@@ -1,0 +1,48 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<savedqueries xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <savedquery>
+    <IsCustomizable>1</IsCustomizable>
+    <CanBeDeleted>0</CanBeDeleted>
+    <isquickfindquery>0</isquickfindquery>
+    <isprivate>0</isprivate>
+    <isdefault>1</isdefault>
+    <savedqueryid>{2aff7553-36cf-42f2-beb9-b3bf2d22ad67}</savedqueryid>
+    <layoutxml>
+      <grid name="resultset" jump="book_name" select="1" icon="1" preview="1">
+        <row name="result" id="book_unfundedrequestsid">
+          <cell name="book_higherlevelufr" width="145" />
+          <cell name="book_name" width="100" />
+          <cell name="book_state" width="100" />
+          <cell name="book_dropdeaddate" width="132" />
+          <cell name="book_oprunfundedamount" width="177" />
+          <cell name="book_newunfundedamount" width="146" />
+          <cell name="book_outcome" width="100" />
+          <cell name="book_outcomenarrative" width="148" />
+        </row>
+      </grid>
+    </layoutxml>
+    <querytype>0</querytype>
+    <fetchxml>
+      <fetch version="1.0" mapping="logical">
+        <entity name="book_unfundedrequests">
+          <attribute name="book_unfundedrequestsid" />
+          <filter type="and">
+            <condition attribute="statecode" operator="eq" value="0" />
+          </filter>
+          <attribute name="book_dropdeaddate" />
+          <attribute name="book_state" />
+          <attribute name="book_name" />
+          <attribute name="book_higherlevelufr" />
+          <attribute name="book_newunfundedamount" />
+          <attribute name="book_outcome" />
+          <attribute name="book_outcomenarrative" />
+          <attribute name="book_oprunfundedamount" />
+        </entity>
+      </fetch>
+    </fetchxml>
+    <IntroducedVersion>1.0.0.0</IntroducedVersion>
+    <LocalizedNames>
+      <LocalizedName description="Active Unfunded Requests" languagecode="1033" />
+    </LocalizedNames>
+  </savedquery>
+</savedqueries>

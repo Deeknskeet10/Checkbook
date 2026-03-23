@@ -1,0 +1,39 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Workflow WorkflowId="{0f483e50-bc60-f011-bec2-001dd805a06b}" Name="Decision Event - Compare Balance" Description="Compares the sum of Decisions to the Amount of the Event" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <XamlFileName>/Workflows/DecisionEvent-CompareBalance-0F483E50-BC60-F011-BEC2-001DD805A06B.xaml</XamlFileName>
+  <Type>1</Type>
+  <Subprocess>0</Subprocess>
+  <Category>2</Category>
+  <Mode>1</Mode>
+  <Scope>4</Scope>
+  <OnDemand>0</OnDemand>
+  <TriggerOnCreate>0</TriggerOnCreate>
+  <TriggerOnDelete>0</TriggerOnDelete>
+  <AsyncAutodelete>0</AsyncAutodelete>
+  <SyncWorkflowLogOnFailure>0</SyncWorkflowLogOnFailure>
+  <StateCode>1</StateCode>
+  <StatusCode>2</StatusCode>
+  <RunAs>1</RunAs>
+  <IsTransacted>1</IsTransacted>
+  <IntroducedVersion>1.0.0.0</IntroducedVersion>
+  <IsCustomizable>1</IsCustomizable>
+  <BusinessProcessType>0</BusinessProcessType>
+  <IsCustomProcessingStepAllowedForOtherPublishers>1</IsCustomProcessingStepAllowedForOtherPublishers>
+  <ProcessTriggerScope>2</ProcessTriggerScope>
+  <ModernFlowType>0</ModernFlowType>
+  <PrimaryEntity>book_DecisionEvent</PrimaryEntity>
+  <LocalizedNames>
+    <LocalizedName languagecode="1033" description="Decision Event - Compare Balance" />
+  </LocalizedNames>
+  <Descriptions>
+    <Description languagecode="1033" description="Compares the sum of Decisions to the Amount of the Event" />
+  </Descriptions>
+  <labels>
+    <steplabels id="{063487d1-87c9-4950-8294-14e2f2847f99}">
+      <label languagecode="1033" description="Decision Balance cannot be less than the Amount associated with this Event." />
+    </steplabels>
+    <steplabels id="{c566d559-95ea-474d-b63a-0dfb11d28c7b}">
+      <label languagecode="1033" description="Decision Balance cannot be greater than the Amount for this Event" />
+    </steplabels>
+  </labels>
+</Workflow>

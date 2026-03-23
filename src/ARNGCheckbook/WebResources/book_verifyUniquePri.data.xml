@@ -1,0 +1,16 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<WebResource xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <WebResourceId>{420a6db7-e417-f111-8406-001dd8204135}</WebResourceId>
+  <Name>book_verifyUniquePri</Name>
+  <DisplayName>verifyUniquePri</DisplayName>
+  <Description>Verifies unique Priority per State, Fund Center and FY</Description>
+  <LanguageCode>0</LanguageCode>
+  <WebResourceType>3</WebResourceType>
+  <IntroducedVersion>1.11.0.21</IntroducedVersion>
+  <IsEnabledForMobileClient>0</IsEnabledForMobileClient>
+  <IsAvailableForMobileOffline>0</IsAvailableForMobileOffline>
+  <IsCustomizable>1</IsCustomizable>
+  <CanBeDeleted>1</CanBeDeleted>
+  <IsHidden>0</IsHidden>
+  <FileName>/WebResources/book_verifyUniquePri420A6DB7-E417-F111-8406-001DD8204135</FileName>
+</WebResource>

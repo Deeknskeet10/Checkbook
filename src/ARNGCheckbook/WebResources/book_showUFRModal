@@ -1,0 +1,28 @@
+function showUFRModal(formContext) {
+    // Centered Dialog
+    var pageInput = {
+        pageType: "custom",
+        name: "book_pagegenerateufrmodal_f2c44",
+        //entityName: "book_fundingtrack",
+        //recordId: formContext.data.entity.getId().replace(/[{}]/g, ""),
+    };
+    var navigationOptions = {
+        target: 2,
+        position: 1,
+        width: { value: 300, unit: "px" },
+        height: { value: 260, unit: "px" },
+        title: "Generate UFRs"
+    };
+    Xrm.Navigation.navigateTo(pageInput, navigationOptions)
+        .then(
+            function () {
+                // Called when the dialog closes
+                formContext.data.refresh();
+            }
+        ).catch(
+            function (error) {
+                // Handle error
+            }
+        );
+
+}

@@ -1,0 +1,14 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<WebResource xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <WebResourceId>{26bc5923-2ca9-f011-bbd3-001dd805a23f}</WebResourceId>
+  <Name>book_calendarweeksolidfull</Name>
+  <DisplayName>calendar-week-solid-full</DisplayName>
+  <WebResourceType>11</WebResourceType>
+  <IntroducedVersion>1.4.1.1</IntroducedVersion>
+  <IsEnabledForMobileClient>0</IsEnabledForMobileClient>
+  <IsAvailableForMobileOffline>0</IsAvailableForMobileOffline>
+  <IsCustomizable>1</IsCustomizable>
+  <CanBeDeleted>1</CanBeDeleted>
+  <IsHidden>0</IsHidden>
+  <FileName>/WebResources/book_calendarweeksolidfull26BC5923-2CA9-F011-BBD3-001DD805A23F</FileName>
+</WebResource>

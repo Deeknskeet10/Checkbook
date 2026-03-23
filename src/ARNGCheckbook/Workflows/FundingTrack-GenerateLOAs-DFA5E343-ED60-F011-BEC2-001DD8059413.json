@@ -1,0 +1,472 @@
+{
+  "properties": {
+    "connectionReferences": {
+      "shared_commondataserviceforapps": {
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "book_sharedcommondataserviceforapps_9388f"
+        },
+        "api": {
+          "name": "shared_commondataserviceforapps"
+        }
+      }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "1.0.0.0",
+      "parameters": {
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        },
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        }
+      },
+      "triggers": {
+        "manual": {
+          "metadata": {
+            "operationMetadataId": "4de312be-b57e-4b13-a0f5-bc2b4ba30a77"
+          },
+          "type": "Request",
+          "kind": "PowerAppV2",
+          "inputs": {
+            "schema": {
+              "type": "object",
+              "properties": {},
+              "required": []
+            }
+          },
+          "runtimeConfiguration": {
+            "concurrency": {
+              "runs": 1
+            }
+          }
+        }
+      },
+      "actions": {
+        "Gather_Data": {
+          "actions": {
+            "List_Funding__Tracks": {
+              "runAfter": {},
+              "metadata": {
+                "operationMetadataId": "aa3cf6d0-74da-4dee-b10b-002d06778b6f"
+              },
+              "type": "OpenApiConnection",
+              "inputs": {
+                "host": {
+                  "connectionName": "shared_commondataserviceforapps",
+                  "operationId": "ListRecords",
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
+                },
+                "parameters": {
+                  "entityName": "book_fundingtracks",
+                  "$filter": "statecode eq 0"
+                },
+                "authentication": "@parameters('$authentication')"
+              }
+            }
+          },
+          "runAfter": {},
+          "metadata": {
+            "operationMetadataId": "6ea620c2-6316-44e3-9f57-bf0b9682c743"
+          },
+          "type": "Scope"
+        },
+        "Loop_through_Funding_Lines": {
+          "foreach": "@outputs('List_Funding__Tracks')?['body/value']",
+          "actions": {
+            "Build_Fund": {
+              "actions": {
+                "List_Funds": {
+                  "runAfter": {},
+                  "metadata": {
+                    "operationMetadataId": "e9055d3a-8462-4ec2-b2d1-ff1cf010e95c"
+                  },
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "host": {
+                      "connectionName": "shared_commondataserviceforapps",
+                      "operationId": "ListRecords",
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
+                    },
+                    "parameters": {
+                      "entityName": "book_funds",
+                      "$filter": "_book_boc_value eq @{items('Loop_through_Funding_Lines')?['_book_boc_value']} and book_appropriation eq @{items('Loop_through_Funding_Lines')?['book_appropriation']} and book_fundingcode eq 'D' and _book_dollartypefundedprogram_value eq @{items('Loop_through_Funding_Lines')?['_book_dollartype_value']}",
+                      "$top": 1
+                    },
+                    "authentication": "@parameters('$authentication')"
+                  }
+                }
+              },
+              "runAfter": {},
+              "metadata": {
+                "operationMetadataId": "a18b7936-2385-4430-ac73-992e7f2bb73c"
+              },
+              "type": "Scope"
+            },
+            "Create_new_LOA": {
+              "runAfter": {
+                "Build_Fund": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "dd54faeb-7811-408d-a414-30dc73dae101"
+              },
+              "type": "OpenApiConnection",
+              "inputs": {
+                "host": {
+                  "connectionName": "shared_commondataserviceforapps",
+                  "operationId": "CreateRecord",
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
+                },
+                "parameters": {
+                  "entityName": "book_fundinglines",
+                  "item/book_newBOC@odata.bind": "book_bocs(@{items('Loop_through_Funding_Lines')?['_book_boc_value']})",
+                  "item/book_DisbursingOfficial@odata.bind": "book_oprs(@{items('Loop_through_Funding_Lines')?['_book_disbursingofficial_value']})",
+                  "item/book_newDollarType@odata.bind": "book_dollartypes(@{items('Loop_through_Funding_Lines')?['_book_dollartype_value']})",
+                  "item/book_Fund@odata.bind": "book_funds(@{first(outputs('List_Funds')?['body/value'])?['book_fundid']})",
+                  "item/book_MDEP@odata.bind": "book_mdeps(@{items('Loop_through_Funding_Lines')?['_book_mdep_value']})",
+                  "item/owningbusinessunit@odata.bind": "businessunits(@{items('Loop_through_Funding_Lines')?['_owningbusinessunit_value']})",
+                  "item/book_PG@odata.bind": "book_pgs(@{items('Loop_through_Funding_Lines')?['_book_pg_value']})",
+                  "item/book_SAG@odata.bind": "book_sags(@{items('Loop_through_Funding_Lines')?['_book_sag_value']})"
+                },
+                "authentication": "@parameters('$authentication')"
+              }
+            },
+            "List_existing_LOA": {
+              "runAfter": {
+                "Create_new_LOA": [
+                  "Failed"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "95a0a2f7-b3be-42ae-aa81-6e39b2c5fd95"
+              },
+              "type": "OpenApiConnection",
+              "inputs": {
+                "host": {
+                  "connectionName": "shared_commondataserviceforapps",
+                  "operationId": "ListRecords",
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
+                },
+                "parameters": {
+                  "entityName": "book_fundinglines",
+                  "$filter": "_book_disbursingofficial_value eq @{items('Loop_through_Funding_Lines')?['_book_disbursingofficial_value']} and _book_fund_value eq @{first(outputs('List_Funds')?['body/value'])?['book_fundid']} and _book_newboc_value eq @{items('Loop_through_Funding_Lines')?['_book_boc_value']} and _book_newdollartype_value eq @{items('Loop_through_Funding_Lines')?['_book_dollartype_value']} and _book_pg_value eq @{items('Loop_through_Funding_Lines')?['_book_pg_value']} and _book_mdep_value eq @{items('Loop_through_Funding_Lines')?['_book_mdep_value']}",
+                  "$top": 1
+                },
+                "authentication": "@parameters('$authentication')"
+              }
+            },
+            "Update_FT_with_new_LOA": {
+              "runAfter": {
+                "Create_new_LOA": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "dd4cb827-4bdc-47fe-9069-c2b4401cd3ae"
+              },
+              "type": "OpenApiConnection",
+              "inputs": {
+                "host": {
+                  "connectionName": "shared_commondataserviceforapps",
+                  "operationId": "UpdateOnlyRecord",
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
+                },
+                "parameters": {
+                  "entityName": "book_fundingtracks",
+                  "recordId": "@items('Loop_through_Funding_Lines')?['book_fundingtrackid']",
+                  "item/book_LineofAccountingLOA@odata.bind": "book_fundinglines(@{outputs('Create_new_LOA')?['body/book_fundinglineid']})"
+                },
+                "authentication": "@parameters('$authentication')"
+              }
+            },
+            "Relate_APE_to_existing_LOA": {
+              "runAfter": {
+                "Update_FT_with_existing_LOA": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "29f95d0b-7d2e-4ebb-89a3-a23f7438d789"
+              },
+              "type": "OpenApiConnection",
+              "inputs": {
+                "host": {
+                  "connectionName": "shared_commondataserviceforapps",
+                  "operationId": "AssociateEntities",
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
+                },
+                "parameters": {
+                  "entityName": "book_fundinglines",
+                  "recordId": "@first(outputs('List_existing_LOA')?['body/value'])?['book_fundinglineid']",
+                  "associationEntityRelationship": "book_FundingLine_book_APE_book_APE",
+                  "item/@odata.id": "@concat('https://',variables('envVar'),'.crm.appsplatform.us/api/data/v9.1/book_apes(',items('Loop_through_Funding_Lines')?['_book_ape_value'],')')"
+                },
+                "authentication": "@parameters('$authentication')"
+              }
+            },
+            "Relate_APE_to_new_LOA": {
+              "runAfter": {
+                "Update_FT_with_new_LOA": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "c08a1a1b-b8cf-4228-8c9f-ba78d944156e"
+              },
+              "type": "OpenApiConnection",
+              "inputs": {
+                "host": {
+                  "connectionName": "shared_commondataserviceforapps",
+                  "operationId": "AssociateEntities",
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
+                },
+                "parameters": {
+                  "entityName": "book_fundinglines",
+                  "recordId": "@outputs('Create_new_LOA')?['body/book_fundinglineid']",
+                  "associationEntityRelationship": "book_FundingLine_book_APE_book_APE",
+                  "item/@odata.id": "@concat('https://',variables('envVar'),'.crm.appsplatform.us/api/data/v9.1/book_apes(',items('Loop_through_Funding_Lines')?['_book_ape_value'],')')"
+                },
+                "authentication": "@parameters('$authentication')"
+              }
+            },
+            "Update_FT_with_existing_LOA": {
+              "runAfter": {
+                "List_existing_LOA": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "8064fa76-5a8d-44ca-9aaf-61022a8399c7"
+              },
+              "type": "OpenApiConnection",
+              "inputs": {
+                "host": {
+                  "connectionName": "shared_commondataserviceforapps",
+                  "operationId": "UpdateOnlyRecord",
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
+                },
+                "parameters": {
+                  "entityName": "book_fundingtracks",
+                  "recordId": "@items('Loop_through_Funding_Lines')?['book_fundingtrackid']",
+                  "item/book_LineofAccountingLOA@odata.bind": "book_fundinglines(@{first(outputs('List_existing_LOA')?['body/value'])?['book_fundinglineid']})"
+                },
+                "authentication": "@parameters('$authentication')"
+              }
+            }
+          },
+          "runAfter": {
+            "Set_envVar": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "21786c05-6d1c-4552-8f9b-cff30a68f3b2"
+          },
+          "type": "Foreach",
+          "runtimeConfiguration": {
+            "concurrency": {
+              "repetitions": 20
+            }
+          }
+        },
+        "List_LOAs": {
+          "runAfter": {
+            "Loop_through_Funding_Lines": [
+              "Succeeded",
+              "Failed"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "9673c6a9-d6ce-402c-9744-70d8e7ad2c24"
+          },
+          "type": "OpenApiConnection",
+          "inputs": {
+            "host": {
+              "connectionName": "shared_commondataserviceforapps",
+              "operationId": "ListRecords",
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
+            },
+            "parameters": {
+              "entityName": "book_fundinglines",
+              "$filter": "statecode eq 0"
+            },
+            "authentication": "@parameters('$authentication')"
+          }
+        },
+        "Loop_through_LOAs": {
+          "foreach": "@outputs('List_LOAs')?['body/value']",
+          "actions": {
+            "List_Funding_Tracks_associated_with_LOA": {
+              "runAfter": {},
+              "metadata": {
+                "operationMetadataId": "a2a79bf5-fe39-44b0-aa44-caf677e0fe92"
+              },
+              "type": "OpenApiConnection",
+              "inputs": {
+                "host": {
+                  "connectionName": "shared_commondataserviceforapps",
+                  "operationId": "ListRecords",
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
+                },
+                "parameters": {
+                  "entityName": "book_fundingtracks",
+                  "$filter": "_book_lineofaccountingloa_value eq @{items('Loop_through_LOAs')?['book_fundinglineid']}"
+                },
+                "authentication": "@parameters('$authentication')"
+              }
+            },
+            "Select_Resource": {
+              "runAfter": {
+                "List_Funding_Tracks_associated_with_LOA": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "b42b2754-58e6-4dc8-abb4-2de8332e510a"
+              },
+              "type": "Select",
+              "inputs": {
+                "from": "@outputs('List_Funding_Tracks_associated_with_LOA')?['body/value']",
+                "select": "@if(equals(item()?['book_resourceamount'], null), 0, item()?['book_resourceamount'])"
+              }
+            },
+            "Compose_Resource": {
+              "runAfter": {
+                "Select_Resource": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "a6c328b2-c211-4083-ac97-c13144889dec"
+              },
+              "type": "Compose",
+              "inputs": {
+                "root": {
+                  "Resource": "@if(equals(body('Select_Resource'), null), 0, body('Select_Resource'))"
+                }
+              }
+            },
+            "Update_LOA_TDP": {
+              "runAfter": {
+                "Compose_Resource": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "0dfe7070-f334-4218-91de-b7a37055ea81"
+              },
+              "type": "OpenApiConnection",
+              "inputs": {
+                "host": {
+                  "connectionName": "shared_commondataserviceforapps",
+                  "operationId": "UpdateOnlyRecord",
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
+                },
+                "parameters": {
+                  "entityName": "book_fundinglines",
+                  "recordId": "@items('Loop_through_LOAs')?['book_fundinglineid']",
+                  "item/book_tdp": "@xpath(xml(outputs('Compose_Resource')), 'sum(/root/Resource)')"
+                },
+                "authentication": "@parameters('$authentication')"
+              }
+            }
+          },
+          "runAfter": {
+            "List_LOAs": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "2d7466ab-3e77-45e3-a197-68f03beb2a07"
+          },
+          "type": "Foreach",
+          "runtimeConfiguration": {
+            "concurrency": {
+              "repetitions": 20
+            }
+          }
+        },
+        "Initialize_envVar": {
+          "runAfter": {
+            "Gather_Data": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "e18951db-6016-435f-9e89-0bbc87921c9a"
+          },
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "envVar",
+                "type": "string"
+              }
+            ]
+          }
+        },
+        "List_Organizations": {
+          "runAfter": {
+            "Initialize_envVar": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "66eaa438-d495-4a67-9de6-fb20f7b79507"
+          },
+          "type": "OpenApiConnection",
+          "inputs": {
+            "host": {
+              "connectionName": "shared_commondataserviceforapps",
+              "operationId": "ListRecords",
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
+            },
+            "parameters": {
+              "entityName": "organizations",
+              "$top": 1
+            },
+            "authentication": "@parameters('$authentication')"
+          }
+        },
+        "Set_envVar": {
+          "runAfter": {
+            "List_Organizations": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "4844c6f7-d673-4b25-abe8-4bcd4e3fe569"
+          },
+          "type": "SetVariable",
+          "inputs": {
+            "name": "envVar",
+            "value": "@{first(outputs('List_Organizations')?['body/value'])?['name']}"
+          }
+        },
+        "Run_a_Child_Flow": {
+          "runAfter": {
+            "Loop_through_LOAs": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "6ba02efd-e54d-4fbf-bb6e-ac049aff624d"
+          },
+          "type": "Workflow",
+          "inputs": {
+            "host": {
+              "workflowReferenceName": "493ecb62-e09a-f011-b4cc-001dd8059413"
+            }
+          }
+        }
+      }
+    },
+    "templateName": ""
+  },
+  "schemaVersion": "1.0.0.0"
+}

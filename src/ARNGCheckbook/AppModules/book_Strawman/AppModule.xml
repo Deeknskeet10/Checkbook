@@ -1,0 +1,40 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<AppModule>
+  <UniqueName>book_Strawman</UniqueName>
+  <IntroducedVersion>1.0.0.0</IntroducedVersion>
+  <WebResourceId>953b9fac-1e5e-e611-80d6-00155ded156f</WebResourceId>
+  <OptimizedFor></OptimizedFor>
+  <statecode>0</statecode>
+  <statuscode>1</statuscode>
+  <FormFactor>1</FormFactor>
+  <ClientType>4</ClientType>
+  <NavigationType>0</NavigationType>
+  <AppModuleComponents>
+    <AppModuleComponent type="62" schemaName="book_Strawman" />
+  </AppModuleComponents>
+  <AppModuleRoleMaps>
+    <Role id="{627090ff-40a3-4053-8790-584edc5be201}" />
+    <Role id="{119f245c-3cc8-4b62-b31c-d1a046ced15d}" />
+  </AppModuleRoleMaps>
+  <LocalizedNames>
+    <LocalizedName description="ARNG Checkbook - Strawman" languagecode="1033" />
+  </LocalizedNames>
+  <Descriptions>
+    <Description description="Development of the FY's Preliminary Budget" languagecode="1033" />
+  </Descriptions>
+  <appelements>
+    <appelement uniquename="book_book_Strawman_canvasappid_book_pagefundingtrackmodal_30c95">
+      <canvasappid>
+        <name>book_pagefundingtrackmodal_30c95</name>
+      </canvasappid>
+      <iscustomizable>1</iscustomizable>
+      <name>book_book_Strawman_canvasappid_book_pagefundingtrackmodal_30c95</name>
+    </appelement>
+  </appelements>
+  <appsettings>
+    <appsetting settingdefinitionid.uniquename="AppChannel">
+      <iscustomizable>1</iscustomizable>
+      <value>1</value>
+    </appsetting>
+  </appsettings>
+</AppModule>

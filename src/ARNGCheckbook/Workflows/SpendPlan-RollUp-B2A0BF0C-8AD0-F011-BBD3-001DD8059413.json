@@ -1,0 +1,361 @@
+{
+  "properties": {
+    "connectionReferences": {
+      "shared_commondataserviceforapps": {
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "book_sharedcommondataserviceforapps_9388f"
+        },
+        "api": {
+          "name": "shared_commondataserviceforapps"
+        }
+      }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "1.0.0.0",
+      "parameters": {
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        },
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        }
+      },
+      "triggers": {
+        "When_a_row_is_added,_modified_or_deleted": {
+          "metadata": {
+            "operationMetadataId": "ec73b832-75a4-476b-84b5-e773a6905451"
+          },
+          "type": "OpenApiConnectionWebhook",
+          "inputs": {
+            "host": {
+              "connectionName": "shared_commondataserviceforapps",
+              "operationId": "SubscribeWebhookTrigger",
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
+            },
+            "parameters": {
+              "subscriptionRequest/message": 3,
+              "subscriptionRequest/entityname": "book_spendplan",
+              "subscriptionRequest/scope": 4,
+              "subscriptionRequest/filteringattributes": "book_january, book_february, book_march, book_april, book_may, book_june, book_july, book_august, book_september, book_october, book_november, book_december",
+              "subscriptionRequest/filterexpression": "statecode eq 0 and (book_spendplantype eq 'Prioritization' or book_spendplantype eq 'Unfunded Request')",
+              "subscriptionRequest/runas": 2
+            },
+            "authentication": "@parameters('$authentication')"
+          }
+        }
+      },
+      "actions": {
+        "Switch": {
+          "runAfter": {},
+          "cases": {
+            "Prioritization": {
+              "case": "Prioritization",
+              "actions": {
+                "Get_Prioritization": {
+                  "runAfter": {},
+                  "metadata": {
+                    "operationMetadataId": "9e7ee5dd-0dd2-4ce5-9f93-7240f9533601"
+                  },
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "host": {
+                      "connectionName": "shared_commondataserviceforapps",
+                      "operationId": "GetItem",
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
+                    },
+                    "parameters": {
+                      "entityName": "book_prioritizations",
+                      "recordId": "@triggerOutputs()?['body/_book_prioritization_value']"
+                    },
+                    "authentication": "@parameters('$authentication')"
+                  }
+                },
+                "List_Prioritization_Spend_Plans": {
+                  "runAfter": {
+                    "Get_Prioritization": [
+                      "Succeeded"
+                    ]
+                  },
+                  "metadata": {
+                    "operationMetadataId": "24b9579b-ef08-474b-875e-dc08a0f028f6"
+                  },
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "host": {
+                      "connectionName": "shared_commondataserviceforapps",
+                      "operationId": "ListRecords",
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
+                    },
+                    "parameters": {
+                      "entityName": "book_spendplans",
+                      "fetchXml": "<fetch aggregate=\"true\">\n    <entity name=\"book_spendplan\">\n        <filter>\n            <condition attribute=\"statecode\" operator=\"eq\" value=\"0\"/>\n        </filter>\n        <attribute name=\"book_january\" alias=\"january_total\" aggregate=\"sum\"/>\n        <attribute name=\"book_february\" alias=\"february_total\" aggregate=\"sum\"/>\n        <attribute name=\"book_march\" alias=\"march_total\" aggregate=\"sum\"/>\n        <attribute name=\"book_april\" alias=\"april_total\" aggregate=\"sum\"/>\n        <attribute name=\"book_may\" alias=\"may_total\" aggregate=\"sum\"/>\n        <attribute name=\"book_june\" alias=\"june_total\" aggregate=\"sum\"/>\n        <attribute name=\"book_july\" alias=\"july_total\" aggregate=\"sum\"/>\n        <attribute name=\"book_august\" alias=\"august_total\" aggregate=\"sum\"/>\n        <attribute name=\"book_september\" alias=\"september_total\" aggregate=\"sum\"/>\n        <attribute name=\"book_october\" alias=\"october_total\" aggregate=\"sum\"/>\n        <attribute name=\"book_november\" alias=\"november_total\" aggregate=\"sum\"/>\n        <attribute name=\"book_december\" alias=\"december_total\" aggregate=\"sum\"/>\n        <link-entity name=\"book_prioritization\" from=\"book_prioritizationid\" to=\"book_prioritization\" link-type=\"inner\">\n            <filter>\n                <condition attribute=\"book_requirementfunding\" operator=\"eq\" value=\"@{outputs('Get_Prioritization')?['body/_book_requirementfunding_value']}\"/>\n            </filter>\n        </link-entity>\n    </entity>\n</fetch>"
+                    },
+                    "authentication": "@parameters('$authentication')"
+                  }
+                },
+                "Grab_Parent_Requirements_Spend_Plan": {
+                  "runAfter": {
+                    "List_Prioritization_Spend_Plans": [
+                      "Succeeded"
+                    ]
+                  },
+                  "metadata": {
+                    "operationMetadataId": "564ae2b8-8464-43f3-8109-ccd3cd3693d8"
+                  },
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "host": {
+                      "connectionName": "shared_commondataserviceforapps",
+                      "operationId": "ListRecords",
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
+                    },
+                    "parameters": {
+                      "entityName": "book_spendplans",
+                      "$filter": "_book_requirementfunding_value eq @{outputs('Get_Prioritization')?['body/_book_requirementfunding_value']} and book_withholding eq false and book_spendplantype eq 'Requirement'",
+                      "$top": 1
+                    },
+                    "authentication": "@parameters('$authentication')"
+                  }
+                },
+                "Check_if_Spend_Plan_Exists": {
+                  "actions": {
+                    "Update_Requirement_Spend_Plan": {
+                      "runAfter": {},
+                      "metadata": {
+                        "operationMetadataId": "428b30d7-8073-44a7-a521-85b6cf552eea"
+                      },
+                      "type": "OpenApiConnection",
+                      "inputs": {
+                        "host": {
+                          "connectionName": "shared_commondataserviceforapps",
+                          "operationId": "UpdateOnlyRecord",
+                          "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
+                        },
+                        "parameters": {
+                          "entityName": "book_spendplans",
+                          "recordId": "@first(outputs('Grab_Parent_Requirements_Spend_Plan')?['body/value'])?['book_spendplanid']",
+                          "item/book_april": "@first(outputs('List_Prioritization_Spend_Plans')?['body/value'])?['april_total']",
+                          "item/book_august": "@first(outputs('List_Prioritization_Spend_Plans')?['body/value'])?['august_total']",
+                          "item/book_december": "@first(outputs('List_Prioritization_Spend_Plans')?['body/value'])?['december_total']",
+                          "item/book_february": "@first(outputs('List_Prioritization_Spend_Plans')?['body/value'])?['february_total']",
+                          "item/book_january": "@first(outputs('List_Prioritization_Spend_Plans')?['body/value'])?['january_total']",
+                          "item/book_july": "@first(outputs('List_Prioritization_Spend_Plans')?['body/value'])?['july_total']",
+                          "item/book_june": "@first(outputs('List_Prioritization_Spend_Plans')?['body/value'])?['june_total']",
+                          "item/book_march": "@first(outputs('List_Prioritization_Spend_Plans')?['body/value'])?['march_total']",
+                          "item/book_may": "@first(outputs('List_Prioritization_Spend_Plans')?['body/value'])?['may_total']",
+                          "item/book_november": "@first(outputs('List_Prioritization_Spend_Plans')?['body/value'])?['november_total']",
+                          "item/book_october": "@first(outputs('List_Prioritization_Spend_Plans')?['body/value'])?['october_total']",
+                          "item/book_september": "@first(outputs('List_Prioritization_Spend_Plans')?['body/value'])?['september_total']",
+                          "item/book_withholding": false
+                        },
+                        "authentication": "@parameters('$authentication')"
+                      }
+                    }
+                  },
+                  "runAfter": {
+                    "Grab_Parent_Requirements_Spend_Plan": [
+                      "Succeeded"
+                    ]
+                  },
+                  "else": {
+                    "actions": {
+                      "Get_Req_Funding": {
+                        "runAfter": {},
+                        "metadata": {
+                          "operationMetadataId": "1f683c21-2c52-44a4-859e-416a7254aeeb"
+                        },
+                        "type": "OpenApiConnection",
+                        "inputs": {
+                          "host": {
+                            "connectionName": "shared_commondataserviceforapps",
+                            "operationId": "GetItem",
+                            "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
+                          },
+                          "parameters": {
+                            "entityName": "book_requirementfundings",
+                            "recordId": "@outputs('Get_Prioritization')?['body/_book_requirementfunding_value']"
+                          },
+                          "authentication": "@parameters('$authentication')"
+                        }
+                      },
+                      "Add_new_Spend_plan": {
+                        "runAfter": {
+                          "Get_Req_Funding": [
+                            "Succeeded"
+                          ]
+                        },
+                        "metadata": {
+                          "operationMetadataId": "fe4270fc-75b0-4d8a-b075-2fcc91e7af7b"
+                        },
+                        "type": "OpenApiConnection",
+                        "inputs": {
+                          "host": {
+                            "connectionName": "shared_commondataserviceforapps",
+                            "operationId": "CreateRecord",
+                            "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
+                          },
+                          "parameters": {
+                            "entityName": "book_spendplans",
+                            "item/book_april": "@first(outputs('List_Prioritization_Spend_Plans')?['body/value'])?['april_total']",
+                            "item/book_august": "@first(outputs('List_Prioritization_Spend_Plans')?['body/value'])?['august_total']",
+                            "item/book_december": "@first(outputs('List_Prioritization_Spend_Plans')?['body/value'])?['december_total']",
+                            "item/book_february": "@first(outputs('List_Prioritization_Spend_Plans')?['body/value'])?['february_total']",
+                            "item/book_january": "@first(outputs('List_Prioritization_Spend_Plans')?['body/value'])?['january_total']",
+                            "item/book_july": "@first(outputs('List_Prioritization_Spend_Plans')?['body/value'])?['july_total']",
+                            "item/book_june": "@first(outputs('List_Prioritization_Spend_Plans')?['body/value'])?['june_total']",
+                            "item/book_march": "@first(outputs('List_Prioritization_Spend_Plans')?['body/value'])?['march_total']",
+                            "item/book_may": "@first(outputs('List_Prioritization_Spend_Plans')?['body/value'])?['may_total']",
+                            "item/book_november": "@first(outputs('List_Prioritization_Spend_Plans')?['body/value'])?['november_total']",
+                            "item/book_october": "@first(outputs('List_Prioritization_Spend_Plans')?['body/value'])?['october_total']",
+                            "item/owningbusinessunit@odata.bind": "businessunits(@{outputs('Get_Req_Funding')?['body/_owningbusinessunit_value']})",
+                            "item/book_RequirementFunding@odata.bind": "book_requirementfundings(@{outputs('Get_Prioritization')?['body/_book_requirementfunding_value']})",
+                            "item/book_september": "@first(outputs('List_Prioritization_Spend_Plans')?['body/value'])?['september_total']",
+                            "item/book_withholding": false
+                          },
+                          "authentication": "@parameters('$authentication')"
+                        }
+                      }
+                    }
+                  },
+                  "expression": {
+                    "and": [
+                      {
+                        "greater": [
+                          "@length(outputs('Grab_Parent_Requirements_Spend_Plan')?['body/value'])",
+                          0
+                        ]
+                      }
+                    ]
+                  },
+                  "metadata": {
+                    "operationMetadataId": "12bd580e-a4d8-4d12-b0d5-8f4f73354260"
+                  },
+                  "type": "If"
+                }
+              }
+            },
+            "Unfunded_Request": {
+              "case": "Unfunded Request",
+              "actions": {
+                "Condition": {
+                  "actions": {},
+                  "runAfter": {},
+                  "else": {
+                    "actions": {
+                      "List_UFR_Spend_Plans": {
+                        "runAfter": {},
+                        "metadata": {
+                          "operationMetadataId": "4792e1d1-2ba3-40dc-b255-dd1b68d27d6a"
+                        },
+                        "type": "OpenApiConnection",
+                        "inputs": {
+                          "host": {
+                            "connectionName": "shared_commondataserviceforapps",
+                            "operationId": "ListRecords",
+                            "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
+                          },
+                          "parameters": {
+                            "entityName": "book_spendplans",
+                            "fetchXml": "<fetch aggregate=\"true\">\n    <entity name=\"book_spendplan\">\n        <attribute name=\"book_january\" alias=\"january_total\" aggregate=\"sum\"/>\n        <attribute name=\"book_february\" alias=\"february_total\" aggregate=\"sum\"/>\n        <attribute name=\"book_march\" alias=\"march_total\" aggregate=\"sum\"/>\n        <attribute name=\"book_april\" alias=\"april_total\" aggregate=\"sum\"/>\n        <attribute name=\"book_may\" alias=\"may_total\" aggregate=\"sum\"/>\n        <attribute name=\"book_june\" alias=\"june_total\" aggregate=\"sum\"/>\n        <attribute name=\"book_july\" alias=\"july_total\" aggregate=\"sum\"/>\n        <attribute name=\"book_august\" alias=\"august_total\" aggregate=\"sum\"/>\n        <attribute name=\"book_september\" alias=\"september_total\" aggregate=\"sum\"/>\n        <attribute name=\"book_october\" alias=\"october_total\" aggregate=\"sum\"/>\n        <attribute name=\"book_november\" alias=\"november_total\" aggregate=\"sum\"/>\n        <attribute name=\"book_december\" alias=\"december_total\" aggregate=\"sum\"/>\n        <link-entity name=\"book_unfundedrequests\" from=\"book_unfundedrequestsid\" to=\"book_unfundedrequest\" link-type=\"inner\">\n            <filter>\n                <condition attribute=\"book_higherlevelufr\" operator=\"eq\" value=\"@{triggerOutputs()?['body/_book_unfundedrequestparent_value']}\"/>\n            </filter>\n        </link-entity>\n    </entity>\n</fetch>"
+                          },
+                          "authentication": "@parameters('$authentication')"
+                        }
+                      },
+                      "Grab_Spend_Plan_for_Parent_UFR": {
+                        "runAfter": {
+                          "List_UFR_Spend_Plans": [
+                            "Succeeded"
+                          ]
+                        },
+                        "metadata": {
+                          "operationMetadataId": "8adbbee6-2dfe-415a-af3f-990896ba0d49"
+                        },
+                        "type": "OpenApiConnection",
+                        "inputs": {
+                          "host": {
+                            "connectionName": "shared_commondataserviceforapps",
+                            "operationId": "ListRecords",
+                            "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
+                          },
+                          "parameters": {
+                            "entityName": "book_spendplans",
+                            "$filter": "_book_unfundedrequest_value eq @{triggerOutputs()?['body/_book_unfundedrequestparent_value']} and statecode eq 0",
+                            "$top": 1
+                          },
+                          "authentication": "@parameters('$authentication')"
+                        }
+                      },
+                      "Update_Parent_UFR_Spend_Plan": {
+                        "runAfter": {
+                          "Grab_Spend_Plan_for_Parent_UFR": [
+                            "Succeeded"
+                          ]
+                        },
+                        "metadata": {
+                          "operationMetadataId": "b3b79c49-08a7-48d8-806b-1f35b4825ddd"
+                        },
+                        "type": "OpenApiConnection",
+                        "inputs": {
+                          "host": {
+                            "connectionName": "shared_commondataserviceforapps",
+                            "operationId": "UpdateOnlyRecord",
+                            "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
+                          },
+                          "parameters": {
+                            "entityName": "book_spendplans",
+                            "recordId": "@first(outputs('Grab_Spend_Plan_for_Parent_UFR')?['body/value'])?['book_spendplanid']",
+                            "item/book_april": "@first(outputs('List_UFR_Spend_Plans')?['body/value'])?['april_total']",
+                            "item/book_august": "@first(outputs('List_UFR_Spend_Plans')?['body/value'])?['august_total']",
+                            "item/book_december": "@first(outputs('List_UFR_Spend_Plans')?['body/value'])?['december_total']",
+                            "item/book_february": "@first(outputs('List_UFR_Spend_Plans')?['body/value'])?['february_total']",
+                            "item/book_january": "@first(outputs('List_UFR_Spend_Plans')?['body/value'])?['january_total']",
+                            "item/book_july": "@first(outputs('List_UFR_Spend_Plans')?['body/value'])?['july_total']",
+                            "item/book_june": "@first(outputs('List_UFR_Spend_Plans')?['body/value'])?['june_total']",
+                            "item/book_march": "@first(outputs('List_UFR_Spend_Plans')?['body/value'])?['march_total']",
+                            "item/book_may": "@first(outputs('List_UFR_Spend_Plans')?['body/value'])?['may_total']",
+                            "item/book_november": "@first(outputs('List_UFR_Spend_Plans')?['body/value'])?['november_total']",
+                            "item/book_october": "@first(outputs('List_UFR_Spend_Plans')?['body/value'])?['october_total']",
+                            "item/book_september": "@first(outputs('List_UFR_Spend_Plans')?['body/value'])?['september_total']"
+                          },
+                          "authentication": "@parameters('$authentication')"
+                        }
+                      }
+                    }
+                  },
+                  "expression": {
+                    "and": [
+                      {
+                        "equals": [
+                          "@empty(triggerOutputs()?['body/_book_unfundedrequestparent_value'])",
+                          true
+                        ]
+                      }
+                    ]
+                  },
+                  "metadata": {
+                    "operationMetadataId": "b46c3fa7-facb-4053-bec9-b9c0b9cc0696"
+                  },
+                  "type": "If"
+                }
+              }
+            }
+          },
+          "default": {
+            "actions": {}
+          },
+          "expression": "@triggerOutputs()?['body/book_spendplantype']",
+          "metadata": {
+            "operationMetadataId": "83fce1a8-d355-4ce7-8288-bed5e1e5f56c"
+          },
+          "type": "Switch"
+        }
+      }
+    },
+    "templateName": ""
+  },
+  "schemaVersion": "1.0.0.0"
+}

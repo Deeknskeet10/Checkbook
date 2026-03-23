@@ -1,0 +1,41 @@
+<appaction uniquename="book__GenerateDistribut!25a2c27b2b064567b94cfbe95e38d172!book_ARNGCheckbookLedger!book_distributions!1">
+  <appmoduleid>
+    <uniquename>book_ARNGCheckbookLedger</uniquename>
+  </appmoduleid>
+  <buttonaccessibilitytext default="Generate Distributions">
+    <label description="Generate Distributions" languagecode="1033" />
+  </buttonaccessibilitytext>
+  <buttonlabeltext default="Generate Distributions">
+    <label description="Generate Distributions" languagecode="1033" />
+  </buttonlabeltext>
+  <buttontooltipdescription default="Pop-up to kick-off Distribution generation.">
+    <label description="Pop-up to kick-off Distribution generation." languagecode="1033" />
+  </buttontooltipdescription>
+  <buttontooltiptitle default="Generate Distributions">
+    <label description="Generate Distributions" languagecode="1033" />
+  </buttontooltiptitle>
+  <context>1</context>
+  <contextentity>
+    <logicalname>book_distributions</logicalname>
+  </contextentity>
+  <contextvalue>book_distributions</contextvalue>
+  <fonticon>CreateInvoice</fonticon>
+  <hidden>0</hidden>
+  <iscustomizable>1</iscustomizable>
+  <isdisabled>0</isdisabled>
+  <isgrouptitlehidden>0</isgrouptitlehidden>
+  <location>1</location>
+  <name>GenerateDistribut!25a2c27b2b064567b94cfbe95e38d172</name>
+  <onclickeventjavascriptfunctionname>showDistroModal</onclickeventjavascriptfunctionname>
+  <onclickeventjavascriptparameters>[{"type":5}]</onclickeventjavascriptparameters>
+  <onclickeventjavascriptwebresourceid>
+    <webresourceid>d483d3ca-e7c6-f011-bbd3-001dd8059413</webresourceid>
+  </onclickeventjavascriptwebresourceid>
+  <onclickeventtype>2</onclickeventtype>
+  <origin>0</origin>
+  <sequence>1000100010.0000000000</sequence>
+  <statecode>0</statecode>
+  <statuscode>1</statuscode>
+  <type>0</type>
+  <visibilitytype>0</visibilitytype>
+</appaction>

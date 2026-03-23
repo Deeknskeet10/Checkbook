@@ -1,0 +1,327 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<forms xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <systemform>
+    <formid>{58df6e79-9420-45c6-b876-5862f5cc4727}</formid>
+    <IntroducedVersion>1.0.0.0</IntroducedVersion>
+    <FormPresentation>1</FormPresentation>
+    <FormActivationState>1</FormActivationState>
+    <form headerdensity="HighWithControls">
+      <tabs>
+        <tab verticallayout="true" id="{2858f447-c03f-4747-849b-ef20898d0e76}" IsUserDefined="1">
+          <labels>
+            <label description="General" languagecode="1033" />
+          </labels>
+          <columns>
+            <column width="100%">
+              <sections>
+                <section name="null_section_3" id="9c312382-33b7-4bc9-8293-70064592c4fd" IsUserDefined="0" locklevel="0" showlabel="true" showbar="false" layout="varwidth" celllabelalignment="Left" celllabelposition="Left" columns="111" labelwidth="115">
+                  <labels>
+                    <label description="Related Record" languagecode="1033" />
+                  </labels>
+                  <rows>
+                    <row>
+                      <cell id="{f99bcf7b-13cc-44e2-b630-5f0e268c445f}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="Prioritization" languagecode="1033" />
+                        </labels>
+                        <control id="book_prioritization" classid="{270BD3DB-D9AF-4782-9025-509E298DEC0A}" datafieldname="book_prioritization" disabled="false" />
+                      </cell>
+                      <cell id="{6221c11c-31b0-41c3-b16c-ee1c863e1bcd}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="Unfunded Request" languagecode="1033" />
+                        </labels>
+                        <control id="book_unfundedrequest" classid="{270BD3DB-D9AF-4782-9025-509E298DEC0A}" datafieldname="book_unfundedrequest" disabled="false" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{5c2bf43d-350f-4b98-ac43-69b13c40ee81}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="Requirement Funding" languagecode="1033" />
+                        </labels>
+                        <control id="book_requirementfunding" classid="{270BD3DB-D9AF-4782-9025-509E298DEC0A}" datafieldname="book_requirementfunding" disabled="false" />
+                      </cell>
+                      <cell id="{aa2a4e6b-5e41-45c3-bc56-b970a1148536}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="Unfunded Request (Parent)" languagecode="1033" />
+                        </labels>
+                        <control id="book_unfundedrequestparent" classid="{270BD3DB-D9AF-4782-9025-509E298DEC0A}" datafieldname="book_unfundedrequestparent" disabled="false" />
+                      </cell>
+                      <cell locklevel="0" id="{5d31ed1e-184b-4188-bd1a-566b1e8c04df}">
+                        <labels>
+                          <label description="" languagecode="1033" />
+                        </labels>
+                      </cell>
+                    </row>
+                  </rows>
+                </section>
+                <section showlabel="true" showbar="false" IsUserDefined="0" id="{f7b2abfc-8b84-4de3-bf09-38047b50ea70}" columns="111" name="Spend Plan">
+                  <labels>
+                    <label description="Spend Plan" languagecode="1033" />
+                  </labels>
+                  <rows>
+                    <row>
+                      <cell id="{a823fe8a-f697-45c8-99a3-d57ca323b227}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="October" languagecode="1033" />
+                        </labels>
+                        <control id="book_october" classid="{0D2C745A-E5A8-4C8F-BA63-C6D3BB604660}" datafieldname="book_october" disabled="false" />
+                      </cell>
+                      <cell id="{0f518cc9-2d0e-440a-be71-79328c3d64e1}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="November" languagecode="1033" />
+                        </labels>
+                        <control id="book_november" classid="{0D2C745A-E5A8-4C8F-BA63-C6D3BB604660}" datafieldname="book_november" disabled="false" />
+                      </cell>
+                      <cell id="{ddf9cbb4-969a-449c-8a27-1097c44549b8}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="December" languagecode="1033" />
+                        </labels>
+                        <control id="book_december" classid="{0D2C745A-E5A8-4C8F-BA63-C6D3BB604660}" datafieldname="book_december" disabled="false" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{d92294b9-584e-445f-8c44-3ca39bd5ad48}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="January" languagecode="1033" />
+                        </labels>
+                        <control id="book_january" classid="{0D2C745A-E5A8-4C8F-BA63-C6D3BB604660}" datafieldname="book_january" disabled="false" />
+                      </cell>
+                      <cell id="{18db5ec1-79fc-4227-b1b9-caa634629878}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="February" languagecode="1033" />
+                        </labels>
+                        <control id="book_february" classid="{0D2C745A-E5A8-4C8F-BA63-C6D3BB604660}" datafieldname="book_february" disabled="false" />
+                      </cell>
+                      <cell id="{786fad10-a3e0-4b80-9e19-819cf1a83602}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="March" languagecode="1033" />
+                        </labels>
+                        <control id="book_march" classid="{0D2C745A-E5A8-4C8F-BA63-C6D3BB604660}" datafieldname="book_march" disabled="false" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{e570235f-dc61-412a-a55e-9ce4ea055452}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="April" languagecode="1033" />
+                        </labels>
+                        <control id="book_april" classid="{0D2C745A-E5A8-4C8F-BA63-C6D3BB604660}" datafieldname="book_april" disabled="false" />
+                      </cell>
+                      <cell id="{1181e308-152f-4420-8ebe-c935beb262be}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="May" languagecode="1033" />
+                        </labels>
+                        <control id="book_may" classid="{0D2C745A-E5A8-4C8F-BA63-C6D3BB604660}" datafieldname="book_may" disabled="false" />
+                      </cell>
+                      <cell id="{4caea5de-c675-4fad-8c6a-9d4c03a58a6b}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="June" languagecode="1033" />
+                        </labels>
+                        <control id="book_june" classid="{0D2C745A-E5A8-4C8F-BA63-C6D3BB604660}" datafieldname="book_june" disabled="false" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{d4a76cdc-1d3f-454f-8e7a-3dbe36a747a3}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="July" languagecode="1033" />
+                        </labels>
+                        <control id="book_july" classid="{0D2C745A-E5A8-4C8F-BA63-C6D3BB604660}" datafieldname="book_july" disabled="false" />
+                      </cell>
+                      <cell id="{a212f444-a78d-42b7-a106-4cd26cdc0fcd}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="August" languagecode="1033" />
+                        </labels>
+                        <control id="book_august" classid="{0D2C745A-E5A8-4C8F-BA63-C6D3BB604660}" datafieldname="book_august" disabled="false" />
+                      </cell>
+                      <cell id="{a3c227ee-1bae-4a9a-bb88-a06c1b11a52c}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="September" languagecode="1033" />
+                        </labels>
+                        <control id="book_september" classid="{0D2C745A-E5A8-4C8F-BA63-C6D3BB604660}" datafieldname="book_september" disabled="false" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{10a2703a-7fd2-40c7-abb4-81e5d011b441}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="Spend Plan Total" languagecode="1033" />
+                        </labels>
+                        <control id="book_spendplantotal" classid="{0D2C745A-E5A8-4C8F-BA63-C6D3BB604660}" datafieldname="book_spendplantotal" disabled="false" />
+                      </cell>
+                      <cell id="{0288b526-8dcd-4022-85bc-4f792b8a3bb7}" locklevel="0" colspan="2" rowspan="4">
+                        <labels>
+                          <label description="Spend Plan Comments" languagecode="1033" />
+                        </labels>
+                        <control id="book_spendplancomments" classid="{E0DECE4B-6FC8-4A8F-A065-082708572369}" datafieldname="book_spendplancomments" disabled="false" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{d5bbc141-bfe8-4212-952b-9336affa0f4d}" locklevel="0" colspan="1" rowspan="1" visible="false">
+                        <labels>
+                          <label description="Total (TDP)" languagecode="1033" />
+                        </labels>
+                        <control id="book_total" classid="{0D2C745A-E5A8-4C8F-BA63-C6D3BB604660}" datafieldname="book_total" disabled="false" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell locklevel="0" id="{46ef9c27-8061-4f2e-9c72-800a65717675}" showlabel="false">
+                        <labels>
+                          <label description="" languagecode="1033" />
+                        </labels>
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{bb4ddd6e-c9b8-644b-2399-196da0328086}" showlabel="false">
+                        <labels>
+                          <label description="" languagecode="1033" />
+                        </labels>
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{528e5edb-987d-6cc0-d257-93d5d3950358}" showlabel="false">
+                        <labels>
+                          <label description="" languagecode="1033" />
+                        </labels>
+                      </cell>
+                      <cell id="{e682dc56-7c79-4a03-9adf-b0238d090da0}" visible="false">
+                        <labels>
+                          <label description="Owner" languagecode="1033" />
+                        </labels>
+                        <control id="ownerid" classid="{270BD3DB-D9AF-4782-9025-509E298DEC0A}" datafieldname="ownerid" />
+                      </cell>
+                      <cell id="{bcc1bd29-b4bd-d6c2-5955-5ee8e2715672}" showlabel="false">
+                        <labels>
+                          <label description="" languagecode="1033" />
+                        </labels>
+                      </cell>
+                    </row>
+                  </rows>
+                </section>
+              </sections>
+            </column>
+          </columns>
+        </tab>
+      </tabs>
+      <header id="{dc2eab37-8650-4f48-bd33-de3710a0567c}" celllabelposition="Top" columns="111" labelwidth="115" celllabelalignment="Left">
+        <rows>
+          <row>
+            <cell id="{b22a42e4-136b-4f27-ac93-fffaa45c1eed}" showlabel="false">
+              <labels>
+                <label description="" languagecode="1033" />
+              </labels>
+            </cell>
+            <cell id="{5198de0a-d530-4df3-96d7-362b143a36b3}" showlabel="false">
+              <labels>
+                <label description="" languagecode="1033" />
+              </labels>
+            </cell>
+            <cell id="{dc2f7671-0949-4c40-b716-dc94e0fd77ef}" showlabel="false">
+              <labels>
+                <label description="" languagecode="1033" />
+              </labels>
+            </cell>
+            <cell id="{9350c2d9-4314-4881-9429-c8d96c472fdc}" locklevel="0" colspan="1" rowspan="1">
+              <labels>
+                <label description="Spend Plan Type" languagecode="1033" />
+              </labels>
+              <control id="header_book_spendplantype" classid="{4273EDBD-AC1D-40D3-9FB2-095C621B552D}" datafieldname="book_spendplantype" disabled="true" />
+            </cell>
+            <cell id="{fef37ab8-ff1c-40c7-876e-d255c5c8cfad}" locklevel="0" colspan="1" rowspan="1">
+              <labels>
+                <label description="Amount Available" languagecode="1033" />
+              </labels>
+              <control id="header_book_availableamount" classid="{C3EFE0C3-0EC6-42BE-8349-CBD9079DFD8E}" datafieldname="book_availableamount" disabled="true" />
+            </cell>
+            <cell id="{88f19435-bc30-4b33-ad14-0d212f16d201}" locklevel="0" colspan="1" rowspan="1">
+              <labels>
+                <label description="Owning Business Unit" languagecode="1033" />
+              </labels>
+              <control id="header_owningbusinessunit" classid="{270BD3DB-D9AF-4782-9025-509E298DEC0A}" datafieldname="owningbusinessunit" disabled="false" />
+            </cell>
+            <cell id="{92a718b6-cbb7-480e-9b3f-924deaacbd95}" locklevel="0" colspan="1" rowspan="1">
+              <labels>
+                <label description="Status" languagecode="1033" />
+              </labels>
+              <control id="header_statecode" classid="{3EF39988-22BB-4F0B-BBBE-64B5A3748AEE}" datafieldname="statecode" disabled="false" />
+            </cell>
+          </row>
+        </rows>
+      </header>
+      <footer id="{192f2683-522c-41c4-9f9b-e13c235375c0}" celllabelposition="Top" columns="111" labelwidth="115" celllabelalignment="Left">
+        <rows>
+          <row>
+            <cell id="{a6e9894e-eeaf-45b4-a668-526b07d607b2}" showlabel="false">
+              <labels>
+                <label description="" languagecode="1033" />
+              </labels>
+            </cell>
+            <cell id="{b547d791-c90a-4f2c-928b-662fb8907caf}" showlabel="false">
+              <labels>
+                <label description="" languagecode="1033" />
+              </labels>
+            </cell>
+            <cell id="{ea7a8333-4b8a-45af-bdf0-6cdc5c3498cd}" showlabel="false">
+              <labels>
+                <label description="" languagecode="1033" />
+              </labels>
+            </cell>
+          </row>
+        </rows>
+      </footer>
+      <Navigation>
+        <NavBar />
+        <NavBarAreas>
+          <NavBarArea Id="Info">
+            <Titles>
+              <Title LCID="1033" Text="Common" />
+            </Titles>
+          </NavBarArea>
+          <NavBarArea Id="Sales">
+            <Titles>
+              <Title LCID="1033" Text="Sales" />
+            </Titles>
+          </NavBarArea>
+          <NavBarArea Id="Service">
+            <Titles>
+              <Title LCID="1033" Text="Service" />
+            </Titles>
+          </NavBarArea>
+          <NavBarArea Id="Marketing">
+            <Titles>
+              <Title LCID="1033" Text="Marketing" />
+            </Titles>
+          </NavBarArea>
+          <NavBarArea Id="ProcessCenter">
+            <Titles>
+              <Title LCID="1033" Text="Process Sessions" />
+            </Titles>
+          </NavBarArea>
+        </NavBarAreas>
+      </Navigation>
+      <DisplayConditions Order="0" FallbackForm="true">
+        <Everyone />
+      </DisplayConditions>
+      <formLibraries>
+        <Library name="book_spendPlanValidate" libraryUniqueId="{ee963f64-b746-4714-a5d7-25c804498a8e}" />
+      </formLibraries>
+      <events>
+        <event name="onsave" application="false" active="false">
+          <Handlers>
+            <Handler functionName="Book.SpendPlan.onFormSave" libraryName="book_spendPlanValidate" handlerUniqueId="{f215a6c7-0b2a-4c54-9eca-8821317cf61e}" enabled="true" parameters="" passExecutionContext="true" />
+          </Handlers>
+        </event>
+        <event name="onload" application="false" active="false">
+          <Handlers>
+            <Handler functionName="Book.SpendPlan.onFormLoad" libraryName="book_spendPlanValidate" handlerUniqueId="{692227c2-2f69-4ffe-82f4-bfb4b182dbef}" enabled="true" parameters="" passExecutionContext="true" />
+          </Handlers>
+        </event>
+      </events>
+    </form>
+    <IsCustomizable>1</IsCustomizable>
+    <CanBeDeleted>1</CanBeDeleted>
+    <LocalizedNames>
+      <LocalizedName description="Information" languagecode="1033" />
+    </LocalizedNames>
+    <Descriptions>
+      <Description description="A form for this entity." languagecode="1033" />
+    </Descriptions>
+  </systemform>
+</forms>

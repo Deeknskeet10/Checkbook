@@ -1,0 +1,149 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ImportExportXml xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" OrganizationVersion="9.2.26021.164" OrganizationSchemaType="Standard" CRMServerServiceabilityVersion="9.2.26021.00164">
+  <Entities />
+  <Roles />
+  <Workflows />
+  <FieldSecurityProfiles />
+  <Templates />
+  <EntityMaps />
+  <EntityRelationships />
+  <OrganizationSettings />
+  <optionsets />
+  <WebResources />
+  <CustomControls />
+  <AppModuleSiteMaps />
+  <AppModules />
+  <EntityDataProviders />
+  <CanvasApps />
+  <appaction_appactionrule_classicrulesset>
+    <appaction_appactionrule_classicrules appactionid.uniquename="book__Mscrm.HomepageGrid.{!EntityLogicalName}.NewRecord!book_ARNGCheckbookUnfundedRequests!book_unfundedrequests!1" appactionruleid.uniquename="msdyn_Mscrm.CreateSelectedEntityPermission!1">
+      <iscustomizable>1</iscustomizable>
+    </appaction_appactionrule_classicrules>
+    <appaction_appactionrule_classicrules appactionid.uniquename="book__Mscrm.HomepageGrid.{!EntityLogicalName}.NewRecord!book_ARNGCheckbookUnfundedRequests!book_unfundedrequests!1" appactionruleid.uniquename="msdyn_Mscrm.HideAddressEntities!1">
+      <iscustomizable>1</iscustomizable>
+    </appaction_appactionrule_classicrules>
+    <appaction_appactionrule_classicrules appactionid.uniquename="book__Mscrm.HomepageGrid.{!EntityLogicalName}.NewRecord!book_ARNGCheckbookUnfundedRequests!book_unfundedrequests!1" appactionruleid.uniquename="msdyn_Mscrm.HideNewForChildEntities!1">
+      <iscustomizable>1</iscustomizable>
+    </appaction_appactionrule_classicrules>
+    <appaction_appactionrule_classicrules appactionid.uniquename="book__Mscrm.HomepageGrid.{!EntityLogicalName}.NewRecord!book_ARNGCheckbookUnfundedRequests!book_unfundedrequests!1" appactionruleid.uniquename="msdyn_Mscrm.IsEntityAvailableForUserInMocaOffline!0">
+      <iscustomizable>1</iscustomizable>
+    </appaction_appactionrule_classicrules>
+    <appaction_appactionrule_classicrules appactionid.uniquename="book__Mscrm.HomepageGrid.{!EntityLogicalName}.NewRecord!book_ARNGCheckbookUnfundedRequests!book_unfundedrequests!1" appactionruleid.uniquename="msdyn_Mscrm.IsNotActivityPointer!1">
+      <iscustomizable>1</iscustomizable>
+    </appaction_appactionrule_classicrules>
+    <appaction_appactionrule_classicrules appactionid.uniquename="book__Mscrm.HomepageGrid.{!EntityLogicalName}.NewRecord!book_ARNGCheckbookUnfundedRequests!book_unfundedrequests!1" appactionruleid.uniquename="msdyn_Mscrm.IsValidForHierarchyPageInUC!0">
+      <iscustomizable>1</iscustomizable>
+    </appaction_appactionrule_classicrules>
+    <appaction_appactionrule_classicrules appactionid.uniquename="book__Mscrm.HomepageGrid.{!EntityLogicalName}.NewRecord!book_ARNGCheckbookUnfundedRequests!book_unfundedrequests!1" appactionruleid.uniquename="msdyn_Mscrm.IsValidForHierarchyView!0">
+      <iscustomizable>1</iscustomizable>
+    </appaction_appactionrule_classicrules>
+    <appaction_appactionrule_classicrules appactionid.uniquename="book__Mscrm.HomepageGrid.{!EntityLogicalName}.NewRecord!book_ARNGCheckbookUnfundedRequests!book_unfundedrequests!1" appactionruleid.uniquename="msdyn_Mscrm.PrimaryIsNotActivityHomePageGrid!0">
+      <iscustomizable>1</iscustomizable>
+    </appaction_appactionrule_classicrules>
+    <appaction_appactionrule_classicrules appactionid.uniquename="book__Mscrm.HomepageGrid.{!EntityLogicalName}.NewRecord!book_ARNGCheckbookUnfundedRequests!book_unfundedrequests!1" appactionruleid.uniquename="msdyn_Mscrm.SelectedEntityIsNotBPFEntity!1">
+      <iscustomizable>1</iscustomizable>
+    </appaction_appactionrule_classicrules>
+    <appaction_appactionrule_classicrules appactionid.uniquename="book__Mscrm.HomepageGrid.{!EntityLogicalName}.NewRecord!book_ARNGCheckbookUnfundedRequests!book_unfundedrequests!1" appactionruleid.uniquename="msdyn_Mscrm.ShowForNonRelationshipBoundGrids!1">
+      <iscustomizable>1</iscustomizable>
+    </appaction_appactionrule_classicrules>
+    <appaction_appactionrule_classicrules appactionid.uniquename="book__Mscrm.HomepageGrid.{!EntityLogicalName}.NewRecordForBPFEntity!book_ARNGCheckbookUnfundedRequests!book_unfundedrequests!1" appactionruleid.uniquename="msdyn_Mscrm.CreateSelectedEntityPermission!1">
+      <iscustomizable>1</iscustomizable>
+    </appaction_appactionrule_classicrules>
+    <appaction_appactionrule_classicrules appactionid.uniquename="book__Mscrm.HomepageGrid.{!EntityLogicalName}.NewRecordForBPFEntity!book_ARNGCheckbookUnfundedRequests!book_unfundedrequests!1" appactionruleid.uniquename="msdyn_Mscrm.IsBPFEntityCustomizationFeatureEnabled!1">
+      <iscustomizable>1</iscustomizable>
+    </appaction_appactionrule_classicrules>
+    <appaction_appactionrule_classicrules appactionid.uniquename="book__Mscrm.HomepageGrid.{!EntityLogicalName}.NewRecordForBPFEntity!book_ARNGCheckbookUnfundedRequests!book_unfundedrequests!1" appactionruleid.uniquename="msdyn_Mscrm.IsEntityAvailableForUserInMocaOffline!0">
+      <iscustomizable>1</iscustomizable>
+    </appaction_appactionrule_classicrules>
+    <appaction_appactionrule_classicrules appactionid.uniquename="book__Mscrm.HomepageGrid.{!EntityLogicalName}.NewRecordForBPFEntity!book_ARNGCheckbookUnfundedRequests!book_unfundedrequests!1" appactionruleid.uniquename="msdyn_Mscrm.IsPUV2EntityCustomizationEnabled!1">
+      <iscustomizable>1</iscustomizable>
+    </appaction_appactionrule_classicrules>
+    <appaction_appactionrule_classicrules appactionid.uniquename="book__Mscrm.HomepageGrid.{!EntityLogicalName}.NewRecordForBPFEntity!book_ARNGCheckbookUnfundedRequests!book_unfundedrequests!1" appactionruleid.uniquename="msdyn_Mscrm.IsValidForHierarchyPageInUC!0">
+      <iscustomizable>1</iscustomizable>
+    </appaction_appactionrule_classicrules>
+    <appaction_appactionrule_classicrules appactionid.uniquename="book__Mscrm.HomepageGrid.{!EntityLogicalName}.NewRecordForBPFEntity!book_ARNGCheckbookUnfundedRequests!book_unfundedrequests!1" appactionruleid.uniquename="msdyn_Mscrm.IsValidForHierarchyView!0">
+      <iscustomizable>1</iscustomizable>
+    </appaction_appactionrule_classicrules>
+    <appaction_appactionrule_classicrules appactionid.uniquename="book__Mscrm.HomepageGrid.{!EntityLogicalName}.NewRecordForBPFEntity!book_ARNGCheckbookUnfundedRequests!book_unfundedrequests!1" appactionruleid.uniquename="msdyn_Mscrm.SelectedEntityIsBPFEntity!1">
+      <iscustomizable>1</iscustomizable>
+    </appaction_appactionrule_classicrules>
+  </appaction_appactionrule_classicrulesset>
+  <connectionreferences>
+    <connectionreference connectionreferencelogicalname="book_sharedcommondataserviceforapps_9388f">
+      <connectionreferencedisplayname>Dataverse - Eric</connectionreferencedisplayname>
+      <connectorid>/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps</connectorid>
+      <iscustomizable>1</iscustomizable>
+      <promptingbehavior>0</promptingbehavior>
+      <statecode>0</statecode>
+      <statuscode>1</statuscode>
+    </connectionreference>
+    <connectionreference connectionreferencelogicalname="book_sharedexcelonlinebusiness_a1f38">
+      <connectionreferencedisplayname>Excel Online - Eric</connectionreferencedisplayname>
+      <connectorid>/providers/Microsoft.PowerApps/apis/shared_excelonlinebusiness</connectorid>
+      <iscustomizable>1</iscustomizable>
+      <promptingbehavior>0</promptingbehavior>
+      <statecode>0</statecode>
+      <statuscode>1</statuscode>
+    </connectionreference>
+    <connectionreference connectionreferencelogicalname="book_sharedoffice365groups_b8d31">
+      <connectionreferencedisplayname>Office 365 Groups - Eric</connectionreferencedisplayname>
+      <connectorid>/providers/Microsoft.PowerApps/apis/shared_office365groups</connectorid>
+      <iscustomizable>1</iscustomizable>
+      <promptingbehavior>0</promptingbehavior>
+      <statecode>0</statecode>
+      <statuscode>1</statuscode>
+    </connectionreference>
+    <connectionreference connectionreferencelogicalname="book_sharedonedriveforbusiness_dab1a">
+      <connectionreferencedisplayname>OneDrive - Eric</connectionreferencedisplayname>
+      <connectorid>/providers/Microsoft.PowerApps/apis/shared_onedriveforbusiness</connectorid>
+      <iscustomizable>1</iscustomizable>
+      <promptingbehavior>0</promptingbehavior>
+      <statecode>0</statecode>
+      <statuscode>1</statuscode>
+    </connectionreference>
+    <connectionreference connectionreferencelogicalname="book_sharedpowerplatformforadmins_ba3fe">
+      <connectionreferencedisplayname>Power Platform Admins - Eric</connectionreferencedisplayname>
+      <connectorid>/providers/Microsoft.PowerApps/apis/shared_powerplatformforadmins</connectorid>
+      <iscustomizable>1</iscustomizable>
+      <promptingbehavior>0</promptingbehavior>
+      <statecode>0</statecode>
+      <statuscode>1</statuscode>
+    </connectionreference>
+    <connectionreference connectionreferencelogicalname="book_sharedsharepointonline_7a184">
+      <connectionreferencedisplayname>Sharepoint - Eric</connectionreferencedisplayname>
+      <connectorid>/providers/Microsoft.PowerApps/apis/shared_sharepointonline</connectorid>
+      <iscustomizable>1</iscustomizable>
+      <promptingbehavior>0</promptingbehavior>
+      <statecode>0</statecode>
+      <statuscode>1</statuscode>
+    </connectionreference>
+  </connectionreferences>
+  <msdyn_dataflows>
+    <msdyn_dataflow msdyn_dataflowid="bad2b352-0185-f011-b4cc-001dd805a23f">
+      <iscustomizable>1</iscustomizable>
+      <msdyn_internalversion>6f732acf-6a1c-44ab-a0a4-defcb1c66298</msdyn_internalversion>
+      <msdyn_mashupdocument>section Section1;
+shared TDCs = let
+  Source = Excel.Workbook(Web.Contents("https://armyeitaas-my.sharepoint-mil.us/personal/eric_l_hughes20_ctr_army_mil/Documents/Apps/Power Query Online GCC-L5/Uploaded Files/TDC_Crosswalk 1.xlsx"), null, true),
+  #"Navigation 1" = Source{[Item = "TdcMaster20250416", Kind = "Sheet"]}[Data],
+  #"Promoted headers" = Table.PromoteHeaders(#"Navigation 1", [PromoteAllScalars = true]),
+  #"Removed columns" = Table.RemoveColumns(#"Promoted headers", {"DESIGNATOR CD", "IS OCO", "IS OPEN ALLOTMENT", "IS ACTIVE"}),
+  #"Inserted conditional column" = Table.AddColumn(#"Removed columns", "CAT", each if [CATEGORY] = "AT" then 1 else if [CATEGORY] = "ADT/ADOS/FTNG" then 0 else if [CATEGORY] = "Disability" then 2 else if [CATEGORY] = "IDT" then 3 else 4),
+  #"Inserted conditional column 1" = Table.AddColumn(#"Inserted conditional column", "Request", each if [REQUEST TYPE CD] = "ADOS RC" then 0 else if [REQUEST TYPE CD] = "ADT" then 1 else if [REQUEST TYPE CD] = "AT" then 2 else 3),
+  #"Inserted conditional column 2" = Table.AddColumn(#"Inserted conditional column 1", "Appropriation", each if [APPN] = 2060 then 1 else 1),
+  #"Changed column type 1" = Table.TransformColumnTypes(#"Inserted conditional column 2", {{"CAT", Int64.Type}, {"Request", Int64.Type}, {"Appropriation", Int64.Type}, {"FCA", type text}, {"ORDER FORMAT", type text}, {"GFEBS IO", type text}, {"SUP ID", type text}})
+in
+  #"Changed column type 1";
+</msdyn_mashupdocument>
+      <msdyn_mashupsettings>{"QueryGroups":[],"DocumentLocale":"en-US","QueriesMetadata":{"TDCs":{"QueryId":"fa6a182f-b874-4b11-b7c7-a0f79e5b7c98","QueryName":"TDCs","QueryGroupId":null,"EntityName":"book_TDC","LastKnownIsCalculatedEntity":false,"LastKnownIsLinkedEntity":false,"LastKnownIsParameter":false,"IsHidden":null,"LastKnownResultTypeName":null,"LoadEnabled":true,"DeleteExistingDataOnLoad":false,"FieldsMetadata":{"book_Appropriation":{"SourceColumnName":"Appropriation","DestinationFieldType":"Integer","AutoNumberSettings":null},"book_Category":{"SourceColumnName":"CAT","DestinationFieldType":"Integer","AutoNumberSettings":null},"book_Department":{"SourceColumnName":"DEPT","DestinationFieldType":"Memo","AutoNumberSettings":null},"book_Description":{"SourceColumnName":"DESCRIPTION","DestinationFieldType":"Memo","AutoNumberSettings":null},"book_EnlistedAMS":{"SourceColumnName":"ENLISTED AMS","DestinationFieldType":"Memo","AutoNumberSettings":null},"book_EnlistedAPC":{"SourceColumnName":"ENLISTED APC","DestinationFieldType":"Memo","AutoNumberSettings":null},"book_FunctionalCostAccount":{"SourceColumnName":"FCA","DestinationFieldType":"Memo","AutoNumberSettings":null},"book_GFEBSIO":{"SourceColumnName":"GFEBS IO","DestinationFieldType":"Memo","AutoNumberSettings":null},"book_MDEP.book_Name":{"SourceColumnName":"MDEP","DestinationFieldType":"Memo","AutoNumberSettings":null},"book_Name":{"SourceColumnName":"TDC","DestinationFieldType":"Memo","AutoNumberSettings":null},"book_OfficerAMS":{"SourceColumnName":"OFFICER AMS","DestinationFieldType":"Memo","AutoNumberSettings":null},"book_OfficerAPC":{"SourceColumnName":"OFFICER APC","DestinationFieldType":"Memo","AutoNumberSettings":null},"book_OrderFormat":{"SourceColumnName":"ORDER FORMAT","DestinationFieldType":"Memo","AutoNumberSettings":null},"book_RequestTypeCD":{"SourceColumnName":"Request","DestinationFieldType":"Integer","AutoNumberSettings":null},"book_SAG.book_Name":{"SourceColumnName":"SAG","DestinationFieldType":"Memo","AutoNumberSettings":null},"book_TDCName":{"SourceColumnName":"TDC NAME","DestinationFieldType":"Memo","AutoNumberSettings":null}},"HostProperties":{"MappingEditorProperties":"{}","ServiceFeatureFlag_EnableNewCdstDataflowOrchestration":"True","CdsUploadExecutorKey":"CdsUploader","DmsVersionKey":"0","ServiceFeatureFlag_EnableDataflowImported":"True","StorageId":"CD000000-0000-0000-0000-0000000000CD","EnvironmentId":null},"JsonOutputDestinations":null,"BindToDefaultOutputDestination":null,"JsonIncrementalRefreshSettings":null,"JsonStagingDefinition":null}},"FastCombine":false,"AllowNativeQueries":false,"HostContext":{"Type":"CdsT","Details":{"EnvironmentId":"d48c69fe-6623-e5d0-a84c-aed3e4347113"}},"HostProperties":null,"SkipAutomaticTypeAndHeaderDetection":false,"DisableAutoAnonymousConnectionUpsert":false,"AllowedModules":null,"DataflowMetadata":"{\"DataflowType\":\"Cdst\",\"DataflowId\":\"d66001b2-b5ba-46e7-981a-3009dbce06a3\",\"OwnerUserId\":\"220b5a7e-9115-401a-8558-2d217a447989\",\"OwnerName\":\"Unknown\",\"OwnerTenantId\":\"fae6d70f-954b-4811-92b6-0530d6f84c43\",\"GatewayObjectId\":null,\"ModelSnapshotUri\":\"\",\"GroupId\":\"d48c69fe-6623-e5d0-a84c-aed3e4347113\",\"DataflowState\":\"Source\",\"LastUpdateTime\":\"2026-01-05T18:38:23.5379321+00:00\",\"LastStateChangedTime\":\"2026-01-05T18:38:23.5379321+00:00\",\"CreatedTime\":\"2025-08-29T17:44:09.5238269+00:00\",\"ExpiresAfter\":\"2025-08-31T16:54:09.9432928+00:00\",\"AllowedModules\":null,\"UseHostConnectionProvider\":null,\"SkipAutomaticTypeAndHeaderDetection\":null,\"EditingSessionId\":null,\"HostInformation\":null,\"HostContext\":{\"Type\":\"CdsT\",\"Details\":{\"EnvironmentId\":\"d48c69fe-6623-e5d0-a84c-aed3e4347113\"}},\"HostProperties\":{\"ServiceFeatureFlag_EnableNewCdstDataflowOrchestration\":\"True\",\"CdsUploadExecutorKey\":\"CdsUploader\",\"DmsVersionKey\":\"0\",\"ServiceFeatureFlag_EnableDataflowImported\":\"True\",\"StorageId\":\"CD000000-0000-0000-0000-0000000000CD\",\"EnvironmentId\":null},\"DisableAutoAnonymousConnectionUpsert\":null,\"RelatedDataflowId\":\"a1f88cab-38a2-41a9-924f-442454b41fbc\",\"NotificationSettings\":{\"RefreshEmailSettings\":{\"SendMailEnabled\":false,\"EmailsList\":[]},\"DataflowWebhooks\":{}},\"DataflowPublishMetadata\":{\"PublishStatus\":\"Published\",\"ErrorInfo\":null,\"PublishVersion\":\"2025-09-09T18:34:50.9571877+00:00\",\"LastUpdateTime\":\"2025-09-09T18:34:59.4014907+00:00\",\"LastPublishedTime\":\"2025-09-09T18:34:59.4014907+00:00\",\"SessionId\":null,\"RequestId\":null},\"TrustedConnections\":null,\"DataflowStorageId\":\"CD000000-0000-0000-0000-0000000000CD\",\"DataflowCreatedByPQInGroupId\":\"d48c69fe-6623-e5d0-a84c-aed3e4347113\",\"ConnectionOverrides\":null}","Dataflow":"{\"name\":\"TDC Data Import\",\"ppdf:dataflowId\":\"d66001b2-b5ba-46e7-981a-3009dbce06a3\",\"ppdf:owner\":{\"tenantId\":\"fae6d70f-954b-4811-92b6-0530d6f84c43\",\"userId\":\"220b5a7e-9115-401a-8558-2d217a447989\"},\"ppdf:fastCopy\":false,\"ppdf:parametric\":false,\"ppdf:partitionedCompute\":false,\"ppdf:allowModernEvaluationEngine\":false,\"version\":\"0\",\"culture\":\"en-US\",\"ppdf:outputFileFormat\":\"Csv\",\"pbi:mashup\":{\"fastCombine\":false,\"allowNativeQueries\":false,\"queriesMetadata\":{\"TDCs\":{\"queryId\":\"fa6a182f-b874-4b11-b7c7-a0f79e5b7c98\",\"queryName\":\"TDCs\",\"entityName\":\"book_TDC\",\"loadEnabled\":true,\"lastKnownIsCalculatedEntity\":false,\"lastKnownIsLinkedEntity\":false,\"lastKnownIsParameter\":false,\"deleteExistingDataOnLoad\":false,\"hostProperties\":{\"MappingEditorProperties\":\"{}\",\"ServiceFeatureFlag_EnableNewCdstDataflowOrchestration\":\"True\",\"CdsUploadExecutorKey\":\"CdsUploader\",\"DmsVersionKey\":\"0\",\"ServiceFeatureFlag_EnableDataflowImported\":\"True\",\"StorageId\":\"CD000000-0000-0000-0000-0000000000CD\",\"EnvironmentId\":null},\"fieldsMetadata\":{\"book_Appropriation\":{\"sourceColumnName\":\"Appropriation\",\"destinationFieldType\":\"Integer\"},\"book_Category\":{\"sourceColumnName\":\"CAT\",\"destinationFieldType\":\"Integer\"},\"book_Department\":{\"sourceColumnName\":\"DEPT\",\"destinationFieldType\":\"Memo\"},\"book_Description\":{\"sourceColumnName\":\"DESCRIPTION\",\"destinationFieldType\":\"Memo\"},\"book_EnlistedAMS\":{\"sourceColumnName\":\"ENLISTED AMS\",\"destinationFieldType\":\"Memo\"},\"book_EnlistedAPC\":{\"sourceColumnName\":\"ENLISTED APC\",\"destinationFieldType\":\"Memo\"},\"book_FunctionalCostAccount\":{\"sourceColumnName\":\"FCA\",\"destinationFieldType\":\"Memo\"},\"book_GFEBSIO\":{\"sourceColumnName\":\"GFEBS IO\",\"destinationFieldType\":\"Memo\"},\"book_MDEP.book_Name\":{\"sourceColumnName\":\"MDEP\",\"destinationFieldType\":\"Memo\"},\"book_Name\":{\"sourceColumnName\":\"TDC\",\"destinationFieldType\":\"Memo\"},\"book_OfficerAMS\":{\"sourceColumnName\":\"OFFICER AMS\",\"destinationFieldType\":\"Memo\"},\"book_OfficerAPC\":{\"sourceColumnName\":\"OFFICER APC\",\"destinationFieldType\":\"Memo\"},\"book_OrderFormat\":{\"sourceColumnName\":\"ORDER FORMAT\",\"destinationFieldType\":\"Memo\"},\"book_RequestTypeCD\":{\"sourceColumnName\":\"Request\",\"destinationFieldType\":\"Integer\"},\"book_SAG.book_Name\":{\"sourceColumnName\":\"SAG\",\"destinationFieldType\":\"Memo\"},\"book_TDCName\":{\"sourceColumnName\":\"TDC NAME\",\"destinationFieldType\":\"Memo\"}}}},\"document\":\"section Section1;\\nshared TDCs = let\\n  Source = Excel.Workbook(Web.Contents(\\\"https://armyeitaas-my.sharepoint-mil.us/personal/eric_l_hughes20_ctr_army_mil/Documents/Apps/Power Query Online GCC-L5/Uploaded Files/TDC_Crosswalk 1.xlsx\\\"), null, true),\\n  #\\\"Navigation 1\\\" = Source{[Item = \\\"TdcMaster20250416\\\", Kind = \\\"Sheet\\\"]}[Data],\\n  #\\\"Promoted headers\\\" = Table.PromoteHeaders(#\\\"Navigation 1\\\", [PromoteAllScalars = true]),\\n  #\\\"Removed columns\\\" = Table.RemoveColumns(#\\\"Promoted headers\\\", {\\\"DESIGNATOR CD\\\", \\\"IS OCO\\\", \\\"IS OPEN ALLOTMENT\\\", \\\"IS ACTIVE\\\"}),\\n  #\\\"Inserted conditional column\\\" = Table.AddColumn(#\\\"Removed columns\\\", \\\"CAT\\\", each if [CATEGORY] = \\\"AT\\\" then 1 else if [CATEGORY] = \\\"ADT/ADOS/FTNG\\\" then 0 else if [CATEGORY] = \\\"Disability\\\" then 2 else if [CATEGORY] = \\\"IDT\\\" then 3 else 4),\\n  #\\\"Inserted conditional column 1\\\" = Table.AddColumn(#\\\"Inserted conditional column\\\", \\\"Request\\\", each if [REQUEST TYPE CD] = \\\"ADOS RC\\\" then 0 else if [REQUEST TYPE CD] = \\\"ADT\\\" then 1 else if [REQUEST TYPE CD] = \\\"AT\\\" then 2 else 3),\\n  #\\\"Inserted conditional column 2\\\" = Table.AddColumn(#\\\"Inserted conditional column 1\\\", \\\"Appropriation\\\", each if [APPN] = 2060 then 1 else 1),\\n  #\\\"Changed column type 1\\\" = Table.TransformColumnTypes(#\\\"Inserted conditional column 2\\\", {{\\\"CAT\\\", Int64.Type}, {\\\"Request\\\", Int64.Type}, {\\\"Appropriation\\\", Int64.Type}, {\\\"FCA\\\", type text}, {\\\"ORDER FORMAT\\\", type text}, {\\\"GFEBS IO\\\", type text}, {\\\"SUP ID\\\", type text}})\\nin\\n  #\\\"Changed column type 1\\\";\\n\"},\"annotations\":[{\"name\":\"pbi:QueryGroups\",\"value\":\"[]\"}]}"}</msdyn_mashupsettings>
+      <msdyn_name>TDC Data Import</msdyn_name>
+      <msdyn_originaldataflowid>d66001b2-b5ba-46e7-981a-3009dbce06a3</msdyn_originaldataflowid>
+      <msdyn_refreshsettings>{"RefreshPeriod":null,"ScheduleRefreshType":null,"StartDateTime":"0001-01-01T00:00:00+00:00","TimeBasedRefreshPeriod":null,"TimeZoneId":null}</msdyn_refreshsettings>
+      <statecode>0</statecode>
+      <statuscode>1</statuscode>
+    </msdyn_dataflow>
+  </msdyn_dataflows>
+  <Languages>
+    <Language>1033</Language>
+  </Languages>
+</ImportExportXml>

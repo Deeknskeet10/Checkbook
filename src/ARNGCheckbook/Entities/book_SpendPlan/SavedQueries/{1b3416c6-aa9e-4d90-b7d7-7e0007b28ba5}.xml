@@ -1,0 +1,43 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<savedqueries xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <savedquery>
+    <IsCustomizable>1</IsCustomizable>
+    <CanBeDeleted>0</CanBeDeleted>
+    <isquickfindquery>0</isquickfindquery>
+    <isprivate>0</isprivate>
+    <isdefault>1</isdefault>
+    <savedqueryid>{1b3416c6-aa9e-4d90-b7d7-7e0007b28ba5}</savedqueryid>
+    <layoutxml>
+      <grid name="resultset" jump="book_name" select="1" icon="1" preview="1">
+        <row name="result" id="book_spendplanid">
+          <cell name="book_name" width="300" />
+          <cell name="book_requirementfunding" width="163" />
+          <cell name="book_spendplantype" width="135" />
+          <cell name="book_spendplantotal" width="136" />
+          <cell name="book_total" width="108" />
+        </row>
+      </grid>
+    </layoutxml>
+    <querytype>0</querytype>
+    <fetchxml>
+      <fetch version="1.0" mapping="logical">
+        <entity name="book_spendplan">
+          <attribute name="book_spendplanid" />
+          <attribute name="book_name" />
+          <order attribute="book_name" descending="false" />
+          <filter type="and">
+            <condition attribute="statecode" operator="eq" value="0" />
+          </filter>
+          <attribute name="book_spendplantype" />
+          <attribute name="book_requirementfunding" />
+          <attribute name="book_spendplantotal" />
+          <attribute name="book_total" />
+        </entity>
+      </fetch>
+    </fetchxml>
+    <IntroducedVersion>1.0.0.0</IntroducedVersion>
+    <LocalizedNames>
+      <LocalizedName description="Active Spend Plans" languagecode="1033" />
+    </LocalizedNames>
+  </savedquery>
+</savedqueries>

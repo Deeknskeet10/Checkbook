@@ -1,0 +1,80 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<AppModule>
+  <UniqueName>book_ARNGCheckbookAdminCenter</UniqueName>
+  <IntroducedVersion>1.0.0.0</IntroducedVersion>
+  <WebResourceId>953b9fac-1e5e-e611-80d6-00155ded156f</WebResourceId>
+  <OptimizedFor></OptimizedFor>
+  <statecode>0</statecode>
+  <statuscode>1</statuscode>
+  <FormFactor>1</FormFactor>
+  <ClientType>4</ClientType>
+  <NavigationType>0</NavigationType>
+  <AppModuleComponents>
+    <AppModuleComponent type="1" schemaName="book_prioritization" />
+    <AppModuleComponent type="1" schemaName="book_prioritybin" />
+    <AppModuleComponent type="1" schemaName="book_requirementfunding" />
+    <AppModuleComponent type="1" schemaName="book_requirements" />
+    <AppModuleComponent type="1" schemaName="book_tdc" />
+    <AppModuleComponent type="1" schemaName="book_unfundedrequests" />
+    <AppModuleComponent type="26" id="{7450f7f8-01c4-49ec-88d3-37f2a79b144f}" />
+    <AppModuleComponent type="26" id="{f30285b5-8ea8-4ff7-b465-548084b1830c}" />
+    <AppModuleComponent type="26" id="{01956d3a-152f-4ee3-8239-9039cbc2aca9}" />
+    <AppModuleComponent type="26" id="{2aff7553-36cf-42f2-beb9-b3bf2d22ad67}" />
+    <AppModuleComponent type="26" id="{788cfe74-02d6-4f33-9d96-b48c5393c8d2}" />
+    <AppModuleComponent type="26" id="{0315d7ca-fd59-413b-bc3d-c97079d9b3a3}" />
+    <AppModuleComponent type="26" id="{862f0c22-fcbd-4ca9-9314-ddda161e3e7f}" />
+    <AppModuleComponent type="26" id="{2adc352b-25ca-4f16-9770-e39cf2a9be92}" />
+    <AppModuleComponent type="26" id="{ae467a41-909b-4ba6-b1d9-ec92db755e0a}" />
+    <AppModuleComponent type="26" id="{780ef34f-a7a7-45bd-b6d3-f536481a3b28}" />
+    <AppModuleComponent type="26" id="{0018223e-4351-4782-ba0e-fae6d36a06b4}" />
+    <AppModuleComponent type="60" id="{637a9687-da47-f011-877a-001dd8059413}" />
+    <AppModuleComponent type="60" id="{8ae1f95b-cb3b-f011-8c4e-001dd8059413}" />
+    <AppModuleComponent type="60" id="{adfec757-5941-f011-b4cc-001dd8059413}" />
+    <AppModuleComponent type="60" id="{37250519-aead-4fc1-ae67-35a0af35e4d5}" />
+    <AppModuleComponent type="62" schemaName="book_ARNGCheckbookAdminCenter" />
+  </AppModuleComponents>
+  <AppModuleRoleMaps>
+    <Role id="{627090ff-40a3-4053-8790-584edc5be201}" />
+    <Role id="{119f245c-3cc8-4b62-b31c-d1a046ced15d}" />
+  </AppModuleRoleMaps>
+  <LocalizedNames>
+    <LocalizedName description="ARNG Checkbook - Admin Center" languagecode="1033" />
+  </LocalizedNames>
+  <Descriptions>
+    <Description description="Administration Center for managing ARNG Checkbook" languagecode="1033" />
+  </Descriptions>
+  <appelements>
+    <appelement uniquename="book_book_ARNGCheckbookAdminCenter_canvasappid_book_arngcheckbookadmincenterdefaultcommandlibrary_1362b">
+      <canvasappid>
+        <name>book_arngcheckbookadmincenterdefaultcommandlibrary_1362b</name>
+      </canvasappid>
+      <iscustomizable>1</iscustomizable>
+      <name>book_book_ARNGCheckbookAdminCenter_canvasappid_book_arngcheckbookadmincenterdefaultcommandlibrary_1362b</name>
+    </appelement>
+    <appelement uniquename="book_book_ARNGCheckbookAdminCenter_canvasappid_book_pagegenerateufrmodal_f2c44">
+      <canvasappid>
+        <name>book_pagegenerateufrmodal_f2c44</name>
+      </canvasappid>
+      <iscustomizable>1</iscustomizable>
+      <name>book_book_ARNGCheckbookAdminCenter_canvasappid_book_pagegenerateufrmodal_f2c44</name>
+    </appelement>
+  </appelements>
+  <appsettings>
+    <appsetting settingdefinitionid.uniquename="AllowNotificationsEarlyAccess">
+      <iscustomizable>1</iscustomizable>
+      <value>true</value>
+    </appsetting>
+    <appsetting settingdefinitionid.uniquename="AppChannel">
+      <iscustomizable>1</iscustomizable>
+      <value>1</value>
+    </appsetting>
+    <appsetting settingdefinitionid.uniquename="HeaderAndNavigationRefresh">
+      <iscustomizable>1</iscustomizable>
+      <value>2</value>
+    </appsetting>
+    <appsetting settingdefinitionid.uniquename="msdyn_TimelineModernization">
+      <iscustomizable>1</iscustomizable>
+      <value>true</value>
+    </appsetting>
+  </appsettings>
+</AppModule>

@@ -1,0 +1,54 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<savedqueries xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <savedquery>
+    <IsCustomizable>1</IsCustomizable>
+    <CanBeDeleted>0</CanBeDeleted>
+    <isquickfindquery>0</isquickfindquery>
+    <isprivate>0</isprivate>
+    <isdefault>1</isdefault>
+    <savedqueryid>{def106ff-90be-4364-9b20-cfa20594f343}</savedqueryid>
+    <layoutxml>
+      <grid name="resultset" jump="book_name" select="1" icon="1" preview="1">
+        <row name="result" id="book_distributionsid">
+          <cell name="book_fundcenter" width="110" />
+          <cell name="book_newpgsag" width="100" />
+          <cell name="book_fund" width="100" />
+          <cell name="a_bc683a7e44e34d5dbf51ec61dfb8e0ea.book_fundkey" width="138" />
+          <cell name="book_amount" width="100" />
+          <cell name="book_disbursementdirection" width="175" />
+          <cell name="book_remarks" width="300" />
+          <cell name="book_fundingtype" width="118" />
+          <cell name="book_entrydocumentnumber" width="183" />
+          <cell name="book_debiteddistribution" width="156" />
+        </row>
+      </grid>
+    </layoutxml>
+    <querytype>0</querytype>
+    <fetchxml>
+      <fetch version="1.0" mapping="logical" distinct="true">
+        <entity name="book_distributions">
+          <attribute name="book_distributionsid" />
+          <attribute name="book_amount" />
+          <attribute name="book_remarks" />
+          <filter type="and">
+            <condition attribute="statecode" operator="eq" value="0" />
+          </filter>
+          <attribute name="book_fundcenter" />
+          <link-entity alias="a_bc683a7e44e34d5dbf51ec61dfb8e0ea" name="book_fund" to="book_fund" from="book_fundid" link-type="outer" visible="false">
+            <attribute name="book_fundkey" />
+          </link-entity>
+          <attribute name="book_fundingtype" />
+          <attribute name="book_newpgsag" />
+          <attribute name="book_entrydocumentnumber" />
+          <attribute name="book_debiteddistribution" />
+          <attribute name="book_disbursementdirection" />
+          <attribute name="book_fund" />
+        </entity>
+      </fetch>
+    </fetchxml>
+    <IntroducedVersion>1.0.0.0</IntroducedVersion>
+    <LocalizedNames>
+      <LocalizedName description="Active Distributions" languagecode="1033" />
+    </LocalizedNames>
+  </savedquery>
+</savedqueries>

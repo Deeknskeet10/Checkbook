@@ -1,0 +1,215 @@
+var ManualDistribution = (function () {
+  "use strict";
+
+  // Debited/credited Choice options
+  var CREDIT_VALUE = 0;
+  var DEBIT_VALUE = 1;
+
+  function onSave(executionContext) {
+    var formContext = executionContext.getFormContext();
+    var saveEvent = executionContext.getEventArgs();
+
+    // Only run on create
+    if (formContext.ui.getFormType() !== 1) return;
+
+    var direction = formContext
+      .getAttribute("book_disbursementdirection")
+      ?.getValue();
+
+    // Only process credit entries
+    if (direction !== CREDIT_VALUE) return;
+
+    // Check if offset already linked (prevent duplicate)
+    var existingDebit = formContext
+      .getAttribute("book_debiteddistribution")
+      ?.getValue();
+    if (existingDebit && existingDebit.length > 0) return;
+
+    saveEvent.preventDefault();
+
+    var creditFundCenter = formContext
+      .getAttribute("book_fundcenter")
+      ?.getValue();
+    if (!creditFundCenter || creditFundCenter.length === 0) {
+      Xrm.Navigation.openAlertDialog({ text: "Fund Center is required." });
+      return;
+    }
+
+    var creditFundCenterId = creditFundCenter[0].id.replace(/[{}]/g, "");
+
+    // Get parent Fund Center, then prompt for debit source
+    getParentFundCenter(creditFundCenterId)
+      .then(function (parent) {
+        return promptForDebitFundCenter(parent);
+      })
+      .then(function (selectedFundCenter) {
+        if (!selectedFundCenter) {
+          return Promise.reject({ cancelled: true });
+        }
+
+        // Validate not same as credit FC
+        if (
+          selectedFundCenter.id.toLowerCase() ===
+          creditFundCenterId.toLowerCase()
+        ) {
+          Xrm.Navigation.openAlertDialog({
+            text: "Cannot debit and credit the same Fund Center.",
+          });
+          return Promise.reject({ cancelled: true });
+        }
+        console.log("Selected FC: " + selectedFundCenter);
+        return createOffsettingDebit(formContext, selectedFundCenter);
+      })
+      .then(function (debitId) {
+        // Link the new debit record
+        formContext.getAttribute("book_debiteddistribution").setValue([
+          {
+            id: debitId,
+            entityType: "book_distributions", // singular
+          },
+        ]);
+
+        // Set manual entry flag on credit record
+        formContext.getAttribute("book_manualentry").setValue(true);
+
+        // Allow save to proceed
+        formContext.data.save().then(function () {
+          formContext.data.refresh(false);
+        });
+      })
+      .catch(function (error) {
+        if (!error.cancelled) {
+          Xrm.Navigation.openAlertDialog({
+            text: "Failed to create offsetting debit: " + error.message,
+          });
+        }
+      });
+  }
+
+  function onLoad(executionContext) {
+    var formContext = executionContext.getFormContext();
+
+    if (formContext.ui.getFormType() === 1) {
+      formContext
+        .getAttribute("book_disbursementdirection")
+        .setValue(CREDIT_VALUE);
+      formContext
+        .getControl("book_disbursementdirection")
+        .removeOption(DEBIT_VALUE);
+    } else {
+      // On existing records, just disable the field to prevent changes
+      formContext.getControl("book_disbursementdirection")?.setDisabled(true);
+    }
+    // Lock manual entry field if already set
+    var isManual = formContext.getAttribute("book_manualentry")?.getValue();
+    if (isManual === true) {
+      formContext.getControl("book_manualentry")?.setDisabled(true);
+    }
+  }
+
+  function getParentFundCenter(fundCenterId) {
+    return Xrm.WebApi.retrieveRecord(
+      "book_fundcenter",
+      fundCenterId,
+      "?$select=_book_parentfundcenter_value&$expand=book_ParentFundCenter($select=book_name)"
+    ).then(function (result) {
+      if (result._book_parentfundcenter_value) {
+        return {
+          id: result._book_parentfundcenter_value,
+          name: result.book_ParentFundCenter?.book_name || "Parent Fund Center",
+        };
+      }
+      return null;
+    });
+  }
+
+  function promptForDebitFundCenter(parentFundCenter) {
+    if (parentFundCenter) {
+      // Offer parent as default with option to override
+      var confirmOptions = {
+        text: 'Debit from "' + parentFundCenter.name + '"?',
+        title: "Select Debit Source",
+        confirmButtonLabel: "Yes",
+        cancelButtonLabel: "Select Different",
+      };
+
+      return Xrm.Navigation.openConfirmDialog(confirmOptions).then(function (
+        response
+      ) {
+        if (response.confirmed) {
+          return parentFundCenter;
+        } else {
+          return openFundCenterLookup();
+        }
+      });
+    } else {
+      // No parent (e.g., A18 selected), must select manually
+      return openFundCenterLookup();
+    }
+  }
+
+  function openFundCenterLookup() {
+    var lookupOptions = {
+      defaultEntityType: "book_fundcenter",
+      entityTypes: ["book_fundcenter"],
+      allowMultiSelect: false,
+      dialogTitle: "Select Fund Center to Debit",
+    };
+
+    return Xrm.Utility.lookupObjects(lookupOptions).then(function (result) {
+      if (result && result.length > 0) {
+        return {
+          id: result[0].id.replace(/[{}]/g, ""),
+          name: result[0].name,
+        };
+      }
+      return null;
+    });
+  }
+
+  function createOffsettingDebit(formContext, debitFundCenter) {
+    var amount = formContext.getAttribute("book_amount")?.getValue();
+    var fundingEvent = formContext
+      .getAttribute("book_fundingevent")
+      ?.getValue();
+    var fund = formContext.getAttribute("book_fund")?.getValue();
+    var pgsag = formContext.getAttribute("book_newpgsag")?.getValue();
+
+    var debitRecord = {
+      book_disbursementdirection: DEBIT_VALUE,
+      book_amount: amount,
+      book_manualentry: true,
+      "book_FundCenter@odata.bind":
+        "/book_fundcenters(" + debitFundCenter.id + ")",
+    };
+
+    // Add lookups if populated - use schema names
+    if (fundingEvent && fundingEvent.length > 0) {
+      var eventId = fundingEvent[0].id.replace(/[{}]/g, "");
+      debitRecord["book_FundingEvent@odata.bind"] =
+        "/book_fundingevents(" + eventId + ")";
+    }
+
+    if (fund && fund.length > 0) {
+      var fundId = fund[0].id.replace(/[{}]/g, "");
+      debitRecord["book_Fund@odata.bind"] = "/book_funds(" + fundId + ")";
+    }
+
+    if (pgsag && pgsag.length > 0) {
+      var pgsagId = pgsag[0].id.replace(/[{}]/g, "");
+      debitRecord["book_newPGSAG@odata.bind"] = "/book_pgs(" + pgsagId + ")";
+    }
+
+    // Use singular entity logical name
+    return Xrm.WebApi.createRecord("book_distributions", debitRecord).then(
+      function (result) {
+        return result.id;
+      }
+    );
+  }
+
+  return {
+    onSave: onSave,
+    onLoad: onLoad,
+  };
+})();

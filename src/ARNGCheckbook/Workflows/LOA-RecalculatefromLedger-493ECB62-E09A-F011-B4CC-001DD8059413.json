@@ -1,0 +1,189 @@
+{
+  "properties": {
+    "connectionReferences": {
+      "shared_commondataserviceforapps": {
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "book_sharedcommondataserviceforapps_9388f"
+        },
+        "api": {
+          "name": "shared_commondataserviceforapps"
+        }
+      }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "1.0.0.0",
+      "parameters": {
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        },
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        }
+      },
+      "triggers": {
+        "manual": {
+          "metadata": {
+            "operationMetadataId": "7f462b75-cd3c-4a9f-89cc-fa8975b97df9"
+          },
+          "type": "Request",
+          "kind": "Button",
+          "inputs": {
+            "schema": {
+              "type": "object",
+              "properties": {},
+              "required": []
+            }
+          }
+        }
+      },
+      "actions": {
+        "List_LOAs": {
+          "runAfter": {},
+          "metadata": {
+            "operationMetadataId": "3cc752ab-6549-4aeb-8362-82f82bff8e3a"
+          },
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "entityName": "book_fundinglines",
+              "$filter": "statecode eq 0"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
+              "operationId": "ListRecords",
+              "connectionName": "shared_commondataserviceforapps"
+            }
+          }
+        },
+        "Loop_through_LOAs": {
+          "foreach": "@outputs('List_LOAs')?['body/value']",
+          "actions": {
+            "List_Ledger_Entries": {
+              "metadata": {
+                "operationMetadataId": "55237c9f-faf6-4e99-9bb9-b39b0888c638"
+              },
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "entityName": "book_ledgers",
+                  "$filter": "_book_lineofaccounting_value eq @{items('Loop_through_LOAs')?['book_fundinglineid']} and book_ledgertype eq 0"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
+                  "operationId": "ListRecords",
+                  "connectionName": "shared_commondataserviceforapps"
+                }
+              }
+            },
+            "Sum_Ledger_Entries": {
+              "actions": {
+                "Select_Amounts": {
+                  "metadata": {
+                    "operationMetadataId": "9819af7c-0dc2-43b9-8281-034430a0c2a1"
+                  },
+                  "type": "Select",
+                  "inputs": {
+                    "from": "@outputs('List_Ledger_Entries')?['body/value']",
+                    "select": "@if(equals(item()?['book_ledgerdirection'], 0), item()?['book_amount'], mul(-1, item()?['book_amount']))"
+                  }
+                },
+                "Sum_Amounts": {
+                  "runAfter": {
+                    "Select_Amounts": [
+                      "Succeeded"
+                    ]
+                  },
+                  "metadata": {
+                    "operationMetadataId": "f7324993-b6b2-44df-90ed-a17210c572bc"
+                  },
+                  "type": "Compose",
+                  "inputs": {
+                    "root": {
+                      "Amount": "@body('Select_Amounts')"
+                    }
+                  }
+                }
+              },
+              "runAfter": {
+                "List_Ledger_Entries": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "4c94848f-a77f-4b02-8614-eb1e3c1527fb"
+              },
+              "type": "Scope"
+            },
+            "Update_LOA": {
+              "runAfter": {
+                "Sum_Ledger_Entries": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "f2ee6e68-d576-4046-b8db-31b1299839ea"
+              },
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "entityName": "book_fundinglines",
+                  "recordId": "@items('Loop_through_LOAs')?['book_fundinglineid']",
+                  "item/book_tdp": "@add(items('Loop_through_LOAs')?['book_tdp'], xpath(xml(outputs('Sum_Amounts')), 'sum(/root/Amount)'))"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
+                  "operationId": "UpdateOnlyRecord",
+                  "connectionName": "shared_commondataserviceforapps"
+                }
+              }
+            }
+          },
+          "runAfter": {
+            "List_LOAs": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "6b20c9bf-8fb7-471f-bef6-5ab6fe52cbf1"
+          },
+          "type": "Foreach"
+        },
+        "Respond_to_a_Power_App_or_flow": {
+          "runAfter": {
+            "Loop_through_LOAs": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "697f7560-de9f-4a7a-93b2-566612f10326"
+          },
+          "type": "Response",
+          "kind": "PowerApp",
+          "inputs": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "status": {
+                  "title": "Status",
+                  "x-ms-dynamically-added": true,
+                  "type": "string"
+                }
+              },
+              "additionalProperties": {}
+            },
+            "statusCode": 200,
+            "body": {
+              "status": "Complete"
+            }
+          }
+        }
+      }
+    },
+    "templateName": null
+  },
+  "schemaVersion": "1.0.0.0"
+}

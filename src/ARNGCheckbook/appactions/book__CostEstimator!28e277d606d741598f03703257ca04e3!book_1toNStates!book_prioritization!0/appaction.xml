@@ -1,0 +1,49 @@
+<appaction uniquename="book__CostEstimator!28e277d606d741598f03703257ca04e3!book_1toNStates!book_prioritization!0">
+  <appmoduleid>
+    <uniquename>book_1toNStates</uniquename>
+  </appmoduleid>
+  <buttonaccessibilitytext default="Opens Cost Estimation Tool">
+    <label description="Opens Cost Estimation Tool" languagecode="1033" />
+  </buttonaccessibilitytext>
+  <buttonlabeltext default="Cost Estimator">
+    <label description="Cost Estimator" languagecode="1033" />
+  </buttonlabeltext>
+  <buttontooltipdescription default="Opens Cost Estimation Tool">
+    <label description="Opens Cost Estimation Tool" languagecode="1033" />
+  </buttontooltipdescription>
+  <buttontooltiptitle default="Opens Cost Estimation Tool">
+    <label description="Opens Cost Estimation Tool" languagecode="1033" />
+  </buttontooltiptitle>
+  <context>1</context>
+  <contextentity>
+    <logicalname>book_prioritization</logicalname>
+  </contextentity>
+  <contextvalue>book_prioritization</contextvalue>
+  <fonticon>CardsInvoice</fonticon>
+  <hidden>0</hidden>
+  <iscustomizable>1</iscustomizable>
+  <isdisabled>0</isdisabled>
+  <isgrouptitlehidden>0</isgrouptitlehidden>
+  <location>0</location>
+  <name>CostEstimator!28e277d606d741598f03703257ca04e3</name>
+  <onclickeventjavascriptfunctionname>openCostEstimate</onclickeventjavascriptfunctionname>
+  <onclickeventjavascriptparameters>[{"type":5}]</onclickeventjavascriptparameters>
+  <onclickeventjavascriptwebresourceid>
+    <webresourceid>bdb3cb86-5424-f011-998a-001dd8059413</webresourceid>
+  </onclickeventjavascriptwebresourceid>
+  <onclickeventtype>2</onclickeventtype>
+  <origin>0</origin>
+  <parentappactionid>
+    <uniquename>book__CostEstimator!e72bc4be34d34660be71482be6087ad8!book_1toNStates!book_prioritization!0</uniquename>
+  </parentappactionid>
+  <sequence>10000.0000000000</sequence>
+  <statecode>0</statecode>
+  <statuscode>1</statuscode>
+  <type>0</type>
+  <visibilityformulacomponentlibraryid>
+    <name>book_1tonstatesdefaultcommandlibrary_3b19f</name>
+  </visibilityformulacomponentlibraryid>
+  <visibilityformulacomponentname>0d40aca8310a48039b4a920026e832cd</visibilityformulacomponentname>
+  <visibilityformulafunctionname>Visible</visibilityformulafunctionname>
+  <visibilitytype>1</visibilitytype>
+</appaction>

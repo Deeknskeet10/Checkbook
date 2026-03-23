@@ -1,0 +1,13 @@
+<environmentvariabledefinition schemaname="book_ARNGCheckbook1toNOPRs">
+  <description default="Link to OPR 1 to N Application">
+    <label description="Link to OPR 1 to N Application" languagecode="1033" />
+  </description>
+  <displayname default="ARNG Checkbook - 1 to N OPRs">
+    <label description="ARNG Checkbook - 1 to N OPRs" languagecode="1033" />
+  </displayname>
+  <introducedversion>1.0.0.0</introducedversion>
+  <iscustomizable>1</iscustomizable>
+  <isrequired>0</isrequired>
+  <secretstore>0</secretstore>
+  <type>100000000</type>
+</environmentvariabledefinition>

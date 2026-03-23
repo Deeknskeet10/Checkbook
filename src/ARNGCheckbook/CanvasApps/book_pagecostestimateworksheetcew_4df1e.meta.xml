@@ -1,0 +1,34 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<CanvasApp xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <Name>book_pagecostestimateworksheetcew_4df1e</Name>
+  <AppVersion>2026-02-02T20:38:42Z</AppVersion>
+  <Status>Ready</Status>
+  <CreatedByClientVersion>3.26012.17.0</CreatedByClientVersion>
+  <MinClientVersion>3.26012.17.0</MinClientVersion>
+  <Tags>{"primaryDeviceWidth":"1366","primaryDeviceHeight":"768","supportsPortrait":"true","supportsLandscape":"true","primaryFormFactor":"Tablet","showStatusBar":"false","publisherVersion":"3.26012.17","minimumRequiredApiVersion":"2.2.0","hasComponent":"false","hasUnlockedComponent":"false","isUnifiedRootApp":"false","sienaVersion":"20260105T183252Z-3.25062.8.0","coauthoringEnabled":"true","multipleWritersEnabled":"true","acceptedCoauthoringTerms":"true"}</Tags>
+  <IsCdsUpgraded>0</IsCdsUpgraded>
+  <GalleryItemId xsi:nil="true"></GalleryItemId>
+  <BackgroundColor>RGBA(0,176,240,1)</BackgroundColor>
+  <DisplayName>Page - Cost Estimate Worksheet (CEW)</DisplayName>
+  <Description>Estimates Labor costs for State submission alongside a Prioritization within the ARNG Checkbook.</Description>
+  <CommitMessage xsi:nil="true"></CommitMessage>
+  <Publisher></Publisher>
+  <AuthorizationReferences>[]</AuthorizationReferences>
+  <ConnectionReferences>{"4f5b344d-5123-46ec-b934-ebe120dfe2e9":{"id":"/providers/microsoft.powerapps/apis/shared_logicflows","displayName":"Logic flows","iconUri":"https://connectorsiconsfairfax.z5.web.core.usgovcloudapi.net/v1.0.1774/1.0.1774.4397/logicflows/icon.png","dataSources":["CostEstimator-AttachPDF/Excel"],"dependencies":["d2e3b510-3890-4dbc-8024-f643d5088ec5","a32e8eb2-ae5f-4e07-a990-0a2bcb49e485","11841c22-091b-43db-bbbb-366d2e584ce4"],"dependents":[],"parameterHints":{"workflowName":{"value":"e98a8e3c-9b45-4a19-8044-36d161ca8ea7"},"workflowEntityId":{"value":"ec442d15-901b-f011-998a-001dd805a06b"},"workflowDisplayName":{"value":"Cost Estimator - Attach PDF/Excel"},"d2e3b510-3890-4dbc-8024-f643d5088ec5":{"value":"shared_commondataserviceforapps"},"a32e8eb2-ae5f-4e07-a990-0a2bcb49e485":{"value":"shared_sharepointonline_1"},"11841c22-091b-43db-bbbb-366d2e584ce4":{"value":"shared_onedriveforbusiness"}},"parameterHintsV2":{"workflowName":{"value":"e98a8e3c-9b45-4a19-8044-36d161ca8ea7"},"workflowEntityId":{"value":"ec442d15-901b-f011-998a-001dd805a06b"},"workflowDisplayName":{"value":"Cost Estimator - Attach PDF/Excel"},"shared_commondataserviceforapps":{"value":"d2e3b510-3890-4dbc-8024-f643d5088ec5"},"shared_sharepointonline_1":{"value":"a32e8eb2-ae5f-4e07-a990-0a2bcb49e485"},"shared_onedriveforbusiness":{"value":"11841c22-091b-43db-bbbb-366d2e584ce4"}},"isOnPremiseConnection":false,"bypassConsent":false,"dataSets":{},"apiTier":"Standard","actions":["Run"]},"d2e3b510-3890-4dbc-8024-f643d5088ec5":{"id":"/providers/microsoft.powerapps/apis/shared_commondataserviceforapps","displayName":"Microsoft Dataverse","iconUri":"https://connectorsiconsfairfax.z5.web.core.usgovcloudapi.net/releases/v1.0.1789/1.0.1789.4619/commondataserviceforapps/icon.png","dataSources":[],"dependencies":[],"dependents":["4f5b344d-5123-46ec-b934-ebe120dfe2e9"],"parameterHints":{},"parameterHintsV2":{},"isOnPremiseConnection":false,"bypassConsent":false,"dataSets":{},"apiTier":"Premium"},"a32e8eb2-ae5f-4e07-a990-0a2bcb49e485":{"id":"/providers/microsoft.powerapps/apis/shared_sharepointonline","displayName":"SharePoint","iconUri":"https://conn-afd-prod-endpoint-bmc9bqahasf3grgk.b01.azurefd.net/releases/v1.0.1732/1.0.1732.4070/sharepointonline/icon.png","dataSources":[],"dependencies":[],"dependents":["4f5b344d-5123-46ec-b934-ebe120dfe2e9"],"parameterHints":{},"parameterHintsV2":{},"isOnPremiseConnection":false,"bypassConsent":false,"dataSets":{},"apiTier":"Standard"},"11841c22-091b-43db-bbbb-366d2e584ce4":{"id":"/providers/microsoft.powerapps/apis/shared_onedriveforbusiness","displayName":"OneDrive for Business","iconUri":"https://connectorsiconsfairfax.z5.web.core.usgovcloudapi.net/v1.0.1775/1.0.1775.4393/onedriveforbusiness/icon.png","dataSources":[],"dependencies":[],"dependents":["4f5b344d-5123-46ec-b934-ebe120dfe2e9"],"parameterHints":{},"parameterHintsV2":{},"isOnPremiseConnection":false,"bypassConsent":false,"dataSets":{},"apiTier":"Standard"}}</ConnectionReferences>
+  <DatabaseReferences>{"default.cds":{"databaseDetails":{"referenceType":"Environmental","environmentName":"default.cds","overrideValues":{"status":"NotSpecified","environmentVariableName":""}},"dataSources":{"Pay Tables":{"entitySetName":"book_paytables","logicalName":"book_paytable"},"States":{"entitySetName":"book_states","logicalName":"book_state"},"Prioritizations":{"entitySetName":"book_prioritizations","logicalName":"book_prioritization"},"Requirements":{"entitySetName":"book_requirementses","logicalName":"book_requirements"},"Requirement Fundings":{"entitySetName":"book_requirementfundings","logicalName":"book_requirementfunding"}}}}</DatabaseReferences>
+  <AppComponents>[]</AppComponents>
+  <AppComponentDependencies>[]</AppComponentDependencies>
+  <CanConsumeAppPass>1</CanConsumeAppPass>
+  <CanvasAppType>2</CanvasAppType>
+  <BypassConsent>0</BypassConsent>
+  <AdminControlBypassConsent>0</AdminControlBypassConsent>
+  <EmbeddedApp xsi:nil="true"></EmbeddedApp>
+  <IntroducedVersion>1.0</IntroducedVersion>
+  <CdsDependencies>{"cdsdependencies":[{"dependencyid":"ec442d15-901b-f011-998a-001dd805a06b","componenttype":29,"componenttypeplatformname":"Workflow"},{"logicalname":"book_paytable","componenttype":1},{"logicalname":"book_state","componenttype":1},{"logicalname":"book_prioritization","componenttype":1},{"logicalname":"book_requirements","componenttype":1},{"logicalname":"book_requirementfunding","componenttype":1},{"logicalname":"","componenttype":10165,"componenttypeplatformname":"Bot"}]}</CdsDependencies>
+  <IsCustomizable>1</IsCustomizable>
+  <BackgroundImageUri>/CanvasApps/book_pagecostestimateworksheetcew_4df1e_BackgroundImageUri</BackgroundImageUri>
+  <DocumentUri>/CanvasApps/book_pagecostestimateworksheetcew_4df1e_DocumentUri.msapp</DocumentUri>
+  <AdditionalUris>
+    <AdditionalUri>/CanvasApps/book_pagecostestimateworksheetcew_4df1e_AdditionalUris0_identity.json</AdditionalUri>
+  </AdditionalUris>
+</CanvasApp>

@@ -1,0 +1,32 @@
+<appaction uniquename="book__RequirementAction!32eed9022f164e90a39b0c879565f89d!book_ARNGCheckbook!book_requirementfunding!0">
+  <appmoduleid>
+    <uniquename>book_ARNGCheckbook</uniquename>
+  </appmoduleid>
+  <buttonlabeltext default="Requirement Actions">
+    <label description="Requirement Actions" languagecode="1033" />
+  </buttonlabeltext>
+  <context>1</context>
+  <contextentity>
+    <logicalname>book_requirementfunding</logicalname>
+  </contextentity>
+  <contextvalue>book_requirementfunding</contextvalue>
+  <fonticon>TaskClipboard</fonticon>
+  <hidden>0</hidden>
+  <iscustomizable>1</iscustomizable>
+  <isdisabled>0</isdisabled>
+  <isgrouptitlehidden>0</isgrouptitlehidden>
+  <location>0</location>
+  <name>RequirementAction!32eed9022f164e90a39b0c879565f89d</name>
+  <onclickeventtype>0</onclickeventtype>
+  <origin>0</origin>
+  <sequence>100100015.0000000000</sequence>
+  <statecode>0</statecode>
+  <statuscode>1</statuscode>
+  <type>1</type>
+  <visibilityformulacomponentlibraryid>
+    <name>book_arngcheckbookdefaultcommandlibrary_035ae</name>
+  </visibilityformulacomponentlibraryid>
+  <visibilityformulacomponentname>0683f032dddf4d06915411cce96f217c</visibilityformulacomponentname>
+  <visibilityformulafunctionname>Visible</visibilityformulafunctionname>
+  <visibilitytype>1</visibilitytype>
+</appaction>

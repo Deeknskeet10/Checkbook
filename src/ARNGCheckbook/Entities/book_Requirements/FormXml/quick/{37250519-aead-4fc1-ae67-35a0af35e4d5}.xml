@@ -1,0 +1,87 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<forms xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <systemform>
+    <formid>{37250519-aead-4fc1-ae67-35a0af35e4d5}</formid>
+    <IntroducedVersion>1.0.0.0</IntroducedVersion>
+    <FormPresentation>1</FormPresentation>
+    <FormActivationState>1</FormActivationState>
+    <form>
+      <tabs>
+        <tab verticallayout="true" id="{fd33526d-72f2-4c92-a2ad-724b67c78b62}" IsUserDefined="1">
+          <labels>
+            <label description="" languagecode="1033" />
+          </labels>
+          <columns>
+            <column width="100%">
+              <sections>
+                <section showlabel="true" showbar="false" IsUserDefined="0" id="{7bb6d946-cf5e-4b2d-ae05-9664d487151c}">
+                  <labels>
+                    <label description="Funding Information" languagecode="1033" />
+                  </labels>
+                  <rows>
+                    <row>
+                      <cell id="{4514ff24-9091-4dbd-9691-eace0ef1170b}" visible="false">
+                        <labels>
+                          <label description="Name" languagecode="1033" />
+                        </labels>
+                        <control id="book_name" classid="{4273EDBD-AC1D-40d3-9FB2-095C621B552D}" datafieldname="book_name" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{e222ccc1-7055-4369-b43f-f93c4116f613}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="TDC" languagecode="1033" />
+                        </labels>
+                        <control id="book_tdc" classid="{270BD3DB-D9AF-4782-9025-509E298DEC0A}" datafieldname="book_tdc" disabled="false" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{e978fb70-b7e7-4b24-8b27-8f8f4aa4636b}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="Deprecated - RVB" languagecode="1033" />
+                        </labels>
+                        <control id="book_temprvb" classid="{4273EDBD-AC1D-40D3-9FB2-095C621B552D}" datafieldname="book_temprvb" disabled="false" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{54765459-81ba-4e25-afdf-d39161737fd8}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="WBS Number" languagecode="1033" />
+                        </labels>
+                        <control id="book_wbsnumber" classid="{4273EDBD-AC1D-40D3-9FB2-095C621B552D}" datafieldname="book_wbsnumber" disabled="false" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{d86422e4-40e6-4890-9d22-2325e5d69fb7}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="APE" languagecode="1033" />
+                        </labels>
+                        <control id="book_ape" classid="{270BD3DB-D9AF-4782-9025-509E298DEC0A}" datafieldname="book_ape" disabled="false" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{f919fcef-7fd5-4bd7-9398-6e15ec2b8454}" visible="false">
+                        <labels>
+                          <label description="Owner" languagecode="1033" />
+                        </labels>
+                        <control id="ownerid" classid="{270BD3DB-D9AF-4782-9025-509E298DEC0A}" datafieldname="ownerid" />
+                      </cell>
+                    </row>
+                  </rows>
+                </section>
+              </sections>
+            </column>
+          </columns>
+        </tab>
+      </tabs>
+      <DisplayConditions Order="0" FallbackForm="true">
+        <Everyone />
+      </DisplayConditions>
+    </form>
+    <IsCustomizable>1</IsCustomizable>
+    <CanBeDeleted>1</CanBeDeleted>
+    <LocalizedNames>
+      <LocalizedName description="Information" languagecode="1033" />
+    </LocalizedNames>
+  </systemform>
+</forms>

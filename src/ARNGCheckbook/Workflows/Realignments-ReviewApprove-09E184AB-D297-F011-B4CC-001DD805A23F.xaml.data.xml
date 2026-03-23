@@ -1,0 +1,74 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Workflow WorkflowId="{09e184ab-d297-f011-b4cc-001dd805a23f}" Name="Realignments - Review/Approve" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <XamlFileName>/Workflows/Realignments-ReviewApprove-09E184AB-D297-F011-B4CC-001DD805A23F.xaml</XamlFileName>
+  <Type>1</Type>
+  <Subprocess>0</Subprocess>
+  <Category>4</Category>
+  <Mode>0</Mode>
+  <Scope>4</Scope>
+  <OnDemand>0</OnDemand>
+  <TriggerOnCreate>1</TriggerOnCreate>
+  <TriggerOnDelete>0</TriggerOnDelete>
+  <AsyncAutodelete>0</AsyncAutodelete>
+  <SyncWorkflowLogOnFailure>0</SyncWorkflowLogOnFailure>
+  <StateCode>1</StateCode>
+  <StatusCode>2</StatusCode>
+  <processorder>100</processorder>
+  <RunAs>1</RunAs>
+  <UniqueName>book_realignmentsreview</UniqueName>
+  <IsTransacted>1</IsTransacted>
+  <IntroducedVersion>1.2.1.1</IntroducedVersion>
+  <IsCustomizable>1</IsCustomizable>
+  <BusinessProcessType>0</BusinessProcessType>
+  <IsCustomProcessingStepAllowedForOtherPublishers>1</IsCustomProcessingStepAllowedForOtherPublishers>
+  <ProcessTriggerScope>1</ProcessTriggerScope>
+  <ModernFlowType>0</ModernFlowType>
+  <PrimaryEntity>book_Realignments</PrimaryEntity>
+  <LocalizedNames>
+    <LocalizedName languagecode="1033" description="Realignments - Review/Approve" />
+  </LocalizedNames>
+  <labels>
+    <steplabels id="{9e9e047e-ead3-44a3-a1ce-ccd7f15ce130}">
+      <label languagecode="1033" description="Realignment Submission" />
+    </steplabels>
+    <steplabels id="{0b1582fc-8d6e-4d91-915c-776f1261aa57}">
+      <label languagecode="1033" description="Amount" />
+    </steplabels>
+    <steplabels id="{699cedb1-921b-4574-9d02-2d33b8169976}">
+      <label languagecode="1033" description="Credited Prioritization" />
+    </steplabels>
+    <steplabels id="{45bfed18-5ee0-47f0-9a01-a3fd6fee8075}">
+      <label languagecode="1033" description="Debited Prioritization" />
+    </steplabels>
+    <steplabels id="{a7d718f1-4050-45eb-8b6d-2d0af5061ff6}">
+      <label languagecode="1033" description="Debited Requirement" />
+    </steplabels>
+    <steplabels id="{08c811ac-01cf-4281-82ce-c7e304ef7295}">
+      <label languagecode="1033" description="Credited Requirement" />
+    </steplabels>
+    <steplabels id="{ef919f3a-b471-413e-8d6b-011ba2a72b3e}">
+      <label languagecode="1033" description="Remarks" />
+    </steplabels>
+    <steplabels id="{273e9c6d-3d66-4442-8eb1-cf8b76802851}">
+      <label languagecode="1033" description="State Approval" />
+    </steplabels>
+    <steplabels id="{b2e9ce8d-fc88-4533-ba19-f02775123955}">
+      <label languagecode="1033" description="State Approval" />
+    </steplabels>
+    <steplabels id="{366b0b6f-bd96-48f6-b832-a7e44a5d134d}">
+      <label languagecode="1033" description="NPM Concurrence" />
+    </steplabels>
+    <steplabels id="{9c2e78ac-a88c-4470-8e46-3449351700d8}">
+      <label languagecode="1033" description="Payee Concurrence" />
+    </steplabels>
+    <steplabels id="{3291f255-2168-4df9-b616-e594aec6356c}">
+      <label languagecode="1033" description="Payer Concurrence" />
+    </steplabels>
+    <steplabels id="{6fc35dfb-0782-416a-b37a-961923b24246}">
+      <label languagecode="1033" description="BE Approval" />
+    </steplabels>
+    <steplabels id="{67914da4-db1e-46bd-af1c-b7d20cd2ca6c}">
+      <label languagecode="1033" description="BE Decision" />
+    </steplabels>
+  </labels>
+</Workflow>

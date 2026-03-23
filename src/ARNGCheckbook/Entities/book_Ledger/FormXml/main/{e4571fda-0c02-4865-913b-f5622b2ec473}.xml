@@ -1,0 +1,144 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<forms xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <systemform>
+    <formid>{e4571fda-0c02-4865-913b-f5622b2ec473}</formid>
+    <IntroducedVersion>1.0.0.0</IntroducedVersion>
+    <FormPresentation>1</FormPresentation>
+    <FormActivationState>1</FormActivationState>
+    <form headerdensity="HighWithControls">
+      <tabs>
+        <tab verticallayout="true" id="{5a089c00-7636-4cf8-9ffd-9991c5d99ba7}" IsUserDefined="1">
+          <labels>
+            <label description="General" languagecode="1033" />
+          </labels>
+          <columns>
+            <column width="33%">
+              <sections>
+                <section showlabel="false" showbar="false" IsUserDefined="0" id="{9268b29d-7c68-42d0-a28f-3d87cc3ccae9}">
+                  <labels>
+                    <label description="General" languagecode="1033" />
+                  </labels>
+                  <rows>
+                    <row>
+                      <cell id="{ad010cb5-2c37-45f3-abce-2b3914b75b0a}" visible="false">
+                        <labels>
+                          <label description="Name" languagecode="1033" />
+                        </labels>
+                        <control id="book_name" classid="{4273EDBD-AC1D-40d3-9FB2-095C621B552D}" datafieldname="book_name" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{fceeef7a-13d6-4ae8-8c61-3d69ae328e66}" visible="false">
+                        <labels>
+                          <label description="Owner" languagecode="1033" />
+                        </labels>
+                        <control id="ownerid" classid="{270BD3DB-D9AF-4782-9025-509E298DEC0A}" datafieldname="ownerid" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{b0b5b686-e7c8-4b8a-b7b0-8f6455a9d100}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="Line of Accounting" languagecode="1033" />
+                        </labels>
+                        <control id="book_lineofaccounting" classid="{270BD3DB-D9AF-4782-9025-509E298DEC0A}" datafieldname="book_lineofaccounting" disabled="false" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{be66e5fb-06c3-40da-bf86-0755ffe51a6a}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="Remarks" languagecode="1033" />
+                        </labels>
+                        <control id="book_remarks" classid="{E0DECE4B-6FC8-4A8F-A065-082708572369}" datafieldname="book_remarks" disabled="false" />
+                      </cell>
+                    </row>
+                  </rows>
+                </section>
+              </sections>
+            </column>
+            <column width="66%">
+              <sections>
+                <section showlabel="false" showbar="false" id="{d1b07e84-41be-426c-9adb-8dd8bf082566}" IsUserDefined="0" height="auto">
+                  <labels>
+                    <label description="Notes" languagecode="1033" />
+                  </labels>
+                  <rows>
+                    <row />
+                    <row>
+                      <cell id="{146efc21-0425-44c5-9aa2-7ed04ee50231}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="Ledger Type" languagecode="1033" />
+                        </labels>
+                        <control id="book_ledgertype" classid="{3EF39988-22BB-4F0B-BBBE-64B5A3748AEE}" datafieldname="book_ledgertype" disabled="false" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{5e5d6c25-548b-445c-b748-bf703ae31521}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="Amount" languagecode="1033" />
+                        </labels>
+                        <control id="book_amount" classid="{0D2C745A-E5A8-4C8F-BA63-C6D3BB604660}" datafieldname="book_amount" disabled="false" />
+                      </cell>
+                    </row>
+                  </rows>
+                </section>
+              </sections>
+            </column>
+          </columns>
+        </tab>
+      </tabs>
+      <header id="{2dccdc3b-79f4-47cc-b241-97b8b6e0fce0}" celllabelposition="Top" columns="111" labelwidth="115" celllabelalignment="Left">
+        <rows>
+          <row>
+            <cell id="{203c94ee-4179-4dbb-b718-192adcf26b5c}" showlabel="false">
+              <labels>
+                <label description="" languagecode="1033" />
+              </labels>
+            </cell>
+            <cell id="{f63ba164-2109-4849-ad14-8f63475717b9}" showlabel="false">
+              <labels>
+                <label description="" languagecode="1033" />
+              </labels>
+            </cell>
+            <cell id="{dbcafc8b-712e-4565-8584-b9003f60554c}" showlabel="false">
+              <labels>
+                <label description="" languagecode="1033" />
+              </labels>
+            </cell>
+          </row>
+        </rows>
+      </header>
+      <footer id="{5ad73fd3-1bda-4b2f-b7e5-d0b6542f1a40}" celllabelposition="Top" columns="111" labelwidth="115" celllabelalignment="Left">
+        <rows>
+          <row>
+            <cell id="{71dd7005-9075-433d-9b59-63c04d4b5bd8}" showlabel="false">
+              <labels>
+                <label description="" languagecode="1033" />
+              </labels>
+            </cell>
+            <cell id="{924e21cd-9f17-4420-92a0-3950a20482d3}" showlabel="false">
+              <labels>
+                <label description="" languagecode="1033" />
+              </labels>
+            </cell>
+            <cell id="{2b6214c8-1be2-48d8-8609-c157ed77f4cb}" showlabel="false">
+              <labels>
+                <label description="" languagecode="1033" />
+              </labels>
+            </cell>
+          </row>
+        </rows>
+      </footer>
+      <DisplayConditions Order="0" FallbackForm="true">
+        <Everyone />
+      </DisplayConditions>
+    </form>
+    <IsCustomizable>1</IsCustomizable>
+    <CanBeDeleted>1</CanBeDeleted>
+    <LocalizedNames>
+      <LocalizedName description="Information" languagecode="1033" />
+    </LocalizedNames>
+    <Descriptions>
+      <Description description="A form for this entity." languagecode="1033" />
+    </Descriptions>
+  </systemform>
+</forms>

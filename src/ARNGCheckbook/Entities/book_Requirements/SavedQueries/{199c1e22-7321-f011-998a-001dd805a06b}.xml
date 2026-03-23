@@ -1,0 +1,49 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<savedqueries xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <savedquery>
+    <IsCustomizable>1</IsCustomizable>
+    <CanBeDeleted>1</CanBeDeleted>
+    <isquickfindquery>0</isquickfindquery>
+    <isprivate>0</isprivate>
+    <isdefault>0</isdefault>
+    <savedqueryid>{199c1e22-7321-f011-998a-001dd805a06b}</savedqueryid>
+    <layoutxml>
+      <grid name="resultset" jump="book_name" select="1" icon="1" preview="1">
+        <row name="result" id="book_requirementsid">
+          <cell name="book_priority" width="72" />
+          <cell name="book_name" width="300" />
+          <cell name="book_description" width="213" />
+          <cell name="book_statutoryjustification" width="240" />
+        </row>
+      </grid>
+    </layoutxml>
+    <querytype>0</querytype>
+    <fetchxml>
+      <fetch version="1.0" output-format="xml-platform" mapping="logical" distinct="true">
+        <entity name="book_requirements">
+          <attribute name="book_name" />
+          <attribute name="book_requirementsid" />
+          <attribute name="book_statutoryjustification" />
+          <attribute name="book_priority" />
+          <attribute name="book_description" />
+          <order attribute="book_priority" descending="false" />
+          <filter type="and">
+            <condition attribute="book_approvalstatus" operator="eq" value="5" />
+          </filter>
+        </entity>
+      </fetch>
+    </fetchxml>
+    <IntroducedVersion>1.0.0.26</IntroducedVersion>
+    <roledisplayconditionsxml>
+      <DisplayConditions>
+        <Role Id="{B83D1A3A-3E19-F011-998A-001DD8059413}" />
+      </DisplayConditions>
+    </roledisplayconditionsxml>
+    <LocalizedNames>
+      <LocalizedName description="Requirements - RI Review" languagecode="1033" />
+    </LocalizedNames>
+    <Descriptions>
+      <Description description="RI Queue" languagecode="1033" />
+    </Descriptions>
+  </savedquery>
+</savedqueries>

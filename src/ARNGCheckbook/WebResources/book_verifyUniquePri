@@ -1,0 +1,48 @@
+async function onSave(executionContext) {
+    const formContext = executionContext.getFormContext();
+    const saveEvent = executionContext.getEventArgs();
+
+    // Only enforce if Priority is being set/changed
+    const priority = formContext.getAttribute("book_statepriority").getValue();
+    if (!priority) return;
+
+    const fy = formContext.getAttribute("book_newfiscalyear").getValue();
+    const state = formContext.getAttribute("book_state").getValue();
+    const fundCenter = formContext.getAttribute("book_fundcenter").getValue();
+
+    if (!fy || !state || !fundCenter) return;
+
+    const fundCenterId = fundCenter[0].id.replace(/[{}]/g, "");
+    const stateId = state[0].id.replace(/[{}]/g, "");
+    const currentRecordId = formContext.data.entity.getId().replace(/[{}]/g, "");
+
+    const fetchXml = `
+        <fetch top="1">
+            <entity name="book_prioritization">
+                <attribute name="book_statepriority" />
+                <filter>
+                    <condition attribute="book_newfiscalyear" operator="eq" value="${fy}" />
+                    <condition attribute="book_state" operator="eq" value="${stateId}" />
+                    <condition attribute="book_fundcenter" operator="eq" value="${fundCenterId}" />
+                    <condition attribute="book_statepriority" operator="eq" value="${priority}" />
+                    <condition attribute="book_prioritizationid" operator="ne" value="${currentRecordId}" />
+                </filter>
+            </entity>
+        </fetch>`;
+
+    const result = await Xrm.WebApi.retrieveMultipleRecords(
+        "book_prioritization",
+        `?fetchXml=${encodeURIComponent(fetchXml)}`
+    );
+
+    if (result.entities.length > 0) {
+        saveEvent.preventDefault();
+        formContext.ui.setFormNotification(
+            `Priority ${priority} is already assigned within this Fund Center. Please choose a unique priority.`,
+            "ERROR",
+            "duplicate_priority"
+        );
+    } else {
+        formContext.ui.clearFormNotification("duplicate_priority");
+    }
+}

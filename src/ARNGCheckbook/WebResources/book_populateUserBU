@@ -1,0 +1,87 @@
+function setStatefromBU(executionContext) {
+    var formContext = executionContext.getFormContext();
+    // Get the logged-in user ID
+    var userId = Xrm.Utility.getGlobalContext().userSettings.userId;
+    var statePopulated = formContext.getAttribute("book_state").getValue();
+    
+    if (statePopulated == null) {
+        /* Get User's BU */
+        Xrm.WebApi.retrieveRecord("systemuser", userId.slice(1, -1), "?$expand=businessunitid($select=name)").then(
+            function (user) {
+                /* Verify user has BU */
+                if (user.hasOwnProperty("businessunitid")) {
+                    var businessUnitName = user["businessunitid"]["name"];
+                    var businessUnitID = user["businessunitid"]["businessunitid"];
+
+                    /* Manipulate Text to match State */
+                    businessUnitName = buToState(businessUnitName)
+
+                    /* Check if User's BU aligns with a State */
+                    var stateFound = retrieveState(businessUnitName, formContext)
+                    
+                    /* Check Parent BU */
+                    if (stateFound === false) {
+                        /* Check Parent Business Unit */
+                        Xrm.WebApi.retrieveRecord("businessunit", businessUnitID, "?$expand=parentbusinessunitid($select=name)").then(
+                            function success(result) {
+                                if (result.businessunitid) {
+                                    /* convert name */
+                                    var parentBusinessUnitName = buToState(result["parentbusinessunitid"]["name"]);
+                                    console.log("Parent BU: ", parentBusinessUnitName)
+
+                                    /* See if Parent matches state */
+                                    retrieveState(parentBusinessUnitName, formContext)
+                                   
+                                }
+                            })
+                    }
+                }
+            });
+    }
+}
+
+function buToState(businessUnitName) {
+    /* Handle cases where states are more than one word */
+    const words = businessUnitName.split(" ");
+
+    /* if len of words > 1 */
+    if ( words.length > 1 ){
+        const capitalize = words.map(word => {
+            if (word.length === 0) return "";
+            return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+        });
+        businessUnitName = capitalize.join(" ");
+    }
+    else{
+        /* Manipulate Text to match State */
+        businessUnitName = businessUnitName[0].toUpperCase() + businessUnitName.slice(1).toLowerCase();
+    }
+
+    return businessUnitName
+}
+
+function retrieveState(businessUnitName, formContext) {
+    var stateSet = false
+    /* Retrieve State */
+    Xrm.WebApi.retrieveMultipleRecords("book_state", "?$select=book_name&$filter=book_name eq '" + businessUnitName + "'").then(
+        function success(result) {
+            console.log(result)
+            if (result.entities.length > 0) {
+                var lookupValue = new Array();
+                lookupValue[0] = new Object();
+                lookupValue[0].id = result.entities[0].book_stateid;
+                lookupValue[0].name = result.entities[0].book_name;
+                lookupValue[0].entityType = "book_state";
+
+                /* Set Field */
+                formContext.getAttribute("book_state").setValue(lookupValue);
+
+                stateSet = true
+
+            }
+
+            
+        });
+
+    return stateSet
+}

@@ -1,0 +1,108 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<forms xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <systemform>
+    <formid>{bff3062a-04a5-4e1f-887c-3e9ac7e252a1}</formid>
+    <IntroducedVersion>1.0.0.0</IntroducedVersion>
+    <FormPresentation>1</FormPresentation>
+    <FormActivationState>1</FormActivationState>
+    <form headerdensity="HighWithControls">
+      <tabs>
+        <tab verticallayout="true" id="{683d989a-e7d1-4323-b22d-58339be25db0}" IsUserDefined="1">
+          <labels>
+            <label description="General" languagecode="1033" />
+          </labels>
+          <columns>
+            <column width="100%">
+              <sections>
+                <section showlabel="false" showbar="false" IsUserDefined="0" id="{8bdd0063-a890-4722-abec-f15a8a9328e7}">
+                  <labels>
+                    <label description="General" languagecode="1033" />
+                  </labels>
+                  <rows>
+                    <row>
+                      <cell id="{b9d3e3ef-f0c3-4083-b0be-632b267ac0c2}" visible="false">
+                        <labels>
+                          <label description="Owner" languagecode="1033" />
+                        </labels>
+                        <control id="ownerid" classid="{270BD3DB-D9AF-4782-9025-509E298DEC0A}" datafieldname="ownerid" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{c46c4614-0998-4c89-a8e9-223df1b081ae}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="LOE" languagecode="1033" />
+                        </labels>
+                        <control id="book_loe" classid="{3EF39988-22BB-4F0B-BBBE-64B5A3748AEE}" datafieldname="book_loe" disabled="false" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{cd5d667b-65d1-46ab-b44c-6ab99d874e8b}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="Focus Area" languagecode="1033" />
+                        </labels>
+                        <control id="book_focusarea" classid="{3EF39988-22BB-4F0B-BBBE-64B5A3748AEE}" datafieldname="book_focusarea" disabled="false" />
+                      </cell>
+                    </row>
+                  </rows>
+                </section>
+              </sections>
+            </column>
+          </columns>
+        </tab>
+      </tabs>
+      <header id="{a4a47ceb-54a0-41af-b996-ae223697c1b3}" celllabelposition="Top" columns="111" labelwidth="115" celllabelalignment="Left">
+        <rows>
+          <row>
+            <cell id="{16559373-cc8e-45ee-8b0a-8e8b0f423f82}" showlabel="false">
+              <labels>
+                <label description="" languagecode="1033" />
+              </labels>
+            </cell>
+            <cell id="{3dd56cc9-474e-4700-b667-83dd0939a84d}" showlabel="false">
+              <labels>
+                <label description="" languagecode="1033" />
+              </labels>
+            </cell>
+            <cell id="{6d198e24-9c53-4c60-b09d-43b0e290741a}" showlabel="false">
+              <labels>
+                <label description="" languagecode="1033" />
+              </labels>
+            </cell>
+          </row>
+        </rows>
+      </header>
+      <footer id="{2dff65ca-9e2b-417e-8a0d-97e1de2129a0}" celllabelposition="Top" columns="111" labelwidth="115" celllabelalignment="Left">
+        <rows>
+          <row>
+            <cell id="{8d67dc94-fbbc-471a-afe9-ea1ae75df046}" showlabel="false">
+              <labels>
+                <label description="" languagecode="1033" />
+              </labels>
+            </cell>
+            <cell id="{8f6cb3fa-78ac-4a2d-af01-ddb2abd7d39a}" showlabel="false">
+              <labels>
+                <label description="" languagecode="1033" />
+              </labels>
+            </cell>
+            <cell id="{15972e89-9273-496a-b32d-64da01a8052a}" showlabel="false">
+              <labels>
+                <label description="" languagecode="1033" />
+              </labels>
+            </cell>
+          </row>
+        </rows>
+      </footer>
+      <DisplayConditions Order="0" FallbackForm="true">
+        <Everyone />
+      </DisplayConditions>
+    </form>
+    <IsCustomizable>1</IsCustomizable>
+    <CanBeDeleted>1</CanBeDeleted>
+    <LocalizedNames>
+      <LocalizedName description="Information" languagecode="1033" />
+    </LocalizedNames>
+    <Descriptions>
+      <Description description="A form for this entity." languagecode="1033" />
+    </Descriptions>
+  </systemform>
+</forms>

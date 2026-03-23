@@ -1,0 +1,64 @@
+{
+  "format": 1,
+  "restore": {
+    "/home/eric/Sync/Power Platform/plugins/ARNGCheckbook.Plugins/ARNGCheckbook.Plugins.csproj": {}
+  },
+  "projects": {
+    "/home/eric/Sync/Power Platform/plugins/ARNGCheckbook.Plugins/ARNGCheckbook.Plugins.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "/home/eric/Sync/Power Platform/plugins/ARNGCheckbook.Plugins/ARNGCheckbook.Plugins.csproj",
+        "projectName": "ARNGCheckbook.Plugins",
+        "projectPath": "/home/eric/Sync/Power Platform/plugins/ARNGCheckbook.Plugins/ARNGCheckbook.Plugins.csproj",
+        "packagesPath": "/home/eric/.nuget/packages/",
+        "outputPath": "/home/eric/Sync/Power Platform/plugins/ARNGCheckbook.Plugins/obj/",
+        "projectStyle": "PackageReference",
+        "configFilePaths": [
+          "/home/eric/.nuget/NuGet/NuGet.Config"
+        ],
+        "originalTargetFrameworks": [
+          "net462"
+        ],
+        "sources": {
+          "/nix/store/8xgg70dis4illcp0zxq1f2ifma90n07b-dotnet-sdk-10.0.103/share/dotnet/library-packs": {},
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "net462": {
+            "targetAlias": "net462",
+            "projectReferences": {}
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        },
+        "restoreAuditProperties": {
+          "enableAudit": "true",
+          "auditLevel": "low",
+          "auditMode": "direct"
+        },
+        "SdkAnalysisLevel": "10.0.100"
+      },
+      "frameworks": {
+        "net462": {
+          "targetAlias": "net462",
+          "dependencies": {
+            "Microsoft.CrmSdk.CoreAssemblies": {
+              "target": "Package",
+              "version": "[9.0.2.56, )"
+            },
+            "Microsoft.NETFramework.ReferenceAssemblies": {
+              "suppressParent": "All",
+              "target": "Package",
+              "version": "[1.0.3, )",
+              "autoReferenced": true
+            }
+          },
+          "runtimeIdentifierGraphPath": "/nix/store/8xgg70dis4illcp0zxq1f2ifma90n07b-dotnet-sdk-10.0.103/share/dotnet/sdk/10.0.103/RuntimeIdentifierGraph.json"
+        }
+      }
+    }
+  }
+}

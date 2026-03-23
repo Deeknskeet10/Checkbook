@@ -1,0 +1,58 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<AppModule>
+  <UniqueName>book_ARNGCheckbookUnfundedRequests</UniqueName>
+  <IntroducedVersion>1.0.0.0</IntroducedVersion>
+  <WebResourceId>953b9fac-1e5e-e611-80d6-00155ded156f</WebResourceId>
+  <OptimizedFor></OptimizedFor>
+  <statecode>0</statecode>
+  <statuscode>1</statuscode>
+  <FormFactor>1</FormFactor>
+  <ClientType>4</ClientType>
+  <NavigationType>0</NavigationType>
+  <AppModuleComponents>
+    <AppModuleComponent type="1" schemaName="book_unfundedrequests" />
+    <AppModuleComponent type="26" id="{8c680670-fe66-f011-bec2-001dd8059413}" />
+    <AppModuleComponent type="26" id="{a783030d-ff66-f011-bec2-001dd805a06b}" />
+    <AppModuleComponent type="26" id="{7450f7f8-01c4-49ec-88d3-37f2a79b144f}" />
+    <AppModuleComponent type="26" id="{0315d7ca-fd59-413b-bc3d-c97079d9b3a3}" />
+    <AppModuleComponent type="26" id="{ae467a41-909b-4ba6-b1d9-ec92db755e0a}" />
+    <AppModuleComponent type="26" id="{780ef34f-a7a7-45bd-b6d3-f536481a3b28}" />
+    <AppModuleComponent type="60" id="{290d4184-6941-f011-b4cc-001dd8059413}" />
+    <AppModuleComponent type="60" id="{8e52c793-6941-f011-b4cc-001dd805a06b}" />
+    <AppModuleComponent type="60" id="{14ed8703-6113-4a7a-84aa-96a4a896b405}" />
+    <AppModuleComponent type="62" schemaName="book_ARNGCheckbookUnfundedRequests" />
+  </AppModuleComponents>
+  <AppModuleRoleMaps>
+    <Role id="{627090ff-40a3-4053-8790-584edc5be201}" />
+    <Role id="{119f245c-3cc8-4b62-b31c-d1a046ced15d}" />
+  </AppModuleRoleMaps>
+  <LocalizedNames>
+    <LocalizedName description="ARNG Checkbook - Unfunded Requests" languagecode="1033" />
+  </LocalizedNames>
+  <appelements>
+    <appelement uniquename="book_book_ARNGCheckbookUnfundedRequests_canvasappid_book_arngcheckbookunfundedrequestsdefaultcommandlibrary_49d1e">
+      <canvasappid>
+        <name>book_arngcheckbookunfundedrequestsdefaultcommandlibrary_49d1e</name>
+      </canvasappid>
+      <iscustomizable>1</iscustomizable>
+      <name>book_book_ARNGCheckbookUnfundedRequests_canvasappid_book_arngcheckbookunfundedrequestsdefaultcommandlibrary_49d1e</name>
+    </appelement>
+    <appelement uniquename="book_book_ARNGCheckbookUnfundedRequests_canvasappid_book_pagespendplanufr_01af9">
+      <canvasappid>
+        <name>book_pagespendplanufr_01af9</name>
+      </canvasappid>
+      <iscustomizable>1</iscustomizable>
+      <name>book_book_ARNGCheckbookUnfundedRequests_canvasappid_book_pagespendplanufr_01af9</name>
+    </appelement>
+  </appelements>
+  <appsettings>
+    <appsetting settingdefinitionid.uniquename="AllowNotificationsEarlyAccess">
+      <iscustomizable>1</iscustomizable>
+      <value>true</value>
+    </appsetting>
+    <appsetting settingdefinitionid.uniquename="AppChannel">
+      <iscustomizable>1</iscustomizable>
+      <value>1</value>
+    </appsetting>
+  </appsettings>
+</AppModule>

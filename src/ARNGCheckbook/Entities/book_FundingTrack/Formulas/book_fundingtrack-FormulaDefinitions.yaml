@@ -1,0 +1,1 @@
+book_dollartypeape: =Concatenate(book_DollarType.book_name, "-", book_APE.book_name)

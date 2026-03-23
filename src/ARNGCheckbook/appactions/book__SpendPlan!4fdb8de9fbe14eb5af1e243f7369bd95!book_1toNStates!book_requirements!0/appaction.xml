@@ -1,0 +1,41 @@
+<appaction uniquename="book__SpendPlan!4fdb8de9fbe14eb5af1e243f7369bd95!book_1toNStates!book_requirements!0">
+  <appmoduleid>
+    <uniquename>book_1toNStates</uniquename>
+  </appmoduleid>
+  <buttonaccessibilitytext default="View Spend Plan">
+    <label description="View Spend Plan" languagecode="1033" />
+  </buttonaccessibilitytext>
+  <buttonlabeltext default="Spend Plan">
+    <label description="Spend Plan" languagecode="1033" />
+  </buttonlabeltext>
+  <buttontooltipdescription default="Allows States to view Spend Plan of Parent Requirement">
+    <label description="Allows States to view Spend Plan of Parent Requirement" languagecode="1033" />
+  </buttontooltipdescription>
+  <buttontooltiptitle default="View Spend Plan">
+    <label description="View Spend Plan" languagecode="1033" />
+  </buttontooltiptitle>
+  <context>1</context>
+  <contextentity>
+    <logicalname>book_requirements</logicalname>
+  </contextentity>
+  <contextvalue>book_requirements</contextvalue>
+  <fonticon>UpcomingMeeting</fonticon>
+  <hidden>0</hidden>
+  <iscustomizable>1</iscustomizable>
+  <isdisabled>0</isdisabled>
+  <isgrouptitlehidden>0</isgrouptitlehidden>
+  <location>0</location>
+  <name>SpendPlan!4fdb8de9fbe14eb5af1e243f7369bd95</name>
+  <onclickeventjavascriptfunctionname>openSpendPlan</onclickeventjavascriptfunctionname>
+  <onclickeventjavascriptparameters>[{"type":5}]</onclickeventjavascriptparameters>
+  <onclickeventjavascriptwebresourceid>
+    <webresourceid>fc435296-5d71-f011-bec3-001dd8059413</webresourceid>
+  </onclickeventjavascriptwebresourceid>
+  <onclickeventtype>2</onclickeventtype>
+  <origin>0</origin>
+  <sequence>100100015.0000000000</sequence>
+  <statecode>0</statecode>
+  <statuscode>1</statuscode>
+  <type>0</type>
+  <visibilitytype>0</visibilitytype>
+</appaction>

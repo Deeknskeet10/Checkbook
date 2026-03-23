@@ -1,0 +1,2 @@
+book_fiscalyear: =If(!IsBlank(book_newDebitedRequirement), book_newDebitedRequirement.book_newfiscalyear, book_newCreditedRequirement.book_newfiscalyear)
+book_realignmenttype: =If(IsBlank(book_DebitedPrioritization), "Requirement", "Prioritization")

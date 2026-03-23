@@ -1,0 +1,14 @@
+<environmentvariabledefinition schemaname="book_ARNGCheckbookSpendPlans">
+  <defaultvalue>https://arngcheckbookdev.crm.appsplatform.us/main.aspx?appid=566d11f1-b482-f011-b4cc-001dd8059413</defaultvalue>
+  <description default="Link to Spend Plan application">
+    <label description="Link to Spend Plan application" languagecode="1033" />
+  </description>
+  <displayname default="ARNG Checkbook - Spend Plans">
+    <label description="ARNG Checkbook - Spend Plans" languagecode="1033" />
+  </displayname>
+  <introducedversion>1.1.1.7</introducedversion>
+  <iscustomizable>1</iscustomizable>
+  <isrequired>0</isrequired>
+  <secretstore>0</secretstore>
+  <type>100000000</type>
+</environmentvariabledefinition>

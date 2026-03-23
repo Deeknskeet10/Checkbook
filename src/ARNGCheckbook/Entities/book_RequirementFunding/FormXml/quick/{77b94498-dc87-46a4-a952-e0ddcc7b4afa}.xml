@@ -1,0 +1,87 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<forms xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <systemform>
+    <formid>{77b94498-dc87-46a4-a952-e0ddcc7b4afa}</formid>
+    <IntroducedVersion>1.7.0.1</IntroducedVersion>
+    <FormPresentation>1</FormPresentation>
+    <FormActivationState>1</FormActivationState>
+    <form>
+      <tabs>
+        <tab verticallayout="true" id="{1197d6e9-2741-4576-8326-c6c6eb70603c}" IsUserDefined="1">
+          <labels>
+            <label description="" languagecode="1033" />
+          </labels>
+          <columns>
+            <column width="100%">
+              <sections>
+                <section showlabel="false" showbar="false" IsUserDefined="0" id="{723f840a-6d02-40b8-8f38-137239ccd33b}">
+                  <labels>
+                    <label description="GENERAL" languagecode="1033" />
+                  </labels>
+                  <rows>
+                    <row>
+                      <cell id="{ab7d7043-1c33-4e77-86b0-146fc3cd073a}" visible="false">
+                        <labels>
+                          <label description="Owner" languagecode="1033" />
+                        </labels>
+                        <control id="ownerid" classid="{270BD3DB-D9AF-4782-9025-509E298DEC0A}" datafieldname="ownerid" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{1ec2fe9c-23a6-4745-9476-22b5e5b51877}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="Fiscal Year" languagecode="1033" />
+                        </labels>
+                        <control id="book_newfiscalyear" classid="{3EF39988-22BB-4F0B-BBBE-64B5A3748AEE}" datafieldname="book_newfiscalyear" disabled="false" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{85f8206f-ac0d-4866-86d8-d6d3e78ef573}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="TDP" languagecode="1033" />
+                        </labels>
+                        <control id="book_tdp" classid="{0D2C745A-E5A8-4C8F-BA63-C6D3BB604660}" datafieldname="book_tdp" disabled="false" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{68b4ca2c-9270-4ca0-8c7a-3130287d614c}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="Withholding" languagecode="1033" />
+                        </labels>
+                        <control id="book_withholding" classid="{0D2C745A-E5A8-4C8F-BA63-C6D3BB604660}" datafieldname="book_withholding" disabled="false" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{5c33b9dd-9324-4419-9148-05e7a53ea2ed}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="Validated Amount" languagecode="1033" />
+                        </labels>
+                        <control id="book_validatedamount" classid="{0D2C745A-E5A8-4C8F-BA63-C6D3BB604660}" datafieldname="book_validatedamount" disabled="false" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{0482a6e9-b38d-4e7d-b9da-d02c7cf84b10}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="Funded Amount" languagecode="1033" />
+                        </labels>
+                        <control id="book_fundedamount" classid="{0D2C745A-E5A8-4C8F-BA63-C6D3BB604660}" datafieldname="book_fundedamount" disabled="false" />
+                      </cell>
+                    </row>
+                  </rows>
+                </section>
+              </sections>
+            </column>
+          </columns>
+        </tab>
+      </tabs>
+      <DisplayConditions Order="0" FallbackForm="true">
+        <Everyone />
+      </DisplayConditions>
+    </form>
+    <IsCustomizable>1</IsCustomizable>
+    <CanBeDeleted>1</CanBeDeleted>
+    <LocalizedNames>
+      <LocalizedName description="Information" languagecode="1033" />
+    </LocalizedNames>
+  </systemform>
+</forms>

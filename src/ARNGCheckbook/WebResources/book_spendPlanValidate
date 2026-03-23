@@ -1,0 +1,229 @@
+// SpendPlanValidation.js
+// Register onFormLoad on Form OnLoad event
+// Register onFormSave on Form OnSave event
+
+var Book = window.Book || {};
+Book.SpendPlan = Book.SpendPlan || {};
+
+(function () {
+    "use strict";
+
+    const NOTIFICATION_ID = "spendplan_validation_error";
+    const NOTIFICATION_ID_SUCCESS = "spendplan_validation_success";
+    const PRECISION_TOLERANCE = 0.01; // Allow 1 cent tolerance for floating-point errors
+
+    const MONTH_FIELDS = [
+        "book_january",
+        "book_february",
+        "book_march",
+        "book_april",
+        "book_may",
+        "book_june",
+        "book_july",
+        "book_august",
+        "book_september",
+        "book_october",
+        "book_november",
+        "book_december"
+    ];
+
+    /**
+     * Rounds a number to 2 decimal places (currency precision)
+     */
+    function roundToCurrency(value) {
+        if (value === null || value === undefined) {
+            return 0.00;
+        }
+        return Math.round(value * 100) / 100;
+    }
+
+    /**
+     * Form OnLoad handler
+     */
+    this.onFormLoad = function (executionContext) {
+        var formContext = executionContext.getFormContext();
+
+        clearAllNotifications(formContext);
+
+        // Register onChange for each month field
+        MONTH_FIELDS.forEach(function (fieldName) {
+            var attr = formContext.getAttribute(fieldName);
+            if (attr) {
+                attr.addOnChange(onMonthChange);
+            }
+        });
+
+        // Register onChange for total field
+        var totalAttr = formContext.getAttribute("book_total");
+        if (totalAttr) {
+            totalAttr.addOnChange(onMonthChange);
+        }
+
+        // Run initial validation
+        validateSpendPlan(formContext);
+    };
+
+    /**
+     * Month field OnChange handler
+     */
+    function onMonthChange(executionContext) {
+        var formContext = executionContext.getFormContext();
+        validateSpendPlan(formContext);
+    }
+
+    /**
+     * Form OnSave handler - synchronous validation
+     */
+    this.onFormSave = function (executionContext) {
+        var formContext = executionContext.getFormContext();
+        var eventArgs = executionContext.getEventArgs();
+
+        clearAllNotifications(formContext);
+
+        var validation = calculateSpendPlanTotals(formContext);
+
+        if (validation.isOverAllocated) {
+            eventArgs.preventDefault();
+
+            var errorMessage = buildErrorMessage(validation);
+            formContext.ui.setFormNotification(errorMessage, "ERROR", NOTIFICATION_ID);
+
+            // Focus on the first month field that has a value
+            focusFirstPopulatedMonth(formContext);
+        }
+    };
+
+    /**
+     * Validates spend plan and shows appropriate notification
+     */
+    function validateSpendPlan(formContext) {
+        clearAllNotifications(formContext);
+
+        var validation = calculateSpendPlanTotals(formContext);
+
+        if (validation.total === null) {
+            // No total set, can't validate
+            return;
+        }
+
+        if (validation.isOverAllocated) {
+            var errorMessage = buildErrorMessage(validation);
+            formContext.ui.setFormNotification(errorMessage, "ERROR", NOTIFICATION_ID);
+
+            // Highlight months with values
+            highlightOverAllocated(formContext, true);
+        } else {
+            var successMessage = "Spend Plan valid. " +
+                "Total Budget: " + formatCurrency(validation.total) + " | " +
+                "Allocated: " + formatCurrency(validation.spendPlanTotal) + " | " +
+                "Remaining: " + formatCurrency(validation.availableAmount);
+
+            formContext.ui.setFormNotification(successMessage, "INFO", NOTIFICATION_ID_SUCCESS);
+
+            highlightOverAllocated(formContext, false);
+        }
+    }
+
+    /**
+     * Calculates spend plan totals from form values
+     */
+    function calculateSpendPlanTotals(formContext) {
+        var total = formContext.getAttribute("book_total")?.getValue();
+        
+        var spendPlanTotal = 0;
+        var monthlyBreakdown = {};
+
+        // Sum with rounding to avoid floating-point accumulation errors
+        MONTH_FIELDS.forEach(function (fieldName) {
+            var value = formContext.getAttribute(fieldName)?.getValue() || 0.00;
+            value = roundToCurrency(value);
+            spendPlanTotal += value;
+            monthlyBreakdown[fieldName] = value;
+        });
+
+        // Round the final total to currency precision
+        spendPlanTotal = roundToCurrency(spendPlanTotal);
+        total = roundToCurrency(total);
+
+        var availableAmount = roundToCurrency(total - spendPlanTotal);
+        
+        // Use tolerance-based comparison instead of strict >
+        // This allows for tiny floating-point errors while catching real overages
+        var isOverAllocated = total !== null && (spendPlanTotal - total) > PRECISION_TOLERANCE;
+        var overageAmount = isOverAllocated ? roundToCurrency(spendPlanTotal - total) : 0.00;
+
+        return {
+            total: total,
+            spendPlanTotal: spendPlanTotal,
+            availableAmount: availableAmount,
+            isOverAllocated: isOverAllocated,
+            overageAmount: overageAmount,
+            monthlyBreakdown: monthlyBreakdown
+        };
+    }
+
+    /**
+     * Builds error message for over-allocation
+     */
+    function buildErrorMessage(validation) {
+        return "Spend Plan exceeds available budget. " +
+            "Total Budget: " + formatCurrency(validation.total) + " | " +
+            "Allocated: " + formatCurrency(validation.spendPlanTotal) + " | " +
+            "Over by: " + formatCurrency(validation.overageAmount);
+    }
+
+    /**
+     * Highlights or clears field notifications for month fields
+     */
+    function highlightOverAllocated(formContext, showError) {
+        MONTH_FIELDS.forEach(function (fieldName) {
+            var control = formContext.getControl(fieldName);
+            if (control) {
+                if (showError) {
+                    control.setNotification("Review allocation", "month_allocation_warning");
+                } else {
+                    control.clearNotification("month_allocation_warning");
+                }
+            }
+        });
+    }
+
+    /**
+     * Sets focus on the first month field that has a value
+     */
+    function focusFirstPopulatedMonth(formContext) {
+        for (var i = 0; i < MONTH_FIELDS.length; i++) {
+            var value = formContext.getAttribute(MONTH_FIELDS[i])?.getValue();
+            if (value && value > 0) {
+                formContext.getControl(MONTH_FIELDS[i])?.setFocus();
+                return;
+            }
+        }
+    }
+
+    /**
+     * Clears all validation notifications
+     */
+    function clearAllNotifications(formContext) {
+        formContext.ui.clearFormNotification(NOTIFICATION_ID);
+        formContext.ui.clearFormNotification(NOTIFICATION_ID_SUCCESS);
+
+        MONTH_FIELDS.forEach(function (fieldName) {
+            formContext.getControl(fieldName)?.clearNotification("month_allocation_warning");
+        });
+    }
+
+    /**
+     * Formats a number as currency
+     */
+    function formatCurrency(value) {
+        if (value === null || value === undefined) {
+            return "$0.00";
+        }
+        return "$" + value.toLocaleString("en-US", {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        });
+    }
+
+}).call(Book.SpendPlan);

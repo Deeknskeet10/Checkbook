@@ -1,0 +1,43 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<savedqueries xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <savedquery>
+    <IsCustomizable>1</IsCustomizable>
+    <CanBeDeleted>0</CanBeDeleted>
+    <isquickfindquery>0</isquickfindquery>
+    <isprivate>0</isprivate>
+    <isdefault>1</isdefault>
+    <savedqueryid>{9e13e6da-2d67-46c1-b644-2c04284ce0fd}</savedqueryid>
+    <layoutxml>
+      <grid name="resultset" jump="book_name" select="1" icon="1" preview="1">
+        <row name="result" id="book_fundingeventid">
+          <cell name="book_name" width="300" />
+          <cell name="book_startdate" width="100" />
+          <cell name="book_enddate" width="100" />
+          <cell name="book_fundingtype" width="118" />
+          <cell name="book_description" width="300" />
+        </row>
+      </grid>
+    </layoutxml>
+    <querytype>0</querytype>
+    <fetchxml>
+      <fetch version="1.0" mapping="logical">
+        <entity name="book_fundingevent">
+          <attribute name="book_fundingeventid" />
+          <attribute name="book_name" />
+          <order attribute="book_name" descending="false" />
+          <filter type="and">
+            <condition attribute="statecode" operator="eq" value="0" />
+          </filter>
+          <attribute name="book_startdate" />
+          <attribute name="book_enddate" />
+          <attribute name="book_fundingtype" />
+          <attribute name="book_description" />
+        </entity>
+      </fetch>
+    </fetchxml>
+    <IntroducedVersion>1.2.1.1</IntroducedVersion>
+    <LocalizedNames>
+      <LocalizedName description="Active Funding Events" languagecode="1033" />
+    </LocalizedNames>
+  </savedquery>
+</savedqueries>

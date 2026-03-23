@@ -1,0 +1,14 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<WebResource xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <WebResourceId>{08cf8067-0ba6-f011-bbd3-001dd8059413}</WebResourceId>
+  <Name>book_personmilitarypointingsolidfull</Name>
+  <DisplayName>person-military-pointing-solid-full</DisplayName>
+  <WebResourceType>11</WebResourceType>
+  <IntroducedVersion>1.4.1.1</IntroducedVersion>
+  <IsEnabledForMobileClient>0</IsEnabledForMobileClient>
+  <IsAvailableForMobileOffline>0</IsAvailableForMobileOffline>
+  <IsCustomizable>1</IsCustomizable>
+  <CanBeDeleted>1</CanBeDeleted>
+  <IsHidden>0</IsHidden>
+  <FileName>/WebResources/book_personmilitarypointingsolidfull08CF8067-0BA6-F011-BBD3-001DD8059413</FileName>
+</WebResource>

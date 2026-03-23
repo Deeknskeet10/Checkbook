@@ -1,0 +1,99 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<forms xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <systemform>
+    <formid>{9868fa91-344b-4187-bdd4-cd148842af50}</formid>
+    <IntroducedVersion>1.0</IntroducedVersion>
+    <FormPresentation>1</FormPresentation>
+    <FormActivationState>1</FormActivationState>
+    <form>
+      <tabs>
+        <tab verticallayout="true" id="{3e263418-00ec-41ae-b1dd-d8fccb194f0d}" name="StageStep3" locklevel="0" expanded="true" visible="false" labelid="{011551d7-6161-457f-a455-1828eb26fa7b}">
+          <labels>
+            <label description="NPM Review" languagecode="1033" />
+          </labels>
+          <columns>
+            <column width="100%">
+              <sections>
+                <section showbar="false" columns="1" id="{89a118e2-7f26-5774-6fd4-06034816fda4}" name="StageStep3_section1" labelid="{bf06fb75-c1f0-4cd9-873e-d51b0132f773}">
+                  <labels>
+                    <label description="NPM Review" languagecode="1033" />
+                  </labels>
+                  <rows>
+                    <row>
+                      <cell id="{8ecacf40-745b-4357-853e-3f393b0b1701}" showlabel="true" visible="true" labelid="{35220d89-cdc2-4fe9-98bf-ead37a2534a7}">
+                        <labels>
+                          <label description="Requirement Name" languagecode="1033" />
+                        </labels>
+                        <control id="bpf_book_requirements_book_arngcheckbookoprapprovalworkflow:book_name" classid="{0d2c745a-e5a8-4c8f-ba63-c6d3bb604660}" datafieldname="book_name" disabled="false" relationship="bpf_book_requirements_book_arngcheckbookoprapprovalworkflow" isrequired="true" />
+                      </cell>
+                    </row>
+                  </rows>
+                </section>
+              </sections>
+            </column>
+          </columns>
+        </tab>
+        <tab verticallayout="true" id="{80ae64e5-1090-492a-8fee-495d7eec9a5e}" name="StageStep7" locklevel="0" expanded="true" visible="false" labelid="{997dab2e-8068-4512-a5ee-609102a0fbc0}">
+          <labels>
+            <label description="RI Validation" languagecode="1033" />
+          </labels>
+          <columns>
+            <column width="100%">
+              <sections>
+                <section showbar="false" columns="1" id="{7c50fb74-04a3-7993-1c6c-0b7ae89288a7}" name="StageStep7_section1" labelid="{dd70c92b-f1be-4add-9b9a-e21b5548ea01}">
+                  <labels>
+                    <label description="RI Validation" languagecode="1033" />
+                  </labels>
+                  <rows>
+                    <row>
+                      <cell id="{859e989f-ae43-491e-a5e5-1eb11b018b00}" showlabel="true" visible="true" labelid="{c270e5e8-6291-4d3c-96df-3565ab94f092}">
+                        <labels>
+                          <label description="Validate Requirement" languagecode="1033" />
+                        </labels>
+                        <control id="bpf_book_requirements_book_arngcheckbookoprapprovalworkflow:book_rivalidated" classid="{67fac785-cd58-4f9f-abb3-4b7ddc6ed5ed}" datafieldname="book_rivalidated" disabled="false" relationship="bpf_book_requirements_book_arngcheckbookoprapprovalworkflow" isrequired="true" />
+                      </cell>
+                    </row>
+                  </rows>
+                </section>
+              </sections>
+            </column>
+          </columns>
+        </tab>
+        <tab verticallayout="true" id="{0f30ddad-c0d8-4c7c-aae0-c8c76ef9f3f2}" name="StageStep11" locklevel="0" expanded="true" visible="false" labelid="{d5501cf1-e6f9-4a0f-9cda-e46cb64f8da9}">
+          <labels>
+            <label description="RMC-BE Approval" languagecode="1033" />
+          </labels>
+          <columns>
+            <column width="100%">
+              <sections>
+                <section showbar="false" columns="1" id="{41321953-704c-c164-30c8-25a42cfc2519}" name="StageStep11_section1" labelid="{3d5a7679-fea9-4cbe-8ef9-73d3cd826731}">
+                  <labels>
+                    <label description="RMC-BE Approval" languagecode="1033" />
+                  </labels>
+                  <rows>
+                    <row>
+                      <cell id="{6df5c5d8-01e0-481d-b6aa-58bafc54c602}" showlabel="true" visible="true" labelid="{ea432d7b-d548-4bd8-95a4-6b279f8d6c66}">
+                        <labels>
+                          <label description="Approve Requirement" languagecode="1033" />
+                        </labels>
+                        <control id="bpf_book_requirements_book_arngcheckbookoprapprovalworkflow:book_requirementapproved" classid="{67fac785-cd58-4f9f-abb3-4b7ddc6ed5ed}" datafieldname="book_requirementapproved" disabled="false" relationship="bpf_book_requirements_book_arngcheckbookoprapprovalworkflow" isrequired="true" />
+                      </cell>
+                    </row>
+                  </rows>
+                </section>
+              </sections>
+            </column>
+          </columns>
+        </tab>
+      </tabs>
+    </form>
+    <IsCustomizable>1</IsCustomizable>
+    <CanBeDeleted>1</CanBeDeleted>
+    <LocalizedNames>
+      <LocalizedName description="Information" languagecode="1033" />
+    </LocalizedNames>
+    <Descriptions>
+      <Description description="A form for this entity." languagecode="1033" />
+    </Descriptions>
+  </systemform>
+</forms>

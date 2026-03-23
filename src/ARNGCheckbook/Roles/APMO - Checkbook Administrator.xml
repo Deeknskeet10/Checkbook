@@ -1,0 +1,32 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Role id="{d41e1cdf-6bf8-f011-8406-001dd8201529}" name="APMO - Checkbook Administrator" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <IsCustomizable>1</IsCustomizable>
+  <IsAutoAssigned>0</IsAutoAssigned>
+  <RolePrivileges>
+    <RolePrivilege name="prvAppendapmo_GenericRVB" level="Global" />
+    <RolePrivilege name="prvAppendapmo_RVB" level="Global" />
+    <RolePrivilege name="prvAppendToapmo_GenericRVB" level="Global" />
+    <RolePrivilege name="prvAppendToapmo_RVB" level="Global" />
+    <RolePrivilege name="prvCreateSharePointData" level="Global" />
+    <RolePrivilege name="prvReadapmo_Contract" level="Global" />
+    <RolePrivilege name="prvReadapmo_Directorate" level="Global" />
+    <RolePrivilege name="prvReadapmo_Division" level="Global" />
+    <RolePrivilege name="prvReadapmo_Funding" level="Global" />
+    <RolePrivilege name="prvReadapmo_GenericRVB" level="Global" />
+    <RolePrivilege name="prvReadapmo_POC" level="Global" />
+    <RolePrivilege name="prvReadapmo_PoP" level="Global" />
+    <RolePrivilege name="prvReadapmo_Prejudice" level="Global" />
+    <RolePrivilege name="prvReadapmo_ROD" level="Global" />
+    <RolePrivilege name="prvReadapmo_RVB" level="Global" />
+    <RolePrivilege name="prvReadapmo_RVBPrejudices" level="Global" />
+    <RolePrivilege name="prvReadapmo_SA" level="Global" />
+    <RolePrivilege name="prvReadPluginAssembly" level="Global" />
+    <RolePrivilege name="prvReadPluginType" level="Global" />
+    <RolePrivilege name="prvReadSdkMessage" level="Global" />
+    <RolePrivilege name="prvReadSdkMessageProcessingStep" level="Global" />
+    <RolePrivilege name="prvReadSdkMessageProcessingStepImage" level="Global" />
+    <RolePrivilege name="prvReadSharePointData" level="Global" />
+    <RolePrivilege name="prvReadSharePointDocument" level="Global" />
+    <RolePrivilege name="prvWriteSharePointData" level="Global" />
+  </RolePrivileges>
+</Role>

@@ -1,0 +1,28 @@
+<appaction uniquename="book__Send!ec24414246fb49139c0ea1bd07ab669a!book_1toNStates!book_prioritization!1">
+  <appmoduleid>
+    <uniquename>book_1toNStates</uniquename>
+  </appmoduleid>
+  <context>1</context>
+  <contextentity>
+    <logicalname>book_prioritization</logicalname>
+  </contextentity>
+  <contextvalue>book_prioritization</contextvalue>
+  <grouptitle default="Send">
+    <label description="Send" languagecode="1033" />
+  </grouptitle>
+  <hidden>0</hidden>
+  <iscustomizable>1</iscustomizable>
+  <isdisabled>0</isdisabled>
+  <isgrouptitlehidden>0</isgrouptitlehidden>
+  <location>1</location>
+  <name>Send!ec24414246fb49139c0ea1bd07ab669a</name>
+  <onclickeventtype>0</onclickeventtype>
+  <origin>0</origin>
+  <parentappactionid>
+    <uniquename>book__CheckbookActions!6a6a54140aa84764bd60568873e07a97!book_1toNStates!book_prioritization!1</uniquename>
+  </parentappactionid>
+  <sequence>20000.0000000000</sequence>
+  <statecode>0</statecode>
+  <statuscode>1</statuscode>
+  <type>3</type>
+</appaction>

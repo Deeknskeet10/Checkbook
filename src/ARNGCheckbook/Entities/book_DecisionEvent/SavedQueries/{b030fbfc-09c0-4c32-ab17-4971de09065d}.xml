@@ -1,0 +1,43 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<savedqueries xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <savedquery>
+    <IsCustomizable>1</IsCustomizable>
+    <CanBeDeleted>0</CanBeDeleted>
+    <isquickfindquery>0</isquickfindquery>
+    <isprivate>0</isprivate>
+    <isdefault>1</isdefault>
+    <savedqueryid>{b030fbfc-09c0-4c32-ab17-4971de09065d}</savedqueryid>
+    <layoutxml>
+      <grid name="resultset" jump="book_name" select="1" icon="1" preview="1">
+        <row name="result" id="book_decisioneventid">
+          <cell name="book_fiscalyear" width="103" />
+          <cell name="book_name" width="300" />
+          <cell name="book_description" width="300" />
+          <cell name="book_amount" width="100" />
+          <cell name="book_decisionbalance" width="139" />
+        </row>
+      </grid>
+    </layoutxml>
+    <querytype>0</querytype>
+    <fetchxml>
+      <fetch version="1.0" mapping="logical">
+        <entity name="book_decisionevent">
+          <attribute name="book_decisioneventid" />
+          <attribute name="book_name" />
+          <order attribute="book_name" descending="false" />
+          <filter type="and">
+            <condition attribute="statecode" operator="eq" value="0" />
+          </filter>
+          <attribute name="book_amount" />
+          <attribute name="book_description" />
+          <attribute name="book_fiscalyear" />
+          <attribute name="book_decisionbalance" />
+        </entity>
+      </fetch>
+    </fetchxml>
+    <IntroducedVersion>1.0.0.0</IntroducedVersion>
+    <LocalizedNames>
+      <LocalizedName description="Active Decision Events" languagecode="1033" />
+    </LocalizedNames>
+  </savedquery>
+</savedqueries>

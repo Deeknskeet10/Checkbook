@@ -1,0 +1,28 @@
+function showDistroModal(formContext) {
+    // Centered Dialog
+    var pageInput = {
+        pageType: "custom",
+        name: "book_pagedistributionmodal_f0fad",
+        //entityName: "book_distributions",
+        //recordId: formContext.data.entity.getId().replace(/[{}]/g, ""),
+    };
+    var navigationOptions = {
+        target: 2,
+        position: 1,
+        width: { value: 300, unit: "px" },
+        height: { value: 260, unit: "px" },
+        title: "Generate Distributions"
+    };
+    Xrm.Navigation.navigateTo(pageInput, navigationOptions)
+        .then(
+            function () {
+                // Called when the dialog closes
+                formContext.data.refresh();
+            }
+        ).catch(
+            function (error) {
+                // Handle error
+            }
+        );
+
+}

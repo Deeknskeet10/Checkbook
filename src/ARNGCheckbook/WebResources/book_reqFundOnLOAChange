@@ -1,0 +1,18 @@
+function onFundingLineChange(executionContext) {
+    var formContext = executionContext.getFormContext();
+    var fundingLineRef = formContext.getAttribute("book_lineofaccounting").getValue();
+    
+    if (!fundingLineRef) {
+        formContext.getAttribute("book_newfiscalyear").setValue(null);
+        return;
+    }
+    console.log(fundingLineRef[0].id);
+    
+    Xrm.WebApi.retrieveRecord("book_fundingline", fundingLineRef[0].id, "?$select=book_fiscalyear")
+        .then(function(result) {
+            formContext.getAttribute("book_newfiscalyear").setValue(result.book_fiscalyear);
+        })
+        .catch(function(error) {
+            console.error("Error retrieving fiscal year: " + error.message);
+        });
+}

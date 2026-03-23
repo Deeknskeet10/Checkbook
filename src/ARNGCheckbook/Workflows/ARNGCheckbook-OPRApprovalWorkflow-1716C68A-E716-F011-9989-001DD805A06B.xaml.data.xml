@@ -1,0 +1,50 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Workflow WorkflowId="{1716c68a-e716-f011-9989-001dd805a06b}" Name="ARNG Checkbook - OPR Approval Workflow" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <XamlFileName>/Workflows/ARNGCheckbook-OPRApprovalWorkflow-1716C68A-E716-F011-9989-001DD805A06B.xaml</XamlFileName>
+  <Type>1</Type>
+  <Subprocess>0</Subprocess>
+  <Category>4</Category>
+  <Mode>0</Mode>
+  <Scope>4</Scope>
+  <OnDemand>0</OnDemand>
+  <TriggerOnCreate>1</TriggerOnCreate>
+  <TriggerOnDelete>0</TriggerOnDelete>
+  <AsyncAutodelete>0</AsyncAutodelete>
+  <SyncWorkflowLogOnFailure>0</SyncWorkflowLogOnFailure>
+  <StateCode>1</StateCode>
+  <StatusCode>2</StatusCode>
+  <processorder>100</processorder>
+  <RunAs>1</RunAs>
+  <UniqueName>book_arngcheckbookoprapprovalworkflow</UniqueName>
+  <IsTransacted>1</IsTransacted>
+  <IntroducedVersion>1.0.0.0</IntroducedVersion>
+  <IsCustomizable>1</IsCustomizable>
+  <BusinessProcessType>0</BusinessProcessType>
+  <IsCustomProcessingStepAllowedForOtherPublishers>1</IsCustomProcessingStepAllowedForOtherPublishers>
+  <ProcessTriggerScope>1</ProcessTriggerScope>
+  <ModernFlowType>0</ModernFlowType>
+  <PrimaryEntity>book_Requirements</PrimaryEntity>
+  <LocalizedNames>
+    <LocalizedName languagecode="1033" description="ARNG Checkbook - OPR Approval Workflow" />
+  </LocalizedNames>
+  <labels>
+    <steplabels id="{3e263418-00ec-41ae-b1dd-d8fccb194f0d}">
+      <label languagecode="1033" description="NPM Review" />
+    </steplabels>
+    <steplabels id="{8ecacf40-745b-4357-853e-3f393b0b1701}">
+      <label languagecode="1033" description="Requirement Name" />
+    </steplabels>
+    <steplabels id="{80ae64e5-1090-492a-8fee-495d7eec9a5e}">
+      <label languagecode="1033" description="RI Validation" />
+    </steplabels>
+    <steplabels id="{859e989f-ae43-491e-a5e5-1eb11b018b00}">
+      <label languagecode="1033" description="Validate Requirement" />
+    </steplabels>
+    <steplabels id="{0f30ddad-c0d8-4c7c-aae0-c8c76ef9f3f2}">
+      <label languagecode="1033" description="RMC-BE Approval" />
+    </steplabels>
+    <steplabels id="{6df5c5d8-01e0-481d-b6aa-58bafc54c602}">
+      <label languagecode="1033" description="Approve Requirement" />
+    </steplabels>
+  </labels>
+</Workflow>

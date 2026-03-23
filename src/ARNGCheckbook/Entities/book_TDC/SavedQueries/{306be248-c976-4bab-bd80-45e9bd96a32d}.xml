@@ -1,0 +1,49 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<savedqueries xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <savedquery>
+    <IsCustomizable>1</IsCustomizable>
+    <CanBeDeleted>0</CanBeDeleted>
+    <isquickfindquery>0</isquickfindquery>
+    <isprivate>0</isprivate>
+    <isdefault>1</isdefault>
+    <savedqueryid>{306be248-c976-4bab-bd80-45e9bd96a32d}</savedqueryid>
+    <layoutxml>
+      <grid name="resultset" jump="book_name" select="1" icon="1" preview="1">
+        <row name="result" id="book_tdcid">
+          <cell name="book_name" width="118" />
+          <cell name="book_tdcname" width="105" />
+          <cell name="book_sag" width="100" />
+          <cell name="book_mdep" width="100" />
+          <cell name="book_gfebsio" width="102" />
+          <cell name="book_appropriation" width="120" />
+          <cell name="book_category" width="100" />
+          <cell name="book_description" width="277" />
+        </row>
+      </grid>
+    </layoutxml>
+    <querytype>0</querytype>
+    <fetchxml>
+      <fetch version="1.0" mapping="logical">
+        <entity name="book_tdc">
+          <attribute name="book_tdcid" />
+          <attribute name="book_name" />
+          <order attribute="book_name" descending="false" />
+          <filter type="and">
+            <condition attribute="statecode" operator="eq" value="0" />
+          </filter>
+          <attribute name="book_appropriation" />
+          <attribute name="book_category" />
+          <attribute name="book_description" />
+          <attribute name="book_gfebsio" />
+          <attribute name="book_mdep" />
+          <attribute name="book_sag" />
+          <attribute name="book_tdcname" />
+        </entity>
+      </fetch>
+    </fetchxml>
+    <IntroducedVersion>1.1.3.0</IntroducedVersion>
+    <LocalizedNames>
+      <LocalizedName description="Active TDCs" languagecode="1033" />
+    </LocalizedNames>
+  </savedquery>
+</savedqueries>

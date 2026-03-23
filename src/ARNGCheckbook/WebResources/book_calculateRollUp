@@ -1,0 +1,34 @@
+function decisionEventOnLoad(executionContext) {
+    var formContext = executionContext.getFormContext();
+    var entityId = formContext.data.entity.getId().replace('{', '').replace('}', '');
+    
+    // call recalculate on form load
+    recalculateRollup(executionContext, "book_decisionevents", entityId, "book_decisionbalance");
+}
+function recalculateRollup(executionContext, entity, entityId, fieldName) {
+    //var formContext = executionContext.getFormContext();
+
+    var clientUrl = Xrm.Utility.getGlobalContext() ? Xrm.Utility.getGlobalContext().getClientUrl() : null;
+    var i = 0;
+    // recalculate the rollup field
+    fetch(clientUrl + "/api/data/v9.2/" +
+        "CalculateRollupField(Target=@p1,FieldName=@p2)?" +
+        "@p1={'@odata.id':'" + entity + "(" + entityId + ")'}&" +
+        "@p2='" + fieldName + "'").then(
+            response => {
+                response.json().then(data => {
+                    if (data.error) {
+                        console.log(data.error.message);
+                    } else {
+                        i = 1;
+                        var jsonResult = JSON.stringify(data);
+                        // refresh the form, if the rollup field is recalculated
+                        if (i === 1) {
+                            formContext.data.entity.refresh();
+                            console.log("Data Recalculated")
+                        }
+                    }
+                });
+            }
+        );
+}

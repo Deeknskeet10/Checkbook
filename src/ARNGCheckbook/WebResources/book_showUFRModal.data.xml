@@ -1,0 +1,15 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<WebResource xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <WebResourceId>{7ef36c1d-6407-f111-8406-001dd8201529}</WebResourceId>
+  <Name>book_showUFRModal</Name>
+  <DisplayName>showUFRModal</DisplayName>
+  <Description>Modal pop-up to kick off UFR Generation Workflow</Description>
+  <WebResourceType>3</WebResourceType>
+  <IntroducedVersion>1.11.0.13</IntroducedVersion>
+  <IsEnabledForMobileClient>0</IsEnabledForMobileClient>
+  <IsAvailableForMobileOffline>0</IsAvailableForMobileOffline>
+  <IsCustomizable>1</IsCustomizable>
+  <CanBeDeleted>1</CanBeDeleted>
+  <IsHidden>0</IsHidden>
+  <FileName>/WebResources/book_showUFRModal7EF36C1D-6407-F111-8406-001DD8201529</FileName>
+</WebResource>

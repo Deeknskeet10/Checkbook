@@ -1,0 +1,30 @@
+function openCostEstimate(formContext) {
+    // Centered Dialog
+    var pageInput = {
+        pageType: "custom",
+        name: "book_pagecostestimateworksheetcew_4df1e",
+        entityName: "book_prioritization",
+        recordId: formContext.data.entity.getId().replace(/[{}]/g, "")
+    };
+    var navigationOptions = {
+        target: 2,
+        position: 1,
+        width: { value: 80, unit: "%" },
+        title: "Cost Estimate Worksheet (CEW)"
+    };
+    console.log(`Post initaliziation: ${pageInput}`);
+
+    Xrm.Navigation.navigateTo(pageInput, navigationOptions)
+        .then(
+            function () {
+                // Called when the dialog closes
+                //console.log(`PageType: ${pageInput.pageType}, name: ${pageInput.name}, Entity: ${pageInput.entityName}, RecordID: ${pageInput.recordId}`);
+                formContext.data.refresh()
+            }
+        ).catch(
+            function (error) {
+                // Handle error
+
+            }
+        );
+}

@@ -1,0 +1,34 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<CanvasApp xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <Name>book_pagenpmspendplan_7fa13</Name>
+  <AppVersion>2026-01-22T19:42:13Z</AppVersion>
+  <Status>Ready</Status>
+  <CreatedByClientVersion>3.26011.4.0</CreatedByClientVersion>
+  <MinClientVersion>3.26011.4.0</MinClientVersion>
+  <Tags>{"primaryDeviceWidth":"1366","primaryDeviceHeight":"470","supportsPortrait":"true","supportsLandscape":"true","primaryFormFactor":"Tablet","showStatusBar":"false","publisherVersion":"3.26011.4","minimumRequiredApiVersion":"2.2.0","hasComponent":"false","hasUnlockedComponent":"false","isUnifiedRootApp":"false","sienaVersion":"20260105T183258Z-3.25112.11.0"}</Tags>
+  <IsCdsUpgraded>0</IsCdsUpgraded>
+  <GalleryItemId xsi:nil="true"></GalleryItemId>
+  <BackgroundColor>RGBA(0,176,240,1)</BackgroundColor>
+  <DisplayName>Page - NPM Spend Plan</DisplayName>
+  <Description>Allows entry of Spend Plan data to attach to the respective Record</Description>
+  <CommitMessage xsi:nil="true"></CommitMessage>
+  <Publisher></Publisher>
+  <AuthorizationReferences>[]</AuthorizationReferences>
+  <ConnectionReferences>{}</ConnectionReferences>
+  <DatabaseReferences>{"default.cds":{"databaseDetails":{"referenceType":"Environmental","environmentName":"default.cds","overrideValues":{"status":"NotSpecified","environmentVariableName":""}},"dataSources":{"Spend Plans":{"entitySetName":"book_spendplans","logicalName":"book_spendplan"},"Requirement Fundings":{"entitySetName":"book_requirementfundings","logicalName":"book_requirementfunding"},"Requirements":{"entitySetName":"book_requirementses","logicalName":"book_requirements"}}}}</DatabaseReferences>
+  <AppComponents>[]</AppComponents>
+  <AppComponentDependencies>[]</AppComponentDependencies>
+  <CanConsumeAppPass>1</CanConsumeAppPass>
+  <CanvasAppType>2</CanvasAppType>
+  <BypassConsent>0</BypassConsent>
+  <AdminControlBypassConsent>0</AdminControlBypassConsent>
+  <EmbeddedApp xsi:nil="true"></EmbeddedApp>
+  <IntroducedVersion>1.0</IntroducedVersion>
+  <CdsDependencies>{"cdsdependencies":[{"logicalname":"book_spendplan","componenttype":1},{"logicalname":"book_requirementfunding","componenttype":1},{"logicalname":"book_requirements","componenttype":1},{"logicalname":"","componenttype":10165,"componenttypeplatformname":"Bot"}]}</CdsDependencies>
+  <IsCustomizable>1</IsCustomizable>
+  <BackgroundImageUri>/CanvasApps/book_pagenpmspendplan_7fa13_BackgroundImageUri</BackgroundImageUri>
+  <DocumentUri>/CanvasApps/book_pagenpmspendplan_7fa13_DocumentUri.msapp</DocumentUri>
+  <AdditionalUris>
+    <AdditionalUri>/CanvasApps/book_pagenpmspendplan_7fa13_AdditionalUris0_identity.json</AdditionalUri>
+  </AdditionalUris>
+</CanvasApp>

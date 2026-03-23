@@ -1,0 +1,15 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<WebResource xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <WebResourceId>{76096a4c-5284-f011-b4cc-001dd8059413}</WebResourceId>
+  <Name>book_codesolidfull</Name>
+  <DisplayName>code-solid-full</DisplayName>
+  <Description>Code Symbol</Description>
+  <WebResourceType>11</WebResourceType>
+  <IntroducedVersion>1.1.3.0</IntroducedVersion>
+  <IsEnabledForMobileClient>0</IsEnabledForMobileClient>
+  <IsAvailableForMobileOffline>0</IsAvailableForMobileOffline>
+  <IsCustomizable>1</IsCustomizable>
+  <CanBeDeleted>1</CanBeDeleted>
+  <IsHidden>0</IsHidden>
+  <FileName>/WebResources/book_codesolidfull76096A4C-5284-F011-B4CC-001DD8059413</FileName>
+</WebResource>

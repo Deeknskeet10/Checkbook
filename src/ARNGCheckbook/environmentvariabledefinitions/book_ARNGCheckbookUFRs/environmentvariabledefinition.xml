@@ -1,0 +1,13 @@
+<environmentvariabledefinition schemaname="book_ARNGCheckbookUFRs">
+  <description default="Link to UFR Module">
+    <label description="Link to UFR Module" languagecode="1033" />
+  </description>
+  <displayname default="ARNG Checkbook - UFRs">
+    <label description="ARNG Checkbook - UFRs" languagecode="1033" />
+  </displayname>
+  <introducedversion>1.0.0.0</introducedversion>
+  <iscustomizable>1</iscustomizable>
+  <isrequired>0</isrequired>
+  <secretstore>0</secretstore>
+  <type>100000000</type>
+</environmentvariabledefinition>

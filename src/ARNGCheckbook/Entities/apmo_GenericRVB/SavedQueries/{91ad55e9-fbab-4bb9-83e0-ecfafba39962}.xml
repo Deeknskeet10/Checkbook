@@ -1,0 +1,43 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<savedqueries xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <savedquery>
+    <IsCustomizable>1</IsCustomizable>
+    <CanBeDeleted>0</CanBeDeleted>
+    <isquickfindquery>0</isquickfindquery>
+    <isprivate>0</isprivate>
+    <isdefault>1</isdefault>
+    <savedqueryid>{91ad55e9-fbab-4bb9-83e0-ecfafba39962}</savedqueryid>
+    <layoutxml>
+      <grid name="resultset" jump="apmo_name" select="1" icon="1" preview="1">
+        <row name="result" id="apmo_genericrvbid">
+          <cell name="apmo_name" width="300" />
+          <cell name="apmo_requirementname" width="150" />
+          <cell name="apmo_directorate" width="103" />
+          <cell name="apmo_division" width="100" />
+          <cell name="apmo_serialnumber" width="123" />
+        </row>
+      </grid>
+    </layoutxml>
+    <querytype>0</querytype>
+    <fetchxml>
+      <fetch version="1.0" mapping="logical">
+        <entity name="apmo_genericrvb">
+          <attribute name="apmo_genericrvbid" />
+          <attribute name="apmo_name" />
+          <order attribute="apmo_name" descending="false" />
+          <filter type="and">
+            <condition attribute="statecode" operator="eq" value="0" />
+          </filter>
+          <attribute name="apmo_directorate" />
+          <attribute name="apmo_division" />
+          <attribute name="apmo_requirementname" />
+          <attribute name="apmo_serialnumber" />
+        </entity>
+      </fetch>
+    </fetchxml>
+    <IntroducedVersion>1.0.0.1</IntroducedVersion>
+    <LocalizedNames>
+      <LocalizedName description="Active Generic RVBs" languagecode="1033" />
+    </LocalizedNames>
+  </savedquery>
+</savedqueries>

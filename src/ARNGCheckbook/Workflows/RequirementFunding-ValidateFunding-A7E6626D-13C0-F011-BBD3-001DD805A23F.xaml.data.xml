@@ -1,0 +1,47 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Workflow WorkflowId="{a7e6626d-13c0-f011-bbd3-001dd805a23f}" Name="Requirement Funding - Validate Funding" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <XamlFileName>/Workflows/RequirementFunding-ValidateFunding-A7E6626D-13C0-F011-BBD3-001DD805A23F.xaml</XamlFileName>
+  <Type>1</Type>
+  <Subprocess>0</Subprocess>
+  <Category>4</Category>
+  <Mode>0</Mode>
+  <Scope>4</Scope>
+  <OnDemand>0</OnDemand>
+  <TriggerOnCreate>1</TriggerOnCreate>
+  <TriggerOnDelete>0</TriggerOnDelete>
+  <AsyncAutodelete>0</AsyncAutodelete>
+  <SyncWorkflowLogOnFailure>0</SyncWorkflowLogOnFailure>
+  <StateCode>1</StateCode>
+  <StatusCode>2</StatusCode>
+  <processorder>100</processorder>
+  <RunAs>1</RunAs>
+  <UniqueName>book_requirementfundingvalidatefunding</UniqueName>
+  <IsTransacted>1</IsTransacted>
+  <IntroducedVersion>1.0.0.0</IntroducedVersion>
+  <IsCustomizable>1</IsCustomizable>
+  <BusinessProcessType>0</BusinessProcessType>
+  <IsCustomProcessingStepAllowedForOtherPublishers>1</IsCustomProcessingStepAllowedForOtherPublishers>
+  <ProcessTriggerScope>1</ProcessTriggerScope>
+  <ModernFlowType>0</ModernFlowType>
+  <PrimaryEntity>book_RequirementFunding</PrimaryEntity>
+  <LocalizedNames>
+    <LocalizedName languagecode="1033" description="Requirement Funding - Validate Funding" />
+  </LocalizedNames>
+  <labels>
+    <steplabels id="{99b94919-8ffb-443e-bd5c-6ed3b0c1679c}">
+      <label languagecode="1033" description="Review" />
+    </steplabels>
+    <steplabels id="{e3006728-78c3-4214-a25b-695fbc2c4539}">
+      <label languagecode="1033" description="Validated Amount" />
+    </steplabels>
+    <steplabels id="{50134eb4-f181-4fef-a433-8ad0a514b50b}">
+      <label languagecode="1033" description="Funded Amount" />
+    </steplabels>
+    <steplabels id="{d0231e2d-719a-4bbc-86ea-fbc44332d4d0}">
+      <label languagecode="1033" description="Validate" />
+    </steplabels>
+    <steplabels id="{ca1c0180-ea90-4bae-8dc9-659094161bcb}">
+      <label languagecode="1033" description="Validate Funding" />
+    </steplabels>
+  </labels>
+</Workflow>

@@ -1,0 +1,40 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<savedqueries xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <savedquery>
+    <IsCustomizable>1</IsCustomizable>
+    <CanBeDeleted>0</CanBeDeleted>
+    <isquickfindquery>0</isquickfindquery>
+    <isprivate>0</isprivate>
+    <isdefault>1</isdefault>
+    <savedqueryid>{e23d938d-af1f-4c64-a371-5cdec903e6cf}</savedqueryid>
+    <layoutxml>
+      <grid name="resultset" jump="book_name" select="1" icon="1" preview="1">
+        <row name="result" id="book_linrequestsid">
+          <cell name="book_lin" width="100" />
+          <cell name="book_prioritization" width="114" />
+          <cell name="book_quantity" width="100" />
+          <cell name="book_psdid" width="100" />
+        </row>
+      </grid>
+    </layoutxml>
+    <querytype>0</querytype>
+    <fetchxml>
+      <fetch version="1.0" mapping="logical">
+        <entity name="book_linrequests">
+          <attribute name="book_linrequestsid" />
+          <filter type="and">
+            <condition attribute="statecode" operator="eq" value="0" />
+          </filter>
+          <attribute name="book_lin" />
+          <attribute name="book_prioritization" />
+          <attribute name="book_psdid" />
+          <attribute name="book_quantity" />
+        </entity>
+      </fetch>
+    </fetchxml>
+    <IntroducedVersion>1.11.0.22</IntroducedVersion>
+    <LocalizedNames>
+      <LocalizedName description="Active LIN Requests" languagecode="1033" />
+    </LocalizedNames>
+  </savedquery>
+</savedqueries>

@@ -1,0 +1,47 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<savedqueries xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <savedquery>
+    <IsCustomizable>1</IsCustomizable>
+    <CanBeDeleted>0</CanBeDeleted>
+    <isquickfindquery>0</isquickfindquery>
+    <isprivate>0</isprivate>
+    <isdefault>0</isdefault>
+    <savedqueryid>{13f15011-1a62-423e-a8c0-dc10646f2753}</savedqueryid>
+    <layoutxml>
+      <grid name="resultset" jump="book_name" select="1" icon="1" preview="1">
+        <row name="result" id="book_fundinglineid">
+          <cell name="book_name" width="300" />
+          <cell name="book_fund" width="100" />
+          <cell name="book_mdep" width="100" />
+          <cell name="book_newboc" width="100" />
+          <cell name="book_newdollartype" width="108" />
+          <cell name="book_pg" width="100" />
+          <cell name="book_sag" width="100" />
+        </row>
+      </grid>
+    </layoutxml>
+    <querytype>0</querytype>
+    <fetchxml>
+      <fetch version="1.0" mapping="logical">
+        <entity name="book_fundingline">
+          <attribute name="book_fundinglineid" />
+          <attribute name="book_name" />
+          <order attribute="book_name" descending="false" />
+          <filter type="and">
+            <condition attribute="statecode" operator="eq" value="1" />
+          </filter>
+          <attribute name="book_mdep" />
+          <attribute name="book_sag" />
+          <attribute name="book_fund" />
+          <attribute name="book_pg" />
+          <attribute name="book_newboc" />
+          <attribute name="book_newdollartype" />
+        </entity>
+      </fetch>
+    </fetchxml>
+    <IntroducedVersion>1.0.0.0</IntroducedVersion>
+    <LocalizedNames>
+      <LocalizedName description="Inactive LOAs" languagecode="1033" />
+    </LocalizedNames>
+  </savedquery>
+</savedqueries>

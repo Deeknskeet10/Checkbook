@@ -1,0 +1,257 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<forms xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <systemform>
+    <formid>{444fc48d-35d8-49b4-94a4-5a8d1b8ec948}</formid>
+    <IntroducedVersion>1.10.0.0</IntroducedVersion>
+    <FormPresentation>1</FormPresentation>
+    <FormActivationState>1</FormActivationState>
+    <form headerdensity="HighWithControls">
+      <tabs>
+        <tab verticallayout="true" id="{330b92c1-e0a0-4fac-b129-d9d427c943d3}" IsUserDefined="1" name="General">
+          <labels>
+            <label description="General" languagecode="1033" />
+          </labels>
+          <columns>
+            <column width="25%">
+              <sections>
+                <section showlabel="true" showbar="false" IsUserDefined="0" id="{c44ea36b-1f4b-4d44-9ad2-a58fc15ba4ce}" name="LIN Details">
+                  <labels>
+                    <label description="LIN Details" languagecode="1033" />
+                  </labels>
+                  <rows>
+                    <row>
+                      <cell id="{176c899c-0e82-45ad-b349-dff2a10ff073}">
+                        <labels>
+                          <label description="Name" languagecode="1033" />
+                        </labels>
+                        <control id="book_name" classid="{4273EDBD-AC1D-40d3-9FB2-095C621B552D}" datafieldname="book_name" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{eb2694b5-48d0-4127-bbfe-d882890e3d57}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="Nomenclature" languagecode="1033" />
+                        </labels>
+                        <control id="book_nomenclature" classid="{4273EDBD-AC1D-40D3-9FB2-095C621B552D}" datafieldname="book_nomenclature" disabled="false" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{e797fbd2-b3b3-4ee2-8c6c-0425d2e3e782}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="Branch" languagecode="1033" />
+                        </labels>
+                        <control id="book_branch" classid="{3EF39988-22BB-4F0B-BBBE-64B5A3748AEE}" datafieldname="book_branch" disabled="false" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{c4999488-a051-49e0-997d-87ef336d5f93}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="Portfolio" languagecode="1033" />
+                        </labels>
+                        <control id="book_portfolio" classid="{3EF39988-22BB-4F0B-BBBE-64B5A3748AEE}" datafieldname="book_portfolio" disabled="false" />
+                      </cell>
+                    </row>
+                  </rows>
+                </section>
+              </sections>
+            </column>
+            <column width="50%">
+              <sections>
+                <section showlabel="false" showbar="false" id="{b41aaf78-3c93-4854-a469-d918d5d5eb4d}" IsUserDefined="0" height="auto" name="General_sec_notes">
+                  <labels>
+                    <label description="Notes" languagecode="1033" />
+                  </labels>
+                  <rows>
+                    <row>
+                      <cell showlabel="false" rowspan="15" auto="false" id="{4409977e-fb75-438c-a844-ff1873370c89}">
+                        <labels>
+                          <label description="Note Text" languagecode="1033" />
+                        </labels>
+                        <control id="notescontrol" classid="{06375649-c143-495e-a496-c962e5b4488e}">
+                          <parameters>
+                            <DefaultTabId>NotesTab</DefaultTabId>
+                          </parameters>
+                        </control>
+                      </cell>
+                    </row>
+                    <row />
+                    <row />
+                    <row />
+                    <row />
+                    <row />
+                    <row />
+                    <row />
+                    <row />
+                    <row />
+                    <row />
+                    <row />
+                    <row />
+                    <row />
+                    <row height="auto" />
+                  </rows>
+                </section>
+              </sections>
+            </column>
+            <column width="25%">
+              <sections>
+                <section name="_section_504" id="ef47c9c2-6635-45bf-a131-3135a4f19f3d" IsUserDefined="0" locklevel="0" showlabel="true" showbar="false" layout="varwidth" celllabelalignment="Left" celllabelposition="Left" columns="1" labelwidth="115">
+                  <labels>
+                    <label description="Point of Contact" languagecode="1033" />
+                  </labels>
+                  <rows>
+                    <row />
+                    <row>
+                      <cell id="{19c5a230-0f1b-45ec-b793-a3d71bdd4af1}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="SI POC" languagecode="1033" />
+                        </labels>
+                        <control id="book_sipoc" classid="{270BD3DB-D9AF-4782-9025-509E298DEC0A}" datafieldname="book_sipoc" disabled="false" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell locklevel="0" id="{b627d1bf-8b53-4dab-a886-c5f15494646d}" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="New QV control 1767100528291" languagecode="1033" />
+                        </labels>
+                        <control id="QuickviewControl1767100528291" classid="{5C5600E0-1D6E-4205-A272-BE80DA87FD42}" datafieldname="book_sipoc">
+                          <parameters>
+                            <DisplayAsCustomer360Tile>false</DisplayAsCustomer360Tile>
+                            <QuickForms>&lt;QuickFormIds&gt;&lt;QuickFormId entityname="systemuser"&gt;13a2165c-81e5-f011-8544-001dd8059413&lt;/QuickFormId&gt;&lt;/QuickFormIds&gt;</QuickForms>
+                          </parameters>
+                        </control>
+                      </cell>
+                    </row>
+                  </rows>
+                </section>
+              </sections>
+            </column>
+          </columns>
+        </tab>
+        <tab name="tab_admin" id="6e1796a5-ec8c-4da0-95e0-05b76e7fd204" IsUserDefined="0" locklevel="0" showlabel="true">
+          <labels>
+            <label description="Administration" languagecode="1033" />
+          </labels>
+          <columns>
+            <column width="100%">
+              <sections>
+                <section name="tab_admin_sec_admin" id="02757235-8161-4633-b3c3-b7ede6d61547" IsUserDefined="0" locklevel="0" showlabel="false" showbar="false" layout="varwidth" celllabelalignment="Left" celllabelposition="Left" columns="11" labelwidth="115">
+                  <labels>
+                    <label description="Administration" languagecode="1033" />
+                  </labels>
+                  <rows>
+                    <row>
+                      <cell id="{9e01cb43-c51e-4c89-bc7e-bae3e4738faa}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="Created By" languagecode="1033" />
+                        </labels>
+                        <control id="createdby" classid="{270BD3DB-D9AF-4782-9025-509E298DEC0A}" datafieldname="createdby" disabled="false" />
+                      </cell>
+                      <cell id="{8b43030b-98b5-4e8a-8986-4485db0537d6}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="Created On" languagecode="1033" />
+                        </labels>
+                        <control id="createdon" classid="{5B773807-9FB2-42DB-97C3-7A91EFF8ADFF}" datafieldname="createdon" disabled="false" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{50bbf866-56b4-42a1-9d0a-2827c033f028}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="Modified By" languagecode="1033" />
+                        </labels>
+                        <control id="modifiedby" classid="{270BD3DB-D9AF-4782-9025-509E298DEC0A}" datafieldname="modifiedby" disabled="false" />
+                      </cell>
+                      <cell id="{cf96d2fa-c3c7-4dd9-b3ed-78b6baf32e9c}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="Modified On" languagecode="1033" />
+                        </labels>
+                        <control id="modifiedon" classid="{5B773807-9FB2-42DB-97C3-7A91EFF8ADFF}" datafieldname="modifiedon" disabled="false" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{f5c77f6b-d985-403a-a5bb-14a42921d850}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="Owner" languagecode="1033" />
+                        </labels>
+                        <control id="ownerid" classid="{270BD3DB-D9AF-4782-9025-509E298DEC0A}" datafieldname="ownerid" />
+                      </cell>
+                      <cell id="{10e46256-8c26-479e-bcd0-3802a21110cd}" locklevel="0">
+                        <labels>
+                          <label description="" languagecode="1033" />
+                        </labels>
+                      </cell>
+                    </row>
+                  </rows>
+                </section>
+              </sections>
+            </column>
+          </columns>
+        </tab>
+      </tabs>
+      <header id="{ad4552a8-19a0-4a96-9340-03f06600f1e0}" celllabelposition="Top" columns="111" labelwidth="115" celllabelalignment="Left">
+        <rows>
+          <row>
+            <cell id="{d938d33e-b083-4807-afb7-a4b203ba90ad}" showlabel="false">
+              <labels>
+                <label description="" languagecode="1033" />
+              </labels>
+            </cell>
+            <cell id="{f457df00-7ecf-43fd-bfd5-9537812d7f51}" showlabel="false">
+              <labels>
+                <label description="" languagecode="1033" />
+              </labels>
+            </cell>
+            <cell id="{3acff83a-2b58-4358-8e9a-b42bbe781624}" showlabel="false">
+              <labels>
+                <label description="" languagecode="1033" />
+              </labels>
+            </cell>
+            <cell id="{6496b2d8-ef64-4f6b-bf7b-fe6d1a8b458f}" locklevel="0" colspan="1" rowspan="1">
+              <labels>
+                <label description="Owning Business Unit" languagecode="1033" />
+              </labels>
+              <control id="header_owningbusinessunit" classid="{270BD3DB-D9AF-4782-9025-509E298DEC0A}" datafieldname="owningbusinessunit" disabled="false" />
+            </cell>
+            <cell id="{d3403e6a-8efa-4601-8036-32f0164630bc}" locklevel="0" colspan="1" rowspan="1">
+              <labels>
+                <label description="Status" languagecode="1033" />
+              </labels>
+              <control id="header_statecode" classid="{3EF39988-22BB-4F0B-BBBE-64B5A3748AEE}" datafieldname="statecode" disabled="false" />
+            </cell>
+          </row>
+        </rows>
+      </header>
+      <footer id="{787ee870-a18f-4370-9af9-46b6d53f72c7}" celllabelposition="Top" columns="111" labelwidth="115" celllabelalignment="Left">
+        <rows>
+          <row>
+            <cell id="{0ae91c4c-739a-4530-b3fd-c9b59e0afd8c}" showlabel="false">
+              <labels>
+                <label description="" languagecode="1033" />
+              </labels>
+            </cell>
+            <cell id="{c27bfd2f-938c-4da1-9ce3-bbb730869c49}" showlabel="false">
+              <labels>
+                <label description="" languagecode="1033" />
+              </labels>
+            </cell>
+            <cell id="{9bdd6f26-278c-473d-954f-480d94bb8633}" showlabel="false">
+              <labels>
+                <label description="" languagecode="1033" />
+              </labels>
+            </cell>
+          </row>
+        </rows>
+      </footer>
+      <DisplayConditions Order="0" FallbackForm="true">
+        <Everyone />
+      </DisplayConditions>
+    </form>
+    <IsCustomizable>1</IsCustomizable>
+    <CanBeDeleted>1</CanBeDeleted>
+    <LocalizedNames>
+      <LocalizedName description="Information" languagecode="1033" />
+    </LocalizedNames>
+    <Descriptions>
+      <Description description="A form for this entity." languagecode="1033" />
+    </Descriptions>
+  </systemform>
+</forms>

@@ -1,0 +1,14 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<WebResource xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <WebResourceId>{c144dc78-8fa3-f011-b41c-001dd805a23f}</WebResourceId>
+  <Name>book_calendarplusregularfull</Name>
+  <DisplayName>calendar-plus-regular-full</DisplayName>
+  <WebResourceType>11</WebResourceType>
+  <IntroducedVersion>1.1.0.1</IntroducedVersion>
+  <IsEnabledForMobileClient>0</IsEnabledForMobileClient>
+  <IsAvailableForMobileOffline>0</IsAvailableForMobileOffline>
+  <IsCustomizable>1</IsCustomizable>
+  <CanBeDeleted>1</CanBeDeleted>
+  <IsHidden>0</IsHidden>
+  <FileName>/WebResources/book_calendarplusregularfullC144DC78-8FA3-F011-B41C-001DD805A23F</FileName>
+</WebResource>

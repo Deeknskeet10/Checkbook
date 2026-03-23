@@ -1,0 +1,157 @@
+{
+  "properties": {
+    "connectionReferences": {
+      "shared_commondataserviceforapps": {
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "book_sharedcommondataserviceforapps_9388f"
+        },
+        "api": {
+          "name": "shared_commondataserviceforapps"
+        }
+      }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "1.0.0.0",
+      "parameters": {
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        },
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        }
+      },
+      "triggers": {
+        "When_a_row_is_added,_modified_or_deleted": {
+          "metadata": {
+            "operationMetadataId": "7b465cce-b527-4e8a-8857-e0e9b08614fa"
+          },
+          "type": "OpenApiConnectionWebhook",
+          "inputs": {
+            "host": {
+              "connectionName": "shared_commondataserviceforapps",
+              "operationId": "SubscribeWebhookTrigger",
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
+            },
+            "parameters": {
+              "subscriptionRequest/message": 3,
+              "subscriptionRequest/entityname": "book_requirements",
+              "subscriptionRequest/scope": 4,
+              "subscriptionRequest/filteringattributes": "statecode"
+            },
+            "authentication": "@parameters('$authentication')"
+          }
+        }
+      },
+      "actions": {
+        "Check_if_Activated_or_Deactivated": {
+          "actions": {
+            "Loop_through_Req_Fundings": {
+              "foreach": "@outputs('List_Requirement_Fundings')?['body/value']",
+              "actions": {
+                "Set_Req_Funding_to_Inactive": {
+                  "runAfter": {},
+                  "metadata": {
+                    "operationMetadataId": "68d827ed-6660-46fe-9a2b-6a90cfe0bd99"
+                  },
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "host": {
+                      "connectionName": "shared_commondataserviceforapps",
+                      "operationId": "UpdateOnlyRecord",
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
+                    },
+                    "parameters": {
+                      "entityName": "book_requirementfundings",
+                      "recordId": "@items('Loop_through_Req_Fundings')?['book_requirementfundingid']",
+                      "item/statecode": 1
+                    },
+                    "authentication": "@parameters('$authentication')"
+                  }
+                }
+              },
+              "runAfter": {},
+              "metadata": {
+                "operationMetadataId": "5d6a5c00-9611-4d00-942a-07f22a46ccdc"
+              },
+              "type": "Foreach"
+            }
+          },
+          "runAfter": {
+            "List_Requirement_Fundings": [
+              "Succeeded"
+            ]
+          },
+          "else": {
+            "actions": {
+              "Loop_through_Req_Fundings_2": {
+                "foreach": "@outputs('List_Requirement_Fundings')?['body/value']",
+                "actions": {
+                  "Set_Req_Funding_to_Active": {
+                    "runAfter": {},
+                    "metadata": {
+                      "operationMetadataId": "0ab656bd-68cf-462b-a46c-f5505c30bf9e"
+                    },
+                    "type": "OpenApiConnection",
+                    "inputs": {
+                      "host": {
+                        "connectionName": "shared_commondataserviceforapps",
+                        "operationId": "UpdateOnlyRecord",
+                        "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
+                      },
+                      "parameters": {
+                        "entityName": "book_requirementfundings",
+                        "recordId": "@items('Loop_through_Req_Fundings_2')?['book_requirementfundingid']",
+                        "item/statecode": 0
+                      },
+                      "authentication": "@parameters('$authentication')"
+                    }
+                  }
+                },
+                "runAfter": {},
+                "metadata": {
+                  "operationMetadataId": "960b4090-82e7-43d5-a851-714c020bb1fc"
+                },
+                "type": "Foreach"
+              }
+            }
+          },
+          "expression": {
+            "equals": [
+              "@triggerOutputs()?['body/statecode']",
+              1
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "467418e4-9d1a-4c34-965b-07c7d1f9c233"
+          },
+          "type": "If"
+        },
+        "List_Requirement_Fundings": {
+          "runAfter": {},
+          "metadata": {
+            "operationMetadataId": "b641fab8-c20a-4f41-ad7c-7bd736d9ad5f"
+          },
+          "type": "OpenApiConnection",
+          "inputs": {
+            "host": {
+              "connectionName": "shared_commondataserviceforapps",
+              "operationId": "ListRecords",
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
+            },
+            "parameters": {
+              "entityName": "book_requirementfundings",
+              "$filter": "_book_requirement_value eq @{triggerOutputs()?['body/book_requirementsid']}"
+            },
+            "authentication": "@parameters('$authentication')"
+          }
+        }
+      }
+    },
+    "templateName": null
+  },
+  "schemaVersion": "1.0.0.0"
+}

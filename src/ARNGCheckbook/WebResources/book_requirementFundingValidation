@@ -1,0 +1,419 @@
+// RequirementFundingValidation.js
+// Register onFormLoad on Form OnLoad event
+// Register onFormSave on Form OnSave event
+
+var Book = window.Book || {};
+Book.RequirementFunding = Book.RequirementFunding || {};
+
+(function () {
+  "use strict";
+
+  const NOTIFICATION_ID = "tdp_validation_error";
+  const NOTIFICATION_ID_LOADING = "tdp_validation_loading";
+  const NOTIFICATION_ID_SUCCESS = "tdp_validation_success";
+
+  let validationTimer = null;
+  const DEBOUNCE_MS = 500;
+
+  let isValidatedSave = false;
+
+  let loaTDPCache = {
+    loaId: null,
+    tdp: null,
+  };
+
+  /**
+   * Form OnLoad handler
+   */
+  this.onFormLoad = function (executionContext) {
+    var formContext = executionContext.getFormContext();
+
+    isValidatedSave = false;
+    clearAllNotifications(formContext);
+
+    var tdpAttribute = formContext.getAttribute("book_tdp");
+    if (tdpAttribute) {
+      tdpAttribute.addOnChange(onTDPChange);
+    }
+
+    var loaAttribute = formContext.getAttribute("book_lineofaccounting");
+    if (loaAttribute) {
+      loaAttribute.addOnChange(onLOAChange);
+    }
+
+    var loaLookup = formContext
+      .getAttribute("book_lineofaccounting")
+      ?.getValue();
+    var tdpValue = formContext.getAttribute("book_tdp")?.getValue();
+
+    if (loaLookup && loaLookup.length > 0 && tdpValue !== null) {
+      validateTDPAllocation(formContext);
+    }
+  };
+
+  /**
+   * TDP field OnChange handler
+   */
+  function onTDPChange(executionContext) {
+    var formContext = executionContext.getFormContext();
+    isValidatedSave = false;
+    debouncedValidation(formContext);
+  }
+
+  /**
+   * LOA field OnChange handler
+   */
+  function onLOAChange(executionContext) {
+    var formContext = executionContext.getFormContext();
+    isValidatedSave = false;
+    loaTDPCache = { loaId: null, tdp: null };
+    clearAllNotifications(formContext);
+    debouncedValidation(formContext);
+  }
+
+  /**
+   * Debounced validation for onChange
+   */
+  function debouncedValidation(formContext) {
+    if (validationTimer) {
+      clearTimeout(validationTimer);
+    }
+
+    formContext.ui.clearFormNotification(NOTIFICATION_ID);
+    formContext.ui.clearFormNotification(NOTIFICATION_ID_SUCCESS);
+
+    validationTimer = setTimeout(function () {
+      validateTDPAllocation(formContext);
+    }, DEBOUNCE_MS);
+  }
+
+  /**
+   * Form OnSave handler - synchronous validation
+   */
+  this.onFormSave = function (executionContext) {
+    var formContext = executionContext.getFormContext();
+    var eventArgs = executionContext.getEventArgs();
+
+    if (isValidatedSave) {
+      isValidatedSave = false;
+      return;
+    }
+
+    if (validationTimer) {
+      clearTimeout(validationTimer);
+      validationTimer = null;
+    }
+
+    clearAllNotifications(formContext);
+
+    var loaLookup = formContext
+      .getAttribute("book_lineofaccounting")
+      ?.getValue();
+    if (!loaLookup || loaLookup.length === 0) {
+      return;
+    }
+
+    var currentTDP = formContext.getAttribute("book_tdp")?.getValue() || 0;
+
+    var currentRecordId = formContext.data.entity.getId();
+    if (currentRecordId) {
+      currentRecordId = cleanGuid(currentRecordId);
+    }
+
+    var loaId = cleanGuid(loaLookup[0].id);
+
+    // Synchronous validation
+    var loaTDP = getLOATotalTDPSync(loaId);
+    var otherAllocatedTDP = getOtherRequirementFundingsTDPSync(
+      loaId,
+      currentRecordId
+    );
+
+    var proposedTotal = otherAllocatedTDP + currentTDP;
+    var remainingTDP = loaTDP - otherAllocatedTDP;
+
+    if (proposedTotal > loaTDP) {
+      eventArgs.preventDefault();
+
+      var errorMessage = buildErrorMessage(
+        currentTDP,
+        loaTDP,
+        otherAllocatedTDP,
+        remainingTDP
+      );
+      formContext.ui.setFormNotification(
+        errorMessage,
+        "ERROR",
+        NOTIFICATION_ID
+      );
+      formContext.getControl("book_tdp")?.setFocus();
+    }
+  };
+
+  /**
+   * Async validation for onChange (non-blocking)
+   */
+  async function validateTDPAllocation(formContext) {
+    var loaLookup = formContext
+      .getAttribute("book_lineofaccounting")
+      ?.getValue();
+    if (!loaLookup || loaLookup.length === 0) {
+      clearAllNotifications(formContext);
+      return true;
+    }
+
+    var currentTDP = formContext.getAttribute("book_tdp")?.getValue();
+    if (currentTDP === null || currentTDP === undefined) {
+      clearAllNotifications(formContext);
+      return true;
+    }
+
+    var currentRecordId = formContext.data.entity.getId();
+    if (currentRecordId) {
+      currentRecordId = cleanGuid(currentRecordId);
+    }
+
+    var loaId = cleanGuid(loaLookup[0].id);
+
+    try {
+      formContext.ui.setFormNotification(
+        "Checking available TDP...",
+        "INFO",
+        NOTIFICATION_ID_LOADING
+      );
+
+      var loaTDP = await getLOATotalTDP(loaId);
+      var otherAllocatedTDP = await getOtherRequirementFundingsTDP(
+        loaId,
+        currentRecordId
+      );
+
+      formContext.ui.clearFormNotification(NOTIFICATION_ID_LOADING);
+
+      var proposedTotal = otherAllocatedTDP + currentTDP;
+      var remainingTDP = loaTDP - otherAllocatedTDP;
+
+      if (proposedTotal > loaTDP) {
+        var errorMessage = buildErrorMessage(
+          currentTDP,
+          loaTDP,
+          otherAllocatedTDP,
+          remainingTDP
+        );
+        formContext.ui.clearFormNotification(NOTIFICATION_ID_SUCCESS);
+        formContext.ui.setFormNotification(
+          errorMessage,
+          "ERROR",
+          NOTIFICATION_ID
+        );
+
+        formContext
+          .getControl("book_tdp")
+          ?.setNotification(
+            "Exceeds available TDP (" +
+              formatCurrency(remainingTDP) +
+              " remaining)",
+            "tdp_field_error"
+          );
+
+        return false;
+      } else {
+        formContext.ui.clearFormNotification(NOTIFICATION_ID);
+        formContext
+          .getControl("book_tdp")
+          ?.clearNotification("tdp_field_error");
+
+        var remainingAfterSave = remainingTDP - currentTDP;
+        var successMessage =
+          "TDP allocation valid. " +
+          "LOA available: " +
+          formatCurrency(remainingTDP) +
+          " | " +
+          "After save: " +
+          formatCurrency(remainingAfterSave) +
+          " will remain";
+
+        formContext.ui.setFormNotification(
+          successMessage,
+          "INFO",
+          NOTIFICATION_ID_SUCCESS
+        );
+
+        return true;
+      }
+    } catch (error) {
+      console.error("TDP Validation Error:", error);
+      formContext.ui.clearFormNotification(NOTIFICATION_ID_LOADING);
+      formContext.ui.setFormNotification(
+        "Could not validate TDP: " + error.message,
+        "WARNING",
+        NOTIFICATION_ID
+      );
+      return true;
+    }
+  }
+
+  /**
+   * Async retrieval of LOA's total TDP (for onChange)
+   */
+  async function getLOATotalTDP(loaId) {
+    if (loaTDPCache.loaId === loaId && loaTDPCache.tdp !== null) {
+      return loaTDPCache.tdp;
+    }
+
+    var result = await Xrm.WebApi.retrieveRecord(
+      "book_fundingline",
+      loaId,
+      "?$select=book_tdp"
+    );
+
+    var tdp = result.book_tdp || 0;
+    loaTDPCache = { loaId: loaId, tdp: tdp };
+
+    return tdp;
+  }
+
+  /**
+   * Async retrieval of other Requirement Fundings' TDP (for onChange)
+   */
+  async function getOtherRequirementFundingsTDP(loaId, excludeRecordId) {
+    var filter = "_book_lineofaccounting_value eq " + loaId;
+
+    if (excludeRecordId) {
+      filter += " and book_requirementfundingid ne " + excludeRecordId;
+    }
+
+    var query = "?$select=book_tdp&$filter=" + filter;
+    var result = await Xrm.WebApi.retrieveMultipleRecords(
+      "book_requirementfunding",
+      query
+    );
+
+    var total = 0;
+    if (result && result.entities) {
+      result.entities.forEach(function (entity) {
+        total += entity.book_tdp || 0;
+      });
+    }
+
+    return total;
+  }
+
+  /**
+   * Synchronous retrieval of LOA's total TDP (for OnSave)
+   */
+  function getLOATotalTDPSync(loaId) {
+    if (loaTDPCache.loaId === loaId && loaTDPCache.tdp !== null) {
+      return loaTDPCache.tdp;
+    }
+
+    var clientUrl = Xrm.Utility.getGlobalContext().getClientUrl();
+    var req = new XMLHttpRequest();
+    req.open(
+      "GET",
+      clientUrl +
+        "/api/data/v9.2/book_fundinglines(" +
+        loaId +
+        ")?$select=book_tdp",
+      false
+    );
+    req.setRequestHeader("OData-MaxVersion", "4.0");
+    req.setRequestHeader("OData-Version", "4.0");
+    req.setRequestHeader("Accept", "application/json");
+    req.send();
+
+    var tdp = 0;
+    if (req.status === 200) {
+      var data = JSON.parse(req.responseText);
+      tdp = data.book_tdp || 0;
+    }
+
+    loaTDPCache = { loaId: loaId, tdp: tdp };
+
+    return tdp;
+  }
+
+  /**
+   * Synchronous retrieval of other Requirement Fundings' TDP (for OnSave)
+   */
+  function getOtherRequirementFundingsTDPSync(loaId, excludeRecordId) {
+    var clientUrl = Xrm.Utility.getGlobalContext().getClientUrl();
+
+    var filter = "_book_lineofaccounting_value eq " + loaId;
+    if (excludeRecordId) {
+      filter += " and book_requirementfundingid ne " + excludeRecordId;
+    }
+
+    var req = new XMLHttpRequest();
+    req.open(
+      "GET",
+      clientUrl +
+        "/api/data/v9.2/book_requirementfundings?$select=book_tdp&$filter=" +
+        encodeURIComponent(filter),
+      false
+    );
+    req.setRequestHeader("OData-MaxVersion", "4.0");
+    req.setRequestHeader("OData-Version", "4.0");
+    req.setRequestHeader("Accept", "application/json");
+    req.send();
+
+    var total = 0;
+    if (req.status === 200) {
+      var data = JSON.parse(req.responseText);
+      if (data.value) {
+        data.value.forEach(function (entity) {
+          total += entity.book_tdp || 0;
+        });
+      }
+    }
+
+    return total;
+  }
+
+  function buildErrorMessage(
+    currentTDP,
+    loaTDP,
+    otherAllocatedTDP,
+    remainingTDP
+  ) {
+    return (
+      "TDP allocation exceeds available funds. " +
+      "Requested: " +
+      formatCurrency(currentTDP) +
+      " | " +
+      "Available: " +
+      formatCurrency(remainingTDP) +
+      " | " +
+      "LOA Total: " +
+      formatCurrency(loaTDP) +
+      " | " +
+      "Already Allocated: " +
+      formatCurrency(otherAllocatedTDP)
+    );
+  }
+
+  function clearAllNotifications(formContext) {
+    formContext.ui.clearFormNotification(NOTIFICATION_ID);
+    formContext.ui.clearFormNotification(NOTIFICATION_ID_LOADING);
+    formContext.ui.clearFormNotification(NOTIFICATION_ID_SUCCESS);
+    formContext.getControl("book_tdp")?.clearNotification("tdp_field_error");
+  }
+
+  function cleanGuid(guid) {
+    if (!guid) return null;
+    return guid.replace("{", "").replace("}", "").toLowerCase();
+  }
+
+  function formatCurrency(value) {
+    if (value === null || value === undefined) {
+      return "$0.00";
+    }
+    return (
+      "$" +
+      value.toLocaleString("en-US", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      })
+    );
+  }
+}).call(Book.RequirementFunding);

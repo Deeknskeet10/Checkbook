@@ -1,0 +1,213 @@
+{
+  "properties": {
+    "connectionReferences": {
+      "shared_commondataserviceforapps": {
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "book_sharedcommondataserviceforapps_9388f"
+        },
+        "api": {
+          "name": "shared_commondataserviceforapps"
+        }
+      }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "1.0.0.0",
+      "parameters": {
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        },
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        }
+      },
+      "triggers": {
+        "manual": {
+          "metadata": {
+            "operationMetadataId": "b69962fa-b0f9-47d0-92ea-1217fae40ccb"
+          },
+          "type": "Request",
+          "kind": "Button",
+          "inputs": {
+            "schema": {
+              "type": "object",
+              "properties": {},
+              "required": []
+            }
+          }
+        }
+      },
+      "actions": {
+        "Loop_through_OAs": {
+          "foreach": "@outputs('List_OAs')?['body/value']",
+          "actions": {
+            "Create_Debit_Distribution": {
+              "runAfter": {
+                "Set_Fund_Center": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "afc87a84-32e8-46ae-8673-bd6be707188a"
+              },
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "entityName": "book_distributionses",
+                  "item/book_Fund@odata.bind": "book_funds(@{items('Loop_through_OAs')?['fund_id']})",
+                  "item/book_FundCenter@odata.bind": "book_fundcenters(@{first(outputs('A18_FC')?['body/value'])?['book_fundcenterid']})",
+                  "item/book_FundingEvent@odata.bind": "book_fundingevents(@{first(outputs('Grab_Funding_Event')?['body/value'])?['book_fundingeventid']})",
+                  "item/book_newPGSAG@odata.bind": "book_pg(@{items('Loop_through_OAs')?['pg_id']})",
+                  "item/book_amount": "@items('Loop_through_OAs')?['total_funding']",
+                  "item/book_disbursementdirection": 1,
+                  "item/book_manualentry": false,
+                  "item/owningbusinessunit@odata.bind": "businessunits(@{first(outputs('A18_FC')?['body/value'])?['_owningbusinessunit_value']})",
+                  "item/book_remarks": "OA"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
+                  "operationId": "CreateRecord",
+                  "connectionName": "shared_commondataserviceforapps"
+                }
+              }
+            },
+            "Get_FC": {
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "entityName": "book_fundcenters",
+                  "recordId": "@items('Loop_through_OAs')?['fc_id']"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
+                  "operationId": "GetItem",
+                  "connectionName": "shared_commondataserviceforapps"
+                }
+              }
+            },
+            "Create_Credit_Distribution": {
+              "runAfter": {
+                "Create_Debit_Distribution": [
+                  "Succeeded"
+                ]
+              },
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "entityName": "book_distributionses",
+                  "item/book_Fund@odata.bind": "book_funds(@{items('Loop_through_OAs')?['fund_id']})",
+                  "item/book_FundCenter@odata.bind": "book_fundcenters(@{outputs('Set_Fund_Center')})",
+                  "item/book_FundingEvent@odata.bind": "book_fundingevents(@{first(outputs('Grab_Funding_Event')?['body/value'])?['book_fundingeventid']})",
+                  "item/book_newPGSAG@odata.bind": "book_pg(@{items('Loop_through_OAs')?['pg_id']})",
+                  "item/book_amount": "@items('Loop_through_OAs')?['total_funding']",
+                  "item/book_DebitedDistribution@odata.bind": "book_distributions(@{outputs('Create_Debit_Distribution')?['body/book_distributionsid']})",
+                  "item/book_disbursementdirection": 0,
+                  "item/book_manualentry": false,
+                  "item/owningbusinessunit@odata.bind": "businessunits(@{outputs('Get_FC')?['body/_owningbusinessunit_value']})",
+                  "item/book_remarks": "OA"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
+                  "operationId": "CreateRecord",
+                  "connectionName": "shared_commondataserviceforapps"
+                }
+              }
+            },
+            "Set_Fund_Center": {
+              "runAfter": {
+                "Get_FC": [
+                  "Succeeded"
+                ]
+              },
+              "type": "Compose",
+              "inputs": "@if(equals(outputs('Get_FC')?['body/_book_parentfundcenter_value'], first(outputs('A18_FC')?['body/value'])?['book_fundcenterid']), outputs('Get_FC')?['body/book_fundcenterid'], outputs('Get_FC')?['body/_book_parentfundcenter_value'])"
+            }
+          },
+          "runAfter": {
+            "Grab_Data": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "aadbdbd5-d7ff-4be7-beb3-b010880aeb53"
+          },
+          "type": "Foreach"
+        },
+        "Grab_Data": {
+          "actions": {
+            "Grab_Funding_Event": {
+              "metadata": {
+                "operationMetadataId": "f6653926-e077-4ae8-88a3-92a0c2329796"
+              },
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "entityName": "book_fundingevents",
+                  "$filter": "book_startdate le @{formatDateTime(utcNow(), 'yyyy-MM-dd')} and book_enddate ge @{formatDateTime(utcNow(), 'yyyy-MM-dd')} and book_fundingtype eq 0 and book_obligationauthority eq 1",
+                  "$top": 1
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
+                  "operationId": "ListRecords",
+                  "connectionName": "shared_commondataserviceforapps"
+                }
+              }
+            },
+            "List_OAs": {
+              "runAfter": {
+                "Grab_Funding_Event": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "b3109aa0-bff4-4db0-99b2-efb60c76397f"
+              },
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "entityName": "book_obligationauthorities",
+                  "fetchXml": "<fetch aggregate=\"true\">\n    <entity name=\"book_obligationauthority\">\n        <attribute name=\"book_amountneeded\" alias=\"total_funding\" aggregate=\"sum\"/>\n        <filter type=\"and\">\n            <condition attribute=\"statecode\" operator=\"eq\" value=\"0\"/>\n        </filter>\n        <link-entity name=\"book_fundcenter\" from=\"book_fundcenterid\" to=\"book_receivingfundcenter\" link-type=\"inner\" alias=\"fundcenter\">\n            <attribute name=\"book_fundcenterid\" alias=\"fc_id\" groupby=\"true\"/>\n        </link-entity>\n        <link-entity name=\"book_fundingline\" from=\"book_fundinglineid\" to=\"book_lineofaccounting\" link-type=\"inner\" alias=\"loa\">\n            <link-entity name=\"book_pg\" from=\"book_pgid\" to=\"book_pg\" link-type=\"inner\" alias=\"pg\">\n                <attribute name=\"book_name\" alias=\"pg_name\" groupby=\"true\"/>\n                <attribute name=\"book_pgid\" alias=\"pg_id\" groupby=\"true\"/>\n            </link-entity>\n            <link-entity name=\"book_fund\" from=\"book_fundid\" to=\"book_fund\" link-type=\"inner\" alias=\"fund\">\n                <attribute name=\"book_name\" alias=\"fund_name\" groupby=\"true\"/>\n                <attribute name=\"book_fundid\" alias=\"fund_id\" groupby=\"true\"/>\n            </link-entity>\n        </link-entity>\n    </entity>\n</fetch>"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
+                  "operationId": "ListRecords",
+                  "connectionName": "shared_commondataserviceforapps"
+                }
+              }
+            },
+            "A18_FC": {
+              "runAfter": {
+                "List_OAs": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "a7cb88b5-0643-4a4b-8f63-c6229fff6fb3"
+              },
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "entityName": "book_fundcenters",
+                  "$filter": "book_name eq 'A18'",
+                  "$top": 1
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
+                  "operationId": "ListRecords",
+                  "connectionName": "shared_commondataserviceforapps"
+                }
+              }
+            }
+          },
+          "runAfter": {},
+          "type": "Scope"
+        }
+      }
+    },
+    "templateName": null
+  },
+  "schemaVersion": "1.0.0.0"
+}

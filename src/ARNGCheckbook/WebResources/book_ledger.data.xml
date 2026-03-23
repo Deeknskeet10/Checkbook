@@ -1,0 +1,15 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<WebResource xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <WebResourceId>{6b1ef902-67c9-f011-bbd3-001dd805a23f}</WebResourceId>
+  <Name>book_ledger</Name>
+  <DisplayName>ledger</DisplayName>
+  <Description>Ledger Book - Attributed to juicy_fish (&lt;a href="https://www.flaticon.com/free-icons/ledger" title="Ledger icons"&gt;Ledger icons created by juicy_fish - Flaticon&lt;/a&gt;</Description>
+  <WebResourceType>5</WebResourceType>
+  <IntroducedVersion>1.0.0.14</IntroducedVersion>
+  <IsEnabledForMobileClient>0</IsEnabledForMobileClient>
+  <IsAvailableForMobileOffline>0</IsAvailableForMobileOffline>
+  <IsCustomizable>1</IsCustomizable>
+  <CanBeDeleted>1</CanBeDeleted>
+  <IsHidden>0</IsHidden>
+  <FileName>/WebResources/book_ledger6B1EF902-67C9-F011-BBD3-001DD805A23F</FileName>
+</WebResource>

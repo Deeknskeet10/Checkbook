@@ -1,0 +1,16 @@
+function toggleTabVisibility(executionContext) {
+    var formContext = executionContext.getFormContext();
+
+    // Get the value of the controlling field 
+    var reqType = formContext.getAttribute("book_type").getValue();
+
+    // Get a reference to the tab to control
+    var obligationTab = formContext.ui.tabs.get("obligation_authority");
+
+    if (reqType === 0) {
+        obligationTab.setVisible(false);
+    }
+    else{
+        obligationTab.setVisible(true)
+    }
+}

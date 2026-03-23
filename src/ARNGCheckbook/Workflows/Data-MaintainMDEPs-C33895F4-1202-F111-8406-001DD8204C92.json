@@ -1,0 +1,151 @@
+{
+  "properties": {
+    "connectionReferences": {
+      "shared_commondataserviceforapps": {
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "book_sharedcommondataserviceforapps_9388f"
+        },
+        "api": {
+          "name": "shared_commondataserviceforapps"
+        }
+      }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "1.0.0.0",
+      "parameters": {
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        },
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        },
+        "Checkbook - GAPS Environment (book_CheckbookGAPSEnvironment)": {
+          "defaultValue": "https://gaps-dev.crm.appsplatform.us/",
+          "type": "String",
+          "metadata": {
+            "schemaName": "book_CheckbookGAPSEnvironment",
+            "description": "Link to GAPS Environments"
+          }
+        }
+      },
+      "triggers": {
+        "When_a_row_is_added,_modified_or_deleted": {
+          "metadata": {
+            "operationMetadataId": "da02c4c6-7bd8-45a9-9933-ca17d42556e5"
+          },
+          "type": "OpenApiConnectionWebhook",
+          "inputs": {
+            "host": {
+              "connectionName": "shared_commondataserviceforapps",
+              "operationId": "SubscribeWebhookTrigger",
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
+            },
+            "parameters": {
+              "subscriptionRequest/message": 4,
+              "subscriptionRequest/entityname": "book_mdep",
+              "subscriptionRequest/scope": 4,
+              "subscriptionRequest/filterexpression": "statecode eq 0",
+              "subscriptionRequest/runas": 3
+            },
+            "authentication": "@parameters('$authentication')"
+          }
+        }
+      },
+      "actions": {
+        "Check_if_Added_or_Modified": {
+          "actions": {
+            "Add_new_MDEP": {
+              "runAfter": {},
+              "metadata": {
+                "operationMetadataId": "4d871f95-e574-470d-89af-119169927eab"
+              },
+              "type": "OpenApiConnection",
+              "inputs": {
+                "host": {
+                  "connectionName": "shared_commondataserviceforapps",
+                  "operationId": "CreateRecordWithOrganization",
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
+                },
+                "parameters": {
+                  "organization": "@parameters('Checkbook - GAPS Environment (book_CheckbookGAPSEnvironment)')",
+                  "entityName": "gaps_mdeps",
+                  "item/gaps_name": "@triggerOutputs()?['body/book_name']",
+                  "item/gaps_description": "@triggerOutputs()?['body/book_description']"
+                },
+                "authentication": "@parameters('$authentication')"
+              }
+            }
+          },
+          "runAfter": {},
+          "else": {
+            "actions": {
+              "List_rows_from_selected_environment": {
+                "runAfter": {},
+                "metadata": {
+                  "operationMetadataId": "8dc2d05d-5dfb-4561-bac1-32c25071dd78"
+                },
+                "type": "OpenApiConnection",
+                "inputs": {
+                  "host": {
+                    "connectionName": "shared_commondataserviceforapps",
+                    "operationId": "ListRecordsWithOrganization",
+                    "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
+                  },
+                  "parameters": {
+                    "organization": "@parameters('Checkbook - GAPS Environment (book_CheckbookGAPSEnvironment)')",
+                    "entityName": "gaps_mdeps",
+                    "$filter": "gaps_name eq '@{triggerOutputs()?['body/book_name']}'"
+                  },
+                  "authentication": "@parameters('$authentication')"
+                }
+              },
+              "Update_a_row_in_selected_environment": {
+                "runAfter": {
+                  "List_rows_from_selected_environment": [
+                    "Succeeded"
+                  ]
+                },
+                "metadata": {
+                  "operationMetadataId": "28b3c2f7-941e-4e95-86e3-9834cc2a6ba3"
+                },
+                "type": "OpenApiConnection",
+                "inputs": {
+                  "host": {
+                    "connectionName": "shared_commondataserviceforapps",
+                    "operationId": "UpdateOnlyRecordWithOrganization",
+                    "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
+                  },
+                  "parameters": {
+                    "organization": "@parameters('Checkbook - GAPS Environment (book_CheckbookGAPSEnvironment)')",
+                    "entityName": "gaps_mdeps",
+                    "recordId": "@first(outputs('List_rows_from_selected_environment')?['body/value'])?['gaps_mdepid']",
+                    "item/gaps_name": "@triggerOutputs()?['body/book_name']",
+                    "item/gaps_description": "@triggerOutputs()?['body/book_description']",
+                    "item/statecode": "@triggerOutputs()?['body/statecode']"
+                  },
+                  "authentication": "@parameters('$authentication')"
+                }
+              }
+            }
+          },
+          "expression": {
+            "equals": [
+              "@triggerOutputs()['body/SdkMessage']",
+              "Create"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "923be914-07e0-427b-8e91-15ea9f268907"
+          },
+          "type": "If"
+        }
+      }
+    },
+    "templateName": ""
+  },
+  "schemaVersion": "1.0.0.0"
+}

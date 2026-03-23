@@ -1,0 +1,675 @@
+/********************************************* NOTIFICATIONS ****************************************************/
+
+var InAppNotificationWrapper = window.InAppNotificationWrapper || {};
+
+InAppNotificationWrapper.SendAppNotificationRequest = function (options) {
+    this.Title = options.title;
+    this.Recipient = options.recipient;
+    this.Body = options.body || "";
+    this.Priority = options.priority || 200000000;
+    this.IconType = options.iconType || 100000000;
+    this.ToastType = options.toastType || 200000000;
+    this.Expiry = options.expiry || 120;
+    this.OverrideContent = options.overrideContent || null;
+    this.Actions = options.actions || null;
+};
+
+InAppNotificationWrapper.SendAppNotificationRequest.prototype.getMetadata = function () {
+    return {
+        boundParameter: null,
+        parameterTypes: {
+            "Title": { "typeName": "Edm.String", "structuralProperty": 1 },
+            "Recipient": { "typeName": "mscrm.systemuser", "structuralProperty": 5 },
+            "Body": { "typeName": "Edm.String", "structuralProperty": 1 },
+            "Priority": { "typeName": "Edm.Int32", "structuralProperty": 1 },
+            "IconType": { "typeName": "Edm.Int32", "structuralProperty": 1 },
+            "ToastType": { "typeName": "Edm.Int32", "structuralProperty": 1 },
+            "Expiry": { "typeName": "Edm.Int32", "structuralProperty": 1 },
+            "OverrideContent": { "typeName": "mscrm.expando", "structuralProperty": 5 },
+            "Actions": { "typeName": "mscrm.expando", "structuralProperty": 5 }
+        },
+        operationType: 0,
+        operationName: "SendAppNotification"
+    };
+};
+
+InAppNotificationWrapper.send = function (options) {
+    var request = new InAppNotificationWrapper.SendAppNotificationRequest(options);
+
+    return Xrm.WebApi.online.execute(request).then(
+        function (response) {
+            if (response.ok) {
+                return response.json();
+            }
+            throw new Error("Notification failed: " + response.statusText);
+        }
+    ).then(function (responseBody) {
+        console.log("Notification sent. ID: " + responseBody.NotificationId);
+        return responseBody.NotificationId;
+    }).catch(function (error) {
+        console.error("SendAppNotification error: " + error.message);
+    });
+};
+
+/**
+ * Sends notification to owner (handles both user and team owners)
+ * @param {string} recordId - GUID of the prioritization record
+ * @param {string} recordName - Name of the record for display
+ * @param {string} title - Notification title
+ * @param {string} body - Notification body
+ * @param {number} iconType - Icon type (100000000=Info, 100000001=Success, 100000002=Failure, 100000003=Warning)
+ */
+async function sendNotificationToRecordOwner(recordId, recordName, title, body, iconType) {
+    try {
+        // Get owner info from the record
+        const record = await Xrm.WebApi.retrieveRecord(
+            "book_prioritization",
+            recordId,
+            "?$select=book_name&$expand=ownerid($select=ownerid)"
+        );
+
+        // Get owner reference via OData
+        const ownerIdResponse = await Xrm.WebApi.retrieveRecord(
+            "book_prioritization",
+            recordId,
+            "?$select=_ownerid_value"
+        );
+
+        const ownerId = ownerIdResponse._ownerid_value;
+        const ownerType = ownerIdResponse["_ownerid_value@Microsoft.Dynamics.CRM.lookuplogicalname"];
+
+        // Build record URL
+        const recordUrl = Xrm.Utility.getGlobalContext().getClientUrl() +
+            "/main.aspx?etn=book_prioritization&id=" + recordId + "&pagetype=entityrecord";
+
+        // Build notification options
+        const notificationOptions = {
+            title: title,
+            body: body,
+            iconType: iconType || 100000003, // Warning
+            toastType: 200000000,
+            actions: {
+                "@odata.type": "#Microsoft.Dynamics.CRM.expando",
+                "actions@odata.type": "#Collection(Microsoft.Dynamics.CRM.expando)",
+                "actions": [
+                    {
+                        "@odata.type": "#Microsoft.Dynamics.CRM.expando",
+                        "title": "View Record",
+                        "data": {
+                            "@odata.type": "#Microsoft.Dynamics.CRM.expando",
+                            "type": "url",
+                            "url": recordUrl,
+                            "navigationTarget": "dialog"
+                        }
+                    }
+                ]
+            }
+        };
+
+        // Get list of user IDs to notify
+        const userIds = await getOwnerUserIds(ownerId, ownerType);
+
+        // Send notification to each user
+        const sendPromises = userIds.map(function (userId) {
+            const userNotification = Object.assign({}, notificationOptions);
+            userNotification.recipient = "/systemusers(" + userId + ")";
+            return InAppNotificationWrapper.send(userNotification);
+        });
+
+        await Promise.all(sendPromises);
+        console.log(`Sent ${userIds.length} notification(s) for record ${recordId}`);
+
+    } catch (error) {
+        console.error("Error sending notification for record " + recordId + ": " + error.message);
+    }
+}
+
+/**
+ * Gets user IDs from owner (single user or team members)
+ * @param {string} ownerId - GUID of owner (user or team)
+ * @param {string} ownerType - "systemuser" or "team"
+ * @returns {Promise<string[]>} Array of user GUIDs
+ */
+async function getOwnerUserIds(ownerId, ownerType) {
+    if (ownerType === "systemuser") {
+        return [ownerId];
+    }
+
+    if (ownerType === "team") {
+        // Query team membership
+        const fetchXml = `
+            <fetch distinct="true">
+                <entity name="systemuser">
+                    <attribute name="systemuserid"/>
+                    <filter>
+                        <condition attribute="isdisabled" operator="eq" value="0"/>
+                    </filter>
+                    <link-entity name="teammembership" from="systemuserid" to="systemuserid" intersect="true">
+                        <filter>
+                            <condition attribute="teamid" operator="eq" value="${ownerId}"/>
+                        </filter>
+                    </link-entity>
+                </entity>
+            </fetch>`;
+
+        const result = await Xrm.WebApi.retrieveMultipleRecords(
+            "systemuser",
+            "?fetchXml=" + encodeURIComponent(fetchXml)
+        );
+
+        return result.entities.map(function (user) {
+            return user.systemuserid;
+        });
+    }
+
+    return [];
+}
+
+/********************************************* HELPER FUNCTIONS ****************************************************/
+/* Grab teams User is associated with */
+function getUserTeams(userId) {
+  return new Promise((resolve, reject) => {
+    Xrm.WebApi.retrieveMultipleRecords(
+      "team",
+      "?$filter=teammembership_association/any(o:o/systemuserid eq " +
+        userId +
+        ")&$select=name,teamid"
+    ).then(
+      function success(result) {
+        resolve(result.entities);
+      },
+      function (error) {
+        reject(error);
+      }
+    );
+  });
+}
+
+/* Grab roles associated with teams */
+function getTeamRoles(teamId) {
+  return new Promise((resolve, reject) => {
+    Xrm.WebApi.retrieveMultipleRecords(
+      "team",
+      `?$expand=teamroles_association($select=name)&$filter=teamid eq '${teamId}'`
+    ).then(
+      function success(result) {
+        resolve(result.entities);
+      },
+      function (error) {
+        reject(error);
+      }
+    );
+  });
+}
+
+async function getUserRolesByTeamAssociation() {
+  const userId = Xrm.Utility.getGlobalContext().userSettings.userId;
+  const userTeams = await getUserTeams(userId);
+  let allTeamRoles = [];
+
+  for (const team of userTeams) {
+    const roles = await getTeamRoles(team.teamid);
+    roles.forEach((team) => {
+      if (
+        team.teamroles_association &&
+        Array.isArray(team.teamroles_association)
+      ) {
+        // Loop through the teamroles_association array for each item
+        team.teamroles_association.forEach((role) => {
+          if (role.name) {
+            allTeamRoles.push(role.name);
+          }
+        });
+      }
+    });
+  }
+
+  // Process and display the roles as needed
+  console.log("Roles associated with user's teams:", allTeamRoles);
+  return allTeamRoles.join(", ");
+}
+
+/********************************************* BUTTONS ****************************************************/
+/**
+ * Calls appropriate button's function based off of buttonID
+ * @param {context} gridContext - view control
+ * @param {list} selectedRecordIds - list of GUIDs of the selected records
+ * @param {int} buttonId - serial for button selected
+ */
+async function checkbookButtons(gridContext, selectedRecordIds, buttonId) {
+  /* Grab User Roles assigned via Team */
+  var userTeamRoles = getUserRolesByTeamAssociation();
+
+  /* Initialize Notifications */
+  var successNotification = {
+    type: 2,
+    level: 1,
+    message: "Success",
+    showCloseButton: true,
+  };
+
+  switch (buttonId) {
+    case 0:
+      /* State Input -> FC Review */
+      successNotification.message = await sendToFC(
+        gridContext,
+        selectedRecordIds,
+        userTeamRoles
+      );
+
+      break;
+    case 1:
+      /* FC Review -> State Review (Approved) || State Review -> State Approved (Approved) */
+      successNotification.message = await approveRecord(
+        gridContext,
+        selectedRecordIds,
+        userTeamRoles
+      );
+
+      break;
+    case 2:
+      console.log("Case 2 - Reject");
+      /* FC Review -> State Input (Rejected) || State Review -> State Input (Rejected) */
+      successNotification.message = await rejectRecord(
+        gridContext,
+        selectedRecordIds,
+        userTeamRoles
+      );
+
+      break;
+    case 3:
+      console.log("Case 3 - Send to NPM");
+      /* State Approved -> NPM (Sent forward) */
+      successNotification.message = await sendToNPM(
+        gridContext,
+        selectedRecordIds,
+        userTeamRoles
+      );
+
+      break;
+    case 4:
+      console.log("Case 4 - Return to State PM");
+      /* Rejected by NPM/Recalled by State -> State Input */
+      successNotification.message = await returnToStatePM(
+        gridContext,
+        selectedRecordIds,
+        userTeamRoles
+      );
+
+      break;
+  }
+
+  /* Send Notifications */
+  await Xrm.App.addGlobalNotification(successNotification).then(
+    function success(result) {
+      console.log("Success notification displayed with ID: " + result);
+
+      // Wait for 5 seconds and then clear the notification
+      window.setTimeout(function () {
+        Xrm.App.clearGlobalNotification(result);
+      }, 5000);
+    },
+    function (error) {
+      console.error("Error displaying success notification: " + error.message);
+      // Handle error conditions if the notification fails to display
+    }
+  );
+}
+/** Choice Values
+ * State Input - 0
+ * State Review - 1
+ * State Reviewed - 2
+ * State Approved - 3
+ * NPM Review - 4
+ * */
+
+/** Role Names
+ * Book - State PM
+ * Book - FC Reviewer
+ * Book - State Approver
+ * Book - State Administrator
+ * Book - NPM
+ */
+
+/* Send to Fund Center Reviewer */
+async function sendToFC(gridContext, selectedRecordIds, userTeamRoles) {
+  var recordSent = 0;
+  var recordDenied = 0;
+
+  // Await the userTeamRoles promise to get the roles
+  const roles = await userTeamRoles;
+
+  if (roles.includes("Administrator") || roles.includes("State PM")) {
+    if (selectedRecordIds && selectedRecordIds.length > 0) {
+      // Use map to create an array of promises, and Promise.all to await them
+      await Promise.all(
+        selectedRecordIds.map(async function (recordId) {
+          const entityName = "book_prioritization";
+          const choiceField = "book_approvalstatus";
+          const data = {};
+
+          /*get Current value */
+          const currentValue = await getCurrentChoiceValue(
+            entityName,
+            recordId,
+            choiceField
+          );
+
+          if (currentValue == 0) {
+            /*set choice field */
+            data[choiceField] = 1;
+
+            /* Update Approval Status */
+            await updateApprovalStatus(entityName, recordId, data, gridContext); // Await the update
+
+            /* Increment count */
+            recordSent++; // Increment after successful update
+          } else {
+            /* Increment denied */
+            recordDenied++; // Increment only if denied
+          }
+        })
+      );
+    } 
+    /* set message */
+  return `Of the selected Prioritizations, ${recordSent} were sent to the Fund Center for Review and ${recordDenied} lacked appropriate permissions to send forward.`;
+  }
+  else {
+      return "You do not have the appropriate permissions to take action on any of the selected records.";
+    }
+  
+}
+
+/* Send to State Approver from FC Reviewer; or State Approver to Approved */
+async function approveRecord(gridContext, selectedRecordIds, userTeamRoles) {
+  var recordSent = 0;
+  var recordDenied = 0;
+
+  // Await the userTeamRoles promise to get the roles
+  const roles = await userTeamRoles;
+
+  if (selectedRecordIds && selectedRecordIds.length > 0) {
+    await Promise.all(
+      selectedRecordIds.map(async function (recordId) {
+        const entityName = "book_prioritization"; // e.g., "account"
+        const choiceField = "book_approvalstatus";
+        const data = {};
+
+        /*get Current value */
+        const currentValue = await getCurrentChoiceValue(
+          entityName,
+          recordId,
+          choiceField
+        );
+
+        /* FC Reviewer Approves record */
+        if (
+          currentValue == 1 &&
+          (roles.includes("FC Reviewer") ||
+            roles.includes("Administrator"))
+        ) {
+
+          /*set choice field */
+          data[choiceField] = 2;
+
+          /* Update Approval Status */
+          await updateApprovalStatus(entityName, recordId, data, gridContext);
+
+          /* Increment approved */
+          recordSent++;
+        } else if (
+          /* State Approver approves record */
+          currentValue == 2 &&
+          (roles.includes("State Approver") ||
+            roles.includes("Administrator"))
+        ) {
+          /*set choice field */
+          data[choiceField] = 3;
+
+          /* Update Approval Status */
+          await updateApprovalStatus(entityName, recordId, data, gridContext);
+
+          /* Increment approved */
+          recordSent++;
+        } else {
+          recordDenied++;
+        }
+      })
+    );
+  }
+  return `Of the selected Prioritizations, ${recordSent} were Approved and ${recordDenied} lacked appropriate permissions to Approve.`;
+}
+
+/* Reject from FC Reviewer or State Approver */
+async function rejectRecord(gridContext, selectedRecordIds, userTeamRoles) {
+  // Await the userTeamRoles promise to get the roles
+  const roles = await userTeamRoles;
+
+  if (selectedRecordIds && selectedRecordIds.length > 0) {
+    const results = await Promise.all(
+      selectedRecordIds.map(async function (recordId) {
+        const entityName = "book_prioritization"; // e.g., "account"
+        const choiceField = "book_approvalstatus";
+        const data = {};
+        let approved = false;
+
+        /*get Current value */
+        const currentValue = await getCurrentChoiceValue(
+          entityName,
+          recordId,
+          choiceField
+        );
+
+        /* FC Reviewer Rejects record */
+        if (
+          currentValue == 1 &&
+          (roles.includes("FC Reviewer") ||
+            roles.includes("Administrator"))
+        ) {
+          /*set choice field */
+          data[choiceField] = 0;
+
+          /* Update Approval Status */
+          await updateApprovalStatus(entityName, recordId, data, gridContext);
+
+          /* Set approved */
+          approved = true;
+          console.log(approved)
+        } else if (
+          /* State Approver Rejects record */
+          currentValue == 2 &&
+          (roles.includes("State Approver") ||
+            roles.includes("Administrator"))
+        ) {
+          /*set choice field */
+          data[choiceField] = 1;
+
+          /* Update Approval Status */
+          await updateApprovalStatus(entityName, recordId, data, gridContext);
+
+          /* Set approved */
+          approved = true;
+
+        }
+        return approved;
+      })
+    );
+
+    const recordSent = results.filter(Boolean).length; // Count records that were approved
+    const recordDenied = selectedRecordIds.length - recordSent;
+
+    return `Of the selected Prioritizations, ${recordSent} were Rejected and ${recordDenied} lacked appropriate permissions to Reject.`;
+  } 
+}
+
+/* Send to NPM */
+async function sendToNPM(gridContext, selectedRecordIds, userTeamRoles) {
+  var recordSent = 0;
+  var recordDenied = 0;
+
+  // Await the userTeamRoles promise to get the roles
+  const roles = await userTeamRoles;
+  if (
+    roles.includes("Administrator") ||
+    roles.includes("State Approver")
+  ) {
+    if (selectedRecordIds && selectedRecordIds.length > 0) {
+      await Promise.all(
+        selectedRecordIds.map(async function (recordId) {
+          const entityName = "book_prioritization"; // e.g., "account"
+          const choiceField = "book_approvalstatus";
+          const data = {};
+
+          /*get Current value */
+          const currentValue = await getCurrentChoiceValue(
+            entityName,
+            recordId,
+            choiceField
+          );
+
+          /*set choice field */
+          if (currentValue == 3) {
+            data[choiceField] = 4;
+
+            /* Update Approval Status */
+            await updateApprovalStatus(entityName, recordId, data, gridContext);
+
+            /* Increment approved */
+            recordSent++;
+          } else {
+            recordDenied++;
+          }
+        })
+      );
+    } 
+    return `Of the selected Prioritizations, ${recordSent} were Sent to the NPM and ${recordDenied} were not ready/permitted to be Sent.`;
+  }
+  else {
+      return "You do not have the appropriate permissions to take action on any of the selected records.";
+    }
+}
+
+/* Return to State Input */
+async function returnToStatePM(gridContext, selectedRecordIds, userTeamRoles) {
+    var recordSent = 0;
+    var recordDenied = 0;
+    var notificationPromises = []; // Collect notification promises
+
+    // Await the userTeamRoles promise to get the roles
+    const roles = await userTeamRoles;
+
+    if (selectedRecordIds && selectedRecordIds.length > 0) {
+        await Promise.all(
+            selectedRecordIds.map(async function (recordId) {
+                const entityName = "book_prioritization";
+                const choiceField = "book_approvalstatus";
+                const data = {};
+
+                /* Get current value */
+                const currentValue = await getCurrentChoiceValue(
+                    entityName,
+                    recordId,
+                    choiceField
+                );
+
+                /* Get record name for notification */
+                let recordName = "";
+                try {
+                    const record = await Xrm.WebApi.retrieveRecord(
+                        entityName,
+                        recordId,
+                        "?$select=book_name"
+                    );
+                    recordName = record.book_name || "Prioritization";
+                } catch (e) {
+                    recordName = "Prioritization";
+                }
+
+                /* State Approver returns from State Approved */
+                if (
+                    currentValue == 3 &&
+                    (roles.includes("State Approver") ||
+                        roles.includes("Administrator"))
+                ) {
+                    /* Set choice field */
+                    data[choiceField] = 0;
+
+                    /* Update Approval Status */
+                    await updateApprovalStatus(entityName, recordId, data, gridContext);
+
+                    /* Increment approved */
+                    recordSent++;
+
+                } else if (
+                    /* NPM Returns record or State Approver pulls back - FROM NPM REVIEW */
+                    currentValue == 4 &&
+                    (roles.includes("State Approver") || roles.includes("NPM"))
+                ) {
+                    /* Set choice field */
+                    data[choiceField] = 0;
+
+                    /* Update Approval Status */
+                    await updateApprovalStatus(entityName, recordId, data, gridContext);
+
+                    /* Queue notification - returned from NPM Review */
+                    notificationPromises.push(
+                        sendNotificationToRecordOwner(
+                            recordId,
+                            recordName,
+                            "Prioritization Returned from NPM",
+                            "**" + recordName + "** has been returned from NPM Review and requires your attention.",
+                            100000003 // Warning icon
+                        )
+                    );
+
+                    /* Increment approved */
+                    recordSent++;
+
+                } else {
+                    recordDenied++;
+                }
+            })
+        );
+
+        /* Send all notifications (fire and forget - don't block UI) */
+        if (notificationPromises.length > 0) {
+            Promise.all(notificationPromises).then(function () {
+                console.log("All return notifications sent successfully.");
+            }).catch(function (error) {
+                console.error("Error sending some notifications: " + error.message);
+            });
+        }
+    }
+
+    return `Of the selected Prioritizations, ${recordSent} were returned to the State PM and ${recordDenied} lacked appropriate permissions to Return.`;
+}
+
+async function getCurrentChoiceValue(entityName, recordId, choiceField) {
+  /* Grab current value of Approval Status */
+  try {
+    const record = await Xrm.WebApi.retrieveRecord(
+      entityName,
+      recordId,
+      `?$select=${choiceField}` // Using template literals for clarity
+    );
+    // Get the value of the choice field (numeric representation)
+    console.log(`The Value of the Choice is: ${record[choiceField]}`);
+    return record[choiceField]; // This will return the actual value
+  } catch (error) {
+    console.error(
+      `Error retrieving choice value for record ${recordId}: ${error.message}`
+    );
+    throw error; // Re-throw the error to be caught by the calling function
+  }
+}
+
+async function updateApprovalStatus(entityName, recordId, data, gridContext) {
+  try {
+    await Xrm.WebApi.updateRecord(entityName, recordId, data); // Await the update operation
+    console.log("Record updated successfully: " + recordId);
+    gridContext.refresh();
+  } catch (error) {
+    console.error("Error updating record " + recordId + ": " + error.message);
+    throw error; // Re-throw the error to be caught by the calling function's catch block
+  }
+}

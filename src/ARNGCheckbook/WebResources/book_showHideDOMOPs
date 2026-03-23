@@ -1,0 +1,14 @@
+function hideDOMOPs(executionContext) {
+  var formContext = executionContext.getFormContext();
+
+  var getReqType = formContext.getAttribute("book_type").getValue();
+  var shouldHide = (getReqType === 5);
+
+  // Hide Prioritization section
+  formContext.ui.tabs
+    .get("general")
+    .sections.get("req_domops")
+    .controls.forEach(function (control) {
+      control.setVisible(shouldHide);
+    });
+}

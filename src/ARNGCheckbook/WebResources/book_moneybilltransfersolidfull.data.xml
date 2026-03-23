@@ -1,0 +1,14 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<WebResource xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <WebResourceId>{af241156-0097-f011-b4cc-001dd805a23f}</WebResourceId>
+  <Name>book_moneybilltransfersolidfull</Name>
+  <DisplayName>money-bill-transfer-solid-full</DisplayName>
+  <WebResourceType>11</WebResourceType>
+  <IntroducedVersion>1.2.1.1</IntroducedVersion>
+  <IsEnabledForMobileClient>0</IsEnabledForMobileClient>
+  <IsAvailableForMobileOffline>0</IsAvailableForMobileOffline>
+  <IsCustomizable>1</IsCustomizable>
+  <CanBeDeleted>1</CanBeDeleted>
+  <IsHidden>0</IsHidden>
+  <FileName>/WebResources/book_moneybilltransfersolidfullAF241156-0097-F011-B4CC-001DD805A23F</FileName>
+</WebResource>

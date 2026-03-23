@@ -1,0 +1,263 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<forms xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <systemform>
+    <formid>{a5f05669-53ed-42eb-911a-b7d70f924689}</formid>
+    <IntroducedVersion>1.0.0.1</IntroducedVersion>
+    <FormPresentation>1</FormPresentation>
+    <FormActivationState>1</FormActivationState>
+    <form headerdensity="HighWithControls">
+      <tabs>
+        <tab verticallayout="true" id="{381e572d-c28c-4024-aa26-036aa04ea915}" IsUserDefined="1">
+          <labels>
+            <label description="General" languagecode="1033" />
+          </labels>
+          <columns>
+            <column width="100%">
+              <sections>
+                <section showlabel="false" showbar="false" IsUserDefined="0" id="{697ee9bf-a2a1-498d-a564-5567f92fd6bd}">
+                  <labels>
+                    <label description="General" languagecode="1033" />
+                  </labels>
+                  <rows>
+                    <row>
+                      <cell id="{39aeb293-79bd-43d9-9778-640129615743}" visible="false">
+                        <labels>
+                          <label description="Owner" languagecode="1033" />
+                        </labels>
+                        <control id="ownerid" classid="{270BD3DB-D9AF-4782-9025-509E298DEC0A}" datafieldname="ownerid" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{cdbb4d88-a6d1-4c68-971f-e712dfb63b5a}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="Requirement Name" languagecode="1033" />
+                        </labels>
+                        <control id="apmo_requirementname" classid="{4273EDBD-AC1D-40D3-9FB2-095C621B552D}" datafieldname="apmo_requirementname" disabled="false" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{ccac3d46-8b0a-4fc7-9ccc-394539c6e60d}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="Division" languagecode="1033" />
+                        </labels>
+                        <control id="apmo_division" classid="{270BD3DB-D9AF-4782-9025-509E298DEC0A}" datafieldname="apmo_division" disabled="false" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{e84a7269-59aa-4df2-933a-cad9faa3e387}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="Generic RVB" languagecode="1033" />
+                        </labels>
+                        <control id="apmo_name" classid="{4273EDBD-AC1D-40D3-9FB2-095C621B552D}" datafieldname="apmo_name" disabled="false" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{feac2916-641c-4b2c-aac0-d92cb58a511c}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="Serial Number" languagecode="1033" />
+                        </labels>
+                        <control id="apmo_serialnumber" classid="{4273EDBD-AC1D-40D3-9FB2-095C621B552D}" datafieldname="apmo_serialnumber" disabled="false" />
+                      </cell>
+                    </row>
+                  </rows>
+                </section>
+              </sections>
+            </column>
+          </columns>
+        </tab>
+        <tab name="tab_2" id="6e9619c8-317b-4c9f-a80d-7b76c3bad36e" IsUserDefined="0" locklevel="0" showlabel="true">
+          <labels>
+            <label description="Associated RVBs" languagecode="1033" />
+          </labels>
+          <columns>
+            <column width="100%">
+              <sections>
+                <section name="tab_2_section_1" id="a6c9c285-47ed-44d2-8d16-50cc2be1e43f" IsUserDefined="0" locklevel="0" showlabel="false" showbar="false" layout="varwidth" celllabelalignment="Left" celllabelposition="Left" columns="1" labelwidth="115">
+                  <labels>
+                    <label description="New Section" languagecode="1033" />
+                  </labels>
+                  <rows>
+                    <row />
+                    <row>
+                      <cell locklevel="0" id="{8bb5d4ec-22eb-42e9-b98d-698312649a30}" rowspan="4" colspan="1" auto="false">
+                        <labels>
+                          <label description="Associated RVBs" languagecode="1033" />
+                        </labels>
+                        <control indicationOfSubgrid="true" id="Subgrid_new_1" classid="{E7A81278-8635-4D9E-8D4D-59480B391C5B}">
+                          <parameters>
+                            <RecordsPerPage>4</RecordsPerPage>
+                            <AutoExpand>Fixed</AutoExpand>
+                            <EnableQuickFind>false</EnableQuickFind>
+                            <EnableViewPicker>false</EnableViewPicker>
+                            <EnableChartPicker>true</EnableChartPicker>
+                            <ChartGridMode>All</ChartGridMode>
+                            <RelationshipName>apmo_rvb_GenericRVB_apmo_genericrvb</RelationshipName>
+                            <TargetEntityType>apmo_rvb</TargetEntityType>
+                            <ViewId>{1E3FC6B8-83A0-49CD-B9FF-B117CC6CFC03}</ViewId>
+                            <ViewIds>{1E3FC6B8-83A0-49CD-B9FF-B117CC6CFC03}</ViewIds>
+                          </parameters>
+                        </control>
+                      </cell>
+                    </row>
+                    <row />
+                    <row />
+                    <row />
+                  </rows>
+                </section>
+              </sections>
+            </column>
+          </columns>
+          <events>
+            <event name="tabstatechange" application="false" active="false">
+              <Handlers>
+                <Handler functionName="handleSubgridsOnNew" libraryName="apmo_hidervbsubgrid" handlerUniqueId="{25d463c9-2bc1-44d6-97ae-22b3b18ca17f}" enabled="true" parameters="" passExecutionContext="true" />
+              </Handlers>
+            </event>
+          </events>
+        </tab>
+        <tab name="tab_3" id="7d43d822-ca4e-4334-bb1b-3e7048415c81" IsUserDefined="0" locklevel="0" showlabel="true">
+          <labels>
+            <label description="Prejudices" languagecode="1033" />
+          </labels>
+          <columns>
+            <column width="100%">
+              <sections>
+                <section name="tab_3_section_1" id="477cfe44-7b8a-46ce-b613-0e7f13b2d543" IsUserDefined="0" locklevel="0" showlabel="false" showbar="false" layout="varwidth" celllabelalignment="Left" celllabelposition="Left" columns="1" labelwidth="115" visible="true">
+                  <labels>
+                    <label description="New Section" languagecode="1033" />
+                  </labels>
+                  <rows>
+                    <row />
+                    <row>
+                      <cell locklevel="0" id="{20604e76-8da6-4a74-adee-1e23446ee68b}" rowspan="4" colspan="1" auto="false">
+                        <labels>
+                          <label description="RVBS" languagecode="1033" />
+                        </labels>
+                        <control indicationOfSubgrid="true" id="Subgrid_new_2" classid="{E7A81278-8635-4D9E-8D4D-59480B391C5B}">
+                          <parameters>
+                            <RecordsPerPage>4</RecordsPerPage>
+                            <AutoExpand>Fixed</AutoExpand>
+                            <EnableQuickFind>false</EnableQuickFind>
+                            <EnableViewPicker>false</EnableViewPicker>
+                            <EnableChartPicker>true</EnableChartPicker>
+                            <ChartGridMode>All</ChartGridMode>
+                            <RelationshipName>apmo_prejudice_GenericRVB_apmo_genericrvb</RelationshipName>
+                            <TargetEntityType>apmo_prejudice</TargetEntityType>
+                            <ViewId>{CE2CD866-F847-4289-B9C2-2F9857365DDC}</ViewId>
+                            <ViewIds>{CE2CD866-F847-4289-B9C2-2F9857365DDC}</ViewIds>
+                          </parameters>
+                        </control>
+                      </cell>
+                    </row>
+                    <row />
+                    <row />
+                    <row />
+                  </rows>
+                </section>
+              </sections>
+            </column>
+          </columns>
+        </tab>
+        <tab name="tab_4" id="ea98643f-b86d-4c5c-bf95-e4457971f7b9" IsUserDefined="0" locklevel="0" showlabel="true">
+          <labels>
+            <label description="SAs" languagecode="1033" />
+          </labels>
+          <columns>
+            <column width="100%">
+              <sections>
+                <section name="tab_4_section_1" id="4d032f57-d490-4f84-ae68-cbb3aad92ee5" IsUserDefined="0" locklevel="0" showlabel="false" showbar="false" layout="varwidth" celllabelalignment="Left" celllabelposition="Left" columns="1" labelwidth="115">
+                  <labels>
+                    <label description="New Section" languagecode="1033" />
+                  </labels>
+                  <rows>
+                    <row />
+                    <row>
+                      <cell locklevel="0" id="{ed6b5113-ec87-4280-8d02-00e6cece5541}" rowspan="4" colspan="1" auto="false">
+                        <labels>
+                          <label description="RVBS" languagecode="1033" />
+                        </labels>
+                        <control indicationOfSubgrid="true" id="Subgrid_new_3" classid="{E7A81278-8635-4D9E-8D4D-59480B391C5B}">
+                          <parameters>
+                            <RecordsPerPage>4</RecordsPerPage>
+                            <AutoExpand>Fixed</AutoExpand>
+                            <EnableQuickFind>false</EnableQuickFind>
+                            <EnableViewPicker>false</EnableViewPicker>
+                            <EnableChartPicker>true</EnableChartPicker>
+                            <ChartGridMode>All</ChartGridMode>
+                            <RelationshipName>apmo_sa_GenericRVB_apmo_genericrvb</RelationshipName>
+                            <TargetEntityType>apmo_sa</TargetEntityType>
+                            <ViewId>{CA0E6B04-7799-402D-A768-E1300557A1DC}</ViewId>
+                            <ViewIds>{CA0E6B04-7799-402D-A768-E1300557A1DC}</ViewIds>
+                          </parameters>
+                        </control>
+                      </cell>
+                    </row>
+                    <row />
+                    <row />
+                    <row />
+                  </rows>
+                </section>
+              </sections>
+            </column>
+          </columns>
+        </tab>
+      </tabs>
+      <header id="{830bbba0-472c-45b0-ba6d-57881bf130cf}" celllabelposition="Top" columns="111" labelwidth="115" celllabelalignment="Left">
+        <rows>
+          <row>
+            <cell id="{92828921-c894-44ab-929b-c31ff89b4b08}" showlabel="false">
+              <labels>
+                <label description="" languagecode="1033" />
+              </labels>
+            </cell>
+            <cell id="{aec097f9-f9eb-4506-a6ea-8647e09b5222}" showlabel="false">
+              <labels>
+                <label description="" languagecode="1033" />
+              </labels>
+            </cell>
+            <cell id="{6cbbe7fd-005f-475e-8802-b680004986a8}" showlabel="false">
+              <labels>
+                <label description="" languagecode="1033" />
+              </labels>
+            </cell>
+          </row>
+        </rows>
+      </header>
+      <footer id="{322a5b2f-c20e-4e11-8d0d-ef85983e2158}" celllabelposition="Top" columns="111" labelwidth="115" celllabelalignment="Left">
+        <rows>
+          <row>
+            <cell id="{47fe44e5-68d8-437d-a465-c9ac54762453}" showlabel="false">
+              <labels>
+                <label description="" languagecode="1033" />
+              </labels>
+            </cell>
+            <cell id="{3bc93518-d6cf-4434-85e8-ffd50e175a67}" showlabel="false">
+              <labels>
+                <label description="" languagecode="1033" />
+              </labels>
+            </cell>
+            <cell id="{d6ea8a64-903a-4806-88b6-45138f21462f}" showlabel="false">
+              <labels>
+                <label description="" languagecode="1033" />
+              </labels>
+            </cell>
+          </row>
+        </rows>
+      </footer>
+      <DisplayConditions Order="0" FallbackForm="true">
+        <Everyone />
+      </DisplayConditions>
+      <formLibraries>
+        <Library name="apmo_hidervbsubgrid" libraryUniqueId="{ca82d664-9cf3-4184-aac9-503d3d6b1c45}" />
+      </formLibraries>
+    </form>
+    <IsCustomizable>1</IsCustomizable>
+    <CanBeDeleted>1</CanBeDeleted>
+    <LocalizedNames>
+      <LocalizedName description="Information" languagecode="1033" />
+    </LocalizedNames>
+    <Descriptions>
+      <Description description="A form for this entity." languagecode="1033" />
+    </Descriptions>
+  </systemform>
+</forms>

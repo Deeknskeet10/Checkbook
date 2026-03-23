@@ -1,0 +1,44 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Workflow WorkflowId="{62ee8e4c-d0ce-f011-bbd3-001dd805a06b}" Name="ARNG Checkbook - DOMOPs Approval" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <XamlFileName>/Workflows/ARNGCheckbook-DOMOPsApproval-62EE8E4C-D0CE-F011-BBD3-001DD805A06B.xaml</XamlFileName>
+  <Type>1</Type>
+  <Subprocess>0</Subprocess>
+  <Category>4</Category>
+  <Mode>0</Mode>
+  <Scope>4</Scope>
+  <OnDemand>0</OnDemand>
+  <TriggerOnCreate>1</TriggerOnCreate>
+  <TriggerOnDelete>0</TriggerOnDelete>
+  <AsyncAutodelete>0</AsyncAutodelete>
+  <SyncWorkflowLogOnFailure>0</SyncWorkflowLogOnFailure>
+  <StateCode>1</StateCode>
+  <StatusCode>2</StatusCode>
+  <processorder>100</processorder>
+  <RunAs>1</RunAs>
+  <UniqueName>book_arngcheckbookdomopsapproval</UniqueName>
+  <IsTransacted>1</IsTransacted>
+  <IntroducedVersion>1.9.3.1</IntroducedVersion>
+  <IsCustomizable>1</IsCustomizable>
+  <BusinessProcessType>0</BusinessProcessType>
+  <IsCustomProcessingStepAllowedForOtherPublishers>1</IsCustomProcessingStepAllowedForOtherPublishers>
+  <ProcessTriggerScope>1</ProcessTriggerScope>
+  <ModernFlowType>0</ModernFlowType>
+  <PrimaryEntity>book_Prioritization</PrimaryEntity>
+  <LocalizedNames>
+    <LocalizedName languagecode="1033" description="ARNG Checkbook - DOMOPs Approval" />
+  </LocalizedNames>
+  <labels>
+    <steplabels id="{137e0d85-e995-4cdf-a0cb-cc7be4a83092}">
+      <label languagecode="1033" description="Coc Approval" />
+    </steplabels>
+    <steplabels id="{86aa3c74-1690-4cfc-8d29-b9c3b47b29ca}">
+      <label languagecode="1033" description="Approval Status" />
+    </steplabels>
+    <steplabels id="{00b9adad-ff36-494c-abae-f0bacf686b18}">
+      <label languagecode="1033" description="Director Approval" />
+    </steplabels>
+    <steplabels id="{d4796d8c-94f7-4251-b307-84e769006e67}">
+      <label languagecode="1033" description="Approval" />
+    </steplabels>
+  </labels>
+</Workflow>

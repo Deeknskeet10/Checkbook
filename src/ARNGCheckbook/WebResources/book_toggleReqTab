@@ -1,0 +1,23 @@
+function toggleReqTab(executionContext) {
+  var formContext = executionContext.getFormContext();
+
+  // Get the value of the controlling field
+  var beApproved = formContext.getAttribute("book_approvalstatus").getValue();
+
+  // Get a reference to the tab to control
+  var reqFundingTab = formContext.ui.tabs.get("reqFundingTab");
+
+  if (beApproved === 7) {
+    reqFundingTab.setVisible(true);
+  } else {
+    reqFundingTab.setVisible(false);
+
+    // Hide Funding section as well
+    formContext.ui.tabs
+      .get("general")
+      .sections.get("req_funding")
+      .controls.forEach(function (control) {
+        control.setVisible(false);
+      });
+  }
+}

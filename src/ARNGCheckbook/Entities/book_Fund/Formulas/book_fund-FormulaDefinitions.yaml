@@ -1,0 +1,1 @@
+book_fundingcode: =Left(Right(book_name, 3), 1)

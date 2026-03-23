@@ -1,0 +1,122 @@
+{
+  "properties": {
+    "connectionReferences": {
+      "shared_commondataserviceforapps": {
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "book_sharedcommondataserviceforapps_9388f"
+        },
+        "api": {
+          "name": "shared_commondataserviceforapps"
+        }
+      }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "1.0.0.0",
+      "parameters": {
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        },
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        },
+        "ARNG Checkbook - Environment (book_ARNGCheckbookEnvironment)": {
+          "defaultValue": "https://arngcheckbookdev.crm.appsplatform.us/",
+          "type": "String",
+          "metadata": {
+            "schemaName": "book_ARNGCheckbookEnvironment",
+            "description": "Environment Org"
+          }
+        }
+      },
+      "triggers": {
+        "When_a_row_is_added,_modified_or_deleted": {
+          "metadata": {
+            "operationMetadataId": "358b233b-54eb-4bdc-82a3-3182cc8712de"
+          },
+          "type": "OpenApiConnectionWebhook",
+          "inputs": {
+            "host": {
+              "connectionName": "shared_commondataserviceforapps",
+              "operationId": "SubscribeWebhookTrigger",
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
+            },
+            "parameters": {
+              "subscriptionRequest/message": 1,
+              "subscriptionRequest/entityname": "book_turnin",
+              "subscriptionRequest/scope": 4,
+              "subscriptionRequest/runas": 1
+            },
+            "authentication": "@parameters('$authentication')"
+          }
+        }
+      },
+      "actions": {
+        "List_User's_to_be_notified": {
+          "runAfter": {},
+          "metadata": {
+            "operationMetadataId": "fc61f1b1-0c58-40f2-b275-01e59ce27a9e"
+          },
+          "type": "OpenApiConnection",
+          "inputs": {
+            "host": {
+              "connectionName": "shared_commondataserviceforapps",
+              "operationId": "ListRecords",
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
+            },
+            "parameters": {
+              "entityName": "systemusers",
+              "fetchXml": "<fetch>\n  <entity name=\"systemuser\">\n    <attribute name=\"systemuserid\"/>\n    <attribute name=\"fullname\"/>\n    <filter>\n      <condition attribute=\"businessunitid\" operator=\"eq\" value=\"@{triggerOutputs()?['body/_owningbusinessunit_value']}\"/>\n      <condition attribute=\"isdisabled\" operator=\"eq\" value=\"0\"/>\n    </filter>\n    <link-entity name=\"systemuserroles\" from=\"systemuserid\" to=\"systemuserid\">\n      <link-entity name=\"role\" from=\"roleid\" to=\"roleid\">\n        <filter type=\"or\">\n          <condition attribute=\"name\" operator=\"eq\" value=\"Book - State Administrator\"/>\n          <condition attribute=\"name\" operator=\"eq\" value=\"Book - State Approver\"/>\n        </filter>\n      </link-entity>\n    </link-entity>\n  </entity>\n</fetch>"
+            },
+            "authentication": "@parameters('$authentication')"
+          }
+        },
+        "Apply_to_each": {
+          "foreach": "@outputs('List_User''s_to_be_notified')?['body/value']",
+          "actions": {
+            "Add_Notification": {
+              "runAfter": {},
+              "metadata": {
+                "operationMetadataId": "a0e77d94-fd18-4a22-aecd-3f84333d84b6"
+              },
+              "type": "OpenApiConnection",
+              "inputs": {
+                "host": {
+                  "connectionName": "shared_commondataserviceforapps",
+                  "operationId": "CreateRecord",
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
+                },
+                "parameters": {
+                  "entityName": "appnotifications",
+                  "item/title": "Turn-In Created",
+                  "item/body": "Turn-In '@{triggerOutputs()?['body/book_name']}' has been submitted for your review.",
+                  "item/data": "{\n  \"actions\": [\n    {\n      \"title\": \"Review Turn-In\",\n      \"data\": {\n        \"type\": \"url\",\n        \"url\": \"@{concat(parameters('ARNG Checkbook - Environment (book_ARNGCheckbookEnvironment)'), '/main.aspx?etn=book_turnin&id=', triggerOutputs()?['body/book_turninid'], '&pagetype=entityrecord')}\",\n        \"navigationTarget\": \"newWindow\"\n      }\n    }\n  ]\n}",
+                  "item/icontype": 100000000,
+                  "item/ownerid@odata.bind": "systemusers(@{items('Apply_to_each')?['systemuserid']})",
+                  "item/owningbusinessunit@odata.bind": "businessunits(@{triggerOutputs()?['body/_owningbusinessunit_value']})",
+                  "item/priority": 200000000,
+                  "item/toasttype": 200000000
+                },
+                "authentication": "@parameters('$authentication')"
+              }
+            }
+          },
+          "runAfter": {
+            "List_User's_to_be_notified": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "30374d78-a567-462a-8ef7-64a211630e7d"
+          },
+          "type": "Foreach"
+        }
+      }
+    },
+    "templateName": ""
+  },
+  "schemaVersion": "1.0.0.0"
+}

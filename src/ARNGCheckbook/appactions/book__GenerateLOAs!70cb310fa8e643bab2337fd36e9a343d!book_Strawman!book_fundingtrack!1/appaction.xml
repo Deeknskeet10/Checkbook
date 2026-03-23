@@ -1,0 +1,41 @@
+<appaction uniquename="book__GenerateLOAs!70cb310fa8e643bab2337fd36e9a343d!book_Strawman!book_fundingtrack!1">
+  <appmoduleid>
+    <uniquename>book_Strawman</uniquename>
+  </appmoduleid>
+  <buttonaccessibilitytext default="Show Generate LOAs Modal">
+    <label description="Show Generate LOAs Modal" languagecode="1033" />
+  </buttonaccessibilitytext>
+  <buttonlabeltext default="Generate LOAs">
+    <label description="Generate LOAs" languagecode="1033" />
+  </buttonlabeltext>
+  <buttontooltipdescription default="Opens Modal to confirm generating LOAs">
+    <label description="Opens Modal to confirm generating LOAs" languagecode="1033" />
+  </buttontooltipdescription>
+  <buttontooltiptitle default="Show Generate LOAs Modal">
+    <label description="Show Generate LOAs Modal" languagecode="1033" />
+  </buttontooltiptitle>
+  <context>1</context>
+  <contextentity>
+    <logicalname>book_fundingtrack</logicalname>
+  </contextentity>
+  <contextvalue>book_fundingtrack</contextvalue>
+  <fonticon>BulletListDownArrow</fonticon>
+  <hidden>0</hidden>
+  <iscustomizable>1</iscustomizable>
+  <isdisabled>0</isdisabled>
+  <isgrouptitlehidden>0</isgrouptitlehidden>
+  <location>1</location>
+  <name>GenerateLOAs!70cb310fa8e643bab2337fd36e9a343d</name>
+  <onclickeventjavascriptfunctionname>showFTModal</onclickeventjavascriptfunctionname>
+  <onclickeventjavascriptparameters>[{"type":5}]</onclickeventjavascriptparameters>
+  <onclickeventjavascriptwebresourceid>
+    <webresourceid>dd309d22-ef63-f011-bec2-001dd8059413</webresourceid>
+  </onclickeventjavascriptwebresourceid>
+  <onclickeventtype>2</onclickeventtype>
+  <origin>0</origin>
+  <sequence>1000100010.0000000000</sequence>
+  <statecode>0</statecode>
+  <statuscode>1</statuscode>
+  <type>0</type>
+  <visibilitytype>0</visibilitytype>
+</appaction>

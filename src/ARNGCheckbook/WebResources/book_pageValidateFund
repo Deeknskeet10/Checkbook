@@ -1,0 +1,30 @@
+function openValidateFund(formContext) {
+    // Centered Dialog
+    var pageInput = {
+        pageType: "custom",
+        name: "book_pagevalidatefund_d0f43",
+        entityName: "book_requirementfundings",
+        recordId: formContext.data.entity.getId().replace(/[{}]/g, "")
+    };
+    var navigationOptions = {
+        target: 2,
+        position: 2,
+        width: { value: 785, unit: "px" },
+        title: "Validate & Fund"
+    };
+    console.log(`Post initaliziation: ${pageInput}`);
+
+    Xrm.Navigation.navigateTo(pageInput, navigationOptions)
+        .then(
+            function () {
+                // Called when the dialog closes
+                //console.log(`PageType: ${pageInput.pageType}, name: ${pageInput.name}, Entity: ${pageInput.entityName}, RecordID: ${pageInput.recordId}`);
+                formContext.data.refresh();
+            }
+        ).catch(
+            function (error) {
+                // Handle error
+
+            }
+        );
+}

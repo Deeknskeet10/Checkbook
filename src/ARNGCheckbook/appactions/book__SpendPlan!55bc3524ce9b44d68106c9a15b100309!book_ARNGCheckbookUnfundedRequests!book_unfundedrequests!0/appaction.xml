@@ -1,0 +1,46 @@
+<appaction uniquename="book__SpendPlan!55bc3524ce9b44d68106c9a15b100309!book_ARNGCheckbookUnfundedRequests!book_unfundedrequests!0">
+  <appmoduleid>
+    <uniquename>book_ARNGCheckbookUnfundedRequests</uniquename>
+  </appmoduleid>
+  <buttonaccessibilitytext default="Develop a Spend Plan">
+    <label description="Develop a Spend Plan" languagecode="1033" />
+  </buttonaccessibilitytext>
+  <buttonlabeltext default="Spend Plan">
+    <label description="Spend Plan" languagecode="1033" />
+  </buttonlabeltext>
+  <buttontooltipdescription default="Create a 12 month Spend plan for the associated UFR">
+    <label description="Create a 12 month Spend plan for the associated UFR" languagecode="1033" />
+  </buttontooltipdescription>
+  <buttontooltiptitle default="Develop a Spend Plan">
+    <label description="Develop a Spend Plan" languagecode="1033" />
+  </buttontooltiptitle>
+  <context>1</context>
+  <contextentity>
+    <logicalname>book_unfundedrequests</logicalname>
+  </contextentity>
+  <contextvalue>book_unfundedrequests</contextvalue>
+  <fonticon>CardsTask</fonticon>
+  <hidden>0</hidden>
+  <iscustomizable>1</iscustomizable>
+  <isdisabled>0</isdisabled>
+  <isgrouptitlehidden>0</isgrouptitlehidden>
+  <location>0</location>
+  <name>SpendPlan!55bc3524ce9b44d68106c9a15b100309</name>
+  <onclickeventjavascriptfunctionname>openSpendPlan</onclickeventjavascriptfunctionname>
+  <onclickeventjavascriptparameters>[{"type":5}]</onclickeventjavascriptparameters>
+  <onclickeventjavascriptwebresourceid>
+    <webresourceid>f17f8b46-c431-f011-8c4e-001dd805b842</webresourceid>
+  </onclickeventjavascriptwebresourceid>
+  <onclickeventtype>2</onclickeventtype>
+  <origin>0</origin>
+  <sequence>100100015.0000000000</sequence>
+  <statecode>0</statecode>
+  <statuscode>1</statuscode>
+  <type>0</type>
+  <visibilityformulacomponentlibraryid>
+    <name>book_arngcheckbookunfundedrequestsdefaultcommandlibrary_49d1e</name>
+  </visibilityformulacomponentlibraryid>
+  <visibilityformulacomponentname>aabfae1b24184f998d7748e1a12378f7</visibilityformulacomponentname>
+  <visibilityformulafunctionname>Visible</visibilityformulafunctionname>
+  <visibilitytype>1</visibilitytype>
+</appaction>

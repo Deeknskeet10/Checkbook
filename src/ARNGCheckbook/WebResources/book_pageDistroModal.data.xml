@@ -1,0 +1,16 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<WebResource xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <WebResourceId>{d483d3ca-e7c6-f011-bbd3-001dd8059413}</WebResourceId>
+  <Name>book_pageDistroModal</Name>
+  <DisplayName>pageDistroModal</DisplayName>
+  <Description>Pop-Up for Generating Distributions</Description>
+  <LanguageCode>0</LanguageCode>
+  <WebResourceType>3</WebResourceType>
+  <IntroducedVersion>1.0.0.13</IntroducedVersion>
+  <IsEnabledForMobileClient>0</IsEnabledForMobileClient>
+  <IsAvailableForMobileOffline>0</IsAvailableForMobileOffline>
+  <IsCustomizable>1</IsCustomizable>
+  <CanBeDeleted>1</CanBeDeleted>
+  <IsHidden>0</IsHidden>
+  <FileName>/WebResources/book_pageDistroModalD483D3CA-E7C6-F011-BBD3-001DD8059413</FileName>
+</WebResource>

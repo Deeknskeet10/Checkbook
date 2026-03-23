@@ -1,0 +1,81 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<forms xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <systemform>
+    <formid>{74ab5c4b-9446-4cfc-b425-27f21eb1af1b}</formid>
+    <IntroducedVersion>1.0</IntroducedVersion>
+    <FormPresentation>1</FormPresentation>
+    <FormActivationState>1</FormActivationState>
+    <form>
+      <tabs>
+        <tab verticallayout="true" id="{99b94919-8ffb-443e-bd5c-6ed3b0c1679c}" name="StageStep3" locklevel="0" expanded="true" visible="false" labelid="{18237d00-e6aa-4db9-9d46-37bfe53e9496}">
+          <labels>
+            <label description="Review" languagecode="1033" />
+          </labels>
+          <columns>
+            <column width="100%">
+              <sections>
+                <section showbar="false" columns="1" id="{c0fb1e7a-5fad-7dce-e49e-6d8d3b0ad0cb}" name="StageStep3_section1" labelid="{a2c5f494-1c23-485c-afe9-6d5359c6de39}">
+                  <labels>
+                    <label description="Review" languagecode="1033" />
+                  </labels>
+                  <rows>
+                    <row>
+                      <cell id="{e3006728-78c3-4214-a25b-695fbc2c4539}" showlabel="true" visible="true" labelid="{6255700f-087a-4cd5-99ab-76464aaff371}">
+                        <labels>
+                          <label description="Validated Amount" languagecode="1033" />
+                        </labels>
+                        <control id="bpf_book_requirementfunding_book_requirementfundingvalidatefunding:book_validatedamount" classid="{0d2c745a-e5a8-4c8f-ba63-c6d3bb604660}" datafieldname="book_validatedamount" relationship="bpf_book_requirementfunding_book_requirementfundingvalidatefunding" isrequired="true" disabled="false" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{50134eb4-f181-4fef-a433-8ad0a514b50b}" showlabel="true" visible="true" labelid="{212489f8-8ffb-4ee4-9142-9342696bcaf7}">
+                        <labels>
+                          <label description="Funded Amount" languagecode="1033" />
+                        </labels>
+                        <control id="bpf_book_requirementfunding_book_requirementfundingvalidatefunding:book_fundedamount" classid="{0d2c745a-e5a8-4c8f-ba63-c6d3bb604660}" datafieldname="book_fundedamount" relationship="bpf_book_requirementfunding_book_requirementfundingvalidatefunding" isrequired="true" disabled="false" />
+                      </cell>
+                    </row>
+                  </rows>
+                </section>
+              </sections>
+            </column>
+          </columns>
+        </tab>
+        <tab verticallayout="true" id="{d0231e2d-719a-4bbc-86ea-fbc44332d4d0}" name="StageStep9" locklevel="0" expanded="true" visible="false" labelid="{8163f733-d49d-444c-abc4-130217f66d7b}">
+          <labels>
+            <label description="Validate" languagecode="1033" />
+          </labels>
+          <columns>
+            <column width="100%">
+              <sections>
+                <section showbar="false" columns="1" id="{6fc970cb-5dcc-570c-1590-ab0940a146c2}" name="StageStep9_section1" labelid="{04b4fc01-46a0-46ba-8203-efee0c7d0e5b}">
+                  <labels>
+                    <label description="Validate" languagecode="1033" />
+                  </labels>
+                  <rows>
+                    <row>
+                      <cell id="{ca1c0180-ea90-4bae-8dc9-659094161bcb}" showlabel="true" visible="true" labelid="{6e7fdb83-1dee-4615-800a-e32acb2e3a82}">
+                        <labels>
+                          <label description="Validate Funding" languagecode="1033" />
+                        </labels>
+                        <control id="bpf_book_requirementfunding_book_requirementfundingvalidatefunding:book_fundingvalidated" classid="{67fac785-cd58-4f9f-abb3-4b7ddc6ed5ed}" datafieldname="book_fundingvalidated" relationship="bpf_book_requirementfunding_book_requirementfundingvalidatefunding" isrequired="true" disabled="false" />
+                      </cell>
+                    </row>
+                  </rows>
+                </section>
+              </sections>
+            </column>
+          </columns>
+        </tab>
+      </tabs>
+    </form>
+    <IsCustomizable>1</IsCustomizable>
+    <CanBeDeleted>1</CanBeDeleted>
+    <LocalizedNames>
+      <LocalizedName description="Information" languagecode="1033" />
+    </LocalizedNames>
+    <Descriptions>
+      <Description description="A form for this entity." languagecode="1033" />
+    </Descriptions>
+  </systemform>
+</forms>

@@ -1,0 +1,50 @@
+function lockAmountFields(executionContext) {
+  var formContext = executionContext.getFormContext();
+  var requirement = formContext.getAttribute("book_requirement").getValue();
+
+  var validatedAmountControl = formContext.getControl("book_validatedamount");
+  var fundedAmountControl = formContext.getControl("book_fundedamount");
+  var requestedAmountControl = formContext.getControl("book_requestedamount");
+
+  if (requirement != null) {
+    Xrm.WebApi.retrieveRecord(
+      "book_requirements",
+      requirement[0].id.replace(/[{}]/g, ""),
+      "?$select=book_type"
+    ).then(
+      function success(result) {
+        var requirementType = result.book_type;
+        console.log("Requirement Type: " + requirementType);
+
+        // Adjust this condition based on which type value(s) should lock the fields
+        // If book_type is an OptionSet, this will be a numeric value
+        var shouldLock = requirementType === 1 || requirementType === 4; // Replace 1 with your specific type value
+
+        if (validatedAmountControl) {
+          validatedAmountControl.setDisabled(!shouldLock);
+        }
+        if (fundedAmountControl) {
+          fundedAmountControl.setDisabled(!shouldLock);
+        }
+        if (requestedAmountControl) {
+          requestedAmountControl.setVisible(!shouldLock);
+        }
+      },
+      function (error) {
+        console.log(error.message);
+      }
+    );
+  } else {
+    // No funding requirement selected - decide default behavior
+    // Optionally lock both fields when nothing is selected
+    if (validatedAmountControl) {
+      validatedAmountControl.setDisabled(true);
+    }
+    if (fundedAmountControl) {
+      fundedAmountControl.setDisabled(true);
+    }
+    if (requestedAmountControl) {
+      requestedAmountControl.setVisible(true);
+    }
+  }
+}

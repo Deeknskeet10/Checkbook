@@ -1,0 +1,13 @@
+<environmentvariabledefinition schemaname="book_ARNGCheckbook1toNStates">
+  <description default="URL to State 1 to N list">
+    <label description="URL to State 1 to N list" languagecode="1033" />
+  </description>
+  <displayname default="ARNG Checkbook - 1 to N States">
+    <label description="ARNG Checkbook - 1 to N States" languagecode="1033" />
+  </displayname>
+  <introducedversion>1.0.0.0</introducedversion>
+  <iscustomizable>1</iscustomizable>
+  <isrequired>0</isrequired>
+  <secretstore>0</secretstore>
+  <type>100000000</type>
+</environmentvariabledefinition>

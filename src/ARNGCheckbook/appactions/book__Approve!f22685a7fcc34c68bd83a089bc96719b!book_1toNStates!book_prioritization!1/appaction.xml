@@ -1,0 +1,49 @@
+<appaction uniquename="book__Approve!f22685a7fcc34c68bd83a089bc96719b!book_1toNStates!book_prioritization!1">
+  <appmoduleid>
+    <uniquename>book_1toNStates</uniquename>
+  </appmoduleid>
+  <buttonaccessibilitytext default="Approve Prioritizations">
+    <label description="Approve Prioritizations" languagecode="1033" />
+  </buttonaccessibilitytext>
+  <buttonlabeltext default="Approve">
+    <label description="Approve" languagecode="1033" />
+  </buttonlabeltext>
+  <buttontooltipdescription default="Approve Prioritizations to move them to the next Reviewer">
+    <label description="Approve Prioritizations to move them to the next Reviewer" languagecode="1033" />
+  </buttontooltipdescription>
+  <buttontooltiptitle default="Approve Prioritizations">
+    <label description="Approve Prioritizations" languagecode="1033" />
+  </buttontooltiptitle>
+  <context>1</context>
+  <contextentity>
+    <logicalname>book_prioritization</logicalname>
+  </contextentity>
+  <contextvalue>book_prioritization</contextvalue>
+  <fonticon>$clientsvg:Accept</fonticon>
+  <hidden>0</hidden>
+  <iscustomizable>1</iscustomizable>
+  <isdisabled>0</isdisabled>
+  <isgrouptitlehidden>0</isgrouptitlehidden>
+  <location>1</location>
+  <name>Approve!f22685a7fcc34c68bd83a089bc96719b</name>
+  <onclickeventjavascriptfunctionname>checkbookButtons</onclickeventjavascriptfunctionname>
+  <onclickeventjavascriptparameters>[{"type":12},{"type":23},{"type":19,"value":1}]</onclickeventjavascriptparameters>
+  <onclickeventjavascriptwebresourceid>
+    <webresourceid>bb5020d9-da6b-f011-bec3-001dd8059413</webresourceid>
+  </onclickeventjavascriptwebresourceid>
+  <onclickeventtype>2</onclickeventtype>
+  <origin>0</origin>
+  <parentappactionid>
+    <uniquename>book__ApproveReject!15aeca26524946829836a71f16c9dfd0!book_1toNStates!book_prioritization!1</uniquename>
+  </parentappactionid>
+  <sequence>10000.0000000000</sequence>
+  <statecode>0</statecode>
+  <statuscode>1</statuscode>
+  <type>0</type>
+  <visibilityformulacomponentlibraryid>
+    <name>book_1tonstatesdefaultcommandlibrary_3b19f</name>
+  </visibilityformulacomponentlibraryid>
+  <visibilityformulacomponentname>460ac03580664280b2232d7cb41d3f97</visibilityformulacomponentname>
+  <visibilityformulafunctionname>Visible</visibilityformulafunctionname>
+  <visibilitytype>1</visibilitytype>
+</appaction>

@@ -1,0 +1,243 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<forms xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <systemform>
+    <formid>{01ce47b6-d063-4422-8e17-9140cab8e000}</formid>
+    <IntroducedVersion>1.0</IntroducedVersion>
+    <FormPresentation>1</FormPresentation>
+    <FormActivationState>1</FormActivationState>
+    <form>
+      <tabs>
+        <tab verticallayout="true" id="{3ac352fc-0137-4fc0-80d2-2bf9838498a7}" name="StageStep3" locklevel="0" expanded="true" visible="false" labelid="{9207feab-d8d3-4825-8854-9bc32f37a1b6}">
+          <labels>
+            <label description="NPM Input" languagecode="1033" />
+          </labels>
+          <columns>
+            <column width="100%">
+              <sections>
+                <section showbar="false" columns="1" id="{62b97159-1fed-ee6c-c66e-8202dbfbae4c}" name="StageStep3_section1" labelid="{1189106d-bfeb-4b09-97cb-895690c56166}">
+                  <labels>
+                    <label description="NPM Input" languagecode="1033" />
+                  </labels>
+                  <rows>
+                    <row>
+                      <cell id="{a4e3cfdb-ff1b-48d7-b803-66fe5f45f552}" showlabel="true" visible="true" labelid="{6ceb6b72-e06a-4a11-9385-e7f443516e51}">
+                        <labels>
+                          <label description="NPM Recommendation" languagecode="1033" />
+                        </labels>
+                        <control id="bpf_book_unfundedrequests_book_arngcheckbookufrvalidation:book_npmrecommendation" classid="{3ef39988-22bb-4f0b-bbbe-64b5a3748aee}" datafieldname="book_npmrecommendation" disabled="false" relationship="bpf_book_unfundedrequests_book_arngcheckbookufrvalidation" isrequired="true" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{dd573ce3-76b2-49db-a3c5-68981b16251d}" showlabel="true" visible="true" labelid="{c0970d73-6db7-42dd-aa05-3e09008da288}">
+                        <labels>
+                          <label description="Priority" languagecode="1033" />
+                        </labels>
+                        <control id="bpf_book_unfundedrequests_book_arngcheckbookufrvalidation:book_priority" classid="{c6d124ca-7eda-4a60-aea9-7fb8d318b68f}" datafieldname="book_priority" disabled="false" relationship="bpf_book_unfundedrequests_book_arngcheckbookufrvalidation" isrequired="true" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{a8824d7e-a974-4f23-bae3-7d2f0e375b67}" showlabel="true" visible="true" labelid="{007dcbd5-4c24-4fc6-91aa-636114a3d886}">
+                        <labels>
+                          <label description="Risk" languagecode="1033" />
+                        </labels>
+                        <control id="bpf_book_unfundedrequests_book_arngcheckbookufrvalidation:book_risk" classid="{3ef39988-22bb-4f0b-bbbe-64b5a3748aee}" datafieldname="book_risk" disabled="false" relationship="bpf_book_unfundedrequests_book_arngcheckbookufrvalidation" isrequired="true" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{dc007670-8974-4a49-a373-eba7805cba5a}" showlabel="true" visible="true" labelid="{b37a2e2a-6c44-426c-a924-30405ee4cc94}">
+                        <labels>
+                          <label description="Risk Statement" languagecode="1033" />
+                        </labels>
+                        <control id="bpf_book_unfundedrequests_book_arngcheckbookufrvalidation:book_riskstatement" classid="{4273edbd-ac1d-40d3-9fb2-095c621b552d}" datafieldname="book_riskstatement" disabled="false" relationship="bpf_book_unfundedrequests_book_arngcheckbookufrvalidation" isrequired="true" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{c8ef6480-8369-4270-9b41-efa33929c5cb}" showlabel="true" visible="true" labelid="{4ee3ee69-340d-4eea-99b8-ff1a226a0bbf}">
+                        <labels>
+                          <label description="Justification" languagecode="1033" />
+                        </labels>
+                        <control id="bpf_book_unfundedrequests_book_arngcheckbookufrvalidation:book_justification" classid="{4273edbd-ac1d-40d3-9fb2-095c621b552d}" datafieldname="book_justification" disabled="false" relationship="bpf_book_unfundedrequests_book_arngcheckbookufrvalidation" isrequired="true" />
+                      </cell>
+                    </row>
+                  </rows>
+                </section>
+              </sections>
+            </column>
+          </columns>
+        </tab>
+        <tab verticallayout="true" id="{c37a189b-7b66-4533-9f39-71e96d4b26b0}" name="StageStep15" locklevel="0" expanded="true" visible="false" labelid="{6615cc1d-58a5-4ec4-9fbf-58b420f07367}">
+          <labels>
+            <label description="RI Validation" languagecode="1033" />
+          </labels>
+          <columns>
+            <column width="100%">
+              <sections>
+                <section showbar="false" columns="1" id="{446dce94-b268-89a9-9c46-0754199b9887}" name="StageStep15_section1" labelid="{726cb484-ce17-44d5-912b-d50f77a12a15}">
+                  <labels>
+                    <label description="RI Validation" languagecode="1033" />
+                  </labels>
+                  <rows>
+                    <row>
+                      <cell id="{fb4312bb-b117-4cfe-80ef-db5dbfe5fb03}" showlabel="true" visible="true" labelid="{d0f91c80-04f2-43d8-90cc-cbc73a259917}">
+                        <labels>
+                          <label description="RI Action" languagecode="1033" />
+                        </labels>
+                        <control id="bpf_book_unfundedrequests_book_arngcheckbookufrvalidation:book_riaction" classid="{3ef39988-22bb-4f0b-bbbe-64b5a3748aee}" datafieldname="book_riaction" disabled="false" relationship="bpf_book_unfundedrequests_book_arngcheckbookufrvalidation" isrequired="true" />
+                      </cell>
+                    </row>
+                  </rows>
+                </section>
+              </sections>
+            </column>
+          </columns>
+        </tab>
+        <tab verticallayout="true" id="{60f31a50-ae35-4eca-b242-24de6daf3bf1}" name="StageStep19" locklevel="0" expanded="true" visible="false" labelid="{000b773d-3c7f-4002-84d3-4532e3d3b833}">
+          <labels>
+            <label description="RWG Review" languagecode="1033" />
+          </labels>
+          <columns>
+            <column width="100%">
+              <sections>
+                <section showbar="false" columns="1" id="{120d5a7e-b2c1-a473-ec68-eac2320197d5}" name="StageStep19_section1" labelid="{0bde3526-3de1-4cfe-9581-ccd89dc22183}">
+                  <labels>
+                    <label description="RWG Review" languagecode="1033" />
+                  </labels>
+                  <rows>
+                    <row>
+                      <cell id="{183de461-50ca-4d45-966c-ec13d6ee3145}" showlabel="true" visible="true" labelid="{f6228020-2152-4512-aa8e-6ee1fe458efb}">
+                        <labels>
+                          <label description="Outcome" languagecode="1033" />
+                        </labels>
+                        <control id="bpf_book_unfundedrequests_book_arngcheckbookufrvalidation:book_rwgoutcome" classid="{3ef39988-22bb-4f0b-bbbe-64b5a3748aee}" datafieldname="book_rwgoutcome" disabled="false" relationship="bpf_book_unfundedrequests_book_arngcheckbookufrvalidation" isrequired="true" />
+                      </cell>
+                    </row>
+                  </rows>
+                </section>
+              </sections>
+            </column>
+          </columns>
+        </tab>
+        <tab verticallayout="true" id="{5e5062e6-136d-44eb-a562-411017fb1ddb}" name="StageStep24" locklevel="0" expanded="true" visible="false" labelid="{b7834628-33e3-48d1-8a60-c57f9fa86833}">
+          <labels>
+            <label description="Rcoc Review" languagecode="1033" />
+          </labels>
+          <columns>
+            <column width="100%">
+              <sections>
+                <section showbar="false" columns="1" id="{cd4a454e-764e-dcce-211a-2fdb54df0af0}" name="StageStep24_section1" labelid="{db2a8e6a-6c73-42d7-bc5b-aaead8e288d7}">
+                  <labels>
+                    <label description="Rcoc Review" languagecode="1033" />
+                  </labels>
+                  <rows>
+                    <row>
+                      <cell id="{6a39e03c-3fc6-4976-9882-5834f1f70bf5}" showlabel="true" visible="true" labelid="{4d7bb22a-5a08-40ff-97cb-427dc423cee2}">
+                        <labels>
+                          <label description="Outcome" languagecode="1033" />
+                        </labels>
+                        <control id="bpf_book_unfundedrequests_book_arngcheckbookufrvalidation:book_rcocoutcome" classid="{3ef39988-22bb-4f0b-bbbe-64b5a3748aee}" datafieldname="book_rcocoutcome" disabled="false" relationship="bpf_book_unfundedrequests_book_arngcheckbookufrvalidation" isrequired="true" />
+                      </cell>
+                    </row>
+                  </rows>
+                </section>
+              </sections>
+            </column>
+          </columns>
+        </tab>
+        <tab verticallayout="true" id="{e5a7be0e-9dbb-44c5-a40e-421c97045a98}" name="StageStep29" locklevel="0" expanded="true" visible="false" labelid="{6987185e-1e64-402a-963a-c1f009747dbe}">
+          <labels>
+            <label description="RISC Review" languagecode="1033" />
+          </labels>
+          <columns>
+            <column width="100%">
+              <sections>
+                <section showbar="false" columns="1" id="{43794e13-a820-44af-7f1d-efa3b965fb7a}" name="StageStep29_section1" labelid="{c123eeb7-c960-4942-8f66-9bb4acfa3453}">
+                  <labels>
+                    <label description="RISC Review" languagecode="1033" />
+                  </labels>
+                  <rows>
+                    <row>
+                      <cell id="{f554e0de-cdb5-46df-b99a-d41acc32a6db}" showlabel="true" visible="true" labelid="{16dbc35e-c48c-450c-bfaa-7230dba70c38}">
+                        <labels>
+                          <label description="Outcome" languagecode="1033" />
+                        </labels>
+                        <control id="bpf_book_unfundedrequests_book_arngcheckbookufrvalidation:book_riscoutcome" classid="{3ef39988-22bb-4f0b-bbbe-64b5a3748aee}" datafieldname="book_riscoutcome" disabled="false" relationship="bpf_book_unfundedrequests_book_arngcheckbookufrvalidation" isrequired="true" />
+                      </cell>
+                    </row>
+                  </rows>
+                </section>
+              </sections>
+            </column>
+          </columns>
+        </tab>
+        <tab verticallayout="true" id="{e1175d1b-d5ad-4175-b3e9-3c7bc52753ee}" name="StageStep34" locklevel="0" expanded="true" visible="false" labelid="{bace1af6-5289-4c31-96ea-d1d637b9a832}">
+          <labels>
+            <label description="PPBG-C Decision" languagecode="1033" />
+          </labels>
+          <columns>
+            <column width="100%">
+              <sections>
+                <section showbar="false" columns="1" id="{08730bbc-2cc8-9b2d-3421-ceb8bd41f80f}" name="StageStep34_section1" labelid="{7a5c4ab9-f322-4b94-856d-80800adca92c}">
+                  <labels>
+                    <label description="PPBG-C Decision" languagecode="1033" />
+                  </labels>
+                  <rows>
+                    <row>
+                      <cell id="{b55fde8a-7eff-4b54-94eb-2a7ec7b1dd47}" showlabel="true" visible="true" labelid="{c3e2ad6a-9307-47df-b6b4-abc6a3dd9767}">
+                        <labels>
+                          <label description="PPBG-C Outcome" languagecode="1033" />
+                        </labels>
+                        <control id="bpf_book_unfundedrequests_book_arngcheckbookufrvalidation:book_ppbgcoutcome" classid="{3ef39988-22bb-4f0b-bbbe-64b5a3748aee}" datafieldname="book_ppbgcoutcome" disabled="false" relationship="bpf_book_unfundedrequests_book_arngcheckbookufrvalidation" isrequired="true" />
+                      </cell>
+                    </row>
+                  </rows>
+                </section>
+              </sections>
+            </column>
+          </columns>
+        </tab>
+        <tab verticallayout="true" id="{11350d18-7ba2-4d38-ba37-c26165ddee7e}" name="StageStep39" locklevel="0" expanded="true" visible="false" labelid="{3cd5a048-c71e-4ab2-84a8-a4ca62aba080}">
+          <labels>
+            <label description="UFR Adjudication" languagecode="1033" />
+          </labels>
+          <columns>
+            <column width="100%">
+              <sections>
+                <section showbar="false" columns="1" id="{86113bb4-9242-3437-f972-2a5f2916fbe9}" name="StageStep39_section1" labelid="{38cd2a60-a7ef-44d6-bfe9-ac6c7642ddc6}">
+                  <labels>
+                    <label description="UFR Adjudication" languagecode="1033" />
+                  </labels>
+                  <rows>
+                    <row>
+                      <cell id="{b30fc124-096d-4b2d-849f-0142975435b0}" showlabel="true" visible="true" labelid="{aea75f02-4d39-4acb-afaf-38d6e35e16d8}">
+                        <labels>
+                          <label description="Outcome" languagecode="1033" />
+                        </labels>
+                        <control id="bpf_book_unfundedrequests_book_arngcheckbookufrvalidation:book_outcome" classid="{3ef39988-22bb-4f0b-bbbe-64b5a3748aee}" datafieldname="book_outcome" disabled="false" relationship="bpf_book_unfundedrequests_book_arngcheckbookufrvalidation" isrequired="true" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{ae9f54bb-06ef-47ca-9173-1d1ba39e645c}" showlabel="true" visible="true" labelid="{ac534acd-3db8-4723-8c71-b7bf1754cb3b}">
+                        <labels>
+                          <label description="Outcome Narrative" languagecode="1033" />
+                        </labels>
+                        <control id="bpf_book_unfundedrequests_book_arngcheckbookufrvalidation:book_outcomenarrative" classid="{4273edbd-ac1d-40d3-9fb2-095c621b552d}" datafieldname="book_outcomenarrative" disabled="false" relationship="bpf_book_unfundedrequests_book_arngcheckbookufrvalidation" isrequired="true" />
+                      </cell>
+                    </row>
+                  </rows>
+                </section>
+              </sections>
+            </column>
+          </columns>
+        </tab>
+      </tabs>
+    </form>
+    <IsCustomizable>1</IsCustomizable>
+    <CanBeDeleted>1</CanBeDeleted>
+    <LocalizedNames>
+      <LocalizedName description="Information" languagecode="1033" />
+    </LocalizedNames>
+    <Descriptions>
+      <Description description="A form for this entity." languagecode="1033" />
+    </Descriptions>
+  </systemform>
+</forms>

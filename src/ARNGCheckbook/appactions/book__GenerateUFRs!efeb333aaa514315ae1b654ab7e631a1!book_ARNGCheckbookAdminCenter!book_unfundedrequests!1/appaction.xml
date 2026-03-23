@@ -1,0 +1,41 @@
+<appaction uniquename="book__GenerateUFRs!efeb333aaa514315ae1b654ab7e631a1!book_ARNGCheckbookAdminCenter!book_unfundedrequests!1">
+  <appmoduleid>
+    <uniquename>book_ARNGCheckbookAdminCenter</uniquename>
+  </appmoduleid>
+  <buttonaccessibilitytext default="Generate UFRs">
+    <label description="Generate UFRs" languagecode="1033" />
+  </buttonaccessibilitytext>
+  <buttonlabeltext default="Generate UFRs">
+    <label description="Generate UFRs" languagecode="1033" />
+  </buttonlabeltext>
+  <buttontooltipdescription default="Generates UFRs for all Requirement Fundings and Prioritizations">
+    <label description="Generates UFRs for all Requirement Fundings and Prioritizations" languagecode="1033" />
+  </buttontooltipdescription>
+  <buttontooltiptitle default="Generate UFRs">
+    <label description="Generate UFRs" languagecode="1033" />
+  </buttontooltiptitle>
+  <context>1</context>
+  <contextentity>
+    <logicalname>book_unfundedrequests</logicalname>
+  </contextentity>
+  <contextvalue>book_unfundedrequests</contextvalue>
+  <fonticon>AssociateChildCase</fonticon>
+  <hidden>0</hidden>
+  <iscustomizable>1</iscustomizable>
+  <isdisabled>0</isdisabled>
+  <isgrouptitlehidden>0</isgrouptitlehidden>
+  <location>1</location>
+  <name>GenerateUFRs!efeb333aaa514315ae1b654ab7e631a1</name>
+  <onclickeventjavascriptfunctionname>showUFRModal</onclickeventjavascriptfunctionname>
+  <onclickeventjavascriptparameters>[{"type":5}]</onclickeventjavascriptparameters>
+  <onclickeventjavascriptwebresourceid>
+    <webresourceid>7ef36c1d-6407-f111-8406-001dd8201529</webresourceid>
+  </onclickeventjavascriptwebresourceid>
+  <onclickeventtype>2</onclickeventtype>
+  <origin>0</origin>
+  <sequence>1000100010.0000000000</sequence>
+  <statecode>0</statecode>
+  <statuscode>1</statuscode>
+  <type>0</type>
+  <visibilitytype>0</visibilitytype>
+</appaction>

@@ -1,0 +1,80 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Workflow WorkflowId="{9d8c3f46-7241-f011-b4cc-001dd805a06b}" Name="ARNG Checkbook - UFR Acceptance" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <XamlFileName>/Workflows/ARNGCheckbook-UFRAcceptance-9D8C3F46-7241-F011-B4CC-001DD805A06B.xaml</XamlFileName>
+  <Type>1</Type>
+  <Subprocess>0</Subprocess>
+  <Category>4</Category>
+  <Mode>0</Mode>
+  <Scope>4</Scope>
+  <OnDemand>0</OnDemand>
+  <TriggerOnCreate>1</TriggerOnCreate>
+  <TriggerOnDelete>0</TriggerOnDelete>
+  <AsyncAutodelete>0</AsyncAutodelete>
+  <SyncWorkflowLogOnFailure>0</SyncWorkflowLogOnFailure>
+  <StateCode>1</StateCode>
+  <StatusCode>2</StatusCode>
+  <processorder>100</processorder>
+  <RunAs>1</RunAs>
+  <UniqueName>book_arngcheckbookufr</UniqueName>
+  <IsTransacted>1</IsTransacted>
+  <IntroducedVersion>1.0.0.5</IntroducedVersion>
+  <IsCustomizable>1</IsCustomizable>
+  <BusinessProcessType>0</BusinessProcessType>
+  <IsCustomProcessingStepAllowedForOtherPublishers>1</IsCustomProcessingStepAllowedForOtherPublishers>
+  <ProcessTriggerScope>1</ProcessTriggerScope>
+  <ModernFlowType>0</ModernFlowType>
+  <PrimaryEntity>book_UnfundedRequests</PrimaryEntity>
+  <LocalizedNames>
+    <LocalizedName languagecode="1033" description="ARNG Checkbook - UFR Acceptance" />
+  </LocalizedNames>
+  <labels>
+    <steplabels id="{00ed9761-8146-4fe6-afef-82ec90bd37e5}">
+      <label languagecode="1033" description="State Input" />
+    </steplabels>
+    <steplabels id="{3237f607-943f-4795-8158-04f84a9091c2}">
+      <label languagecode="1033" description="Priority" />
+    </steplabels>
+    <steplabels id="{1dd1f63b-6d25-49b5-b4ff-1cfee7d53ec8}">
+      <label languagecode="1033" description="Internal State Risk" />
+    </steplabels>
+    <steplabels id="{cb426c18-d37a-4d64-b22f-ff83f1ebba7b}">
+      <label languagecode="1033" description="Risk Statement" />
+    </steplabels>
+    <steplabels id="{f6bcde3f-64a8-443f-8c43-75f6996eefee}">
+      <label languagecode="1033" description="Justification" />
+    </steplabels>
+    <steplabels id="{fea517df-e47a-460b-a135-b042e31b8861}">
+      <label languagecode="1033" description="State Recommendation" />
+    </steplabels>
+    <steplabels id="{54704b7a-d4d4-4102-8a70-bf838d0130c2}">
+      <label languagecode="1033" description="State Review" />
+    </steplabels>
+    <steplabels id="{efb20633-ba52-463f-a683-a35d4872003e}">
+      <label languagecode="1033" description="Fund Center Recommendation" />
+    </steplabels>
+    <steplabels id="{a23c3544-9241-482e-9155-e82d44c82014}">
+      <label languagecode="1033" description="State Approval" />
+    </steplabels>
+    <steplabels id="{2371a861-ab62-4adc-b3a9-2d7c50ab7d1c}">
+      <label languagecode="1033" description="State Action" />
+    </steplabels>
+    <steplabels id="{d486ee0f-eda2-4b87-a1d9-204e3b990885}">
+      <label languagecode="1033" description="Action if not Resourced" />
+    </steplabels>
+    <steplabels id="{607a5728-f392-46d5-beb7-c17d12a956f1}">
+      <label languagecode="1033" description="NPM Recommendation" />
+    </steplabels>
+    <steplabels id="{bc6fbc71-0e30-4971-b9c1-9c821ce9ac29}">
+      <label languagecode="1033" description="NPM Recommendation" />
+    </steplabels>
+    <steplabels id="{7d5f4561-eb6b-4a11-b524-cb7c1d1b6ccd}">
+      <label languagecode="1033" description="Outcome" />
+    </steplabels>
+    <steplabels id="{d4dc7220-328d-4c3b-80dc-60c3c8ab91fa}">
+      <label languagecode="1033" description="Outcome" />
+    </steplabels>
+    <steplabels id="{693b5b0b-0012-4d34-9acd-ef1f22b7d69f}">
+      <label languagecode="1033" description="Outcome Narrative" />
+    </steplabels>
+  </labels>
+</Workflow>

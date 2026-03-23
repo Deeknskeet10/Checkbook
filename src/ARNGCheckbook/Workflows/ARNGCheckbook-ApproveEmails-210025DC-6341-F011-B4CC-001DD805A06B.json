@@ -1,0 +1,135 @@
+{
+  "properties": {
+    "connectionReferences": {
+      "shared_commondataserviceforapps": {
+        "impersonation": {
+          "source": "invoker"
+        },
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "book_sharedcommondataserviceforapps_9388f"
+        },
+        "api": {
+          "name": "shared_commondataserviceforapps"
+        }
+      }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "1.0.0.0",
+      "parameters": {
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        },
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        }
+      },
+      "triggers": {
+        "When_a_row_is_added,_modified_or_deleted": {
+          "metadata": {
+            "operationMetadataId": "4924153a-a089-4a75-b493-2249e1b93fb4"
+          },
+          "type": "OpenApiConnectionWebhook",
+          "inputs": {
+            "host": {
+              "connectionName": "shared_commondataserviceforapps",
+              "operationId": "SubscribeWebhookTrigger",
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
+            },
+            "parameters": {
+              "subscriptionRequest/message": 1,
+              "subscriptionRequest/entityname": "email",
+              "subscriptionRequest/scope": 4,
+              "subscriptionRequest/filterexpression": "directioncode eq true",
+              "subscriptionRequest/runas": 2
+            },
+            "authentication": "@parameters('$authentication')"
+          }
+        }
+      },
+      "actions": {
+        "List_Mailboxes": {
+          "runAfter": {},
+          "metadata": {
+            "operationMetadataId": "50fafd5b-36fc-4318-87ab-925176d760f4"
+          },
+          "type": "OpenApiConnection",
+          "inputs": {
+            "host": {
+              "connectionName": "shared_commondataserviceforapps",
+              "operationId": "ListRecords",
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
+            },
+            "parameters": {
+              "entityName": "mailboxes",
+              "$filter": "_owninguser_value eq @{triggerOutputs()?['body/_ownerid_value']} and emailaddress ne null"
+            },
+            "authentication": "@parameters('$authentication')"
+          }
+        },
+        "Apply_to_each": {
+          "foreach": "@outputs('List_Mailboxes')?['body/value']",
+          "actions": {
+            "Check_Mailbox_Status": {
+              "actions": {
+                "Approve_Mailbox": {
+                  "runAfter": {},
+                  "metadata": {
+                    "operationMetadataId": "20dc54a6-7cfa-41e2-a04e-90ad00c3be46"
+                  },
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "host": {
+                      "connectionName": "shared_commondataserviceforapps",
+                      "operationId": "UpdateOnlyRecord",
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
+                    },
+                    "parameters": {
+                      "entityName": "mailboxes",
+                      "recordId": "@items('Apply_to_each')?['mailboxid']",
+                      "item/isemailaddressapprovedbyo365admin": true,
+                      "item/emailrouteraccessapproval": 1,
+                      "item/enabledforact": true,
+                      "item/enabledforincomingemail": true,
+                      "item/enabledforoutgoingemail": true,
+                      "item/statecode": 0,
+                      "item/testemailconfigurationscheduled": true
+                    },
+                    "authentication": "@parameters('$authentication')"
+                  }
+                }
+              },
+              "runAfter": {},
+              "expression": {
+                "not": {
+                  "equals": [
+                    "@items('Apply_to_each')?['emailrouteraccessapproval']",
+                    1
+                  ]
+                }
+              },
+              "metadata": {
+                "operationMetadataId": "3be71571-f32b-41b5-9db4-4507f94e4a34"
+              },
+              "type": "If"
+            }
+          },
+          "runAfter": {
+            "List_Mailboxes": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "5660c1c8-467f-4f04-8d7e-3c09049101a3"
+          },
+          "type": "Foreach"
+        }
+      }
+    },
+    "templateName": ""
+  },
+  "schemaVersion": "1.0.0.0"
+}

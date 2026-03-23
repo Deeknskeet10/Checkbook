@@ -1,0 +1,45 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<savedqueries xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <savedquery>
+    <IsCustomizable>1</IsCustomizable>
+    <CanBeDeleted>0</CanBeDeleted>
+    <isquickfindquery>0</isquickfindquery>
+    <isprivate>0</isprivate>
+    <isdefault>1</isdefault>
+    <savedqueryid>{491bd0f4-cf5a-4872-a7fc-1b1fc1642886}</savedqueryid>
+    <layoutxml>
+      <grid name="resultset" jump="book_name" select="1" icon="1" preview="1">
+        <row name="result" id="book_obligationauthorityid">
+          <cell name="book_name" width="300" />
+          <cell name="book_prioritization" width="114" />
+          <cell name="book_requirement" width="113" />
+          <cell name="book_lineofaccounting" width="150" />
+          <cell name="book_amountneeded" width="133" />
+          <cell name="book_period" width="100" />
+        </row>
+      </grid>
+    </layoutxml>
+    <querytype>0</querytype>
+    <fetchxml>
+      <fetch version="1.0" mapping="logical">
+        <entity name="book_obligationauthority">
+          <attribute name="book_obligationauthorityid" />
+          <attribute name="book_name" />
+          <order attribute="book_name" descending="false" />
+          <filter type="and">
+            <condition attribute="statecode" operator="eq" value="0" />
+          </filter>
+          <attribute name="book_amountneeded" />
+          <attribute name="book_prioritization" />
+          <attribute name="book_requirement" />
+          <attribute name="book_period" />
+          <attribute name="book_lineofaccounting" />
+        </entity>
+      </fetch>
+    </fetchxml>
+    <IntroducedVersion>1.4.1.1</IntroducedVersion>
+    <LocalizedNames>
+      <LocalizedName description="Active Obligation Authorities" languagecode="1033" />
+    </LocalizedNames>
+  </savedquery>
+</savedqueries>

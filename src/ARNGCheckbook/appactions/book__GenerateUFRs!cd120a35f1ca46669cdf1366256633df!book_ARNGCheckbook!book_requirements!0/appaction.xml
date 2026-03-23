@@ -1,0 +1,49 @@
+<appaction uniquename="book__GenerateUFRs!cd120a35f1ca46669cdf1366256633df!book_ARNGCheckbook!book_requirements!0">
+  <appmoduleid>
+    <uniquename>book_ARNGCheckbook</uniquename>
+  </appmoduleid>
+  <buttonaccessibilitytext default="Manually generate UFRs">
+    <label description="Manually generate UFRs" languagecode="1033" />
+  </buttonaccessibilitytext>
+  <buttonlabeltext default="Generate UFRs">
+    <label description="Generate UFRs" languagecode="1033" />
+  </buttonlabeltext>
+  <buttontooltipdescription default="UFRs are generated automatically when a Requirement is validated by the RI.  Manually generate any new UFRs with this button.">
+    <label description="UFRs are generated automatically when a Requirement is validated by the RI.  Manually generate any new UFRs with this button." languagecode="1033" />
+  </buttontooltipdescription>
+  <buttontooltiptitle default="Manually generate UFRs">
+    <label description="Manually generate UFRs" languagecode="1033" />
+  </buttontooltiptitle>
+  <context>1</context>
+  <contextentity>
+    <logicalname>book_requirements</logicalname>
+  </contextentity>
+  <contextvalue>book_requirements</contextvalue>
+  <fonticon>UseCurrentPricing</fonticon>
+  <hidden>0</hidden>
+  <iscustomizable>1</iscustomizable>
+  <isdisabled>0</isdisabled>
+  <isgrouptitlehidden>0</isgrouptitlehidden>
+  <location>0</location>
+  <name>GenerateUFRs!cd120a35f1ca46669cdf1366256633df</name>
+  <onclickeventformulacomponentlibraryid>
+    <name>book_arngcheckbookdefaultcommandlibrary_035ae</name>
+  </onclickeventformulacomponentlibraryid>
+  <onclickeventformulacomponentname>4fe7a8971f724924a415dfaf7294a274</onclickeventformulacomponentname>
+  <onclickeventformulafunctionname>OnSelect</onclickeventformulafunctionname>
+  <onclickeventtype>1</onclickeventtype>
+  <origin>0</origin>
+  <parentappactionid>
+    <uniquename>book__UnfundedRequests!ab3c5107707844418c211884aafe0c8f!book_ARNGCheckbook!book_requirements!0</uniquename>
+  </parentappactionid>
+  <sequence>10000.0000000000</sequence>
+  <statecode>0</statecode>
+  <statuscode>1</statuscode>
+  <type>0</type>
+  <visibilityformulacomponentlibraryid>
+    <name>book_arngcheckbookdefaultcommandlibrary_035ae</name>
+  </visibilityformulacomponentlibraryid>
+  <visibilityformulacomponentname>4fe7a8971f724924a415dfaf7294a274</visibilityformulacomponentname>
+  <visibilityformulafunctionname>Visible</visibilityformulafunctionname>
+  <visibilitytype>1</visibilitytype>
+</appaction>

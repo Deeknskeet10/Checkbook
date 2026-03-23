@@ -1,0 +1,89 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Workflow WorkflowId="{ba3f0bfd-6f41-f011-b4cc-001dd805a06b}" Name="ARNG Checkbook - UFR Validation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <XamlFileName>/Workflows/ARNGCheckbook-UFRValidation-BA3F0BFD-6F41-F011-B4CC-001DD805A06B.xaml</XamlFileName>
+  <Type>1</Type>
+  <Subprocess>0</Subprocess>
+  <Category>4</Category>
+  <Mode>0</Mode>
+  <Scope>4</Scope>
+  <OnDemand>0</OnDemand>
+  <TriggerOnCreate>1</TriggerOnCreate>
+  <TriggerOnDelete>0</TriggerOnDelete>
+  <AsyncAutodelete>0</AsyncAutodelete>
+  <SyncWorkflowLogOnFailure>0</SyncWorkflowLogOnFailure>
+  <StateCode>1</StateCode>
+  <StatusCode>2</StatusCode>
+  <processorder>100</processorder>
+  <RunAs>1</RunAs>
+  <UniqueName>book_arngcheckbookufrvalidation</UniqueName>
+  <IsTransacted>1</IsTransacted>
+  <IntroducedVersion>1.0.0.5</IntroducedVersion>
+  <IsCustomizable>1</IsCustomizable>
+  <BusinessProcessType>0</BusinessProcessType>
+  <IsCustomProcessingStepAllowedForOtherPublishers>1</IsCustomProcessingStepAllowedForOtherPublishers>
+  <ProcessTriggerScope>1</ProcessTriggerScope>
+  <ModernFlowType>0</ModernFlowType>
+  <PrimaryEntity>book_UnfundedRequests</PrimaryEntity>
+  <LocalizedNames>
+    <LocalizedName languagecode="1033" description="ARNG Checkbook - UFR Validation" />
+  </LocalizedNames>
+  <labels>
+    <steplabels id="{3ac352fc-0137-4fc0-80d2-2bf9838498a7}">
+      <label languagecode="1033" description="NPM Input" />
+    </steplabels>
+    <steplabels id="{a4e3cfdb-ff1b-48d7-b803-66fe5f45f552}">
+      <label languagecode="1033" description="NPM Recommendation" />
+    </steplabels>
+    <steplabels id="{dd573ce3-76b2-49db-a3c5-68981b16251d}">
+      <label languagecode="1033" description="Priority" />
+    </steplabels>
+    <steplabels id="{a8824d7e-a974-4f23-bae3-7d2f0e375b67}">
+      <label languagecode="1033" description="Risk" />
+    </steplabels>
+    <steplabels id="{dc007670-8974-4a49-a373-eba7805cba5a}">
+      <label languagecode="1033" description="Risk Statement" />
+    </steplabels>
+    <steplabels id="{c8ef6480-8369-4270-9b41-efa33929c5cb}">
+      <label languagecode="1033" description="Justification" />
+    </steplabels>
+    <steplabels id="{c37a189b-7b66-4533-9f39-71e96d4b26b0}">
+      <label languagecode="1033" description="RI Validation" />
+    </steplabels>
+    <steplabels id="{fb4312bb-b117-4cfe-80ef-db5dbfe5fb03}">
+      <label languagecode="1033" description="RI Action" />
+    </steplabels>
+    <steplabels id="{60f31a50-ae35-4eca-b242-24de6daf3bf1}">
+      <label languagecode="1033" description="RWG Review" />
+    </steplabels>
+    <steplabels id="{183de461-50ca-4d45-966c-ec13d6ee3145}">
+      <label languagecode="1033" description="Outcome" />
+    </steplabels>
+    <steplabels id="{5e5062e6-136d-44eb-a562-411017fb1ddb}">
+      <label languagecode="1033" description="Rcoc Review" />
+    </steplabels>
+    <steplabels id="{6a39e03c-3fc6-4976-9882-5834f1f70bf5}">
+      <label languagecode="1033" description="Outcome" />
+    </steplabels>
+    <steplabels id="{e5a7be0e-9dbb-44c5-a40e-421c97045a98}">
+      <label languagecode="1033" description="RISC Review" />
+    </steplabels>
+    <steplabels id="{f554e0de-cdb5-46df-b99a-d41acc32a6db}">
+      <label languagecode="1033" description="Outcome" />
+    </steplabels>
+    <steplabels id="{e1175d1b-d5ad-4175-b3e9-3c7bc52753ee}">
+      <label languagecode="1033" description="PPBG-C Decision" />
+    </steplabels>
+    <steplabels id="{b55fde8a-7eff-4b54-94eb-2a7ec7b1dd47}">
+      <label languagecode="1033" description="PPBG-C Outcome" />
+    </steplabels>
+    <steplabels id="{11350d18-7ba2-4d38-ba37-c26165ddee7e}">
+      <label languagecode="1033" description="UFR Adjudication" />
+    </steplabels>
+    <steplabels id="{b30fc124-096d-4b2d-849f-0142975435b0}">
+      <label languagecode="1033" description="Outcome" />
+    </steplabels>
+    <steplabels id="{ae9f54bb-06ef-47ca-9173-1d1ba39e645c}">
+      <label languagecode="1033" description="Outcome Narrative" />
+    </steplabels>
+  </labels>
+</Workflow>

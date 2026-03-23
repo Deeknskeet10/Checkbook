@@ -1,0 +1,49 @@
+<appaction uniquename="book__SendtoNPM!9e4aeb1a171740309695cca86a1a517e!book_1toNStates!book_prioritization!1">
+  <appmoduleid>
+    <uniquename>book_1toNStates</uniquename>
+  </appmoduleid>
+  <buttonaccessibilitytext default="Send to NPM">
+    <label description="Send to NPM" languagecode="1033" />
+  </buttonaccessibilitytext>
+  <buttonlabeltext default="Send to NPM">
+    <label description="Send to NPM" languagecode="1033" />
+  </buttonlabeltext>
+  <buttontooltipdescription default="Send Prioritizations to NPM for Review">
+    <label description="Send Prioritizations to NPM for Review" languagecode="1033" />
+  </buttontooltipdescription>
+  <buttontooltiptitle default="Send to NPM">
+    <label description="Send to NPM" languagecode="1033" />
+  </buttontooltiptitle>
+  <context>1</context>
+  <contextentity>
+    <logicalname>book_prioritization</logicalname>
+  </contextentity>
+  <contextvalue>book_prioritization</contextvalue>
+  <fonticon>$clientsvg:FollowUser</fonticon>
+  <hidden>0</hidden>
+  <iscustomizable>1</iscustomizable>
+  <isdisabled>0</isdisabled>
+  <isgrouptitlehidden>0</isgrouptitlehidden>
+  <location>1</location>
+  <name>SendtoNPM!9e4aeb1a171740309695cca86a1a517e</name>
+  <onclickeventjavascriptfunctionname>checkbookButtons</onclickeventjavascriptfunctionname>
+  <onclickeventjavascriptparameters>[{"type":12},{"type":23},{"type":19,"value":3}]</onclickeventjavascriptparameters>
+  <onclickeventjavascriptwebresourceid>
+    <webresourceid>bb5020d9-da6b-f011-bec3-001dd8059413</webresourceid>
+  </onclickeventjavascriptwebresourceid>
+  <onclickeventtype>2</onclickeventtype>
+  <origin>0</origin>
+  <parentappactionid>
+    <uniquename>book__Send!ec24414246fb49139c0ea1bd07ab669a!book_1toNStates!book_prioritization!1</uniquename>
+  </parentappactionid>
+  <sequence>20000.0000000000</sequence>
+  <statecode>0</statecode>
+  <statuscode>1</statuscode>
+  <type>0</type>
+  <visibilityformulacomponentlibraryid>
+    <name>book_1tonstatesdefaultcommandlibrary_3b19f</name>
+  </visibilityformulacomponentlibraryid>
+  <visibilityformulacomponentname>77b48587ac9046d1911ae25636dff012</visibilityformulacomponentname>
+  <visibilityformulafunctionname>Visible</visibilityformulafunctionname>
+  <visibilitytype>1</visibilitytype>
+</appaction>

@@ -1,0 +1,49 @@
+<appaction uniquename="book__SpendPlan!fca449907e5549c1a8ea80f795c18e7e!book_ARNGCheckbook!book_requirements!0">
+  <appmoduleid>
+    <uniquename>book_ARNGCheckbook</uniquename>
+  </appmoduleid>
+  <buttonaccessibilitytext default="Opens Spend Plan for Requirement">
+    <label description="Opens Spend Plan for Requirement" languagecode="1033" />
+  </buttonaccessibilitytext>
+  <buttonlabeltext default="Spend Plan">
+    <label description="Spend Plan" languagecode="1033" />
+  </buttonlabeltext>
+  <buttontooltipdescription default="Rolls up child Prioritization funding OR allows NPMs to edit spend plan.">
+    <label description="Rolls up child Prioritization funding OR allows NPMs to edit spend plan." languagecode="1033" />
+  </buttontooltipdescription>
+  <buttontooltiptitle default="Opens Spend Plan for Requirement">
+    <label description="Opens Spend Plan for Requirement" languagecode="1033" />
+  </buttontooltiptitle>
+  <context>1</context>
+  <contextentity>
+    <logicalname>book_requirements</logicalname>
+  </contextentity>
+  <contextvalue>book_requirements</contextvalue>
+  <fonticon>UpcomingMeeting</fonticon>
+  <hidden>0</hidden>
+  <iscustomizable>1</iscustomizable>
+  <isdisabled>0</isdisabled>
+  <isgrouptitlehidden>0</isgrouptitlehidden>
+  <location>0</location>
+  <name>SpendPlan!fca449907e5549c1a8ea80f795c18e7e</name>
+  <onclickeventjavascriptfunctionname>openSpendPlan</onclickeventjavascriptfunctionname>
+  <onclickeventjavascriptparameters>[{"type":5}]</onclickeventjavascriptparameters>
+  <onclickeventjavascriptwebresourceid>
+    <webresourceid>fc435296-5d71-f011-bec3-001dd8059413</webresourceid>
+  </onclickeventjavascriptwebresourceid>
+  <onclickeventtype>2</onclickeventtype>
+  <origin>0</origin>
+  <parentappactionid>
+    <uniquename>book__Funding!a2651140e4ab40c38c45c9619328b4c8!book_ARNGCheckbook!book_requirements!0</uniquename>
+  </parentappactionid>
+  <sequence>20000.0000000000</sequence>
+  <statecode>0</statecode>
+  <statuscode>1</statuscode>
+  <type>0</type>
+  <visibilityformulacomponentlibraryid>
+    <name>book_arngcheckbookdefaultcommandlibrary_035ae</name>
+  </visibilityformulacomponentlibraryid>
+  <visibilityformulacomponentname>15d716b09c074fcfb2cd9aa6e4a22e7b</visibilityformulacomponentname>
+  <visibilityformulafunctionname>Visible</visibilityformulafunctionname>
+  <visibilitytype>1</visibilitytype>
+</appaction>

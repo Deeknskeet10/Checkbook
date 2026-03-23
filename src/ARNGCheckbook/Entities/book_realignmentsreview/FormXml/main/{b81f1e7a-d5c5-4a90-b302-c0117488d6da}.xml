@@ -1,0 +1,173 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<forms xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <systemform>
+    <formid>{b81f1e7a-d5c5-4a90-b302-c0117488d6da}</formid>
+    <IntroducedVersion>1.0</IntroducedVersion>
+    <FormPresentation>1</FormPresentation>
+    <FormActivationState>1</FormActivationState>
+    <form>
+      <tabs>
+        <tab verticallayout="true" id="{9e9e047e-ead3-44a3-a1ce-ccd7f15ce130}" name="StageStep3" locklevel="0" expanded="true" visible="false" labelid="{7aee926c-d130-42fc-9c8a-23e87be0d647}">
+          <labels>
+            <label description="Realignment Submission" languagecode="1033" />
+          </labels>
+          <columns>
+            <column width="100%">
+              <sections>
+                <section showbar="false" columns="1" id="{63a7572a-a701-999a-21a3-1f357e926bb6}" name="StageStep3_section1" labelid="{0692d52e-81ee-469a-aef6-60552c002e89}">
+                  <labels>
+                    <label description="Realignment Submission" languagecode="1033" />
+                  </labels>
+                  <rows>
+                    <row>
+                      <cell id="{0b1582fc-8d6e-4d91-915c-776f1261aa57}" showlabel="true" visible="true" labelid="{066d20c5-e7fa-48ae-8caa-4d952d4606a1}">
+                        <labels>
+                          <label description="Amount" languagecode="1033" />
+                        </labels>
+                        <control id="bpf_book_realignments_book_realignmentsreview:book_amount" classid="{0d2c745a-e5a8-4c8f-ba63-c6d3bb604660}" datafieldname="book_amount" disabled="false" relationship="bpf_book_realignments_book_realignmentsreview" isrequired="true" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{699cedb1-921b-4574-9d02-2d33b8169976}" showlabel="true" visible="true" labelid="{f38bbbe9-3f65-47e8-9c3d-86631be4813f}">
+                        <labels>
+                          <label description="Credited Prioritization" languagecode="1033" />
+                        </labels>
+                        <control id="bpf_book_realignments_book_realignmentsreview:book_creditedprioritization" classid="{270bd3db-d9af-4782-9025-509e298dec0a}" datafieldname="book_creditedprioritization" disabled="false" relationship="bpf_book_realignments_book_realignmentsreview" isrequired="false" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{45bfed18-5ee0-47f0-9a01-a3fd6fee8075}" showlabel="true" visible="true" labelid="{74b031f9-9082-4c4f-a422-a301d96bd158}">
+                        <labels>
+                          <label description="Debited Prioritization" languagecode="1033" />
+                        </labels>
+                        <control id="bpf_book_realignments_book_realignmentsreview:book_debitedprioritization" classid="{270bd3db-d9af-4782-9025-509e298dec0a}" datafieldname="book_debitedprioritization" disabled="false" relationship="bpf_book_realignments_book_realignmentsreview" isrequired="false" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{a7d718f1-4050-45eb-8b6d-2d0af5061ff6}" showlabel="true" visible="true" labelid="{e81310a6-894a-4940-8ef8-ce4504f50780}">
+                        <labels>
+                          <label description="Debited Requirement" languagecode="1033" />
+                        </labels>
+                        <control id="bpf_book_realignments_book_realignmentsreview:book_newdebitedrequirement" classid="{270bd3db-d9af-4782-9025-509e298dec0a}" datafieldname="book_newdebitedrequirement" disabled="false" relationship="bpf_book_realignments_book_realignmentsreview" isrequired="true" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{08c811ac-01cf-4281-82ce-c7e304ef7295}" showlabel="true" visible="true" labelid="{4b1fa222-4bf7-4af5-8103-e251cd327371}">
+                        <labels>
+                          <label description="Credited Requirement" languagecode="1033" />
+                        </labels>
+                        <control id="bpf_book_realignments_book_realignmentsreview:book_newcreditedrequirement" classid="{270bd3db-d9af-4782-9025-509e298dec0a}" datafieldname="book_newcreditedrequirement" disabled="false" relationship="bpf_book_realignments_book_realignmentsreview" isrequired="true" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{ef919f3a-b471-413e-8d6b-011ba2a72b3e}" showlabel="true" visible="true" labelid="{8ff75169-1c7a-4edd-870a-325c19bec1d2}">
+                        <labels>
+                          <label description="Remarks" languagecode="1033" />
+                        </labels>
+                        <control id="bpf_book_realignments_book_realignmentsreview:book_remarks" classid="{4273edbd-ac1d-40d3-9fb2-095c621b552d}" datafieldname="book_remarks" disabled="false" relationship="bpf_book_realignments_book_realignmentsreview" isrequired="true" />
+                      </cell>
+                    </row>
+                  </rows>
+                </section>
+              </sections>
+            </column>
+          </columns>
+        </tab>
+        <tab verticallayout="true" id="{273e9c6d-3d66-4442-8eb1-cf8b76802851}" name="StageStep17" locklevel="0" expanded="true" visible="false" labelid="{22bd4c2a-a222-4da9-8eee-ee1ec75536a1}">
+          <labels>
+            <label description="State Approval" languagecode="1033" />
+          </labels>
+          <columns>
+            <column width="100%">
+              <sections>
+                <section showbar="false" columns="1" id="{a6c660d5-2b72-34f8-b500-6aa81756b019}" name="StageStep17_section1" labelid="{8aafc9f6-1e4a-4267-a44e-eb6113811e6d}">
+                  <labels>
+                    <label description="State Approval" languagecode="1033" />
+                  </labels>
+                  <rows>
+                    <row>
+                      <cell id="{b2e9ce8d-fc88-4533-ba19-f02775123955}" showlabel="true" visible="true" labelid="{90f06ffb-85d8-45a7-baa8-37c239950282}">
+                        <labels>
+                          <label description="State Approval" languagecode="1033" />
+                        </labels>
+                        <control id="bpf_book_realignments_book_realignmentsreview:book_stateapproved" classid="{270bd3db-d9af-4782-9025-509e298dec0a}" datafieldname="book_stateapproved" disabled="false" relationship="bpf_book_realignments_book_realignmentsreview" isrequired="false" />
+                      </cell>
+                    </row>
+                  </rows>
+                </section>
+              </sections>
+            </column>
+          </columns>
+        </tab>
+        <tab verticallayout="true" id="{366b0b6f-bd96-48f6-b832-a7e44a5d134d}" name="StageStep21" locklevel="0" expanded="true" visible="false" labelid="{c8a593d7-5a9b-43ad-9d74-8ffdd881f243}">
+          <labels>
+            <label description="NPM Concurrence" languagecode="1033" />
+          </labels>
+          <columns>
+            <column width="100%">
+              <sections>
+                <section showbar="false" columns="1" id="{5f9bb101-1680-5bc5-b05c-4aec5d4431da}" name="StageStep21_section1" labelid="{756f05f2-7786-4714-88a8-42e7cbadaf52}">
+                  <labels>
+                    <label description="NPM Concurrence" languagecode="1033" />
+                  </labels>
+                  <rows>
+                    <row>
+                      <cell id="{9c2e78ac-a88c-4470-8e46-3449351700d8}" showlabel="true" visible="true" labelid="{c1d682bb-2faf-429d-aab8-8ad1e18b36a3}">
+                        <labels>
+                          <label description="Payee Concurrence" languagecode="1033" />
+                        </labels>
+                        <control id="bpf_book_realignments_book_realignmentsreview:book_payeeconcurrence" classid="{3ef39988-22bb-4f0b-bbbe-64b5a3748aee}" datafieldname="book_payeeconcurrence" disabled="false" relationship="bpf_book_realignments_book_realignmentsreview" isrequired="true" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{3291f255-2168-4df9-b616-e594aec6356c}" showlabel="true" visible="true" labelid="{1ac386d6-5170-4a97-a15b-131b7544b255}">
+                        <labels>
+                          <label description="Payer Concurrence" languagecode="1033" />
+                        </labels>
+                        <control id="bpf_book_realignments_book_realignmentsreview:book_payerconcurrence" classid="{3ef39988-22bb-4f0b-bbbe-64b5a3748aee}" datafieldname="book_payerconcurrence" disabled="false" relationship="bpf_book_realignments_book_realignmentsreview" isrequired="true" />
+                      </cell>
+                    </row>
+                  </rows>
+                </section>
+              </sections>
+            </column>
+          </columns>
+        </tab>
+        <tab verticallayout="true" id="{6fc35dfb-0782-416a-b37a-961923b24246}" name="StageStep27" locklevel="0" expanded="true" visible="false" labelid="{ce4bc4cb-ba9c-4fcf-9254-8e9b2213fb79}">
+          <labels>
+            <label description="BE Approval" languagecode="1033" />
+          </labels>
+          <columns>
+            <column width="100%">
+              <sections>
+                <section showbar="false" columns="1" id="{d98438f0-e2e0-f6a3-5fc2-564dea637ba8}" name="StageStep27_section1" labelid="{ac2db163-be87-4952-a75d-8581d062379a}">
+                  <labels>
+                    <label description="BE Approval" languagecode="1033" />
+                  </labels>
+                  <rows>
+                    <row>
+                      <cell id="{67914da4-db1e-46bd-af1c-b7d20cd2ca6c}" showlabel="true" visible="true" labelid="{cec176eb-739a-435f-81dd-e8430e322443}">
+                        <labels>
+                          <label description="BE Decision" languagecode="1033" />
+                        </labels>
+                        <control id="bpf_book_realignments_book_realignmentsreview:book_bedecision" classid="{3ef39988-22bb-4f0b-bbbe-64b5a3748aee}" datafieldname="book_bedecision" disabled="false" relationship="bpf_book_realignments_book_realignmentsreview" isrequired="true" />
+                      </cell>
+                    </row>
+                  </rows>
+                </section>
+              </sections>
+            </column>
+          </columns>
+        </tab>
+      </tabs>
+    </form>
+    <IsCustomizable>1</IsCustomizable>
+    <CanBeDeleted>1</CanBeDeleted>
+    <LocalizedNames>
+      <LocalizedName description="Information" languagecode="1033" />
+    </LocalizedNames>
+    <Descriptions>
+      <Description description="A form for this entity." languagecode="1033" />
+    </Descriptions>
+  </systemform>
+</forms>

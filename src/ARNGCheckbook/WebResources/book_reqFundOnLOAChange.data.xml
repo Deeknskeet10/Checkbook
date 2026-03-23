@@ -1,0 +1,16 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<WebResource xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <WebResourceId>{cee89118-96da-f011-8544-001dd805a06b}</WebResourceId>
+  <Name>book_reqFundOnLOAChange</Name>
+  <DisplayName>reqFundOnLOAChange</DisplayName>
+  <Description>When a user selects an LOA, populates the FY field.  </Description>
+  <LanguageCode>0</LanguageCode>
+  <WebResourceType>3</WebResourceType>
+  <IntroducedVersion>1.0.0.38</IntroducedVersion>
+  <IsEnabledForMobileClient>0</IsEnabledForMobileClient>
+  <IsAvailableForMobileOffline>0</IsAvailableForMobileOffline>
+  <IsCustomizable>1</IsCustomizable>
+  <CanBeDeleted>1</CanBeDeleted>
+  <IsHidden>0</IsHidden>
+  <FileName>/WebResources/book_reqFundOnLOAChangeCEE89118-96DA-F011-8544-001DD805A06B</FileName>
+</WebResource>

@@ -1,0 +1,42 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<savedqueries xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <savedquery>
+    <IsCustomizable>1</IsCustomizable>
+    <CanBeDeleted>0</CanBeDeleted>
+    <isquickfindquery>0</isquickfindquery>
+    <isprivate>0</isprivate>
+    <isdefault>1</isdefault>
+    <savedqueryid>{48a443af-dec3-4636-abbd-820fe9fd88a7}</savedqueryid>
+    <layoutxml>
+      <grid name="resultset" jump="book_name" select="1" icon="1" preview="1">
+        <row name="result" id="book_realignmentsid">
+          <cell name="book_fiscalyear" width="103" />
+          <cell name="book_newdebitedloa" width="117" />
+          <cell name="book_newcreditedloa" width="121" />
+          <cell name="book_amount" width="100" />
+          <cell name="book_remarks" width="100" />
+        </row>
+      </grid>
+    </layoutxml>
+    <querytype>0</querytype>
+    <fetchxml>
+      <fetch version="1.0" mapping="logical">
+        <entity name="book_realignments">
+          <attribute name="book_realignmentsid" />
+          <filter type="and">
+            <condition attribute="statecode" operator="eq" value="0" />
+          </filter>
+          <attribute name="book_amount" />
+          <attribute name="book_newdebitedloa" />
+          <attribute name="book_newcreditedloa" />
+          <attribute name="book_fiscalyear" />
+          <attribute name="book_remarks" />
+        </entity>
+      </fetch>
+    </fetchxml>
+    <IntroducedVersion>1.0.0.3</IntroducedVersion>
+    <LocalizedNames>
+      <LocalizedName description="Active Realignments" languagecode="1033" />
+    </LocalizedNames>
+  </savedquery>
+</savedqueries>

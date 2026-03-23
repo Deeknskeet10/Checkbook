@@ -1,0 +1,82 @@
+/********************************************* HELPER FUNCTIONS ****************************************************/
+/* Grab teams User is associated with */
+function getUserTeams(userId) {
+  return new Promise((resolve, reject) => {
+    Xrm.WebApi.retrieveMultipleRecords(
+      "team",
+      "?$filter=teammembership_association/any(o:o/systemuserid eq " +
+        userId +
+        ")&$select=name,teamid"
+    ).then(
+      function success(result) {
+        resolve(result.entities);
+      },
+      function (error) {
+        reject(error);
+      }
+    );
+  });
+}
+
+/* Grab roles associated with teams */
+function getTeamRoles(teamId) {
+  return new Promise((resolve, reject) => {
+    Xrm.WebApi.retrieveMultipleRecords(
+      "team",
+      `?$expand=teamroles_association($select=name)&$filter=teamid eq '${teamId}'`
+    ).then(
+      function success(result) {
+        resolve(result.entities);
+      },
+      function (error) {
+        reject(error);
+      }
+    );
+  });
+}
+
+async function getUserRolesByTeamAssociation() {
+  const userId = Xrm.Utility.getGlobalContext().userSettings.userId;
+  const userTeams = await getUserTeams(userId);
+  let allTeamRoles = [];
+
+  for (const team of userTeams) {
+    const roles = await getTeamRoles(team.teamid);
+    roles.forEach((team) => {
+      if (
+        team.teamroles_association &&
+        Array.isArray(team.teamroles_association)
+      ) {
+        // Loop through the teamroles_association array for each item
+        team.teamroles_association.forEach((role) => {
+          if (role.name) {
+            allTeamRoles.push(role.name);
+          }
+        });
+      }
+    });
+  }
+
+  // Process and display the roles as needed
+  console.log("Roles associated with user's teams:", allTeamRoles);
+  return allTeamRoles.join(", ");
+}
+
+// Get User's Roles and hide Prioritization section as needed
+async function manageFieldStatus(executionContext) {
+    var formContext = executionContext.getFormContext();
+
+    // Await the userTeamRoles promise to get the roles
+    const roles = await getUserRolesByTeamAssociation();
+
+    // Check if OPR User
+    if (!(roles.includes("NPM") || roles.includes("Resource"))) {
+        // Hide Prioritization section
+        formContext.ui.tabs.get("general")
+            .sections.get("pri_section")
+            .controls.forEach(function (control) {
+                control.setVisible(false);
+            });
+    }
+
+}

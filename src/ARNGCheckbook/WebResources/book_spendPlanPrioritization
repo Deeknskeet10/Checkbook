@@ -1,0 +1,28 @@
+function openSpendPlan(formContext) {
+    // Centered Dialog
+    var pageInput = {
+        pageType: "custom",
+        name: "book_pagespendplanufr_01af9",
+        entityName: "book_prioritization",
+        recordId: formContext.data.entity.getId().replace(/[{}]/g, ""),
+    };
+    var navigationOptions = {
+        target: 2,
+        position: 1,
+        width: { value: 90, unit: "%" },
+        height: { value: 70, unit: "%" },
+        title: "Spend Plan (Prioritization)"
+    };
+    Xrm.Navigation.navigateTo(pageInput, navigationOptions)
+        .then(
+            function () {
+                // Called when the dialog closes
+                formContext.data.refresh();
+            }
+        ).catch(
+            function (error) {
+                // Handle error
+            }
+        );
+
+}

@@ -1,0 +1,510 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<forms xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <systemform>
+    <formid>{af33228b-9095-f011-b4cc-001dd8059413}</formid>
+    <IntroducedVersion>1.2.1.1</IntroducedVersion>
+    <FormPresentation>1</FormPresentation>
+    <FormActivationState>1</FormActivationState>
+    <form headerdensity="HighWithControls">
+      <tabs>
+        <tab verticallayout="true" id="{febafcaa-3dd8-44d9-9d01-6840dd2318a9}" IsUserDefined="1" labelid="{7f989158-ca22-472b-ace6-489453a2ed81}" name="Realignment Details">
+          <labels>
+            <label description="Realignment Details" languagecode="1033" />
+          </labels>
+          <columns>
+            <column width="100%">
+              <sections>
+                <section name="Realignment Details_section_5" id="8e32b106-2a18-4248-8bec-3358e8fdfa37" IsUserDefined="0" locklevel="0" showlabel="true" showbar="false" layout="varwidth" celllabelalignment="Left" celllabelposition="Left" columns="11" labelwidth="115">
+                  <labels>
+                    <label description="MDEP" languagecode="1033" />
+                  </labels>
+                  <rows>
+                    <row />
+                    <row>
+                      <cell id="{3e5e320c-245b-4952-a37e-0854103da17f}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="Debited MDEP" languagecode="1033" />
+                        </labels>
+                        <control id="book_debitedmdep" classid="{270BD3DB-D9AF-4782-9025-509E298DEC0A}" datafieldname="book_debitedmdep" disabled="false" />
+                      </cell>
+                      <cell id="{30e75648-5c5a-40bf-a336-486bd4e87dab}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="Credited MDEP" languagecode="1033" />
+                        </labels>
+                        <control id="book_creditedmdep" classid="{270BD3DB-D9AF-4782-9025-509E298DEC0A}" datafieldname="book_creditedmdep" disabled="false" />
+                      </cell>
+                    </row>
+                  </rows>
+                </section>
+                <section showlabel="true" showbar="false" IsUserDefined="0" id="{e6705da4-ffa7-4d36-8017-5f3687623210}" columns="11" labelid="{005dc61e-e956-4305-9dcb-1d2c7b54dde9}" name="Realignment Details_sec_requirement">
+                  <labels>
+                    <label description="Requirement" languagecode="1033" />
+                  </labels>
+                  <rows>
+                    <row>
+                      <cell id="{2732a07d-33e2-4019-aca4-f32ac9c76bf4}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="Debited Requirement" languagecode="1033" />
+                        </labels>
+                        <control id="book_newdebitedrequirement" classid="{270BD3DB-D9AF-4782-9025-509E298DEC0A}" datafieldname="book_newdebitedrequirement" disabled="false">
+                          <parameters>
+                            <DependentAttributeName>book_realignments.book_debitedmdep</DependentAttributeName>
+                            <DependentAttributeType>book_mdep</DependentAttributeType>
+                            <FilterRelationshipName>book_requirementfunding_MDEP_book_mdep</FilterRelationshipName>
+                            <DefaultViewId>{2ADC352B-25CA-4F16-9770-E39CF2A9BE92}</DefaultViewId>
+                            <AvailableViewIds>{2ADC352B-25CA-4F16-9770-E39CF2A9BE92},{5364425C-A52A-4ED1-B483-8DAEF39312A6},{86380E4E-C0CF-F011-BBD3-001DD805A06B},{828729AA-7087-470C-8E2A-86395E502FA3}</AvailableViewIds>
+                          </parameters>
+                        </control>
+                      </cell>
+                      <cell locklevel="0" id="{20bcbbe2-81fa-4f05-bc12-bb576ed862ba}">
+                        <labels>
+                          <label description="" languagecode="1033" />
+                        </labels>
+                      </cell>
+                    </row>
+                    <row>
+                      <cell locklevel="0" id="{c8ef0fb8-b1e6-42c9-bd33-a49ca5a45b37}" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="New QV control 1765469924863" languagecode="1033" />
+                        </labels>
+                        <control id="QuickviewControl1765469924863" classid="{5C5600E0-1D6E-4205-A272-BE80DA87FD42}" datafieldname="book_newdebitedrequirement">
+                          <parameters>
+                            <DisplayAsCustomer360Tile>false</DisplayAsCustomer360Tile>
+                            <QuickForms>&lt;QuickFormIds&gt;&lt;QuickFormId entityname="book_requirementfunding"&gt;9b4c9dd3-a8d6-f011-8544-001dd805a06b&lt;/QuickFormId&gt;&lt;/QuickFormIds&gt;</QuickForms>
+                          </parameters>
+                        </control>
+                      </cell>
+                      <cell locklevel="0" id="{075a8ba1-6bf3-429d-a852-39659a573e64}">
+                        <labels>
+                          <label description="" languagecode="1033" />
+                        </labels>
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{6320e386-d444-44e5-a4af-055dd7de6631}" visible="false" labelid="{7cde6f68-ae1c-4ecc-ac1f-ad150bd41414}">
+                        <labels>
+                          <label description="Name" languagecode="1033" />
+                        </labels>
+                        <control id="book_name" classid="{4273EDBD-AC1D-40d3-9FB2-095C621B552D}" datafieldname="book_name" />
+                      </cell>
+                      <cell id="{57bf424f-063b-439c-9296-bc81f666aa13}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="Credited Requirement" languagecode="1033" />
+                        </labels>
+                        <control id="book_newcreditedrequirement" classid="{270BD3DB-D9AF-4782-9025-509E298DEC0A}" datafieldname="book_newcreditedrequirement" disabled="false">
+                          <parameters>
+                            <DependentAttributeName>book_realignments.book_creditedmdep</DependentAttributeName>
+                            <DependentAttributeType>book_mdep</DependentAttributeType>
+                            <FilterRelationshipName>book_requirementfunding_MDEP_book_mdep</FilterRelationshipName>
+                            <DefaultViewId>{2ADC352B-25CA-4F16-9770-E39CF2A9BE92}</DefaultViewId>
+                            <AvailableViewIds>{2ADC352B-25CA-4F16-9770-E39CF2A9BE92},{5364425C-A52A-4ED1-B483-8DAEF39312A6},{86380E4E-C0CF-F011-BBD3-001DD805A06B},{828729AA-7087-470C-8E2A-86395E502FA3}</AvailableViewIds>
+                          </parameters>
+                        </control>
+                      </cell>
+                    </row>
+                    <row>
+                      <cell locklevel="0" id="{c42aa9ca-ad9d-40e2-baa4-0ec305dd907f}">
+                        <labels>
+                          <label description="" languagecode="1033" />
+                        </labels>
+                      </cell>
+                      <cell locklevel="0" id="{9b9a9bab-dfe5-4912-98a5-802a493a052a}" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="New QV control 1765469938926" languagecode="1033" />
+                        </labels>
+                        <control id="QuickviewControl1765469938926" classid="{5C5600E0-1D6E-4205-A272-BE80DA87FD42}" datafieldname="book_newcreditedrequirement">
+                          <parameters>
+                            <DisplayAsCustomer360Tile>false</DisplayAsCustomer360Tile>
+                            <QuickForms>&lt;QuickFormIds&gt;&lt;QuickFormId entityname="book_requirementfunding"&gt;9b4c9dd3-a8d6-f011-8544-001dd805a06b&lt;/QuickFormId&gt;&lt;/QuickFormIds&gt;</QuickForms>
+                          </parameters>
+                        </control>
+                      </cell>
+                    </row>
+                  </rows>
+                </section>
+                <section name="prioritization_section" id="b480ab7f-ae73-4a18-9933-46cfe71c2d2a" IsUserDefined="0" locklevel="0" showlabel="true" showbar="false" layout="varwidth" celllabelalignment="Left" celllabelposition="Left" columns="11" labelwidth="115">
+                  <labels>
+                    <label description="Prioritization" languagecode="1033" />
+                  </labels>
+                  <rows>
+                    <row>
+                      <cell locklevel="0" id="{37ef499b-1b6d-4609-aeee-5bc6215cd52e}">
+                        <labels>
+                          <label description="" languagecode="1033" />
+                        </labels>
+                      </cell>
+                      <cell locklevel="0" id="{b06d7aa6-0fae-4f3e-bf86-bb719c41fd60}">
+                        <labels>
+                          <label description="" languagecode="1033" />
+                        </labels>
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{e8d387ed-841e-4b81-a1c9-cc0eaca346ce}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="Debited Prioritization" languagecode="1033" />
+                        </labels>
+                        <control id="book_debitedprioritization" classid="{270BD3DB-D9AF-4782-9025-509E298DEC0A}" datafieldname="book_debitedprioritization" disabled="false">
+                          <parameters>
+                            <DependentAttributeName>book_realignments.book_newdebitedrequirement</DependentAttributeName>
+                            <DependentAttributeType>book_requirementfunding</DependentAttributeType>
+                            <FilterRelationshipName>book_prioritization_RequirementFunding_book_requirementfunding</FilterRelationshipName>
+                          </parameters>
+                        </control>
+                      </cell>
+                      <cell id="{dc572d7e-a991-46c4-97bb-8b4c0806be16}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="Credited Prioritization" languagecode="1033" />
+                        </labels>
+                        <control id="book_creditedprioritization" classid="{270BD3DB-D9AF-4782-9025-509E298DEC0A}" datafieldname="book_creditedprioritization" disabled="false">
+                          <parameters>
+                            <DependentAttributeName>book_realignments.book_newcreditedrequirement</DependentAttributeName>
+                            <DependentAttributeType>book_requirementfunding</DependentAttributeType>
+                            <FilterRelationshipName>book_prioritization_RequirementFunding_book_requirementfunding</FilterRelationshipName>
+                          </parameters>
+                        </control>
+                      </cell>
+                    </row>
+                  </rows>
+                </section>
+                <section name="Realignment Details_section_5" id="40210ebb-7da1-4dae-9bc0-82347ed9c6da" IsUserDefined="0" locklevel="0" showlabel="true" showbar="false" layout="varwidth" celllabelalignment="Left" celllabelposition="Left" columns="11" labelwidth="115">
+                  <labels>
+                    <label description="Funding Details" languagecode="1033" />
+                  </labels>
+                  <rows>
+                    <row>
+                      <cell id="{0dfd81c0-e40b-4568-a033-186654831a0c}" locklevel="0" colspan="1" rowspan="1" labelid="{2dc5e527-a10f-469c-9259-ea12df29d8ca}">
+                        <labels>
+                          <label description="Amount" languagecode="1033" />
+                        </labels>
+                        <control id="book_amount" classid="{0D2C745A-E5A8-4C8F-BA63-C6D3BB604660}" datafieldname="book_amount" disabled="false" />
+                      </cell>
+                      <cell id="{227354a3-320e-4935-adf5-8b6627cf20d9}" locklevel="0" colspan="1" rowspan="4" labelid="{04e70ed1-96f3-4da9-a7d8-90979ee4fadd}">
+                        <labels>
+                          <label description="Remarks" languagecode="1033" />
+                        </labels>
+                        <control id="book_remarks" classid="{E0DECE4B-6FC8-4A8F-A065-082708572369}" datafieldname="book_remarks" disabled="false" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{eb09c898-34a7-4932-9d9c-6c3da13c3d98}" userspacer="true" showlabel="false" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="" languagecode="1033" />
+                        </labels>
+                      </cell>
+                    </row>
+                    <row>
+                      <cell locklevel="0" id="{893f6795-0088-45e9-bfa2-3aa688394dfe}" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="Confirm Debited LOA" languagecode="1033" />
+                        </labels>
+                        <control id="book_confirmdebitedaccount" classid="{F9A8A302-114E-466A-B582-6771B2AE0D92}" datafieldname="book_confirmdebitedaccount" uniqueid="{adfbbf21-cf6d-42e4-ae06-5c3d1e1d9950}" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{96fa402a-ceed-4eb0-a737-f8262e02b5b1}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="Debited LOA" languagecode="1033" />
+                        </labels>
+                        <control id="book_newdebitedloa" classid="{270BD3DB-D9AF-4782-9025-509E298DEC0A}" datafieldname="book_newdebitedloa" disabled="true" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell locklevel="0" id="{516922cd-7e81-49ec-86db-41b9efdc1967}" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="New QV control 1758565008649" languagecode="1033" />
+                        </labels>
+                        <control id="QuickviewControl1758565008649" classid="{5C5600E0-1D6E-4205-A272-BE80DA87FD42}" datafieldname="book_newdebitedloa">
+                          <parameters>
+                            <DisplayAsCustomer360Tile>false</DisplayAsCustomer360Tile>
+                            <QuickForms>&lt;QuickFormIds&gt;&lt;QuickFormId entityname="book_fundingline"&gt;1773411a-aad6-f011-8544-001dd805a06b&lt;/QuickFormId&gt;&lt;/QuickFormIds&gt;</QuickForms>
+                          </parameters>
+                        </control>
+                      </cell>
+                      <cell locklevel="0" id="{10299249-3e8b-436e-bea8-bb54395d80a0}" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="Confirm Credited LOA" languagecode="1033" />
+                        </labels>
+                        <control id="book_confirmcreditedloa" classid="{F9A8A302-114E-466A-B582-6771B2AE0D92}" datafieldname="book_confirmcreditedloa" uniqueid="{0564dd59-10fe-4ddd-ab10-65f7ad2e47d7}" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell locklevel="0" id="{0c051778-9000-4faf-8baa-8f5fa56e5919}">
+                        <labels>
+                          <label description="" languagecode="1033" />
+                        </labels>
+                      </cell>
+                      <cell id="{69f4c97b-2b3a-4c61-bf5a-62c8b27554e4}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="Credited LOA" languagecode="1033" />
+                        </labels>
+                        <control id="book_newcreditedloa" classid="{270BD3DB-D9AF-4782-9025-509E298DEC0A}" datafieldname="book_newcreditedloa" disabled="true" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell locklevel="0" id="{09ac58d8-4624-42d7-84f5-dcaa2780cc96}">
+                        <labels>
+                          <label description="" languagecode="1033" />
+                        </labels>
+                      </cell>
+                      <cell locklevel="0" id="{de9c9d41-31e9-48f2-a3fa-e853fdadd1ea}" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="New QV control 1758565021182" languagecode="1033" />
+                        </labels>
+                        <control id="QuickviewControl1758565021182" classid="{5C5600E0-1D6E-4205-A272-BE80DA87FD42}" datafieldname="book_newcreditedloa">
+                          <parameters>
+                            <DisplayAsCustomer360Tile>false</DisplayAsCustomer360Tile>
+                            <QuickForms>&lt;QuickFormIds&gt;&lt;QuickFormId entityname="book_fundingline"&gt;1773411a-aad6-f011-8544-001dd805a06b&lt;/QuickFormId&gt;&lt;/QuickFormIds&gt;</QuickForms>
+                          </parameters>
+                        </control>
+                      </cell>
+                    </row>
+                  </rows>
+                </section>
+              </sections>
+            </column>
+          </columns>
+        </tab>
+        <tab name="tab_2" id="9f580012-32a4-4a4d-9b88-2a6e430b3146" IsUserDefined="0" locklevel="0" showlabel="true">
+          <labels>
+            <label description="Ledgers" languagecode="1033" />
+          </labels>
+          <columns>
+            <column width="100%">
+              <sections>
+                <section name="tab_2_section_1" id="63375420-a4c2-407c-8de8-da2f2f50b755" IsUserDefined="0" locklevel="0" showlabel="true" showbar="false" layout="varwidth" celllabelalignment="Left" celllabelposition="Left" columns="1" labelwidth="115">
+                  <labels>
+                    <label description="Realignment Ledgers" languagecode="1033" />
+                  </labels>
+                  <rows>
+                    <row />
+                    <row>
+                      <cell locklevel="0" id="{91ba1817-623a-43ee-9c9e-416d92385ece}" rowspan="4" colspan="1" auto="false" showlabel="false">
+                        <labels>
+                          <label description="New SG control 1765469994402" languagecode="1033" />
+                        </labels>
+                        <control indicationOfSubgrid="true" id="Subgrid_new_1" classid="{E7A81278-8635-4D9E-8D4D-59480B391C5B}">
+                          <parameters>
+                            <RecordsPerPage>4</RecordsPerPage>
+                            <AutoExpand>Fixed</AutoExpand>
+                            <EnableQuickFind>false</EnableQuickFind>
+                            <EnableViewPicker>false</EnableViewPicker>
+                            <EnableChartPicker>true</EnableChartPicker>
+                            <ChartGridMode>All</ChartGridMode>
+                            <RelationshipName>book_ledger_Realignment_book_realignments</RelationshipName>
+                            <TargetEntityType>book_ledger</TargetEntityType>
+                            <ViewId>{3f869e1c-8e0d-404e-911c-749e9d92a11e}</ViewId>
+                            <ViewIds>{3f869e1c-8e0d-404e-911c-749e9d92a11e}</ViewIds>
+                          </parameters>
+                        </control>
+                      </cell>
+                    </row>
+                    <row />
+                    <row />
+                    <row />
+                  </rows>
+                </section>
+              </sections>
+            </column>
+          </columns>
+        </tab>
+        <tab name="tab_admin" id="ba7c9aab-9431-4e5b-bb5d-c2e3c873c582" IsUserDefined="0" locklevel="0" showlabel="true">
+          <labels>
+            <label description="Administration" languagecode="1033" />
+          </labels>
+          <columns>
+            <column width="100%">
+              <sections>
+                <section name="tab_admin_sec_admin" id="8b6a7e09-7cf6-4e99-af75-cb6298bfd4b5" IsUserDefined="0" locklevel="0" showlabel="false" showbar="false" layout="varwidth" celllabelalignment="Left" celllabelposition="Left" columns="11" labelwidth="115">
+                  <labels>
+                    <label description="Administration" languagecode="1033" />
+                  </labels>
+                  <rows>
+                    <row>
+                      <cell id="{66b6ad92-6ab3-4bb2-b07a-fb6b09de74bf}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="Created By" languagecode="1033" />
+                        </labels>
+                        <control id="createdby" classid="{270BD3DB-D9AF-4782-9025-509E298DEC0A}" datafieldname="createdby" disabled="false" />
+                      </cell>
+                      <cell id="{c4f844de-0dd9-41bc-9b04-32a9939f5838}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="Created On" languagecode="1033" />
+                        </labels>
+                        <control id="createdon" classid="{5B773807-9FB2-42DB-97C3-7A91EFF8ADFF}" datafieldname="createdon" disabled="false" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{d0ca4257-8e56-46e5-ae06-6625a3464738}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="Modified By" languagecode="1033" />
+                        </labels>
+                        <control id="modifiedby" classid="{270BD3DB-D9AF-4782-9025-509E298DEC0A}" datafieldname="modifiedby" disabled="false" />
+                      </cell>
+                      <cell id="{37e9d86e-c343-49e8-9fe0-136f9d69487c}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="Modified On" languagecode="1033" />
+                        </labels>
+                        <control id="modifiedon" classid="{5B773807-9FB2-42DB-97C3-7A91EFF8ADFF}" datafieldname="modifiedon" disabled="false" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{5e6242eb-83f1-45ff-8495-76d077e35e02}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="Owner" languagecode="1033" />
+                        </labels>
+                        <control id="ownerid" classid="{270BD3DB-D9AF-4782-9025-509E298DEC0A}" datafieldname="ownerid" />
+                      </cell>
+                      <cell id="{c402c2c3-b5fc-4698-8c71-0689910756bf}" locklevel="0">
+                        <labels>
+                          <label description="" languagecode="1033" />
+                        </labels>
+                      </cell>
+                    </row>
+                  </rows>
+                </section>
+              </sections>
+            </column>
+          </columns>
+        </tab>
+      </tabs>
+      <header id="{65662e72-b78c-41f2-9566-8573ca418f8f}" celllabelposition="Top" columns="111" labelwidth="115" celllabelalignment="Left">
+        <rows>
+          <row>
+            <cell id="{71c4de2d-d030-4d0b-a2f2-d52878b71f93}" showlabel="false" labelid="{fc346a39-51cb-4188-ac73-e3f90192891e}">
+              <labels>
+                <label description="" languagecode="1033" />
+              </labels>
+            </cell>
+            <cell id="{8f55f966-21bc-4dc9-9de4-23535c691d0c}" showlabel="false" labelid="{caa9c325-edf6-4b5b-afca-72c7381a7a93}">
+              <labels>
+                <label description="" languagecode="1033" />
+              </labels>
+            </cell>
+            <cell id="{6eebb539-afad-4882-b8a8-eeb38279bc6c}" showlabel="false" labelid="{a18d1d4e-cda5-4faa-b89d-1360d269137a}">
+              <labels>
+                <label description="" languagecode="1033" />
+              </labels>
+            </cell>
+            <cell id="{81701a59-9c8d-41ed-bc36-eaf0625aa5de}" locklevel="0" colspan="1" rowspan="1">
+              <labels>
+                <label description="Payee Concurrence" languagecode="1033" />
+              </labels>
+              <control id="header_book_payeeconcurrence" classid="{3EF39988-22BB-4F0B-BBBE-64B5A3748AEE}" datafieldname="book_payeeconcurrence" disabled="false" />
+            </cell>
+            <cell id="{8fbcf5b2-e9a0-4863-bdfd-8f6f6832b77a}" locklevel="0" colspan="1" rowspan="1">
+              <labels>
+                <label description="Payer Concurrence" languagecode="1033" />
+              </labels>
+              <control id="header_book_payerconcurrence" classid="{3EF39988-22BB-4F0B-BBBE-64B5A3748AEE}" datafieldname="book_payerconcurrence" disabled="false" />
+            </cell>
+            <cell id="{d1ef9482-60de-40cc-9881-cf8551ef0e1c}" locklevel="0" colspan="1" rowspan="1">
+              <labels>
+                <label description="BE Decision" languagecode="1033" />
+              </labels>
+              <control id="header_book_bedecision" classid="{3EF39988-22BB-4F0B-BBBE-64B5A3748AEE}" datafieldname="book_bedecision" disabled="false" />
+            </cell>
+          </row>
+        </rows>
+      </header>
+      <footer id="{905641b0-5984-418f-8c48-efa99ee647da}" celllabelposition="Top" columns="111" labelwidth="115" celllabelalignment="Left">
+        <rows>
+          <row>
+            <cell id="{c5e46e56-2d7b-4d79-825f-d0d9b688d515}" showlabel="false" labelid="{0142af04-6223-4cff-a93d-c9c3615bee75}">
+              <labels>
+                <label description="" languagecode="1033" />
+              </labels>
+            </cell>
+            <cell id="{30ccd7b5-a7ca-4b74-a6c6-e52fc493b838}" showlabel="false" labelid="{9bcb1574-2157-4941-a4de-6a6fe07e6fd2}">
+              <labels>
+                <label description="" languagecode="1033" />
+              </labels>
+            </cell>
+            <cell id="{c030003f-21aa-489d-9b42-646aeb121d58}" showlabel="false" labelid="{bda77058-f5e2-48ba-86aa-2e63981afc97}">
+              <labels>
+                <label description="" languagecode="1033" />
+              </labels>
+            </cell>
+          </row>
+        </rows>
+      </footer>
+      <DisplayConditions Order="1" FallbackForm="true">
+        <Everyone />
+      </DisplayConditions>
+      <controlDescriptions>
+        <controlDescription forControl="{adfbbf21-cf6d-42e4-ae06-5c3d1e1d9950}">
+          <customControl id="{67FAC785-CD58-4F9F-ABB3-4B7DDC6ED5ED}">
+            <parameters>
+              <datafieldname>book_confirmdebitedaccount</datafieldname>
+            </parameters>
+          </customControl>
+          <customControl id="{67FAC785-CD58-4F9F-ABB3-4B7DDC6ED5ED}">
+            <parameters>
+              <datafieldname>book_confirmdebitedaccount</datafieldname>
+            </parameters>
+          </customControl>
+          <customControl formFactor="0" name="MscrmControls.FieldControls.CheckboxControl">
+            <parameters>
+              <value type="TwoOptions">book_confirmdebitedaccount</value>
+            </parameters>
+          </customControl>
+          <customControl formFactor="2" name="MscrmControls.FieldControls.CheckboxControl">
+            <parameters>
+              <value type="TwoOptions">book_confirmdebitedaccount</value>
+            </parameters>
+          </customControl>
+          <customControl formFactor="1" name="MscrmControls.FieldControls.CheckboxControl">
+            <parameters>
+              <value type="TwoOptions">book_confirmdebitedaccount</value>
+            </parameters>
+          </customControl>
+        </controlDescription>
+        <controlDescription forControl="{0564dd59-10fe-4ddd-ab10-65f7ad2e47d7}">
+          <customControl id="{67FAC785-CD58-4F9F-ABB3-4B7DDC6ED5ED}">
+            <parameters>
+              <datafieldname>book_confirmcreditedloa</datafieldname>
+            </parameters>
+          </customControl>
+          <customControl id="{67FAC785-CD58-4F9F-ABB3-4B7DDC6ED5ED}">
+            <parameters>
+              <datafieldname>book_confirmcreditedloa</datafieldname>
+            </parameters>
+          </customControl>
+          <customControl formFactor="0" name="MscrmControls.FieldControls.CheckboxControl">
+            <parameters>
+              <value type="TwoOptions">book_confirmcreditedloa</value>
+            </parameters>
+          </customControl>
+          <customControl formFactor="2" name="MscrmControls.FieldControls.CheckboxControl">
+            <parameters>
+              <value type="TwoOptions">book_confirmcreditedloa</value>
+            </parameters>
+          </customControl>
+          <customControl formFactor="1" name="MscrmControls.FieldControls.CheckboxControl">
+            <parameters>
+              <value type="TwoOptions">book_confirmcreditedloa</value>
+            </parameters>
+          </customControl>
+        </controlDescription>
+      </controlDescriptions>
+      <formLibraries>
+        <Library name="book_hidePriRealignments" libraryUniqueId="{816ba311-79f6-4aa9-8405-d1a84dc595a3}" />
+      </formLibraries>
+      <events>
+        <event name="onload" application="false" active="false">
+          <Handlers>
+            <Handler functionName="manageFieldStatus" libraryName="book_hidePriRealignments" handlerUniqueId="{665b221c-ad64-4240-9d99-403c4d8d59e6}" enabled="true" parameters="" passExecutionContext="true" />
+          </Handlers>
+        </event>
+      </events>
+    </form>
+    <IsCustomizable>1</IsCustomizable>
+    <CanBeDeleted>1</CanBeDeleted>
+    <LocalizedNames>
+      <LocalizedName description="Realign Requirement" languagecode="1033" />
+    </LocalizedNames>
+    <Descriptions>
+      <Description description="A form for this entity." languagecode="1033" />
+    </Descriptions>
+  </systemform>
+</forms>

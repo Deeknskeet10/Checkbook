@@ -1,0 +1,149 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<forms xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <systemform>
+    <formid>{a0a6dce7-e828-4b2e-a0a5-bafbff82b91d}</formid>
+    <IntroducedVersion>1.0</IntroducedVersion>
+    <FormPresentation>1</FormPresentation>
+    <FormActivationState>1</FormActivationState>
+    <form>
+      <tabs>
+        <tab verticallayout="true" id="{ff95b8ad-85cf-410e-b729-3e34cd472ef3}" name="StageStep3" locklevel="0" expanded="true" visible="false" labelid="{dbce1ea7-d523-4bd7-b4ca-8dabf1ba8039}">
+          <labels>
+            <label description="Initiation" languagecode="1033" />
+          </labels>
+          <columns>
+            <column width="100%">
+              <sections>
+                <section showbar="false" columns="1" id="{c1567054-f5ed-cd08-8dd7-f335f5344f55}" name="StageStep3_section1" labelid="{821827af-144d-40a8-9aa9-57bedc6c3d58}">
+                  <labels>
+                    <label description="Initiation" languagecode="1033" />
+                  </labels>
+                  <rows>
+                    <row>
+                      <cell id="{d81fce58-03ff-47f7-ab40-367f0e6fe85c}" showlabel="true" visible="true" labelid="{07e1d324-a2b7-401a-9021-e8ca77b127c0}">
+                        <labels>
+                          <label description="Fund Center" languagecode="1033" />
+                        </labels>
+                        <control id="bpf_book_turnin_book_turninapprovalprocess:book_fundcenter" classid="{270bd3db-d9af-4782-9025-509e298dec0a}" datafieldname="book_fundcenter" relationship="bpf_book_turnin_book_turninapprovalprocess" isrequired="true" disabled="false" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{1c447583-b668-43b9-b98e-2eb6b10343ec}" showlabel="true" visible="true" labelid="{28027028-cbd8-437c-9c74-4736b81e2e5a}">
+                        <labels>
+                          <label description="Fund" languagecode="1033" />
+                        </labels>
+                        <control id="bpf_book_turnin_book_turninapprovalprocess:book_fund" classid="{270bd3db-d9af-4782-9025-509e298dec0a}" datafieldname="book_fund" relationship="bpf_book_turnin_book_turninapprovalprocess" isrequired="true" disabled="false" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{4790755e-1eea-483d-aac4-deda84bc54bb}" showlabel="true" visible="true" labelid="{95eb9685-cf74-4e2f-9a80-dd67cb6a8cc4}">
+                        <labels>
+                          <label description="PG" languagecode="1033" />
+                        </labels>
+                        <control id="bpf_book_turnin_book_turninapprovalprocess:book_pg" classid="{270bd3db-d9af-4782-9025-509e298dec0a}" datafieldname="book_pg" relationship="bpf_book_turnin_book_turninapprovalprocess" isrequired="true" disabled="false" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{407d9af2-1d9e-4e8b-beac-3c8ffc2a6ba1}" showlabel="true" visible="true" labelid="{53699079-b609-4ce1-b3e4-5e320f430ae6}">
+                        <labels>
+                          <label description="Amount" languagecode="1033" />
+                        </labels>
+                        <control id="bpf_book_turnin_book_turninapprovalprocess:book_amount" classid="{0d2c745a-e5a8-4c8f-ba63-c6d3bb604660}" datafieldname="book_amount" relationship="bpf_book_turnin_book_turninapprovalprocess" isrequired="true" disabled="false" />
+                      </cell>
+                    </row>
+                  </rows>
+                </section>
+              </sections>
+            </column>
+          </columns>
+        </tab>
+        <tab verticallayout="true" id="{7cfcecc3-b05a-407c-a6e1-0d9b83b2daf9}" name="StageStep13" locklevel="0" expanded="true" visible="false" labelid="{e30b29e9-46fe-4c3b-b0d0-3f2a344a8196}">
+          <labels>
+            <label description="State Input" languagecode="1033" />
+          </labels>
+          <columns>
+            <column width="100%">
+              <sections>
+                <section showbar="false" columns="1" id="{eeb37991-1114-dcdd-8818-0d51b2781fd2}" name="StageStep13_section1" labelid="{7df2b284-5853-465f-b1e8-156d5b118530}">
+                  <labels>
+                    <label description="State Input" languagecode="1033" />
+                  </labels>
+                  <rows>
+                    <row>
+                      <cell id="{493a2298-5de5-4936-a2c8-0698a8e5b537}" showlabel="true" visible="true" labelid="{c1623cb6-aca3-4c7d-a83f-21a9c573f256}">
+                        <labels>
+                          <label description="Identified Turn-In Amount" languagecode="1033" />
+                        </labels>
+                        <control id="bpf_book_turnin_book_turninapprovalprocess:book_identifiedturninamount" classid="{c3efe0c3-0ec6-42be-8349-cbd9079dfd8e}" datafieldname="book_identifiedturninamount" relationship="bpf_book_turnin_book_turninapprovalprocess" isrequired="false" disabled="false" />
+                      </cell>
+                    </row>
+                  </rows>
+                </section>
+              </sections>
+            </column>
+          </columns>
+        </tab>
+        <tab verticallayout="true" id="{7cba05ae-d4af-4602-b5dd-54b4eda1cf14}" name="StageStep17" locklevel="0" expanded="true" visible="false" labelid="{556c602b-66f8-475a-82bf-46f876f99ef7}">
+          <labels>
+            <label description="State Approval" languagecode="1033" />
+          </labels>
+          <columns>
+            <column width="100%">
+              <sections>
+                <section showbar="false" columns="1" id="{d9734e52-2bd9-d9d1-303c-708d540f7513}" name="StageStep17_section1" labelid="{6f11160f-5a31-4de4-b510-c4c5925074ad}">
+                  <labels>
+                    <label description="State Approval" languagecode="1033" />
+                  </labels>
+                  <rows>
+                    <row>
+                      <cell id="{6683a384-cf96-4abc-9dea-ecefda0c16dc}" showlabel="true" visible="true" labelid="{b5fb43a9-6ebe-4dc7-8266-532979cfa9fe}">
+                        <labels>
+                          <label description="State Approved" languagecode="1033" />
+                        </labels>
+                        <control id="bpf_book_turnin_book_turninapprovalprocess:book_stateapproved" classid="{67fac785-cd58-4f9f-abb3-4b7ddc6ed5ed}" datafieldname="book_stateapproved" relationship="bpf_book_turnin_book_turninapprovalprocess" isrequired="true" disabled="false" />
+                      </cell>
+                    </row>
+                  </rows>
+                </section>
+              </sections>
+            </column>
+          </columns>
+        </tab>
+        <tab verticallayout="true" id="{118f5421-9c21-416e-922a-4282c189eee1}" name="StageStep21" locklevel="0" expanded="true" visible="false" labelid="{0215a78a-7960-45db-9a29-7ade79ea84cb}">
+          <labels>
+            <label description="Turn-In Completion" languagecode="1033" />
+          </labels>
+          <columns>
+            <column width="100%">
+              <sections>
+                <section showbar="false" columns="1" id="{b001ca6e-d307-1b99-04ed-1da4fafe52a9}" name="StageStep21_section1" labelid="{994f0c21-a490-46ef-a218-8f1324098b5e}">
+                  <labels>
+                    <label description="Turn-In Completion" languagecode="1033" />
+                  </labels>
+                  <rows>
+                    <row>
+                      <cell id="{eba58a47-5937-47a5-b9c2-8980738d411e}" showlabel="true" visible="true" labelid="{3f268b3d-9884-4756-8a90-72db1625fa8d}">
+                        <labels>
+                          <label description="BE Approved" languagecode="1033" />
+                        </labels>
+                        <control id="bpf_book_turnin_book_turninapprovalprocess:book_beapproved" classid="{67fac785-cd58-4f9f-abb3-4b7ddc6ed5ed}" datafieldname="book_beapproved" relationship="bpf_book_turnin_book_turninapprovalprocess" isrequired="true" disabled="false" />
+                      </cell>
+                    </row>
+                  </rows>
+                </section>
+              </sections>
+            </column>
+          </columns>
+        </tab>
+      </tabs>
+    </form>
+    <IsCustomizable>1</IsCustomizable>
+    <CanBeDeleted>1</CanBeDeleted>
+    <LocalizedNames>
+      <LocalizedName description="Information" languagecode="1033" />
+    </LocalizedNames>
+    <Descriptions>
+      <Description description="A form for this entity." languagecode="1033" />
+    </Descriptions>
+  </systemform>
+</forms>

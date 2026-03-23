@@ -1,0 +1,46 @@
+<appaction uniquename="book__ReturntoStatePM!fd568369f1024d29a54feb2e867ca172!book_ARNGCheckbook!book_prioritization!1">
+  <appmoduleid>
+    <uniquename>book_ARNGCheckbook</uniquename>
+  </appmoduleid>
+  <buttonaccessibilitytext default="Return Prioritization to State PM">
+    <label description="Return Prioritization to State PM" languagecode="1033" />
+  </buttonaccessibilitytext>
+  <buttonlabeltext default="Return to State PM">
+    <label description="Return to State PM" languagecode="1033" />
+  </buttonlabeltext>
+  <buttontooltipdescription default="Return Prioritization to State PM">
+    <label description="Return Prioritization to State PM" languagecode="1033" />
+  </buttontooltipdescription>
+  <buttontooltiptitle default="Return Prioritization to State PM">
+    <label description="Return Prioritization to State PM" languagecode="1033" />
+  </buttontooltiptitle>
+  <context>1</context>
+  <contextentity>
+    <logicalname>book_prioritization</logicalname>
+  </contextentity>
+  <contextvalue>book_prioritization</contextvalue>
+  <fonticon>EditSeries</fonticon>
+  <hidden>0</hidden>
+  <iscustomizable>1</iscustomizable>
+  <isdisabled>0</isdisabled>
+  <isgrouptitlehidden>0</isgrouptitlehidden>
+  <location>1</location>
+  <name>ReturntoStatePM!fd568369f1024d29a54feb2e867ca172</name>
+  <onclickeventjavascriptfunctionname>checkbookButtons</onclickeventjavascriptfunctionname>
+  <onclickeventjavascriptparameters>[{"type":12},{"type":23},{"type":19,"value":4}]</onclickeventjavascriptparameters>
+  <onclickeventjavascriptwebresourceid>
+    <webresourceid>bb5020d9-da6b-f011-bec3-001dd8059413</webresourceid>
+  </onclickeventjavascriptwebresourceid>
+  <onclickeventtype>2</onclickeventtype>
+  <origin>0</origin>
+  <sequence>1000100010.0000000000</sequence>
+  <statecode>0</statecode>
+  <statuscode>1</statuscode>
+  <type>0</type>
+  <visibilityformulacomponentlibraryid>
+    <name>book_arngcheckbookdefaultcommandlibrary_035ae</name>
+  </visibilityformulacomponentlibraryid>
+  <visibilityformulacomponentname>d10e45a58d6a4568beceaabe05a90cf9</visibilityformulacomponentname>
+  <visibilityformulafunctionname>Visible</visibilityformulafunctionname>
+  <visibilitytype>1</visibilitytype>
+</appaction>

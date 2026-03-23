@@ -1,0 +1,119 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<forms xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <systemform>
+    <formid>{37c130cb-221d-45ed-855d-8e8747432879}</formid>
+    <IntroducedVersion>1.0.0.0</IntroducedVersion>
+    <FormPresentation>1</FormPresentation>
+    <FormActivationState>1</FormActivationState>
+    <form>
+      <tabs>
+        <tab verticallayout="true" id="{da01b8ee-0abb-4f12-9d35-50902e847fb4}" IsUserDefined="1">
+          <labels>
+            <label description="" languagecode="1033" />
+          </labels>
+          <columns>
+            <column width="100%">
+              <sections>
+                <section showlabel="false" showbar="false" IsUserDefined="0" id="{7d506d9c-fc51-445e-a0a3-5935922af469}">
+                  <labels>
+                    <label description="GENERAL" languagecode="1033" />
+                  </labels>
+                  <rows>
+                    <row>
+                      <cell id="{7a9b6d2d-9582-4b42-b867-3f9aa7ff771d}" visible="false">
+                        <labels>
+                          <label description="Name" languagecode="1033" />
+                        </labels>
+                        <control id="book_name" classid="{4273EDBD-AC1D-40d3-9FB2-095C621B552D}" datafieldname="book_name" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{c2a0d018-da3c-44d6-a9b3-c176c38023bf}" visible="false">
+                        <labels>
+                          <label description="Owner" languagecode="1033" />
+                        </labels>
+                        <control id="ownerid" classid="{270BD3DB-D9AF-4782-9025-509E298DEC0A}" datafieldname="ownerid" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{0e3ac269-7d01-434b-a343-9cd7384e061a}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="Fiscal Year" languagecode="1033" />
+                        </labels>
+                        <control id="book_fiscalyear" classid="{3EF39988-22BB-4F0B-BBBE-64B5A3748AEE}" datafieldname="book_fiscalyear" disabled="false" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{7f362b95-9728-46c1-ba29-4d165e753765}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="Disbursing Official" languagecode="1033" />
+                        </labels>
+                        <control id="book_disbursingofficial" classid="{270BD3DB-D9AF-4782-9025-509E298DEC0A}" datafieldname="book_disbursingofficial" disabled="false" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{0d7c5884-fe8d-477f-9bdd-825a2851e032}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="Appropriation" languagecode="1033" />
+                        </labels>
+                        <control id="book_appropriation" classid="{3EF39988-22BB-4F0B-BBBE-64B5A3748AEE}" datafieldname="book_appropriation" disabled="false" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{d9512e1a-9315-48a7-80d7-081d42c19606}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="MDEP" languagecode="1033" />
+                        </labels>
+                        <control id="book_mdep" classid="{270BD3DB-D9AF-4782-9025-509E298DEC0A}" datafieldname="book_mdep" disabled="false" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{633a0308-a2ac-4e79-b589-c949e0aeb31c}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="Dollar Type" languagecode="1033" />
+                        </labels>
+                        <control id="book_dollartype" classid="{270BD3DB-D9AF-4782-9025-509E298DEC0A}" datafieldname="book_dollartype" disabled="false" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{ea077606-29de-4ee5-ba9f-66346bac8219}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="SAG" languagecode="1033" />
+                        </labels>
+                        <control id="book_sag" classid="{270BD3DB-D9AF-4782-9025-509E298DEC0A}" datafieldname="book_sag" disabled="false" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{1b575b54-268e-48a1-9a11-36b65f51f85f}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="APE" languagecode="1033" />
+                        </labels>
+                        <control id="book_ape" classid="{270BD3DB-D9AF-4782-9025-509E298DEC0A}" datafieldname="book_ape" disabled="false" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{ccd073f7-39bc-4dd6-8e0d-691acdcc9603}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="Resource Amount" languagecode="1033" />
+                        </labels>
+                        <control id="book_resourceamount" classid="{0D2C745A-E5A8-4C8F-BA63-C6D3BB604660}" datafieldname="book_resourceamount" disabled="false" />
+                      </cell>
+                    </row>
+                  </rows>
+                </section>
+              </sections>
+            </column>
+          </columns>
+        </tab>
+      </tabs>
+      <DisplayConditions Order="0" FallbackForm="true">
+        <Everyone />
+      </DisplayConditions>
+    </form>
+    <IsCustomizable>1</IsCustomizable>
+    <CanBeDeleted>1</CanBeDeleted>
+    <LocalizedNames>
+      <LocalizedName description="Information" languagecode="1033" />
+    </LocalizedNames>
+  </systemform>
+</forms>

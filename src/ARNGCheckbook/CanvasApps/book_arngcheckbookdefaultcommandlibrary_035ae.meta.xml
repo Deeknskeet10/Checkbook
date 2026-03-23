@@ -1,0 +1,31 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<CanvasApp xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <Name>book_arngcheckbookdefaultcommandlibrary_035ae</Name>
+  <AppVersion>2026-03-06T13:32:04Z</AppVersion>
+  <Status>Ready</Status>
+  <CreatedByClientVersion>3.26014.7.0</CreatedByClientVersion>
+  <MinClientVersion>0.0.0.0</MinClientVersion>
+  <Tags>{"primaryDeviceWidth":"1366","primaryDeviceHeight":"768","sienaVersion":"20260206T150259Z-3.26013.14.0","deviceCapabilities":"","supportsPortrait":"true","supportsLandscape":"true","primaryFormFactor":"Tablet","publisherVersion":"3.26013.9","minimumRequiredApiVersion":"2.2.0","hasComponent":"true","hasUnlockedComponent":"true","isUnifiedRootApp":"false","showStatusBar":"false"}</Tags>
+  <IsCdsUpgraded>0</IsCdsUpgraded>
+  <GalleryItemId xsi:nil="true"></GalleryItemId>
+  <BackgroundColor>RGBA(251,101,60,1)</BackgroundColor>
+  <DisplayName>ARNGCheckbook_DefaultCommandLibrary</DisplayName>
+  <Description xsi:nil="true"></Description>
+  <CommitMessage>Saved by Command designer.</CommitMessage>
+  <Publisher></Publisher>
+  <AuthorizationReferences>[]</AuthorizationReferences>
+  <ConnectionReferences>{}</ConnectionReferences>
+  <DatabaseReferences>{"default.cds":{"databaseDetails":{"referenceType":"Environmental","environmentName":"default.cds"},"dataSources":{"Prioritizations":{"entitySetName":"book_prioritizations","logicalName":"book_prioritization"},"Requirements":{"entitySetName":"book_requirementses","logicalName":"book_requirements"},"Unfunded Requests":{"entitySetName":"book_unfundedrequestses","logicalName":"book_unfundedrequests"},"Requirement Fundings":{"entitySetName":"book_requirementfundings","logicalName":"book_requirementfunding"},"Requirement Funding - Validate Funding":{"entitySetName":"book_requirementfundingvalidatefundings","logicalName":"book_requirementfundingvalidatefunding"}}}}</DatabaseReferences>
+  <AppComponents>[]</AppComponents>
+  <AppComponentDependencies>[]</AppComponentDependencies>
+  <CanConsumeAppPass>1</CanConsumeAppPass>
+  <CanvasAppType>1</CanvasAppType>
+  <BypassConsent>0</BypassConsent>
+  <AdminControlBypassConsent>0</AdminControlBypassConsent>
+  <EmbeddedApp xsi:nil="true"></EmbeddedApp>
+  <IntroducedVersion>1.0</IntroducedVersion>
+  <CdsDependencies>{"cdsdependencies":[{"logicalname":"book_prioritization","componenttype":1},{"logicalname":"book_requirements","componenttype":1},{"logicalname":"book_unfundedrequests","componenttype":1},{"logicalname":"book_requirementfunding","componenttype":1},{"logicalname":"book_requirementfundingvalidatefunding","componenttype":1}]}</CdsDependencies>
+  <IsCustomizable>1</IsCustomizable>
+  <BackgroundImageUri>/CanvasApps/book_arngcheckbookdefaultcommandlibrary_035ae_BackgroundImageUri</BackgroundImageUri>
+  <DocumentUri>/CanvasApps/book_arngcheckbookdefaultcommandlibrary_035ae_DocumentUri.msapp</DocumentUri>
+</CanvasApp>

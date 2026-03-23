@@ -1,0 +1,95 @@
+{
+  "properties": {
+    "connectionReferences": {
+      "shared_commondataserviceforapps": {
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "book_sharedcommondataserviceforapps_9388f"
+        },
+        "api": {
+          "name": "shared_commondataserviceforapps"
+        }
+      }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "1.0.0.0",
+      "parameters": {
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        },
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        }
+      },
+      "triggers": {
+        "When_a_row_is_added,_modified_or_deleted": {
+          "metadata": {
+            "operationMetadataId": "8e1a479d-ef04-43ac-a31e-2f33e93c48d3"
+          },
+          "type": "OpenApiConnectionWebhook",
+          "inputs": {
+            "parameters": {
+              "subscriptionRequest/message": 4,
+              "subscriptionRequest/entityname": "book_decision",
+              "subscriptionRequest/scope": 4,
+              "subscriptionRequest/filteringattributes": "statecode, book_amount"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
+              "operationId": "SubscribeWebhookTrigger",
+              "connectionName": "shared_commondataserviceforapps"
+            }
+          }
+        }
+      },
+      "actions": {
+        "List_Decisions": {
+          "runAfter": {},
+          "metadata": {
+            "operationMetadataId": "c437a718-36a3-4fdc-a60e-b95c98c1af6d"
+          },
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "entityName": "book_decisions",
+              "fetchXml": "<fetch aggregate=\"true\">\n    <entity name=\"book_decision\">\n        <attribute name=\"book_amount\" alias=\"amount\" aggregate=\"sum\"/>\n        <filter type=\"and\">\n            <condition attribute=\"statecode\" operator=\"eq\" value=\"0\"/>\n            <condition attribute=\"book_fundingline\" operator=\"eq\" value=\"@{triggerOutputs()?['body/_book_fundingline_value']}\"/>\n        </filter>\n        <link-entity name=\"book_fundingtrack\" from=\"book_fundingtrackid\" to=\"book_fundingline\" link-type=\"inner\" alias=\"opr\">\n            <attribute name=\"book_beginningbalancereadonly\" alias=\"begin_balance\" groupby=\"true\"/>\n        </link-entity>\n    </entity>\n</fetch"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
+              "operationId": "ListRecords",
+              "connectionName": "shared_commondataserviceforapps"
+            }
+          }
+        },
+        "Update_Funding_Track": {
+          "runAfter": {
+            "List_Decisions": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "8bfd53e9-4c3e-40fe-aecb-c290dae78139"
+          },
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "entityName": "book_fundingtracks",
+              "recordId": "@triggerOutputs()?['body/_book_fundingline_value']",
+              "item/book_resourceamount": "@add(if(equals(first(outputs('List_Decisions')?['body/value'])?['begin_balance'], null), 0.00, first(outputs('List_Decisions')?['body/value'])?['begin_balance']), if(equals(first(outputs('List_Decisions')?['body/value'])?['amount'], null), 0.00, first(outputs('List_Decisions')?['body/value'])?['amount']))"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
+              "operationId": "UpdateOnlyRecord",
+              "connectionName": "shared_commondataserviceforapps"
+            }
+          }
+        }
+      }
+    },
+    "templateName": null
+  },
+  "schemaVersion": "1.0.0.0"
+}

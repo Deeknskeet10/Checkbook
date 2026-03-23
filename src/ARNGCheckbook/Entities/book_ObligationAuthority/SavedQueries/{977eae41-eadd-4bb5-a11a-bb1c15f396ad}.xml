@@ -1,0 +1,38 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<savedqueries xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <savedquery>
+    <IsCustomizable>1</IsCustomizable>
+    <CanBeDeleted>0</CanBeDeleted>
+    <isquickfindquery>0</isquickfindquery>
+    <isprivate>0</isprivate>
+    <isdefault>1</isdefault>
+    <savedqueryid>{977eae41-eadd-4bb5-a11a-bb1c15f396ad}</savedqueryid>
+    <layoutxml>
+      <grid name="book_obligationauthorities" jump="book_name" select="1" icon="1" preview="1">
+        <row name="book_obligationauthority" id="book_obligationauthorityid">
+          <cell name="book_name" width="152" />
+          <cell name="book_period" width="100" />
+          <cell name="book_amountneeded" width="133" />
+        </row>
+      </grid>
+    </layoutxml>
+    <querytype>2</querytype>
+    <fetchxml>
+      <fetch version="1.0" mapping="logical">
+        <entity name="book_obligationauthority">
+          <attribute name="book_obligationauthorityid" />
+          <filter type="and">
+            <condition attribute="statecode" operator="eq" value="0" />
+          </filter>
+          <attribute name="book_amountneeded" />
+          <attribute name="book_name" />
+          <attribute name="book_period" />
+        </entity>
+      </fetch>
+    </fetchxml>
+    <IntroducedVersion>1.4.1.1</IntroducedVersion>
+    <LocalizedNames>
+      <LocalizedName description="Obligation Authority Associated View" languagecode="1033" />
+    </LocalizedNames>
+  </savedquery>
+</savedqueries>

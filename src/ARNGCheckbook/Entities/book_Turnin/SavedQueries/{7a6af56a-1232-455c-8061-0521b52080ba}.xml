@@ -1,0 +1,46 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<savedqueries xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <savedquery>
+    <IsCustomizable>1</IsCustomizable>
+    <CanBeDeleted>0</CanBeDeleted>
+    <isquickfindquery>0</isquickfindquery>
+    <isprivate>0</isprivate>
+    <isdefault>1</isdefault>
+    <savedqueryid>{7a6af56a-1232-455c-8061-0521b52080ba}</savedqueryid>
+    <layoutxml>
+      <grid name="resultset" jump="book_name" select="1" icon="1" preview="1">
+        <row name="result" id="book_turninid">
+          <cell name="book_fundcenter" width="110" />
+          <cell name="book_fund" width="100" />
+          <cell name="book_pg" width="100" />
+          <cell name="book_amount" width="100" />
+          <cell name="book_identifiedturninamount" width="191" />
+          <cell name="book_stateapproved" width="128" />
+          <cell name="book_beapproved" width="118" />
+        </row>
+      </grid>
+    </layoutxml>
+    <querytype>0</querytype>
+    <fetchxml>
+      <fetch version="1.0" mapping="logical">
+        <entity name="book_turnin">
+          <attribute name="book_turninid" />
+          <filter type="and">
+            <condition attribute="statecode" operator="eq" value="0" />
+          </filter>
+          <attribute name="book_amount" />
+          <attribute name="book_stateapproved" />
+          <attribute name="book_fundcenter" />
+          <attribute name="book_fund" />
+          <attribute name="book_pg" />
+          <attribute name="book_identifiedturninamount" />
+          <attribute name="book_beapproved" />
+        </entity>
+      </fetch>
+    </fetchxml>
+    <IntroducedVersion>1.2.1.1</IntroducedVersion>
+    <LocalizedNames>
+      <LocalizedName description="Active Turn-ins" languagecode="1033" />
+    </LocalizedNames>
+  </savedquery>
+</savedqueries>

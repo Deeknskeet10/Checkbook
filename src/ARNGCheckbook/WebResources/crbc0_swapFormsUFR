@@ -1,0 +1,51 @@
+function SwitchUFRForm(executionContext) {
+    var formContext = executionContext.getFormContext();
+    /* UFR Forms */
+    var ufrState = "290d4184-6941-f011-b4cc-001dd8059413";
+    var ufrOPR = "8e52c793-6941-f011-b4cc-001dd805a06b";
+
+    var parentUFR = formContext.getAttribute("book_higherlevelufr").getValue();
+
+    console.log(`Parent UFR: ${parentUFR}`)
+
+    if (parentUFR == null) {
+        /* Set Form */
+        SwitchForm(formContext, ufrOPR);
+
+        /* Set BPF */
+        Xrm.Page.data.process.setActiveProcess("BA3F0BFD-6F41-F011-B4CC-001DD805A06B", callBackFunction)
+
+    }
+    else {
+        /* Set Form */
+        SwitchForm(formContext, ufrState);
+
+        /* Set BPF */
+        Xrm.Page.data.process.setActiveProcess("9D8C3F46-7241-F011-B4CC-001DD805A06B", callBackFunction)
+    }
+}
+
+function SwitchForm(formContext, formId) {
+    var currentForm = formContext.ui.formSelector.getCurrentItem();
+    var availableForms = formContext.ui.formSelector.items.get();
+    if (currentForm.getId() != formId) {
+        for (var i in availableForms) {
+            var form = availableForms[i];
+            // try to find a form based on the ID
+            if (form.getId() == formId) {
+                form.navigate();
+                return true;
+            }
+        }
+    }
+}
+
+/* Can be used to later notify User or set values if needed */
+function callBackFunction(result) {
+    if (result == "success") {
+
+    }
+    else {
+
+    }
+}

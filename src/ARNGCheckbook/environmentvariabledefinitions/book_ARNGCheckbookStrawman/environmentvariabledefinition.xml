@@ -1,0 +1,13 @@
+<environmentvariabledefinition schemaname="book_ARNGCheckbookStrawman">
+  <description default="Link to Strawman">
+    <label description="Link to Strawman" languagecode="1033" />
+  </description>
+  <displayname default="ARNG Checkbook - Strawman">
+    <label description="ARNG Checkbook - Strawman" languagecode="1033" />
+  </displayname>
+  <introducedversion>1.0.0.44</introducedversion>
+  <iscustomizable>1</iscustomizable>
+  <isrequired>0</isrequired>
+  <secretstore>0</secretstore>
+  <type>100000000</type>
+</environmentvariabledefinition>

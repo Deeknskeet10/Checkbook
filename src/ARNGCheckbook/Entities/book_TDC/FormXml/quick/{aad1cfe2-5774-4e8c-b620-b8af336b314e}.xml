@@ -1,0 +1,79 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<forms xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <systemform>
+    <formid>{aad1cfe2-5774-4e8c-b620-b8af336b314e}</formid>
+    <IntroducedVersion>1.1.3.0</IntroducedVersion>
+    <FormPresentation>1</FormPresentation>
+    <FormActivationState>1</FormActivationState>
+    <form>
+      <tabs>
+        <tab verticallayout="true" id="{65612c70-2fcf-4310-baa9-6a232b2c9e54}" IsUserDefined="1">
+          <labels>
+            <label description="" languagecode="1033" />
+          </labels>
+          <columns>
+            <column width="100%">
+              <sections>
+                <section showlabel="true" showbar="false" IsUserDefined="0" id="{3ed18a74-d0bc-4581-96ba-efe74f2d41d6}">
+                  <labels>
+                    <label description="TDC Details" languagecode="1033" />
+                  </labels>
+                  <rows>
+                    <row>
+                      <cell id="{1f3ea0c0-ed17-4ef8-b29c-a8e5ae98c83e}" visible="false">
+                        <labels>
+                          <label description="Name" languagecode="1033" />
+                        </labels>
+                        <control id="book_name" classid="{4273EDBD-AC1D-40d3-9FB2-095C621B552D}" datafieldname="book_name" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{761c5ce3-9336-46a2-a4f9-0af4f8dd01df}" visible="false">
+                        <labels>
+                          <label description="Owner" languagecode="1033" />
+                        </labels>
+                        <control id="ownerid" classid="{270BD3DB-D9AF-4782-9025-509E298DEC0A}" datafieldname="ownerid" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{f0237c50-6d09-49b5-bc84-70f927c51801}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="GFEBS IO" languagecode="1033" />
+                        </labels>
+                        <control id="book_gfebsio" classid="{4273EDBD-AC1D-40D3-9FB2-095C621B552D}" datafieldname="book_gfebsio" disabled="false" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{073d903b-c4c9-4be9-bcad-060cef9f2284}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="Functional Cost Account" languagecode="1033" />
+                        </labels>
+                        <control id="book_functionalcostaccount" classid="{4273EDBD-AC1D-40D3-9FB2-095C621B552D}" datafieldname="book_functionalcostaccount" disabled="false" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{7ea066ac-1ecb-4507-aba8-f80b8b536972}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="Description" languagecode="1033" />
+                        </labels>
+                        <control id="book_description" classid="{E0DECE4B-6FC8-4A8F-A065-082708572369}" datafieldname="book_description" disabled="false" />
+                      </cell>
+                    </row>
+                  </rows>
+                </section>
+              </sections>
+            </column>
+          </columns>
+        </tab>
+      </tabs>
+      <DisplayConditions Order="0" FallbackForm="true">
+        <Everyone />
+      </DisplayConditions>
+    </form>
+    <IsCustomizable>1</IsCustomizable>
+    <CanBeDeleted>1</CanBeDeleted>
+    <LocalizedNames>
+      <LocalizedName description="Information" languagecode="1033" />
+    </LocalizedNames>
+  </systemform>
+</forms>

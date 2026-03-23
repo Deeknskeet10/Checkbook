@@ -1,0 +1,49 @@
+<appaction uniquename="book__ValidateFund!2b883c369480499da87a0d49299dd769!book_ARNGCheckbook!book_requirements!0">
+  <appmoduleid>
+    <uniquename>book_ARNGCheckbook</uniquename>
+  </appmoduleid>
+  <buttonaccessibilitytext default="Launch Validate and Funding Tool">
+    <label description="Launch Validate and Funding Tool" languagecode="1033" />
+  </buttonaccessibilitytext>
+  <buttonlabeltext default="Validate &amp; Fund">
+    <label description="Validate &amp; Fund" languagecode="1033" />
+  </buttonlabeltext>
+  <buttontooltipdescription default="Allows User to input Funding data for Requirement and associated Prioritizations">
+    <label description="Allows User to input Funding data for Requirement and associated Prioritizations" languagecode="1033" />
+  </buttontooltipdescription>
+  <buttontooltiptitle default="Launch Validate and Funding Tool">
+    <label description="Launch Validate and Funding Tool" languagecode="1033" />
+  </buttontooltiptitle>
+  <context>1</context>
+  <contextentity>
+    <logicalname>book_requirements</logicalname>
+  </contextentity>
+  <contextvalue>book_requirements</contextvalue>
+  <fonticon>$clientsvg:ActivateOrders</fonticon>
+  <hidden>0</hidden>
+  <iscustomizable>1</iscustomizable>
+  <isdisabled>0</isdisabled>
+  <isgrouptitlehidden>0</isgrouptitlehidden>
+  <location>0</location>
+  <name>ValidateFund!2b883c369480499da87a0d49299dd769</name>
+  <onclickeventjavascriptfunctionname>openValidateFund</onclickeventjavascriptfunctionname>
+  <onclickeventjavascriptparameters>[{"type":5}]</onclickeventjavascriptparameters>
+  <onclickeventjavascriptwebresourceid>
+    <webresourceid>7539de1c-7d35-f011-8c4e-001dd805a06b</webresourceid>
+  </onclickeventjavascriptwebresourceid>
+  <onclickeventtype>2</onclickeventtype>
+  <origin>0</origin>
+  <parentappactionid>
+    <uniquename>book__Funding!a2651140e4ab40c38c45c9619328b4c8!book_ARNGCheckbook!book_requirements!0</uniquename>
+  </parentappactionid>
+  <sequence>10000.0000000000</sequence>
+  <statecode>0</statecode>
+  <statuscode>1</statuscode>
+  <type>0</type>
+  <visibilityformulacomponentlibraryid>
+    <name>book_arngcheckbookdefaultcommandlibrary_035ae</name>
+  </visibilityformulacomponentlibraryid>
+  <visibilityformulacomponentname>5990462c1208461ab3f70f2365afe071</visibilityformulacomponentname>
+  <visibilityformulafunctionname>Visible</visibilityformulafunctionname>
+  <visibilitytype>1</visibilitytype>
+</appaction>

@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<manifest>
+  <control namespace="ARNGCheckbook" constructor="SpendPlanCalendar" version="0.0.1" display-name-key="SpendPlanCalendar" description-key="Spend Plan Calendar Grid for fiscal year budget allocation" control-type="virtual">
+    <external-service-usage enabled="false">
+    </external-service-usage>
+
+    <!-- Bind to the primary key field of the parent record -->
+    <property name="parentRecordId" display-name-key="Parent Record ID" description-key="The ID of the parent record (Prioritization, Requirement Funding, or UFR)" of-type="SingleLine.Text" usage="bound" required="true" />
+
+    <!-- Property to identify which entity type this is bound to -->
+    <property name="parentEntityType" display-name-key="Parent Entity Type" description-key="The logical name of the parent entity (book_prioritization, book_requirementfunding, or book_unfundedrequests)" of-type="SingleLine.Text" usage="input" required="true" />
+
+    <!-- Read-only mode for rollup scenarios -->
+    <property name="isReadOnly" display-name-key="Read Only" description-key="Set to true to make the grid read-only" of-type="TwoOptions" usage="input" required="false" />
+
+    <resources>
+      <code path="index.ts" order="1"/>
+      <platform-library name="React" version="16.14.0" />
+      <platform-library name="Fluent" version="9.46.2" />
+      <css path="css/SpendPlanCalendar.css" order="1" />
+    </resources>
+
+    <feature-usage>
+      <uses-feature name="WebAPI" required="true" />
+    </feature-usage>
+  </control>
+</manifest>

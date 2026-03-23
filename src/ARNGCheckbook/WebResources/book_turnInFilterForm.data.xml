@@ -1,0 +1,16 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<WebResource xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <WebResourceId>{362f7d87-f8fa-f011-8406-001dd8204135}</WebResourceId>
+  <Name>book_turnInFilterForm</Name>
+  <DisplayName>turnInFilterForm</DisplayName>
+  <Description>Pre-Filters Requirement Funding on Turn-In Items form to only allow same Fund/PG selection.</Description>
+  <LanguageCode>0</LanguageCode>
+  <WebResourceType>3</WebResourceType>
+  <IntroducedVersion>1.11.0.6</IntroducedVersion>
+  <IsEnabledForMobileClient>0</IsEnabledForMobileClient>
+  <IsAvailableForMobileOffline>0</IsAvailableForMobileOffline>
+  <IsCustomizable>1</IsCustomizable>
+  <CanBeDeleted>1</CanBeDeleted>
+  <IsHidden>0</IsHidden>
+  <FileName>/WebResources/book_turnInFilterForm362F7D87-F8FA-F011-8406-001DD8204135</FileName>
+</WebResource>

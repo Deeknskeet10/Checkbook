@@ -1,0 +1,16 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<WebResource xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <WebResourceId>{12f8a1b8-6f61-f011-bec2-001dd805a06b}</WebResourceId>
+  <Name>book_calculateRollUp</Name>
+  <DisplayName>calculateRollUp</DisplayName>
+  <Description>Recalculates Decision Balance Roll-up field</Description>
+  <LanguageCode>0</LanguageCode>
+  <WebResourceType>3</WebResourceType>
+  <IntroducedVersion>1.0.0.0</IntroducedVersion>
+  <IsEnabledForMobileClient>0</IsEnabledForMobileClient>
+  <IsAvailableForMobileOffline>0</IsAvailableForMobileOffline>
+  <IsCustomizable>1</IsCustomizable>
+  <CanBeDeleted>1</CanBeDeleted>
+  <IsHidden>0</IsHidden>
+  <FileName>/WebResources/book_calculateRollUp12F8A1B8-6F61-F011-BEC2-001DD805A06B</FileName>
+</WebResource>

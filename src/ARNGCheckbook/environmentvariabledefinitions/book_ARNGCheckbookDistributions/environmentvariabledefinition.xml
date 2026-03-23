@@ -1,0 +1,13 @@
+<environmentvariabledefinition schemaname="book_ARNGCheckbookDistributions">
+  <description default="Link to Distro">
+    <label description="Link to Distro" languagecode="1033" />
+  </description>
+  <displayname default="ARNG Checkbook - Distributions">
+    <label description="ARNG Checkbook - Distributions" languagecode="1033" />
+  </displayname>
+  <introducedversion>1.3.1.1</introducedversion>
+  <iscustomizable>1</iscustomizable>
+  <isrequired>0</isrequired>
+  <secretstore>0</secretstore>
+  <type>100000000</type>
+</environmentvariabledefinition>

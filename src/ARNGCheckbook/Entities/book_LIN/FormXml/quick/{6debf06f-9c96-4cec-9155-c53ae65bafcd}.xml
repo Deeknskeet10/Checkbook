@@ -1,0 +1,71 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<forms xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <systemform>
+    <formid>{6debf06f-9c96-4cec-9155-c53ae65bafcd}</formid>
+    <IntroducedVersion>1.10.0.0</IntroducedVersion>
+    <FormPresentation>1</FormPresentation>
+    <FormActivationState>1</FormActivationState>
+    <form>
+      <tabs>
+        <tab verticallayout="true" id="{b0e1688e-673d-4729-a78c-0eebd4d1d91f}" IsUserDefined="1">
+          <labels>
+            <label description="" languagecode="1033" />
+          </labels>
+          <columns>
+            <column width="100%">
+              <sections>
+                <section showlabel="true" showbar="false" IsUserDefined="0" id="{fd76c60b-a568-488c-84b8-20e4bfe0928a}" name="General">
+                  <labels>
+                    <label description="LIN Details" languagecode="1033" />
+                  </labels>
+                  <rows>
+                    <row>
+                      <cell id="{c3f47245-ed8c-407a-9766-44f57a23ebcb}">
+                        <labels>
+                          <label description="Name" languagecode="1033" />
+                        </labels>
+                        <control id="book_name" classid="{4273EDBD-AC1D-40d3-9FB2-095C621B552D}" datafieldname="book_name" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{9902e0f7-3b55-41c4-a4a7-4baa015132ae}" visible="false">
+                        <labels>
+                          <label description="Owner" languagecode="1033" />
+                        </labels>
+                        <control id="ownerid" classid="{270BD3DB-D9AF-4782-9025-509E298DEC0A}" datafieldname="ownerid" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{8bbeaa14-f23b-4650-a43c-5467e7a9db74}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="Nomenclature" languagecode="1033" />
+                        </labels>
+                        <control id="book_nomenclature" classid="{4273EDBD-AC1D-40D3-9FB2-095C621B552D}" datafieldname="book_nomenclature" disabled="false" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{1984e959-6746-42bd-bf9d-dbe5ff5ed8da}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="Branch" languagecode="1033" />
+                        </labels>
+                        <control id="book_branch" classid="{3EF39988-22BB-4F0B-BBBE-64B5A3748AEE}" datafieldname="book_branch" disabled="false" />
+                      </cell>
+                    </row>
+                  </rows>
+                </section>
+              </sections>
+            </column>
+          </columns>
+        </tab>
+      </tabs>
+      <DisplayConditions Order="0" FallbackForm="true">
+        <Everyone />
+      </DisplayConditions>
+    </form>
+    <IsCustomizable>1</IsCustomizable>
+    <CanBeDeleted>1</CanBeDeleted>
+    <LocalizedNames>
+      <LocalizedName description="Information" languagecode="1033" />
+    </LocalizedNames>
+  </systemform>
+</forms>

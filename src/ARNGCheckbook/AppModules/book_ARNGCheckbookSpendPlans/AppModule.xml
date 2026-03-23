@@ -1,0 +1,39 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<AppModule>
+  <UniqueName>book_ARNGCheckbookSpendPlans</UniqueName>
+  <IntroducedVersion>1.1.1.7</IntroducedVersion>
+  <WebResourceId>953b9fac-1e5e-e611-80d6-00155ded156f</WebResourceId>
+  <OptimizedFor></OptimizedFor>
+  <statecode>0</statecode>
+  <statuscode>1</statuscode>
+  <FormFactor>1</FormFactor>
+  <ClientType>4</ClientType>
+  <NavigationType>0</NavigationType>
+  <AppModuleComponents>
+    <AppModuleComponent type="1" schemaName="book_spendplan" />
+    <AppModuleComponent type="26" id="{d6fb14d9-b682-f011-b4cc-001dd8059413}" />
+    <AppModuleComponent type="26" id="{87fa1416-b782-f011-b4cc-001dd8059413}" />
+    <AppModuleComponent type="26" id="{158751d2-b582-f011-b4cc-001dd805a06b}" />
+    <AppModuleComponent type="26" id="{fd76d7d2-b53f-4790-bc5a-570b7fc4ea28}" />
+    <AppModuleComponent type="26" id="{06e0a6fa-4d86-471f-899c-6e111f96473b}" />
+    <AppModuleComponent type="26" id="{09d78c1f-3787-4dc4-a982-cba43445cf6b}" />
+    <AppModuleComponent type="26" id="{76a67bef-2b58-42c4-80cc-f5e03a81dbe4}" />
+    <AppModuleComponent type="62" schemaName="book_ARNGCheckbookSpendPlans" />
+  </AppModuleComponents>
+  <AppModuleRoleMaps>
+    <Role id="{627090ff-40a3-4053-8790-584edc5be201}" />
+    <Role id="{119f245c-3cc8-4b62-b31c-d1a046ced15d}" />
+  </AppModuleRoleMaps>
+  <LocalizedNames>
+    <LocalizedName description="ARNG Checkbook - Spend Plans" languagecode="1033" />
+  </LocalizedNames>
+  <Descriptions>
+    <Description description="Spend Plans for Requirements, Prioritizations, and UFRs" languagecode="1033" />
+  </Descriptions>
+  <appsettings>
+    <appsetting settingdefinitionid.uniquename="AppChannel">
+      <iscustomizable>1</iscustomizable>
+      <value>1</value>
+    </appsetting>
+  </appsettings>
+</AppModule>

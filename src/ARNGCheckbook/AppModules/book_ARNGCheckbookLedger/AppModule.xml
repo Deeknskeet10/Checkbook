@@ -1,0 +1,70 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<AppModule>
+  <UniqueName>book_ARNGCheckbookLedger</UniqueName>
+  <IntroducedVersion>1.0.0.0</IntroducedVersion>
+  <WebResourceId>953b9fac-1e5e-e611-80d6-00155ded156f</WebResourceId>
+  <OptimizedFor></OptimizedFor>
+  <statecode>0</statecode>
+  <statuscode>1</statuscode>
+  <FormFactor>1</FormFactor>
+  <ClientType>4</ClientType>
+  <NavigationType>0</NavigationType>
+  <AppModuleComponents>
+    <AppModuleComponent type="1" schemaName="book_distributions" />
+    <AppModuleComponent type="1" schemaName="book_fundingdetails" />
+    <AppModuleComponent type="1" schemaName="book_fundingevent" />
+    <AppModuleComponent type="1" schemaName="book_ledger" />
+    <AppModuleComponent type="1" schemaName="book_obligationauthority" />
+    <AppModuleComponent type="1" schemaName="book_obligationperiods" />
+    <AppModuleComponent type="1" schemaName="book_realignments" />
+    <AppModuleComponent type="1" schemaName="book_turnin" />
+    <AppModuleComponent type="1" schemaName="book_turninitems" />
+    <AppModuleComponent type="60" id="{af33228b-9095-f011-b4cc-001dd8059413}" />
+    <AppModuleComponent type="60" id="{f60e2f4a-73e9-4583-9449-a4d3fe04fa68}" />
+    <AppModuleComponent type="62" schemaName="book_ARNGCheckbookLedger" />
+  </AppModuleComponents>
+  <AppModuleRoleMaps>
+    <Role id="{627090ff-40a3-4053-8790-584edc5be201}" />
+    <Role id="{119f245c-3cc8-4b62-b31c-d1a046ced15d}" />
+  </AppModuleRoleMaps>
+  <LocalizedNames>
+    <LocalizedName description="ARNG Checkbook - Ledger" languagecode="1033" />
+  </LocalizedNames>
+  <Descriptions>
+    <Description description="Distribution, Realignments and Turn-ins" languagecode="1033" />
+  </Descriptions>
+  <appelements>
+    <appelement uniquename="book_book_ARNGCheckbookLedger_canvasappid_book_arngcheckbookledgerdefaultcommandlibrary_6173b">
+      <canvasappid>
+        <name>book_arngcheckbookledgerdefaultcommandlibrary_6173b</name>
+      </canvasappid>
+      <iscustomizable>1</iscustomizable>
+      <name>book_book_ARNGCheckbookLedger_canvasappid_book_arngcheckbookledgerdefaultcommandlibrary_6173b</name>
+    </appelement>
+    <appelement uniquename="book_book_ARNGCheckbookLedger_canvasappid_book_pagedistributionmodal_f0fad">
+      <canvasappid>
+        <name>book_pagedistributionmodal_f0fad</name>
+      </canvasappid>
+      <iscustomizable>1</iscustomizable>
+      <name>book_book_ARNGCheckbookLedger_canvasappid_book_pagedistributionmodal_f0fad</name>
+    </appelement>
+  </appelements>
+  <appsettings>
+    <appsetting settingdefinitionid.uniquename="AllowNotificationsEarlyAccess">
+      <iscustomizable>1</iscustomizable>
+      <value>true</value>
+    </appsetting>
+    <appsetting settingdefinitionid.uniquename="AppChannel">
+      <iscustomizable>1</iscustomizable>
+      <value>1</value>
+    </appsetting>
+    <appsetting settingdefinitionid.uniquename="HeaderAndNavigationRefresh">
+      <iscustomizable>1</iscustomizable>
+      <value>2</value>
+    </appsetting>
+    <appsetting settingdefinitionid.uniquename="msdyn_TimelineModernization">
+      <iscustomizable>1</iscustomizable>
+      <value>true</value>
+    </appsetting>
+  </appsettings>
+</AppModule>

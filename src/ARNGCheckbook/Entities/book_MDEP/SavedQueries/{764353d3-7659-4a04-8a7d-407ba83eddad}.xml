@@ -1,0 +1,42 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<savedqueries xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <savedquery>
+    <IsCustomizable>1</IsCustomizable>
+    <CanBeDeleted>0</CanBeDeleted>
+    <isquickfindquery>0</isquickfindquery>
+    <isprivate>0</isprivate>
+    <isdefault>1</isdefault>
+    <savedqueryid>{764353d3-7659-4a04-8a7d-407ba83eddad}</savedqueryid>
+    <layoutxml>
+      <grid name="resultset" jump="book_name" select="1" icon="1" preview="1">
+        <row name="result" id="book_mdepid">
+          <cell name="book_name" width="100" />
+          <cell name="book_description" width="242" />
+          <cell name="a_104f4e1a0be0448d94d44987861c43f8.book_focusarea" width="182" />
+          <cell name="a_104f4e1a0be0448d94d44987861c43f8.book_loe" width="145" />
+        </row>
+      </grid>
+    </layoutxml>
+    <querytype>0</querytype>
+    <fetchxml>
+      <fetch version="1.0" mapping="logical">
+        <entity name="book_mdep">
+          <attribute name="book_mdepid" />
+          <filter type="and">
+            <condition attribute="statecode" operator="eq" value="0" />
+          </filter>
+          <attribute name="book_description" />
+          <link-entity alias="a_104f4e1a0be0448d94d44987861c43f8" name="book_loefocusarea" to="book_focusarea" from="book_loefocusareaid" link-type="outer" visible="false">
+            <attribute name="book_focusarea" />
+            <attribute name="book_loe" />
+          </link-entity>
+          <attribute name="book_name" />
+        </entity>
+      </fetch>
+    </fetchxml>
+    <IntroducedVersion>1.0.0.0</IntroducedVersion>
+    <LocalizedNames>
+      <LocalizedName description="Active MDEPS" languagecode="1033" />
+    </LocalizedNames>
+  </savedquery>
+</savedqueries>

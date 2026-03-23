@@ -1,0 +1,384 @@
+{
+  "properties": {
+    "connectionReferences": {
+      "shared_onedriveforbusiness": {
+        "runtimeSource": "invoker",
+        "connection": {
+          "connectionReferenceLogicalName": "book_sharedonedriveforbusiness_dab1a"
+        },
+        "api": {
+          "name": "shared_onedriveforbusiness"
+        }
+      },
+      "shared_commondataserviceforapps": {
+        "impersonation": {},
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "book_sharedcommondataserviceforapps_9388f"
+        },
+        "api": {
+          "name": "shared_commondataserviceforapps"
+        }
+      }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "1.0.0.0",
+      "parameters": {
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        },
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        }
+      },
+      "triggers": {
+        "manual": {
+          "metadata": {
+            "operationMetadataId": "5ec012ca-3f22-43e4-953f-0f9a98b618a6"
+          },
+          "type": "Request",
+          "kind": "PowerAppV2",
+          "inputs": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "text": {
+                  "title": "File Name",
+                  "type": "string",
+                  "x-ms-dynamically-added": true,
+                  "description": "Please enter your input",
+                  "x-ms-content-hint": "TEXT"
+                },
+                "file": {
+                  "title": "File Content",
+                  "type": "object",
+                  "x-ms-dynamically-added": true,
+                  "description": "Please select file or image",
+                  "x-ms-content-hint": "FILE",
+                  "properties": {
+                    "name": {
+                      "type": "string"
+                    },
+                    "contentBytes": {
+                      "type": "string",
+                      "format": "byte"
+                    }
+                  }
+                },
+                "text_1": {
+                  "title": "Export Type",
+                  "type": "string",
+                  "x-ms-dynamically-added": true,
+                  "description": "Please enter your input",
+                  "x-ms-content-hint": "TEXT"
+                },
+                "text_2": {
+                  "title": "Excel JSON",
+                  "type": "string",
+                  "x-ms-dynamically-added": true,
+                  "description": "Please enter your input",
+                  "x-ms-content-hint": "TEXT"
+                },
+                "text_3": {
+                  "title": "Regarding",
+                  "type": "string",
+                  "x-ms-dynamically-added": true,
+                  "description": "Please enter your input",
+                  "x-ms-content-hint": "TEXT"
+                },
+                "text_4": {
+                  "title": "Total",
+                  "type": "string",
+                  "x-ms-dynamically-added": true,
+                  "description": "Please enter your input",
+                  "x-ms-content-hint": "TEXT"
+                }
+              },
+              "required": [
+                "text",
+                "text_1",
+                "text_2",
+                "text_3",
+                "text_4"
+              ]
+            }
+          }
+        }
+      },
+      "actions": {
+        "Excel_or_PDF": {
+          "actions": {
+            "Create_PDF": {
+              "runAfter": {},
+              "metadata": {
+                "operationMetadataId": "b42c3487-8d74-42f1-a33e-cd2ad8939a62"
+              },
+              "type": "OpenApiConnection",
+              "inputs": {
+                "host": {
+                  "connectionName": "shared_onedriveforbusiness",
+                  "operationId": "CreateFile",
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_onedriveforbusiness"
+                },
+                "parameters": {
+                  "folderPath": "/Attachments",
+                  "name": "@triggerBody()['text']",
+                  "body": "@triggerBody()?['file']?['contentBytes']"
+                },
+                "authentication": "@parameters('$authentication')"
+              },
+              "runtimeConfiguration": {
+                "contentTransfer": {
+                  "transferMode": "Chunked"
+                }
+              }
+            },
+            "Get_file_content": {
+              "runAfter": {
+                "Create_PDF": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "d2a61bfd-354b-4a27-84ca-a67fbfd2d168"
+              },
+              "type": "OpenApiConnection",
+              "inputs": {
+                "host": {
+                  "connectionName": "shared_onedriveforbusiness",
+                  "operationId": "GetFileContent",
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_onedriveforbusiness"
+                },
+                "parameters": {
+                  "id": "@outputs('Create_PDF')?['body/Id']",
+                  "inferContentType": true
+                },
+                "authentication": "@parameters('$authentication')"
+              }
+            },
+            "Delete_PDF": {
+              "runAfter": {
+                "Add_a_new_Note": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "ee8fc19b-c481-45ec-a97f-7f19a5b6a6c6"
+              },
+              "type": "OpenApiConnection",
+              "inputs": {
+                "host": {
+                  "connectionName": "shared_onedriveforbusiness",
+                  "operationId": "DeleteFile",
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_onedriveforbusiness"
+                },
+                "parameters": {
+                  "id": "@outputs('Create_PDF')?['body/Id']"
+                },
+                "authentication": "@parameters('$authentication')"
+              }
+            },
+            "Add_a_new_Note": {
+              "runAfter": {
+                "Get_file_content": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "c624cd99-2923-460e-825e-5c0f6f16a66a"
+              },
+              "type": "OpenApiConnection",
+              "inputs": {
+                "host": {
+                  "connectionName": "shared_commondataserviceforapps",
+                  "operationId": "CreateRecord",
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
+                },
+                "parameters": {
+                  "entityName": "annotations",
+                  "item/subject": "Cost Estimate Worksheet - @{formatDateTime(utcNow(), 'yyyy-MM-dd')}",
+                  "item/notetext": "Grand Total (Estimate) - @{triggerBody()['text_4']}",
+                  "item/isdocument": true,
+                  "item/documentbody": "@base64(outputs('Get_file_content')?['body'])",
+                  "item/filename": "@triggerBody()['text']",
+                  "item/objectid_book_prioritization@odata.bind": "book_prioritizations(@{triggerBody()['text_3']})"
+                },
+                "authentication": "@parameters('$authentication')"
+              }
+            }
+          },
+          "runAfter": {},
+          "else": {
+            "actions": {
+              "Parse_JSON": {
+                "runAfter": {},
+                "metadata": {
+                  "operationMetadataId": "35130e9b-bdc8-4e27-8cd3-738f87484be6"
+                },
+                "type": "ParseJson",
+                "inputs": {
+                  "content": "@triggerBody()['text_2']",
+                  "schema": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "dutyType": {},
+                        "estimatedCost": {},
+                        "numDays": {},
+                        "numRequested": {},
+                        "payGrade": {},
+                        "payType": {},
+                        "state": {}
+                      },
+                      "required": [
+                        "estimatedCost",
+                        "numDays",
+                        "numRequested",
+                        "payGrade",
+                        "payType"
+                      ]
+                    }
+                  }
+                }
+              },
+              "Create_CSV_table": {
+                "runAfter": {
+                  "Parse_JSON": [
+                    "Succeeded"
+                  ]
+                },
+                "metadata": {
+                  "operationMetadataId": "464c332b-fe4a-46ca-abcf-e6d0d2f99406"
+                },
+                "type": "Table",
+                "inputs": {
+                  "from": "@body('Parse_JSON')",
+                  "format": "CSV"
+                }
+              },
+              "Create_file_2": {
+                "runAfter": {
+                  "Create_CSV_table": [
+                    "Succeeded"
+                  ]
+                },
+                "metadata": {
+                  "operationMetadataId": "f3b1a553-becd-422f-afb5-1027837d8fd0"
+                },
+                "type": "OpenApiConnection",
+                "inputs": {
+                  "host": {
+                    "connectionName": "shared_onedriveforbusiness",
+                    "operationId": "CreateFile",
+                    "apiId": "/providers/Microsoft.PowerApps/apis/shared_onedriveforbusiness"
+                  },
+                  "parameters": {
+                    "folderPath": "/Attachments",
+                    "name": "@triggerBody()['text']",
+                    "body": "@body('Create_CSV_table')"
+                  },
+                  "authentication": "@parameters('$authentication')"
+                },
+                "runtimeConfiguration": {
+                  "contentTransfer": {
+                    "transferMode": "Chunked"
+                  }
+                }
+              },
+              "Get_file_content_2": {
+                "runAfter": {
+                  "Create_file_2": [
+                    "Succeeded"
+                  ]
+                },
+                "metadata": {
+                  "operationMetadataId": "cf002eda-206d-4f5f-9546-68d342f4644b"
+                },
+                "type": "OpenApiConnection",
+                "inputs": {
+                  "host": {
+                    "connectionName": "shared_onedriveforbusiness",
+                    "operationId": "GetFileContent",
+                    "apiId": "/providers/Microsoft.PowerApps/apis/shared_onedriveforbusiness"
+                  },
+                  "parameters": {
+                    "id": "@outputs('Create_file_2')?['body/Id']",
+                    "inferContentType": true
+                  },
+                  "authentication": "@parameters('$authentication')"
+                }
+              },
+              "Add_a_new_Note_for_Excel_Doc": {
+                "runAfter": {
+                  "Get_file_content_2": [
+                    "Succeeded"
+                  ]
+                },
+                "metadata": {
+                  "operationMetadataId": "978a2813-c006-4b86-87fd-edda46f27ce5"
+                },
+                "type": "OpenApiConnection",
+                "inputs": {
+                  "host": {
+                    "connectionName": "shared_commondataserviceforapps",
+                    "operationId": "CreateRecord",
+                    "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
+                  },
+                  "parameters": {
+                    "entityName": "annotations",
+                    "item/subject": "Cost Estimate Worksheet - @{formatDateTime(utcNow(), 'yyyy-MM-dd')}",
+                    "item/notetext": "Grand Total (Estimate) - @{triggerBody()['text_4']}",
+                    "item/isdocument": true,
+                    "item/documentbody": "@base64(outputs('Get_file_content_2')?['body'])",
+                    "item/filename": "@triggerBody()['text']",
+                    "item/mimetype": "text/csv",
+                    "item/objectid_book_prioritization@odata.bind": "book_prioritizations(@{triggerBody()['text_3']})"
+                  },
+                  "authentication": "@parameters('$authentication')"
+                }
+              },
+              "Delete_file_2": {
+                "runAfter": {
+                  "Add_a_new_Note_for_Excel_Doc": [
+                    "Succeeded"
+                  ]
+                },
+                "metadata": {
+                  "operationMetadataId": "abb9b702-0949-4c4b-81ac-7abe18b73011"
+                },
+                "type": "OpenApiConnection",
+                "inputs": {
+                  "host": {
+                    "connectionName": "shared_onedriveforbusiness",
+                    "operationId": "DeleteFile",
+                    "apiId": "/providers/Microsoft.PowerApps/apis/shared_onedriveforbusiness"
+                  },
+                  "parameters": {
+                    "id": "@outputs('Create_file_2')?['body/Id']"
+                  },
+                  "authentication": "@parameters('$authentication')"
+                }
+              }
+            }
+          },
+          "expression": {
+            "equals": [
+              "@triggerBody()['text_1']",
+              "PDF"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "1620f306-fdd2-4557-a970-5e5e23e0ce5a"
+          },
+          "type": "If"
+        }
+      }
+    },
+    "templateName": ""
+  },
+  "schemaVersion": "1.0.0.0"
+}

@@ -1,0 +1,13 @@
+<environmentvariabledefinition schemaname="book_ARNGCheckbookEnvironment">
+  <description default="Environment Org">
+    <label description="Environment Org" languagecode="1033" />
+  </description>
+  <displayname default="ARNG Checkbook - Environment">
+    <label description="ARNG Checkbook - Environment" languagecode="1033" />
+  </displayname>
+  <introducedversion>1.11.0.10</introducedversion>
+  <iscustomizable>1</iscustomizable>
+  <isrequired>0</isrequired>
+  <secretstore>0</secretstore>
+  <type>100000000</type>
+</environmentvariabledefinition>

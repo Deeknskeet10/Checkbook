@@ -1,0 +1,19 @@
+book_fundingtype: =If(IsBlank(book_FundingEvent), [@global_book_fundingtype].'0', book_FundingEvent.book_fundingtype)
+book_month: |-
+    =Switch( Month(UTCToday()),
+        1, "January",
+        2, "February",
+        3, "March",
+        4, "April",
+        5, "May",
+        6, "June",
+        7, "July",
+        8, "August",
+        9, "September",
+        10, "October",
+        11, "November",
+        12, "December"
+    )
+book_monthvalue: =Month(UTCToday())
+book_newenteredintogfebs: =If(IsBlank(book_entrydocumentnumber), "No", "Yes")
+book_newtype: =If(book_disbursementdirection = global_book_transactionterms.'0', "+", If(book_disbursementdirection = global_book_transactionterms.'1', "-", ""))

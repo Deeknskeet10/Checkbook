@@ -1,0 +1,44 @@
+<appaction uniquename="book__CostEstimator!492033be1e3d42179e0d7818e77a2d6d!book_ARNGCheckbook!book_prioritization!0">
+  <appmoduleid>
+    <uniquename>book_ARNGCheckbook</uniquename>
+  </appmoduleid>
+  <buttonaccessibilitytext default="Cost Estimate Worksheet (CEW)">
+    <label description="Cost Estimate Worksheet (CEW)" languagecode="1033" />
+  </buttonaccessibilitytext>
+  <buttonlabeltext default="Cost Estimator">
+    <label description="Cost Estimator" languagecode="1033" />
+  </buttonlabeltext>
+  <buttontooltipdescription default="Used for calculating standard personnel costs.">
+    <label description="Used for calculating standard personnel costs." languagecode="1033" />
+  </buttontooltipdescription>
+  <buttontooltiptitle default="Cost Estimate Worksheet (CEW)">
+    <label description="Cost Estimate Worksheet (CEW)" languagecode="1033" />
+  </buttontooltiptitle>
+  <context>1</context>
+  <contextentity>
+    <logicalname>book_prioritization</logicalname>
+  </contextentity>
+  <contextvalue>book_prioritization</contextvalue>
+  <fonticon>CardsInvoice</fonticon>
+  <hidden>0</hidden>
+  <iscustomizable>1</iscustomizable>
+  <isdisabled>0</isdisabled>
+  <isgrouptitlehidden>0</isgrouptitlehidden>
+  <location>0</location>
+  <name>CostEstimator!492033be1e3d42179e0d7818e77a2d6d</name>
+  <onclickeventjavascriptfunctionname>openCostEstimate</onclickeventjavascriptfunctionname>
+  <onclickeventjavascriptparameters>[{"type":5}]</onclickeventjavascriptparameters>
+  <onclickeventjavascriptwebresourceid>
+    <webresourceid>bdb3cb86-5424-f011-998a-001dd8059413</webresourceid>
+  </onclickeventjavascriptwebresourceid>
+  <onclickeventtype>2</onclickeventtype>
+  <origin>0</origin>
+  <parentappactionid>
+    <uniquename>book__CostEstimate!5b5442f9da9343b3ae50be3882135f0d!book_ARNGCheckbook!book_prioritization!0</uniquename>
+  </parentappactionid>
+  <sequence>10000.0000000000</sequence>
+  <statecode>0</statecode>
+  <statuscode>1</statuscode>
+  <type>0</type>
+  <visibilitytype>0</visibilitytype>
+</appaction>

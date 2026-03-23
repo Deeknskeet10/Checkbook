@@ -1,0 +1,15 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<WebResource xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <WebResourceId>{96d7b702-4df2-f011-8407-001dd805a06b}</WebResourceId>
+  <Name>book_turnInQC</Name>
+  <DisplayName>turnInQC</DisplayName>
+  <Description>Turn-In Item Quick Create Form</Description>
+  <WebResourceType>3</WebResourceType>
+  <IntroducedVersion>1.11.0.2</IntroducedVersion>
+  <IsEnabledForMobileClient>0</IsEnabledForMobileClient>
+  <IsAvailableForMobileOffline>0</IsAvailableForMobileOffline>
+  <IsCustomizable>1</IsCustomizable>
+  <CanBeDeleted>1</CanBeDeleted>
+  <IsHidden>0</IsHidden>
+  <FileName>/WebResources/book_turnInQC96D7B702-4DF2-F011-8407-001DD805A06B</FileName>
+</WebResource>

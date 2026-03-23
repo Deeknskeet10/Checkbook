@@ -1,0 +1,17 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<WebResource xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <WebResourceId>{d27b4587-d2fa-eb11-94ef-0022480a7171}</WebResourceId>
+  <Name>msf_icons_location16</Name>
+  <DisplayName>Locations 16</DisplayName>
+  <Description>Icon from Icons8 https://icons8.com, located at https://icons8.com/icon/48089/place-marker
+</Description>
+  <WebResourceType>5</WebResourceType>
+  <IntroducedVersion>1.0.0.0</IntroducedVersion>
+  <IsEnabledForMobileClient>1</IsEnabledForMobileClient>
+  <IsAvailableForMobileOffline>0</IsAvailableForMobileOffline>
+  <DependencyXml>&lt;Dependencies&gt;&lt;Dependency componentType="WebResource"/&gt;&lt;/Dependencies&gt;</DependencyXml>
+  <IsCustomizable>1</IsCustomizable>
+  <CanBeDeleted>1</CanBeDeleted>
+  <IsHidden>0</IsHidden>
+  <FileName>/WebResources/msf_icons_location16D27B4587-D2FA-EB11-94EF-0022480A7171</FileName>
+</WebResource>

@@ -1,0 +1,103 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<forms xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <systemform>
+    <formid>{1b9b4ec5-f1ac-4b7b-90e2-125b0ee87fe7}</formid>
+    <IntroducedVersion>1.0.0.0</IntroducedVersion>
+    <FormPresentation>1</FormPresentation>
+    <FormActivationState>1</FormActivationState>
+    <form>
+      <tabs>
+        <tab verticallayout="true" id="{a9eac9ac-f495-4adb-9976-9600ebab5f4e}" IsUserDefined="1">
+          <labels>
+            <label description="" languagecode="1033" />
+          </labels>
+          <columns>
+            <column width="100%">
+              <sections>
+                <section showlabel="false" showbar="false" IsUserDefined="0" id="{18d653ed-8245-4b30-a92f-b150a561ab5d}">
+                  <labels>
+                    <label description="Prioritization" languagecode="1033" />
+                  </labels>
+                  <rows>
+                    <row>
+                      <cell id="{e9636fc8-fdef-4820-b171-c935be2e9c1d}" visible="false">
+                        <labels>
+                          <label description="Name" languagecode="1033" />
+                        </labels>
+                        <control id="book_name" classid="{4273EDBD-AC1D-40d3-9FB2-095C621B552D}" datafieldname="book_name" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{d7b86ffe-ae3a-472d-bd2c-9d31cc89da7b}" visible="false">
+                        <labels>
+                          <label description="Owner" languagecode="1033" />
+                        </labels>
+                        <control id="ownerid" classid="{270BD3DB-D9AF-4782-9025-509E298DEC0A}" datafieldname="ownerid" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{781d5f22-140c-4aa6-90b5-af95166078ea}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="MDEP" languagecode="1033" />
+                        </labels>
+                        <control id="book_mdep" classid="{270BD3DB-D9AF-4782-9025-509E298DEC0A}" datafieldname="book_mdep" disabled="false" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{59b18b37-e55f-4462-be3e-a90002f96bc8}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="Quantity" languagecode="1033" />
+                        </labels>
+                        <control id="book_quantities" classid="{C6D124CA-7EDA-4A60-AEA9-7FB8D318B68F}" datafieldname="book_quantities" disabled="false" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{abfe2120-3936-4e84-bd4b-6ec0a0aa97e2}" locklevel="0" colspan="1" rowspan="1" visible="false">
+                        <labels>
+                          <label description="Justification" languagecode="1033" />
+                        </labels>
+                        <control id="book_statutoryjustification" classid="{E0DECE4B-6FC8-4A8F-A065-082708572369}" datafieldname="book_statutoryjustification" disabled="false" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{1e171ee8-09c6-46cc-8f82-af96c9094544}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="Requested Amount" languagecode="1033" />
+                        </labels>
+                        <control id="book_requestedamount" classid="{0D2C745A-E5A8-4C8F-BA63-C6D3BB604660}" datafieldname="book_requestedamount" disabled="false" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{4f207156-9024-42ae-80f3-46099326449f}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="Validated Amount" languagecode="1033" />
+                        </labels>
+                        <control id="book_newvalidatedamount" classid="{0D2C745A-E5A8-4C8F-BA63-C6D3BB604660}" datafieldname="book_newvalidatedamount" disabled="false" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{265eb4c0-e654-4192-95ca-eae715f040a2}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="Funded Amount (TDP)" languagecode="1033" />
+                        </labels>
+                        <control id="book_fundedamounttdp" classid="{0D2C745A-E5A8-4C8F-BA63-C6D3BB604660}" datafieldname="book_fundedamounttdp" disabled="false" />
+                      </cell>
+                    </row>
+                  </rows>
+                </section>
+              </sections>
+            </column>
+          </columns>
+        </tab>
+      </tabs>
+      <DisplayConditions Order="0" FallbackForm="true">
+        <Everyone />
+      </DisplayConditions>
+    </form>
+    <IsCustomizable>1</IsCustomizable>
+    <CanBeDeleted>1</CanBeDeleted>
+    <LocalizedNames>
+      <LocalizedName description="Information" languagecode="1033" />
+    </LocalizedNames>
+  </systemform>
+</forms>

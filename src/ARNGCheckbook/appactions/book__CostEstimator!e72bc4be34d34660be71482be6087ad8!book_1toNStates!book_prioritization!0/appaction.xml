@@ -1,0 +1,28 @@
+<appaction uniquename="book__CostEstimator!e72bc4be34d34660be71482be6087ad8!book_1toNStates!book_prioritization!0">
+  <appmoduleid>
+    <uniquename>book_1toNStates</uniquename>
+  </appmoduleid>
+  <context>1</context>
+  <contextentity>
+    <logicalname>book_prioritization</logicalname>
+  </contextentity>
+  <contextvalue>book_prioritization</contextvalue>
+  <grouptitle default="Cost Estimate">
+    <label description="Cost Estimate" languagecode="1033" />
+  </grouptitle>
+  <hidden>0</hidden>
+  <iscustomizable>1</iscustomizable>
+  <isdisabled>0</isdisabled>
+  <isgrouptitlehidden>0</isgrouptitlehidden>
+  <location>0</location>
+  <name>CostEstimator!e72bc4be34d34660be71482be6087ad8</name>
+  <onclickeventtype>0</onclickeventtype>
+  <origin>0</origin>
+  <parentappactionid>
+    <uniquename>book__PrioritizationAct!2f9c83c749b44c978d783b74b550d1e4!book_1toNStates!book_prioritization!0</uniquename>
+  </parentappactionid>
+  <sequence>10000.0000000000</sequence>
+  <statecode>0</statecode>
+  <statuscode>1</statuscode>
+  <type>3</type>
+</appaction>

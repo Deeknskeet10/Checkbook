@@ -1,0 +1,14 @@
+<environmentvariabledefinition schemaname="book_CheckbookGAPSEnvironment">
+  <apiid>/providers/microsoft.powerapps/apis/shared_commondataservice</apiid>
+  <description default="Link to GAPS Environments">
+    <label description="Link to GAPS Environments" languagecode="1033" />
+  </description>
+  <displayname default="Checkbook - GAPS Environment">
+    <label description="Checkbook - GAPS Environment" languagecode="1033" />
+  </displayname>
+  <introducedversion>1.9.3.1</introducedversion>
+  <iscustomizable>1</iscustomizable>
+  <isrequired>0</isrequired>
+  <secretstore>0</secretstore>
+  <type>100000004</type>
+</environmentvariabledefinition>

@@ -1,0 +1,44 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<savedqueries xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <savedquery>
+    <IsCustomizable>1</IsCustomizable>
+    <CanBeDeleted>1</CanBeDeleted>
+    <isquickfindquery>0</isquickfindquery>
+    <isprivate>0</isprivate>
+    <isdefault>0</isdefault>
+    <savedqueryid>{398afc57-8540-f011-b4cc-001dd805a06b}</savedqueryid>
+    <layoutxml>
+      <grid name="resultset" jump="book_name" select="1" icon="1" preview="1">
+        <row name="result" id="book_prioritizationid">
+          <cell name="book_name" width="200" />
+          <cell name="book_state" width="100" />
+          <cell name="book_requestedamount" width="148" />
+          <cell name="book_newvalidatedamount" width="143" />
+          <cell name="book_fundedamounttdp" width="171" />
+          <cell name="book_newunfundedamount" width="146" />
+        </row>
+      </grid>
+    </layoutxml>
+    <querytype>0</querytype>
+    <fetchxml>
+      <fetch version="1.0" output-format="xml-platform" mapping="logical">
+        <entity name="book_prioritization">
+          <attribute name="book_name" />
+          <attribute name="book_prioritizationid" />
+          <attribute name="book_state" />
+          <attribute name="book_requestedamount" />
+          <attribute name="book_newvalidatedamount" />
+          <attribute name="book_fundedamounttdp" />
+          <attribute name="book_newunfundedamount" />
+        </entity>
+      </fetch>
+    </fetchxml>
+    <IntroducedVersion>1.0.0.23</IntroducedVersion>
+    <LocalizedNames>
+      <LocalizedName description="Prioritization - Requirements View" languagecode="1033" />
+    </LocalizedNames>
+    <Descriptions>
+      <Description description="View for Requirement Form" languagecode="1033" />
+    </Descriptions>
+  </savedquery>
+</savedqueries>

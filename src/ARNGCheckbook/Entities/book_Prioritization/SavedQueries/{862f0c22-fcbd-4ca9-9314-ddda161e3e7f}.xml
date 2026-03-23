@@ -1,0 +1,54 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<savedqueries xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <savedquery>
+    <IsCustomizable>1</IsCustomizable>
+    <CanBeDeleted>0</CanBeDeleted>
+    <isquickfindquery>0</isquickfindquery>
+    <isprivate>0</isprivate>
+    <isdefault>0</isdefault>
+    <savedqueryid>{862f0c22-fcbd-4ca9-9314-ddda161e3e7f}</savedqueryid>
+    <layoutxml>
+      <grid name="resultset" jump="book_name" select="1" icon="1" preview="1">
+        <row name="result" id="book_prioritizationid">
+          <cell name="book_statepriority" width="115" />
+          <cell name="a_9118126605904cd0a6797ea328c839e1.book_requirement" width="248" />
+          <cell name="book_state" width="118" />
+          <cell name="book_fundcenter" width="140" />
+          <cell name="book_requestedamount" width="148" />
+        </row>
+      </grid>
+    </layoutxml>
+    <querytype>0</querytype>
+    <fetchxml>
+      <fetch version="1.0" mapping="logical">
+        <entity name="book_prioritization">
+          <attribute name="book_prioritizationid" />
+          <filter type="and">
+            <condition attribute="statecode" operator="eq" value="0" />
+          </filter>
+          <attribute name="book_fundcenter" />
+          <attribute name="book_state" />
+          <attribute name="book_statepriority" />
+          <attribute name="book_requestedamount" />
+          <link-entity alias="a_9118126605904cd0a6797ea328c839e1" name="book_requirementfunding" to="book_requirementfunding" from="book_requirementfundingid" link-type="outer" visible="false">
+            <attribute name="book_requirement" />
+          </link-entity>
+        </entity>
+      </fetch>
+    </fetchxml>
+    <IntroducedVersion>1.0.0.0</IntroducedVersion>
+    <roledisplayconditionsxml>
+      <DisplayConditions>
+        <Role Id="{C1474AE9-3E19-F011-998A-001DD8059413}" />
+        <Role Id="{14EE21C6-2121-F011-998A-001DD805B842}" />
+        <Role Id="{C60574A3-3D19-F011-998A-001DD805A06B}" />
+        <Role Id="{B83D1A3A-3E19-F011-998A-001DD8059413}" />
+        <Role Id="{627090ff-40a3-4053-8790-584edc5be201}" />
+        <Role Id="{119f245c-3cc8-4b62-b31c-d1a046ced15d}" />
+      </DisplayConditions>
+    </roledisplayconditionsxml>
+    <LocalizedNames>
+      <LocalizedName description="Active Prioritizations" languagecode="1033" />
+    </LocalizedNames>
+  </savedquery>
+</savedqueries>

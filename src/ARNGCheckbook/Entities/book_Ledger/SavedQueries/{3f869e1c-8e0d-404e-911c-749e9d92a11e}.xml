@@ -1,0 +1,46 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<savedqueries xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <savedquery>
+    <IsCustomizable>1</IsCustomizable>
+    <CanBeDeleted>0</CanBeDeleted>
+    <isquickfindquery>0</isquickfindquery>
+    <isprivate>0</isprivate>
+    <isdefault>1</isdefault>
+    <savedqueryid>{3f869e1c-8e0d-404e-911c-749e9d92a11e}</savedqueryid>
+    <layoutxml>
+      <grid name="resultset" jump="book_name" select="1" icon="1" preview="1">
+        <row name="result" id="book_ledgerid">
+          <cell name="book_newfiscalyear" width="103" />
+          <cell name="book_lineofaccounting" width="150" />
+          <cell name="book_ledgertype" width="111" />
+          <cell name="book_amount" width="100" />
+          <cell name="book_realignment" width="112" />
+          <cell name="book_turnin" width="100" />
+          <cell name="book_relatedentry" width="118" />
+        </row>
+      </grid>
+    </layoutxml>
+    <querytype>0</querytype>
+    <fetchxml>
+      <fetch version="1.0" mapping="logical">
+        <entity name="book_ledger">
+          <attribute name="book_ledgerid" />
+          <filter type="and">
+            <condition attribute="statecode" operator="eq" value="0" />
+          </filter>
+          <attribute name="book_amount" />
+          <attribute name="book_ledgertype" />
+          <attribute name="book_lineofaccounting" />
+          <attribute name="book_realignment" />
+          <attribute name="book_turnin" />
+          <attribute name="book_relatedentry" />
+          <attribute name="book_newfiscalyear" />
+        </entity>
+      </fetch>
+    </fetchxml>
+    <IntroducedVersion>1.0.0.0</IntroducedVersion>
+    <LocalizedNames>
+      <LocalizedName description="Active Ledgers" languagecode="1033" />
+    </LocalizedNames>
+  </savedquery>
+</savedqueries>

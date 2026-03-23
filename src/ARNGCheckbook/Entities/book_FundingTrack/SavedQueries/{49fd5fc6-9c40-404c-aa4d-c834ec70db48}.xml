@@ -1,0 +1,50 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<savedqueries xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <savedquery>
+    <IsCustomizable>1</IsCustomizable>
+    <CanBeDeleted>0</CanBeDeleted>
+    <isquickfindquery>0</isquickfindquery>
+    <isprivate>0</isprivate>
+    <isdefault>1</isdefault>
+    <savedqueryid>{49fd5fc6-9c40-404c-aa4d-c834ec70db48}</savedqueryid>
+    <layoutxml>
+      <grid name="resultset" jump="book_name" select="1" icon="1" preview="1">
+        <row name="result" id="book_fundingtrackid">
+          <cell name="book_name" width="100" />
+          <cell name="book_disbursingofficial" width="149" />
+          <cell name="book_fiscalyear" width="103" />
+          <cell name="book_appropriation" width="120" />
+          <cell name="book_mdep" width="100" />
+          <cell name="book_dollartype" width="108" />
+          <cell name="book_sag" width="100" />
+          <cell name="book_ape" width="100" />
+          <cell name="book_resourceamount" width="142" />
+        </row>
+      </grid>
+    </layoutxml>
+    <querytype>0</querytype>
+    <fetchxml>
+      <fetch version="1.0" mapping="logical">
+        <entity name="book_fundingtrack">
+          <attribute name="book_fundingtrackid" />
+          <filter type="and">
+            <condition attribute="statecode" operator="eq" value="0" />
+          </filter>
+          <attribute name="book_appropriation" />
+          <attribute name="book_ape" />
+          <attribute name="book_disbursingofficial" />
+          <attribute name="book_dollartype" />
+          <attribute name="book_fiscalyear" />
+          <attribute name="book_mdep" />
+          <attribute name="book_resourceamount" />
+          <attribute name="book_sag" />
+          <attribute name="book_name" />
+        </entity>
+      </fetch>
+    </fetchxml>
+    <IntroducedVersion>1.0.0.0</IntroducedVersion>
+    <LocalizedNames>
+      <LocalizedName description="Active Funding Tracks" languagecode="1033" />
+    </LocalizedNames>
+  </savedquery>
+</savedqueries>

@@ -1,0 +1,160 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<forms xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <systemform>
+    <formid>{52692c4f-84da-40ef-804c-d9fb8432a2b0}</formid>
+    <IntroducedVersion>1.10.0.10</IntroducedVersion>
+    <FormPresentation>1</FormPresentation>
+    <FormActivationState>1</FormActivationState>
+    <form headerdensity="HighWithControls">
+      <tabs>
+        <tab verticallayout="true" id="{53f9cd8e-4680-434a-9a72-2af840255a0f}" IsUserDefined="1">
+          <labels>
+            <label description="General" languagecode="1033" />
+          </labels>
+          <columns>
+            <column width="100%">
+              <sections>
+                <section name="turn_in" id="4db1da32-3402-40f5-ac85-e98ab26846a4" IsUserDefined="0" locklevel="0" showlabel="true" showbar="false" layout="varwidth" celllabelalignment="Left" celllabelposition="Left" columns="1" labelwidth="115">
+                  <labels>
+                    <label description="Related Turn-In" languagecode="1033" />
+                  </labels>
+                  <rows>
+                    <row />
+                    <row>
+                      <cell id="{e46198c1-b390-4242-a425-dd3d01744ba9}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="Turn-in" languagecode="1033" />
+                        </labels>
+                        <control id="book_turnin" classid="{270BD3DB-D9AF-4782-9025-509E298DEC0A}" datafieldname="book_turnin" disabled="false" />
+                      </cell>
+                    </row>
+                  </rows>
+                </section>
+                <section showlabel="true" showbar="false" IsUserDefined="0" id="{2ae84e9b-9d56-4607-a471-3a202110a707}" name="general">
+                  <labels>
+                    <label description="Debited Source" languagecode="1033" />
+                  </labels>
+                  <rows>
+                    <row>
+                      <cell id="{19586471-b5d0-473f-abab-c370410b1ebd}" visible="false">
+                        <labels>
+                          <label description="Owner" languagecode="1033" />
+                        </labels>
+                        <control id="ownerid" classid="{270BD3DB-D9AF-4782-9025-509E298DEC0A}" datafieldname="ownerid" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{cacc8f8b-95c7-47ba-bea1-977c5d7e20d5}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="Requirement Funding" languagecode="1033" />
+                        </labels>
+                        <control id="book_requirementfunding" classid="{270BD3DB-D9AF-4782-9025-509E298DEC0A}" datafieldname="book_requirementfunding" disabled="false" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{ae44ae12-1a1c-4839-ad88-3e896dcf62eb}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="Prioritization" languagecode="1033" />
+                        </labels>
+                        <control id="book_prioritization" classid="{270BD3DB-D9AF-4782-9025-509E298DEC0A}" datafieldname="book_prioritization" disabled="false">
+                          <parameters>
+                            <DependentAttributeName>book_turninitems.book_requirementfunding</DependentAttributeName>
+                            <DependentAttributeType>book_requirementfunding</DependentAttributeType>
+                            <FilterRelationshipName>book_prioritization_RequirementFunding_book_requirementfunding</FilterRelationshipName>
+                          </parameters>
+                        </control>
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{2f414d7a-f64b-4e15-913f-3d0b17dc3aa5}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="Turn-In Amount" languagecode="1033" />
+                        </labels>
+                        <control id="book_newturninamount" classid="{C3EFE0C3-0EC6-42BE-8349-CBD9079DFD8E}" datafieldname="book_newturninamount" disabled="false" />
+                      </cell>
+                    </row>
+                  </rows>
+                </section>
+              </sections>
+            </column>
+          </columns>
+        </tab>
+      </tabs>
+      <header id="{29044b24-5e4c-48c6-a152-33af2af191dd}" celllabelposition="Top" columns="111" labelwidth="115" celllabelalignment="Left">
+        <rows>
+          <row>
+            <cell id="{9bcb0b8f-8d58-45b9-ad1b-21846fc0df19}" showlabel="false">
+              <labels>
+                <label description="" languagecode="1033" />
+              </labels>
+            </cell>
+            <cell id="{9cc910ea-f5a5-457a-af28-ea31a56901cc}" showlabel="false">
+              <labels>
+                <label description="" languagecode="1033" />
+              </labels>
+            </cell>
+            <cell id="{c228b20b-6792-4102-bb91-5290d4728dbd}" showlabel="false">
+              <labels>
+                <label description="" languagecode="1033" />
+              </labels>
+            </cell>
+            <cell id="{ae7eb1d2-5998-41ec-9a55-120e60c12536}" locklevel="0" colspan="1" rowspan="1">
+              <labels>
+                <label description="Owning Business Unit" languagecode="1033" />
+              </labels>
+              <control id="header_owningbusinessunit" classid="{270BD3DB-D9AF-4782-9025-509E298DEC0A}" datafieldname="owningbusinessunit" disabled="false" />
+            </cell>
+            <cell id="{e67e4b19-cef6-45c8-bf79-96fa1821bc64}" locklevel="0" colspan="1" rowspan="1">
+              <labels>
+                <label description="Status" languagecode="1033" />
+              </labels>
+              <control id="header_statecode" classid="{3EF39988-22BB-4F0B-BBBE-64B5A3748AEE}" datafieldname="statecode" disabled="false" />
+            </cell>
+          </row>
+        </rows>
+      </header>
+      <footer id="{f87379c3-cec5-4136-93ed-a1977e4365c7}" celllabelposition="Top" columns="111" labelwidth="115" celllabelalignment="Left">
+        <rows>
+          <row>
+            <cell id="{7e4d42cc-22af-4dc3-8aa4-751121e37008}" showlabel="false">
+              <labels>
+                <label description="" languagecode="1033" />
+              </labels>
+            </cell>
+            <cell id="{e2dd87ca-e962-402a-8ffe-c94863445ee3}" showlabel="false">
+              <labels>
+                <label description="" languagecode="1033" />
+              </labels>
+            </cell>
+            <cell id="{fbda579c-4636-432b-bdae-8fc1642e92a6}" showlabel="false">
+              <labels>
+                <label description="" languagecode="1033" />
+              </labels>
+            </cell>
+          </row>
+        </rows>
+      </footer>
+      <DisplayConditions Order="0" FallbackForm="true">
+        <Everyone />
+      </DisplayConditions>
+      <formLibraries>
+        <Library name="book_turnInFilterForm" libraryUniqueId="{b79f86e9-90e7-412e-b071-6ebb42fa28a5}" />
+      </formLibraries>
+      <events>
+        <event name="onload" application="false" active="false">
+          <Handlers>
+            <Handler functionName="TurnInItem.onLoad" libraryName="book_turnInFilterForm" handlerUniqueId="{e0e56969-2f07-4785-bb1f-1b743d388874}" enabled="true" parameters="" passExecutionContext="true" />
+          </Handlers>
+        </event>
+      </events>
+    </form>
+    <IsCustomizable>1</IsCustomizable>
+    <CanBeDeleted>1</CanBeDeleted>
+    <LocalizedNames>
+      <LocalizedName description="Information" languagecode="1033" />
+    </LocalizedNames>
+    <Descriptions>
+      <Description description="A form for this entity." languagecode="1033" />
+    </Descriptions>
+  </systemform>
+</forms>

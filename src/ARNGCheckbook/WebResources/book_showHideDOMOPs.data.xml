@@ -1,0 +1,15 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<WebResource xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <WebResourceId>{add9902f-eacf-f011-bbd3-001dd8059413}</WebResourceId>
+  <Name>book_showHideDOMOPs</Name>
+  <DisplayName>showHideDOMOPs</DisplayName>
+  <Description>Toggle DOMOPs section on requirement form</Description>
+  <WebResourceType>3</WebResourceType>
+  <IntroducedVersion>1.9.1.1</IntroducedVersion>
+  <IsEnabledForMobileClient>0</IsEnabledForMobileClient>
+  <IsAvailableForMobileOffline>0</IsAvailableForMobileOffline>
+  <IsCustomizable>1</IsCustomizable>
+  <CanBeDeleted>1</CanBeDeleted>
+  <IsHidden>0</IsHidden>
+  <FileName>/WebResources/book_showHideDOMOPsADD9902F-EACF-F011-BBD3-001DD8059413</FileName>
+</WebResource>

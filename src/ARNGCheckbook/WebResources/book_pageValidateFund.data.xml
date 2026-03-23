@@ -1,0 +1,16 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<WebResource xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <WebResourceId>{7539de1c-7d35-f011-8c4e-001dd805a06b}</WebResourceId>
+  <Name>book_pageValidateFund</Name>
+  <DisplayName>pageValidateFund</DisplayName>
+  <Description>Page for inputting Validated and Funded Amounts</Description>
+  <LanguageCode>0</LanguageCode>
+  <WebResourceType>3</WebResourceType>
+  <IntroducedVersion>1.0.0.0</IntroducedVersion>
+  <IsEnabledForMobileClient>0</IsEnabledForMobileClient>
+  <IsAvailableForMobileOffline>0</IsAvailableForMobileOffline>
+  <IsCustomizable>1</IsCustomizable>
+  <CanBeDeleted>1</CanBeDeleted>
+  <IsHidden>0</IsHidden>
+  <FileName>/WebResources/book_pageValidateFund7539DE1C-7D35-F011-8C4E-001DD805A06B</FileName>
+</WebResource>

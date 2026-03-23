@@ -1,0 +1,16 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<WebResource xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <WebResourceId>{5ee336e6-05d6-f011-8544-001dd805a23f}</WebResourceId>
+  <Name>book_requirementFundingValidation</Name>
+  <DisplayName>requirementFundingValidation</DisplayName>
+  <Description>Form Validation to ensure available TDP for distribution to Requirement Funding line</Description>
+  <LanguageCode>0</LanguageCode>
+  <WebResourceType>3</WebResourceType>
+  <IntroducedVersion>1.0.0.35</IntroducedVersion>
+  <IsEnabledForMobileClient>0</IsEnabledForMobileClient>
+  <IsAvailableForMobileOffline>0</IsAvailableForMobileOffline>
+  <IsCustomizable>1</IsCustomizable>
+  <CanBeDeleted>1</CanBeDeleted>
+  <IsHidden>0</IsHidden>
+  <FileName>/WebResources/book_requirementFundingValidation5EE336E6-05D6-F011-8544-001DD805A23F</FileName>
+</WebResource>

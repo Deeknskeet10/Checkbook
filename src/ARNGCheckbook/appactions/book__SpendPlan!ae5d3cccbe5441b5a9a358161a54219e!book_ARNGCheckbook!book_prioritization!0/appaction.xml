@@ -1,0 +1,44 @@
+<appaction uniquename="book__SpendPlan!ae5d3cccbe5441b5a9a358161a54219e!book_ARNGCheckbook!book_prioritization!0">
+  <appmoduleid>
+    <uniquename>book_ARNGCheckbook</uniquename>
+  </appmoduleid>
+  <buttonaccessibilitytext default="Open Prioritization Spend Plan">
+    <label description="Open Prioritization Spend Plan" languagecode="1033" />
+  </buttonaccessibilitytext>
+  <buttonlabeltext default="Spend Plan">
+    <label description="Spend Plan" languagecode="1033" />
+  </buttonlabeltext>
+  <buttontooltipdescription default="Open Prioritization Spend Plan for viewing purposes">
+    <label description="Open Prioritization Spend Plan for viewing purposes" languagecode="1033" />
+  </buttontooltipdescription>
+  <buttontooltiptitle default="Open Prioritization Spend Plan">
+    <label description="Open Prioritization Spend Plan" languagecode="1033" />
+  </buttontooltiptitle>
+  <context>1</context>
+  <contextentity>
+    <logicalname>book_prioritization</logicalname>
+  </contextentity>
+  <contextvalue>book_prioritization</contextvalue>
+  <fonticon>UpcomingMeeting</fonticon>
+  <hidden>0</hidden>
+  <iscustomizable>1</iscustomizable>
+  <isdisabled>0</isdisabled>
+  <isgrouptitlehidden>0</isgrouptitlehidden>
+  <location>0</location>
+  <name>SpendPlan!ae5d3cccbe5441b5a9a358161a54219e</name>
+  <onclickeventjavascriptfunctionname>openSpendPlan</onclickeventjavascriptfunctionname>
+  <onclickeventjavascriptparameters>[{"type":5}]</onclickeventjavascriptparameters>
+  <onclickeventjavascriptwebresourceid>
+    <webresourceid>fc110282-5d71-f011-bec3-001dd805a06b</webresourceid>
+  </onclickeventjavascriptwebresourceid>
+  <onclickeventtype>2</onclickeventtype>
+  <origin>0</origin>
+  <parentappactionid>
+    <uniquename>book__SpendPlan!3d168f5873fd4b6f96272fa98eaf398a!book_ARNGCheckbook!book_prioritization!0</uniquename>
+  </parentappactionid>
+  <sequence>10000.0000000000</sequence>
+  <statecode>0</statecode>
+  <statuscode>1</statuscode>
+  <type>0</type>
+  <visibilitytype>0</visibilitytype>
+</appaction>

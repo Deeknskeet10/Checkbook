@@ -1,0 +1,186 @@
+{
+  "properties": {
+    "connectionReferences": {
+      "shared_commondataserviceforapps": {
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "book_sharedcommondataserviceforapps_9388f"
+        },
+        "api": {
+          "name": "shared_commondataserviceforapps"
+        }
+      }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "1.0.0.0",
+      "parameters": {
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        },
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        },
+        "ARNG Checkbook - Environment (book_ARNGCheckbookEnvironment)": {
+          "defaultValue": "https://arngcheckbookdev.crm.appsplatform.us/",
+          "type": "String",
+          "metadata": {
+            "schemaName": "book_ARNGCheckbookEnvironment",
+            "description": "Environment Org"
+          }
+        }
+      },
+      "triggers": {
+        "When_a_row_is_added,_modified_or_deleted": {
+          "metadata": {
+            "operationMetadataId": "a1048848-b92c-4aaa-a2f1-acf87f3fbf03"
+          },
+          "type": "OpenApiConnectionWebhook",
+          "inputs": {
+            "parameters": {
+              "subscriptionRequest/message": 4,
+              "subscriptionRequest/entityname": "book_distributions",
+              "subscriptionRequest/scope": 4,
+              "subscriptionRequest/filteringattributes": "book_entrydocumentnumber",
+              "subscriptionRequest/filterexpression": "statecode eq 0 and book_entrydocumentnumber ne null and book_fundingtype eq 0",
+              "subscriptionRequest/runas": 1
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
+              "operationId": "SubscribeWebhookTrigger",
+              "connectionName": "shared_commondataserviceforapps"
+            }
+          }
+        }
+      },
+      "actions": {
+        "Get_Distribution": {
+          "runAfter": {},
+          "metadata": {
+            "operationMetadataId": "46a1ec5d-c805-47da-a218-f0b1a76aa96c"
+          },
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "entityName": "book_distributionses",
+              "recordId": "@triggerOutputs()?['body/book_distributionsid']"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
+              "operationId": "GetItem",
+              "connectionName": "shared_commondataserviceforapps"
+            }
+          }
+        },
+        "List_Users": {
+          "runAfter": {
+            "Get_PG": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "09095e7a-276d-4a51-b7cf-846aa9bb58c9"
+          },
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "entityName": "systemusers",
+              "fetchXml": "<fetch distinct=\"true\">\n  <entity name=\"systemuser\">\n    <attribute name=\"systemuserid\"/>\n    <attribute name=\"fullname\"/>\n    <filter>\n      <condition attribute=\"businessunitid\" operator=\"eq\" value=\"@{outputs('Get_Distribution')?['body/_owningbusinessunit_value']}\"/>\n      <condition attribute=\"isdisabled\" operator=\"eq\" value=\"0\"/>\n    </filter>\n<link-entity name=\"teammembership\" from=\"systemuserid\" to=\"systemuserid\" link-type=\"inner\" intersect=\"true\">\n      <link-entity name=\"team\" from=\"teamid\" to=\"teamid\" link-type=\"inner\">\n        <link-entity name=\"teamroles\" from=\"teamid\" to=\"teamid\" link-type=\"inner\">\n          <link-entity name=\"role\" from=\"roleid\" to=\"roleid\" link-type=\"inner\">\n\t    <filter>\n              <condition attribute=\"name\" operator=\"eq\" value=\"Book - State Administrator\"/>\n            </filter>\n          </link-entity>\n        </link-entity>\n      </link-entity>\n    </link-entity>\n  </entity>\n</fetch>"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
+              "operationId": "ListRecords",
+              "connectionName": "shared_commondataserviceforapps"
+            }
+          }
+        },
+        "Loop_through_Users": {
+          "foreach": "@outputs('List_Users')?['body/value']",
+          "actions": {
+            "Send_Notifications": {
+              "metadata": {
+                "operationMetadataId": "adda9974-25a2-4b51-bf05-369eccb17062"
+              },
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "entityName": "appnotifications",
+                  "item/title": "Distribution Completed",
+                  "item/body": "A Distribution for Fund: '@{outputs('Get_Fund')?['body/book_name']}' and PG: '@{outputs('Get_PG')?['body/book_name']}' for '@{outputs('Get_Distribution')?['body/book_amount']}' has been completed.  EDN: '@{outputs('Get_Distribution')?['body/book_entrydocumentnumber']}'",
+                  "item/data": "{\n  \"actions\": [\n    {\n      \"title\": \"Funded Amount Updated\",\n      \"data\": {\n        \"type\": \"url\",\n        \"url\": \"@{concat(parameters('ARNG Checkbook - Environment (book_ARNGCheckbookEnvironment)'), '/main.aspx?etn=book_distributions&id=', triggerOutputs()?['body/book_distributionsid'], '&pagetype=entityrecord')}\",\n        \"navigationTarget\": \"dialog\"\n      }\n    }\n  ]\n}",
+                  "item/icontype": 100000000,
+                  "item/ownerid@odata.bind": "systemusers(@{items('Loop_through_Users')?['systemuserid']})",
+                  "item/owningbusinessunit@odata.bind": "businessunits(@{outputs('Get_Distribution')?['body/_owningbusinessunit_value']})",
+                  "item/priority": 200000000,
+                  "item/toasttype": 200000000
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
+                  "operationId": "CreateRecord",
+                  "connectionName": "shared_commondataserviceforapps"
+                }
+              }
+            }
+          },
+          "runAfter": {
+            "List_Users": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "b4c05663-f1fc-47e0-91c0-aacb031aba76"
+          },
+          "type": "Foreach"
+        },
+        "Get_Fund": {
+          "runAfter": {
+            "Get_Distribution": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "f3b2185d-27bb-4b8a-a0c6-daf65d39f931"
+          },
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "entityName": "book_funds",
+              "recordId": "@outputs('Get_Distribution')?['body/_book_fund_value']"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
+              "operationId": "GetItem",
+              "connectionName": "shared_commondataserviceforapps"
+            }
+          }
+        },
+        "Get_PG": {
+          "runAfter": {
+            "Get_Fund": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "909ff128-3567-43aa-92a5-dd713763ab27"
+          },
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "entityName": "book_pgs",
+              "recordId": "@outputs('Get_Distribution')?['body/_book_newpgsag_value']"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
+              "operationId": "GetItem",
+              "connectionName": "shared_commondataserviceforapps"
+            }
+          }
+        }
+      }
+    },
+    "templateName": null
+  },
+  "schemaVersion": "1.0.0.0"
+}

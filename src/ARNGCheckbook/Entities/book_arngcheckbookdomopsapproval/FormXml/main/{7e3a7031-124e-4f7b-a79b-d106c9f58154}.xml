@@ -1,0 +1,73 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<forms xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <systemform>
+    <formid>{7e3a7031-124e-4f7b-a79b-d106c9f58154}</formid>
+    <IntroducedVersion>1.0</IntroducedVersion>
+    <FormPresentation>1</FormPresentation>
+    <FormActivationState>1</FormActivationState>
+    <form>
+      <tabs>
+        <tab verticallayout="true" id="{137e0d85-e995-4cdf-a0cb-cc7be4a83092}" name="StageStep3" locklevel="0" expanded="true" visible="false" labelid="{874f6094-d342-4306-a936-10d15d62b29e}">
+          <labels>
+            <label description="Coc Approval" languagecode="1033" />
+          </labels>
+          <columns>
+            <column width="100%">
+              <sections>
+                <section showbar="false" columns="1" id="{fdfe76f4-eb80-3ef9-d651-ce320f65e768}" name="StageStep3_section1" labelid="{28128ee5-64b1-42ff-9764-746a27b0cfce}">
+                  <labels>
+                    <label description="Coc Approval" languagecode="1033" />
+                  </labels>
+                  <rows>
+                    <row>
+                      <cell id="{86aa3c74-1690-4cfc-8d29-b9c3b47b29ca}" showlabel="true" visible="true" labelid="{a1af643a-03f4-4b84-8d0d-7a114e19dac5}">
+                        <labels>
+                          <label description="Approval Status" languagecode="1033" />
+                        </labels>
+                        <control id="bpf_book_prioritization_book_arngcheckbookdomopsapproval:book_approvalstatus" classid="{3ef39988-22bb-4f0b-bbbe-64b5a3748aee}" datafieldname="book_approvalstatus" disabled="false" relationship="bpf_book_prioritization_book_arngcheckbookdomopsapproval" isrequired="true" />
+                      </cell>
+                    </row>
+                  </rows>
+                </section>
+              </sections>
+            </column>
+          </columns>
+        </tab>
+        <tab verticallayout="true" id="{00b9adad-ff36-494c-abae-f0bacf686b18}" name="StageStep7" locklevel="0" expanded="true" visible="false" labelid="{55090aef-985a-4872-a0d5-a6fd8684a6e6}">
+          <labels>
+            <label description="Director Approval" languagecode="1033" />
+          </labels>
+          <columns>
+            <column width="100%">
+              <sections>
+                <section showbar="false" columns="1" id="{f72ef062-467e-65fb-1ad2-c15f467cc71f}" name="StageStep7_section1" labelid="{736d9159-b24f-4676-9910-edeab3b2be5e}">
+                  <labels>
+                    <label description="Director Approval" languagecode="1033" />
+                  </labels>
+                  <rows>
+                    <row>
+                      <cell id="{d4796d8c-94f7-4251-b307-84e769006e67}" showlabel="true" visible="true" labelid="{c782b998-bac7-484a-a3c3-8cb7e33a8126}">
+                        <labels>
+                          <label description="Approval" languagecode="1033" />
+                        </labels>
+                        <control id="bpf_book_prioritization_book_arngcheckbookdomopsapproval:createdon" classid="{5b773807-9fb2-42db-97c3-7a91eff8adff}" datafieldname="createdon" disabled="false" relationship="bpf_book_prioritization_book_arngcheckbookdomopsapproval" isrequired="true" />
+                      </cell>
+                    </row>
+                  </rows>
+                </section>
+              </sections>
+            </column>
+          </columns>
+        </tab>
+      </tabs>
+    </form>
+    <IsCustomizable>1</IsCustomizable>
+    <CanBeDeleted>1</CanBeDeleted>
+    <LocalizedNames>
+      <LocalizedName description="Information" languagecode="1033" />
+    </LocalizedNames>
+    <Descriptions>
+      <Description description="A form for this entity." languagecode="1033" />
+    </Descriptions>
+  </systemform>
+</forms>

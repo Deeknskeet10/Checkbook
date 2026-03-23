@@ -1,0 +1,2 @@
+book_newunfundedamount: =If(book_requestedamount - book_fundedamounttdp <= 0, Float(0), book_requestedamount - book_fundedamounttdp)
+book_requirementtype: =book_RequirementFunding.book_Requirement.book_type

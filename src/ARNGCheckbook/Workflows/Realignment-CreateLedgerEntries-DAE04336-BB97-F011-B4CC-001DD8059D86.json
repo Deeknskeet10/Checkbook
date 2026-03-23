@@ -1,0 +1,510 @@
+{
+  "properties": {
+    "connectionReferences": {
+      "shared_commondataserviceforapps": {
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "book_sharedcommondataserviceforapps_9388f"
+        },
+        "api": {
+          "name": "shared_commondataserviceforapps"
+        }
+      }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "1.0.0.0",
+      "parameters": {
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        },
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        }
+      },
+      "triggers": {
+        "When_a_row_is_added,_modified_or_deleted": {
+          "metadata": {
+            "operationMetadataId": "6ad951ea-b8eb-49d0-b23a-55fb3a8c2936"
+          },
+          "type": "OpenApiConnectionWebhook",
+          "inputs": {
+            "parameters": {
+              "subscriptionRequest/message": 3,
+              "subscriptionRequest/entityname": "book_realignments",
+              "subscriptionRequest/scope": 4,
+              "subscriptionRequest/filteringattributes": "book_bedecision",
+              "subscriptionRequest/runas": 1
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
+              "operationId": "SubscribeWebhookTrigger",
+              "connectionName": "shared_commondataserviceforapps"
+            }
+          }
+        }
+      },
+      "actions": {
+        "If_Realignment_Approved": {
+          "actions": {
+            "Get_LOA_Details": {
+              "actions": {
+                "Get_Debited_LOA": {
+                  "metadata": {
+                    "operationMetadataId": "51c3caf4-e17e-4d5d-9219-22fee2c6ae99"
+                  },
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "parameters": {
+                      "entityName": "book_fundinglines",
+                      "recordId": "@triggerOutputs()?['body/_book_newdebitedloa_value']"
+                    },
+                    "host": {
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
+                      "operationId": "GetItem",
+                      "connectionName": "shared_commondataserviceforapps"
+                    }
+                  }
+                },
+                "Get_Credited_LOA": {
+                  "runAfter": {
+                    "Get_Debited_LOA": [
+                      "Succeeded"
+                    ]
+                  },
+                  "metadata": {
+                    "operationMetadataId": "81df2152-a467-469f-821d-f73893fa6e1e"
+                  },
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "parameters": {
+                      "entityName": "book_fundinglines",
+                      "recordId": "@triggerOutputs()?['body/_book_newcreditedloa_value']"
+                    },
+                    "host": {
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
+                      "operationId": "GetItem",
+                      "connectionName": "shared_commondataserviceforapps"
+                    }
+                  }
+                }
+              },
+              "metadata": {
+                "operationMetadataId": "9134975e-f57b-459b-96ca-fffaa5922126"
+              },
+              "type": "Scope"
+            },
+            "Create_Debit_Ledger": {
+              "runAfter": {
+                "Get_LOA_Details": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "432602b7-2fe4-4335-bd78-64fea82286f6"
+              },
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "entityName": "book_ledgers",
+                  "item/book_amount": "@triggerOutputs()?['body/book_amount']",
+                  "item/book_fiscalyear": "@triggerOutputs()?['body/book_fiscalyear']",
+                  "item/book_ledgerdirection": 1,
+                  "item/book_ledgertype": 0,
+                  "item/book_LineofAccounting@odata.bind": "book_fundinglines(@{outputs('Get_Debited_LOA')?['body/book_fundinglineid']})",
+                  "item/owningbusinessunit@odata.bind": "businessunits(@{outputs('Get_Debited_LOA')?['body/_owningbusinessunit_value']})",
+                  "item/book_Realignment@odata.bind": "book_realignmentses(@{triggerOutputs()?['body/book_realignmentsid']})",
+                  "item/book_realignmentapproved": 0
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
+                  "operationId": "CreateRecord",
+                  "connectionName": "shared_commondataserviceforapps"
+                }
+              }
+            },
+            "Create_Credit_Ledger": {
+              "runAfter": {
+                "Create_Debit_Ledger": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "8ce684e9-03cd-4b48-81b8-aabc75555961"
+              },
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "entityName": "book_ledgers",
+                  "item/book_amount": "@triggerOutputs()?['body/book_amount']",
+                  "item/book_fiscalyear": "@triggerOutputs()?['body/book_fiscalyear']",
+                  "item/book_ledgerdirection": 0,
+                  "item/book_ledgertype": 0,
+                  "item/book_LineofAccounting@odata.bind": "book_fundinglines(@{outputs('Get_Credited_LOA')?['body/book_fundinglineid']})",
+                  "item/owningbusinessunit@odata.bind": "businessunits(@{outputs('Get_Credited_LOA')?['body/_owningbusinessunit_value']})",
+                  "item/book_Realignment@odata.bind": "book_realignmentses(@{triggerOutputs()?['body/book_realignmentsid']})",
+                  "item/book_realignmentapproved": 0,
+                  "item/book_RelatedEntry@odata.bind": "book_ledgers(@{outputs('Create_Debit_Ledger')?['body/book_ledgerid']})"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
+                  "operationId": "CreateRecord",
+                  "connectionName": "shared_commondataserviceforapps"
+                }
+              }
+            },
+            "Update_Debit_Ledger": {
+              "runAfter": {
+                "Create_Credit_Ledger": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "324b30a0-14c9-4610-a991-4eb6c1f0efb4"
+              },
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "entityName": "book_ledgers",
+                  "recordId": "@outputs('Create_Debit_Ledger')?['body/book_ledgerid']",
+                  "item/book_RelatedEntry@odata.bind": "book_ledgers(@{outputs('Create_Credit_Ledger')?['body/book_ledgerid']})"
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
+                  "operationId": "UpdateOnlyRecord",
+                  "connectionName": "shared_commondataserviceforapps"
+                }
+              }
+            },
+            "Update_Child_Records": {
+              "actions": {
+                "Get_Debit_Req_Funding": {
+                  "metadata": {
+                    "operationMetadataId": "17e21221-18d5-4365-b65b-296f9f13f308"
+                  },
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "parameters": {
+                      "entityName": "book_requirementfundings",
+                      "recordId": "@triggerOutputs()?['body/_book_newdebitedrequirement_value']"
+                    },
+                    "host": {
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
+                      "operationId": "GetItem",
+                      "connectionName": "shared_commondataserviceforapps"
+                    }
+                  }
+                },
+                "Get_Credit_Req_Funding": {
+                  "runAfter": {
+                    "Get_Debit_Req_Funding": [
+                      "Succeeded"
+                    ]
+                  },
+                  "metadata": {
+                    "operationMetadataId": "e5e95d78-05a1-4ccf-9277-8c21dbbb5f21"
+                  },
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "parameters": {
+                      "entityName": "book_requirementfundings",
+                      "recordId": "@triggerOutputs()?['body/_book_newcreditedrequirement_value']"
+                    },
+                    "host": {
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
+                      "operationId": "GetItem",
+                      "connectionName": "shared_commondataserviceforapps"
+                    }
+                  }
+                },
+                "Check_if_Prioritizations_exist": {
+                  "actions": {
+                    "Debit_Prioritization": {
+                      "runAfter": {
+                        "Get_Prioritizations": [
+                          "Succeeded"
+                        ]
+                      },
+                      "metadata": {
+                        "operationMetadataId": "05b4771f-a0aa-4cad-bd5f-869e2e1390e9"
+                      },
+                      "type": "OpenApiConnection",
+                      "inputs": {
+                        "parameters": {
+                          "entityName": "book_prioritizations",
+                          "recordId": "@outputs('Get_Debited_Prioritization')?['body/book_prioritizationid']",
+                          "item/book_fundedamounttdp": "@sub(outputs('Get_Debited_Prioritization')?['body/book_fundedamounttdp'], triggerOutputs()?['body/book_amount'])"
+                        },
+                        "host": {
+                          "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
+                          "operationId": "UpdateOnlyRecord",
+                          "connectionName": "shared_commondataserviceforapps"
+                        }
+                      }
+                    },
+                    "Get_Prioritizations": {
+                      "actions": {
+                        "Get_Debited_Prioritization": {
+                          "metadata": {
+                            "operationMetadataId": "78216962-4707-495d-bfab-4d4efc1f21ba"
+                          },
+                          "type": "OpenApiConnection",
+                          "inputs": {
+                            "parameters": {
+                              "entityName": "book_prioritizations",
+                              "recordId": "@triggerOutputs()?['body/_book_debitedprioritization_value']"
+                            },
+                            "host": {
+                              "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
+                              "operationId": "GetItem",
+                              "connectionName": "shared_commondataserviceforapps"
+                            }
+                          }
+                        },
+                        "Get_Credited_Prioritization": {
+                          "runAfter": {
+                            "Get_Debited_Prioritization": [
+                              "Succeeded"
+                            ]
+                          },
+                          "metadata": {
+                            "operationMetadataId": "575d19a0-f675-4932-a614-36f89e24a1ed"
+                          },
+                          "type": "OpenApiConnection",
+                          "inputs": {
+                            "parameters": {
+                              "entityName": "book_prioritizations",
+                              "recordId": "@triggerOutputs()?['body/_book_creditedprioritization_value']"
+                            },
+                            "host": {
+                              "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
+                              "operationId": "GetItem",
+                              "connectionName": "shared_commondataserviceforapps"
+                            }
+                          }
+                        }
+                      },
+                      "metadata": {
+                        "operationMetadataId": "5e1c0d6b-00ea-4375-b408-410ce3f71728"
+                      },
+                      "type": "Scope"
+                    },
+                    "Credit_Prioritization": {
+                      "runAfter": {
+                        "Debit_Prioritization": [
+                          "Succeeded"
+                        ]
+                      },
+                      "metadata": {
+                        "operationMetadataId": "e3730c15-e8fd-4332-a0da-a065554283f8"
+                      },
+                      "type": "OpenApiConnection",
+                      "inputs": {
+                        "parameters": {
+                          "entityName": "book_prioritizations",
+                          "recordId": "@outputs('Get_Credited_Prioritization')?['body/book_prioritizationid']",
+                          "item/book_fundedamounttdp": "@add(outputs('Get_Credited_Prioritization')?['body/book_fundedamounttdp'], triggerOutputs()?['body/book_amount'])"
+                        },
+                        "host": {
+                          "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
+                          "operationId": "UpdateOnlyRecord",
+                          "connectionName": "shared_commondataserviceforapps"
+                        }
+                      }
+                    }
+                  },
+                  "runAfter": {
+                    "Get_Credit_Req_Funding": [
+                      "Succeeded"
+                    ]
+                  },
+                  "else": {
+                    "actions": {}
+                  },
+                  "expression": {
+                    "and": [
+                      {
+                        "not": {
+                          "equals": [
+                            "@length(triggerOutputs()?['body/_book_creditedprioritization_value'])",
+                            "@null"
+                          ]
+                        }
+                      },
+                      {
+                        "not": {
+                          "equals": [
+                            "@length(triggerOutputs()?['body/_book_debitedprioritization_value'])",
+                            "@null"
+                          ]
+                        }
+                      }
+                    ]
+                  },
+                  "metadata": {
+                    "operationMetadataId": "9439ebd3-b4d5-4ff6-ac17-77300e17f31f"
+                  },
+                  "type": "If"
+                },
+                "Reduce_Debit": {
+                  "runAfter": {
+                    "Check_if_Prioritizations_exist": [
+                      "Succeeded",
+                      "Failed"
+                    ]
+                  },
+                  "metadata": {
+                    "operationMetadataId": "2014fb6c-cdfd-4cd4-afd5-819f7087643e"
+                  },
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "parameters": {
+                      "entityName": "book_requirementfundings",
+                      "recordId": "@outputs('Get_Debit_Req_Funding')?['body/book_requirementfundingid']",
+                      "item/book_fundedamount": "@if(greater(triggerOutputs()?['body/book_amount'], outputs('Get_Debit_Req_Funding')?['body/book_withholding']), sub(if(equals(outputs('Get_Debit_Req_Funding')?['body/book_fundedamount'], null), 0, outputs('Get_Debit_Req_Funding')?['body/book_fundedamount']), sub(if(equals(triggerOutputs()?['body/book_amount'], null), 0, triggerOutputs()?['body/book_amount']), outputs('Get_Debit_Req_Funding')?['body/book_withholding'])), outputs('Get_Debit_Req_Funding')?['body/book_fundedamount'])",
+                      "item/book_tdp": "@sub(if(equals(outputs('Get_Debit_Req_Funding')?['body/book_tdp'], null), 0, outputs('Get_Debit_Req_Funding')?['body/book_tdp']), triggerOutputs()?['body/book_amount'])"
+                    },
+                    "host": {
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
+                      "operationId": "UpdateOnlyRecord",
+                      "connectionName": "shared_commondataserviceforapps"
+                    }
+                  }
+                },
+                "Increase_Credit": {
+                  "runAfter": {
+                    "Reduce_Debit": [
+                      "Succeeded"
+                    ]
+                  },
+                  "metadata": {
+                    "operationMetadataId": "51f7eadb-fdeb-416c-965b-e3c8dfe9fbef"
+                  },
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "parameters": {
+                      "entityName": "book_requirementfundings",
+                      "recordId": "@outputs('Get_Credit_Req_Funding')?['body/book_requirementfundingid']",
+                      "item/book_tdp": "@add(if(equals(outputs('Get_Credit_Req_Funding')?['body/book_tdp'], null), 0, outputs('Get_Credit_Req_Funding')?['body/book_tdp']), triggerOutputs()?['body/book_amount'])"
+                    },
+                    "host": {
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
+                      "operationId": "UpdateOnlyRecord",
+                      "connectionName": "shared_commondataserviceforapps"
+                    }
+                  }
+                }
+              },
+              "runAfter": {
+                "Update_Debit_Ledger": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "864115f0-dbcc-4d0e-b100-dcd0540b24e1"
+              },
+              "type": "Scope"
+            },
+            "Update_LOAs": {
+              "actions": {
+                "Update_Credit_LOA": {
+                  "runAfter": {
+                    "Update_Debit_LOA": [
+                      "Succeeded"
+                    ]
+                  },
+                  "metadata": {
+                    "operationMetadataId": "5e91ebf9-6117-4de5-906c-2c08ddb02240"
+                  },
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "parameters": {
+                      "entityName": "book_fundinglines",
+                      "recordId": "@outputs('Get_Credited_LOA')?['body/book_fundinglineid']",
+                      "item/book_tdp": "@add(outputs('Get_Credited_LOA')?['body/book_tdp'], triggerOutputs()?['body/book_amount'])"
+                    },
+                    "host": {
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
+                      "operationId": "UpdateOnlyRecord",
+                      "connectionName": "shared_commondataserviceforapps"
+                    }
+                  }
+                },
+                "Update_Debit_LOA": {
+                  "metadata": {
+                    "operationMetadataId": "e1805740-7fcf-4dc1-a112-8febce1b7117"
+                  },
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "parameters": {
+                      "entityName": "book_fundinglines",
+                      "recordId": "@outputs('Get_Debited_LOA')?['body/book_fundinglineid']",
+                      "item/book_tdp": "@sub(outputs('Get_Debited_LOA')?['body/book_tdp'], triggerOutputs()?['body/book_amount'])"
+                    },
+                    "host": {
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
+                      "operationId": "UpdateOnlyRecord",
+                      "connectionName": "shared_commondataserviceforapps"
+                    }
+                  }
+                }
+              },
+              "runAfter": {
+                "Update_Child_Records": [
+                  "Succeeded",
+                  "Failed"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "5d53c2df-67d1-43c8-9f15-6725a5530ddf"
+              },
+              "type": "Scope"
+            }
+          },
+          "runAfter": {},
+          "else": {
+            "actions": {}
+          },
+          "expression": {
+            "equals": [
+              "@triggerOutputs()?['body/book_bedecision']",
+              0
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "f349c2e7-dd49-4272-b103-3d265e479a45"
+          },
+          "type": "If"
+        },
+        "Inactivate_Realignment": {
+          "runAfter": {
+            "If_Realignment_Approved": [
+              "Succeeded",
+              "Failed"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "6934367f-0a4d-4a08-8ee5-bcf1bdf9576d"
+          },
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "entityName": "book_realignmentses",
+              "recordId": "@triggerOutputs()?['body/book_realignmentsid']",
+              "item/statecode": 1
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
+              "operationId": "UpdateOnlyRecord",
+              "connectionName": "shared_commondataserviceforapps"
+            }
+          }
+        }
+      }
+    },
+    "templateName": null
+  },
+  "schemaVersion": "1.0.0.0"
+}

@@ -1,0 +1,118 @@
+{
+  "properties": {
+    "connectionReferences": {
+      "shared_commondataserviceforapps": {
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "book_sharedcommondataserviceforapps_9388f"
+        },
+        "api": {
+          "name": "shared_commondataserviceforapps"
+        }
+      }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "1.0.0.0",
+      "parameters": {
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        },
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        },
+        "ARNG Checkbook - Environment (book_ARNGCheckbookEnvironment)": {
+          "defaultValue": "https://arngcheckbookdev.crm.appsplatform.us/",
+          "type": "String",
+          "metadata": {
+            "schemaName": "book_ARNGCheckbookEnvironment",
+            "description": "Environment Org"
+          }
+        }
+      },
+      "triggers": {
+        "When_a_row_is_added,_modified_or_deleted": {
+          "metadata": {
+            "operationMetadataId": "088c77d5-0afb-4a17-bcaf-49c66c2836f1"
+          },
+          "type": "OpenApiConnectionWebhook",
+          "inputs": {
+            "parameters": {
+              "subscriptionRequest/message": 1,
+              "subscriptionRequest/entityname": "book_realignments",
+              "subscriptionRequest/scope": 4,
+              "subscriptionRequest/runas": 1
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
+              "operationId": "SubscribeWebhookTrigger",
+              "connectionName": "shared_commondataserviceforapps"
+            }
+          }
+        }
+      },
+      "actions": {
+        "List_Users": {
+          "runAfter": {},
+          "metadata": {
+            "operationMetadataId": "c0451f4c-a04e-47df-8093-17a9c9569d4e"
+          },
+          "type": "OpenApiConnection",
+          "inputs": {
+            "parameters": {
+              "entityName": "systemusers",
+              "fetchXml": "<fetch>\n  <entity name=\"systemuser\">\n    <attribute name=\"systemuserid\"/>\n    <attribute name=\"fullname\"/>\n    <filter>\n      <condition attribute=\"businessunitid\" operator=\"eq\" value=\"@{triggerOutputs()?['body/_owningbusinessunit_value']}\"/>\n      <condition attribute=\"isdisabled\" operator=\"eq\" value=\"0\"/>\n    </filter>\n    <link-entity name=\"systemuserroles\" from=\"systemuserid\" to=\"systemuserid\">\n      <link-entity name=\"role\" from=\"roleid\" to=\"roleid\">\n        <filter type=\"or\">\n          <condition attribute=\"name\" operator=\"eq\" value=\"Book - State Administrator\"/>\n          <condition attribute=\"name\" operator=\"eq\" value=\"Book - State Approver\"/>\n        </filter>\n      </link-entity>\n    </link-entity>\n  </entity>\n</fetch>"
+            },
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
+              "operationId": "ListRecords",
+              "connectionName": "shared_commondataserviceforapps"
+            }
+          }
+        },
+        "Loop_through_Users": {
+          "foreach": "@outputs('List_Users')?['body/value']",
+          "actions": {
+            "Create_Notification": {
+              "metadata": {
+                "operationMetadataId": "a318a74d-f5ee-456a-b4ca-c4b857098945"
+              },
+              "type": "OpenApiConnection",
+              "inputs": {
+                "parameters": {
+                  "entityName": "appnotifications",
+                  "item/title": "Realignment Created",
+                  "item/body": "Realignment '@{triggerOutputs()?['body/book_name']}' has been submitted.",
+                  "item/data": "{\n  \"actions\": [\n    {\n      \"title\": \"Review Realignment\",\n      \"data\": {\n        \"type\": \"url\",\n        \"url\": \"@{concat(parameters('ARNG Checkbook - Environment (book_ARNGCheckbookEnvironment)'), '/main.aspx?etn=book_realignments&id=', triggerOutputs()?['body/book_realignmentid'], '&pagetype=entityrecord')}\",\n        \"navigationTarget\": \"newWindow\"\n      }\n    }\n  ]\n}",
+                  "item/icontype": 100000000,
+                  "item/ownerid@odata.bind": "systemusers(@{items('Loop_through_Users')?['systemuserid']})",
+                  "item/owningbusinessunit@odata.bind": "businessunits(@{triggerOutputs()?['body/_owningbusinessunit_value']})",
+                  "item/priority": 200000000,
+                  "item/toasttype": 200000000
+                },
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
+                  "operationId": "CreateRecord",
+                  "connectionName": "shared_commondataserviceforapps"
+                }
+              }
+            }
+          },
+          "runAfter": {
+            "List_Users": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "8bc4fa4e-b311-4c6c-be83-90ffc406e4e9"
+          },
+          "type": "Foreach"
+        }
+      }
+    },
+    "templateName": null
+  },
+  "schemaVersion": "1.0.0.0"
+}

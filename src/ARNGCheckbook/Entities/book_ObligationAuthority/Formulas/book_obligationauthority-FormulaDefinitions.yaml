@@ -1,0 +1,1 @@
+book_distributionfundcenter: =If(IsBlank(book_Prioritization.book_FundCenter), book_Requirement.book_FundCenter.book_name, book_Prioritization.book_FundCenter.book_ParentFundCenter.book_name)

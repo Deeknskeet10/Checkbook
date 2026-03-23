@@ -1,0 +1,2 @@
+book_ape6: =Left(book_name, 6)
+book_fundingtype: =Switch(Mid(book_name, 5, 1), "1", "Base Pay", "2", "Travel", "4", "Clothing", "7", "Subsistence", "9", "BAH", "3", "Benefit / Bonus", "5", "COLA", "8", "RPA", "6", "Stipend", "T", "TSP", "0", "MISC")

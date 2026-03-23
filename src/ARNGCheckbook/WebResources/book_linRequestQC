@@ -1,0 +1,25 @@
+function linRequestQC(executionContext) {
+    var formContext = executionContext.getFormContext();
+    var parentRecordReference = Xrm.Utility.getPageContext().input.createFromEntity;
+
+    // Check if the Quick Create form was launched from a related record
+    if (parentRecordReference != null) {
+        // Get the ID, entity type, and name of the parent record
+        var parentRecordId = parentRecordReference.id;
+        var parentRecordEntityType = parentRecordReference.entityType;
+        var parentRecordName = parentRecordReference.name;
+
+        // Define the lookup field value object
+        var lookupValue = [
+            {
+                id: parentRecordId,
+                name: parentRecordName,
+                entityType: parentRecordEntityType
+            }
+        ];
+
+        // Populate lookup field
+        formContext.getAttribute("book_prioritization").setValue(lookupValue);
+
+    }
+}

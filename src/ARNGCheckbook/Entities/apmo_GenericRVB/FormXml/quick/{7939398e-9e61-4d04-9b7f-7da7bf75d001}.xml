@@ -1,0 +1,63 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<forms xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <systemform>
+    <formid>{7939398e-9e61-4d04-9b7f-7da7bf75d001}</formid>
+    <IntroducedVersion>1.0.0.1</IntroducedVersion>
+    <FormPresentation>1</FormPresentation>
+    <FormActivationState>1</FormActivationState>
+    <form>
+      <tabs>
+        <tab verticallayout="true" id="{18e55cf7-1316-4540-9519-6cb3740ae4a1}" IsUserDefined="1">
+          <labels>
+            <label description="" languagecode="1033" />
+          </labels>
+          <columns>
+            <column width="100%">
+              <sections>
+                <section showlabel="true" showbar="false" IsUserDefined="0" id="{0adab6f1-0c7b-4000-aa48-e14749600c52}" name="General">
+                  <labels>
+                    <label description="RVB Details" languagecode="1033" />
+                  </labels>
+                  <rows>
+                    <row>
+                      <cell id="{85fe7bac-9d9f-4383-86ad-9b21e0b9dae5}">
+                        <labels>
+                          <label description="Generic RVB" languagecode="1033" />
+                        </labels>
+                        <control id="apmo_name" classid="{4273EDBD-AC1D-40d3-9FB2-095C621B552D}" datafieldname="apmo_name" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{d6a9e95e-a75d-4c02-926e-b63ef47bdb71}" visible="false">
+                        <labels>
+                          <label description="Owner" languagecode="1033" />
+                        </labels>
+                        <control id="ownerid" classid="{270BD3DB-D9AF-4782-9025-509E298DEC0A}" datafieldname="ownerid" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{f0b42907-5995-4998-8f70-45c704da992a}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="Requirement Name" languagecode="1033" />
+                        </labels>
+                        <control id="apmo_requirementname" classid="{4273EDBD-AC1D-40D3-9FB2-095C621B552D}" datafieldname="apmo_requirementname" disabled="false" />
+                      </cell>
+                    </row>
+                  </rows>
+                </section>
+              </sections>
+            </column>
+          </columns>
+        </tab>
+      </tabs>
+      <DisplayConditions Order="0" FallbackForm="true">
+        <Everyone />
+      </DisplayConditions>
+    </form>
+    <IsCustomizable>1</IsCustomizable>
+    <CanBeDeleted>1</CanBeDeleted>
+    <LocalizedNames>
+      <LocalizedName description="Information" languagecode="1033" />
+    </LocalizedNames>
+  </systemform>
+</forms>

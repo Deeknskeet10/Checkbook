@@ -1,0 +1,107 @@
+var TurnInItem = window.TurnInItem || {};
+(function () {
+    "use strict";
+
+    var parentData = {
+        fundId: null,
+        pgId: null,
+        fiscalYear: null,
+        fundCenterId: null
+    };
+
+    this.onLoad = function (executionContext) {
+        var formContext = executionContext.getFormContext();
+
+        var turnInAttr = formContext.getAttribute("book_turnin");
+        var turnInValue = turnInAttr ? turnInAttr.getValue() : null;
+
+        if (turnInValue && turnInValue.length > 0) {
+            var turnInId = turnInValue[0].id.replace("{", "").replace("}", "");
+            this.fetchParentData(turnInId, formContext);
+        }
+    };
+
+    this.fetchParentData = function (turnInId, formContext) {
+        var self = this;
+
+        Xrm.WebApi.retrieveRecord("book_turnin", turnInId,
+            "?$select=_book_fund_value,_book_pg_value,book_fiscalyear,_book_fundcenter_value"
+        ).then(
+            function (result) {
+                parentData.fundId = result._book_fund_value;
+                parentData.pgId = result._book_pg_value;
+                parentData.fiscalYear = result.book_fiscalyear;
+                parentData.fundCenterId = result._book_fundcenter_value;
+
+                // Set up Requirement Funding custom view
+                var reqFundingControl = formContext.getControl("book_requirementfunding");
+                if (reqFundingControl && parentData.fundId && parentData.pgId && parentData.fiscalYear) {
+                    self.setRequirementFundingView(reqFundingControl);
+                }
+
+                // Prioritization can still use addPreSearch since it's a simple filter
+                var prioritizationControl = formContext.getControl("book_prioritization");
+                if (prioritizationControl) {
+                    prioritizationControl.addPreSearch(self.filterPrioritizations);
+                }
+            },
+            function (error) {
+                console.log("Error fetching parent Turn-In data: " + error.message);
+            }
+        );
+    };
+
+    this.setRequirementFundingView = function (control) {
+        var viewId = "00000000-0000-0000-0000-000000000001"; // Random GUID for custom view
+        var entityName = "book_requirementfunding";
+        var viewDisplayName = "Filtered Requirement Fundings";
+
+        var fetchXml = `
+            <fetch version="1.0" output-format="xml-platform" mapping="logical" distinct="true">
+                <entity name="book_requirementfunding">
+                    <attribute name="book_requirementfundingid" />
+                    <attribute name="book_name" />
+                    <filter type="and">
+                        <condition attribute="statecode" operator="eq" value="0" />
+                    </filter>
+                    <link-entity name="book_fundingline" from="book_fundinglineid" to="book_lineofaccounting" alias="loa">
+                        <filter type="and">
+                            <condition attribute="book_fund" operator="eq" value="${parentData.fundId}" />
+                            <condition attribute="book_pg" operator="eq" value="${parentData.pgId}" />
+                            <condition attribute="book_fiscalyear" operator="eq" value="${parentData.fiscalYear}" />
+                        </filter>
+                    </link-entity>
+                    <order attribute="book_name" descending="false" />
+                </entity>
+            </fetch>
+        `;
+
+        var layoutXml = `
+            <grid name="resultset" object="1" jump="book_name" select="1" icon="1" preview="1">
+                <row name="result" id="book_requirementfundingid">
+                    <cell name="book_name" width="300" />
+                </row>
+            </grid>
+        `;
+
+        control.addCustomView(viewId, entityName, viewDisplayName, fetchXml, layoutXml, true);
+    };
+
+    this.filterPrioritizations = function (executionContext) {
+        var formContext = executionContext.getFormContext();
+
+        if (!parentData.fundCenterId) {
+            return;
+        }
+
+        var filter = `
+            <filter type="and">
+                <condition attribute="statecode" operator="eq" value="0" />
+                <condition attribute="book_fundcenter" operator="eq" value="${parentData.fundCenterId}" />
+            </filter>
+        `;
+
+        formContext.getControl("book_prioritization").addCustomFilter(filter, "book_prioritization");
+    };
+
+}).call(TurnInItem);
