@@ -12,9 +12,9 @@
         <row name="result" id="book_unfundedrequestsid">
           <cell name="book_requirementfunding" width="163" />
           <cell name="book_dropdeaddate" width="132" />
-          <cell name="book_riskstatement" width="126" />
+          <cell name="book_unfundedamount" width="146" />
+          <cell name="book_newriskstatement" width="126" />
           <cell name="book_justification" width="109" />
-          <cell name="book_newunfundedamount" width="146" />
           <cell name="book_outcome" width="100" />
           <cell name="book_outcomenarrative" width="148" />
         </row>
@@ -28,14 +28,14 @@
           <attribute name="book_outcome" />
           <attribute name="book_outcomenarrative" />
           <attribute name="book_justification" />
-          <attribute name="book_riskstatement" />
           <filter type="and">
             <condition attribute="book_higherlevelufr" operator="null" />
           </filter>
           <attribute name="book_dropdeaddate" />
           <order attribute="book_dropdeaddate" descending="false" />
-          <attribute name="book_newunfundedamount" />
           <attribute name="book_requirementfunding" />
+          <attribute name="book_newriskstatement" />
+          <attribute name="book_unfundedamount" />
         </entity>
       </fetch>
     </fetchxml>

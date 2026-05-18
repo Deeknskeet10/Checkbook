@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("ARNGCheckbook.Plugins")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+11dd3b6a9a1309dfd4d7fb69f917376a74a830bc")]
 [assembly: System.Reflection.AssemblyProductAttribute("ARNGCheckbook.Plugins")]
 [assembly: System.Reflection.AssemblyTitleAttribute("ARNGCheckbook.Plugins")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

@@ -48,7 +48,7 @@
                       </cell>
                       <cell id="{b8977236-b83b-5535-132a-ad80bb8d9317}" showlabel="true" locklevel="0">
                         <labels>
-                          <label description="Fund Center" languagecode="1033" />
+                          <label description="Deprecated - Fund Center" languagecode="1033" />
                         </labels>
                         <control id="book_fundcenter" classid="{270BD3DB-D9AF-4782-9025-509E298DEC0A}" datafieldname="book_fundcenter" disabled="false" />
                       </cell>
@@ -237,6 +237,38 @@
           <columns>
             <column width="100%">
               <sections>
+                <section name="reqFundingTab_section_3" id="927394e3-4528-4986-9b63-715a00357acb" IsUserDefined="0" locklevel="0" showlabel="true" showbar="false" layout="varwidth" celllabelalignment="Left" celllabelposition="Left" columns="1" labelwidth="115">
+                  <labels>
+                    <label description="Funding Details" languagecode="1033" />
+                  </labels>
+                  <rows>
+                    <row />
+                    <row>
+                      <cell locklevel="0" id="{7d47c69a-bb0e-45ad-a651-cbaa6591d8d4}" rowspan="4" colspan="1" auto="false" showlabel="false">
+                        <labels>
+                          <label description="New SG control 1779060114378" languagecode="1033" />
+                        </labels>
+                        <control indicationOfSubgrid="true" id="Subgrid_new_4" classid="{E7A81278-8635-4D9E-8D4D-59480B391C5B}">
+                          <parameters>
+                            <RecordsPerPage>4</RecordsPerPage>
+                            <AutoExpand>Fixed</AutoExpand>
+                            <EnableQuickFind>false</EnableQuickFind>
+                            <EnableViewPicker>false</EnableViewPicker>
+                            <EnableChartPicker>true</EnableChartPicker>
+                            <ChartGridMode>All</ChartGridMode>
+                            <RelationshipName>book_requirementdetails_Requirement_book_requirements</RelationshipName>
+                            <TargetEntityType>book_requirementdetails</TargetEntityType>
+                            <ViewId>{DD8AD28A-DE14-4843-8364-00BB6DB81556}</ViewId>
+                            <ViewIds>{DD8AD28A-DE14-4843-8364-00BB6DB81556}</ViewIds>
+                          </parameters>
+                        </control>
+                      </cell>
+                    </row>
+                    <row />
+                    <row />
+                    <row />
+                  </rows>
+                </section>
                 <section name="tab_4_section_1" id="08dad481-59ad-4e16-9eeb-b7d51317d5b6" IsUserDefined="0" locklevel="0" showlabel="true" showbar="false" layout="varwidth" celllabelalignment="Left" celllabelposition="Left" columns="1" labelwidth="115">
                   <labels>
                     <label description="Requirement Funding" languagecode="1033" />

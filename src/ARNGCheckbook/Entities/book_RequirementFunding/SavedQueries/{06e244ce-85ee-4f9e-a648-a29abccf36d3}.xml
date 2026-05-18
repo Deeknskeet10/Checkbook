@@ -11,7 +11,11 @@
       <grid name="book_requirementfundings" jump="book_name" select="1" icon="1" preview="1">
         <row name="book_requirementfunding" id="book_requirementfundingid">
           <cell name="book_name" width="300" />
-          <cell name="createdon" width="125" />
+          <cell name="book_newtdp" width="100" />
+          <cell name="book_newwithholding" width="111" />
+          <cell name="book_newvalidatedamount" width="143" />
+          <cell name="book_newfundedamount" width="132" />
+          <cell name="book_newunfundedamount" width="146" />
         </row>
       </grid>
     </layoutxml>
@@ -21,11 +25,15 @@
         <entity name="book_requirementfunding">
           <attribute name="book_requirementfundingid" />
           <attribute name="book_name" />
-          <attribute name="createdon" />
           <order attribute="book_name" descending="false" />
           <filter type="and">
             <condition attribute="statecode" operator="eq" value="0" />
           </filter>
+          <attribute name="book_newfundedamount" />
+          <attribute name="book_newwithholding" />
+          <attribute name="book_newvalidatedamount" />
+          <attribute name="book_newunfundedamount" />
+          <attribute name="book_newtdp" />
         </entity>
       </fetch>
     </fetchxml>

@@ -1,0 +1,38 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<savedqueries xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <savedquery>
+    <IsCustomizable>1</IsCustomizable>
+    <CanBeDeleted>0</CanBeDeleted>
+    <isquickfindquery>0</isquickfindquery>
+    <isprivate>0</isprivate>
+    <isdefault>1</isdefault>
+    <savedqueryid>{60b01a59-9339-4b9b-9a9e-72a44274fa61}</savedqueryid>
+    <layoutxml>
+      <grid name="resultset" jump="book_name" select="1" icon="1" preview="1">
+        <row name="result" id="book_commitmentitemid">
+          <cell name="book_commitment" width="114" />
+          <cell name="book_tdc" width="100" />
+          <cell name="book_requestedamount" width="148" />
+        </row>
+      </grid>
+    </layoutxml>
+    <querytype>0</querytype>
+    <fetchxml>
+      <fetch version="1.0" mapping="logical">
+        <entity name="book_commitmentitem">
+          <attribute name="book_commitmentitemid" />
+          <filter type="and">
+            <condition attribute="statecode" operator="eq" value="0" />
+          </filter>
+          <attribute name="book_commitment" />
+          <attribute name="book_requestedamount" />
+          <attribute name="book_tdc" />
+        </entity>
+      </fetch>
+    </fetchxml>
+    <IntroducedVersion>1.11.0.28</IntroducedVersion>
+    <LocalizedNames>
+      <LocalizedName description="Active Commitment Items" languagecode="1033" />
+    </LocalizedNames>
+  </savedquery>
+</savedqueries>

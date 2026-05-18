@@ -66,11 +66,11 @@
                       </cell>
                     </row>
                     <row>
-                      <cell id="{44b1b72b-9e0d-45f3-9d5b-67de18c8e065}" locklevel="0" colspan="1" rowspan="1">
+                      <cell id="{fa243c51-4864-4b9e-9f00-0a132cad5cd4}" locklevel="0" colspan="1" rowspan="1">
                         <labels>
                           <label description="Amount" languagecode="1033" />
                         </labels>
-                        <control id="book_amount" classid="{0D2C745A-E5A8-4C8F-BA63-C6D3BB604660}" datafieldname="book_amount" disabled="false" />
+                        <control id="book_newamount" classid="{C3EFE0C3-0EC6-42BE-8349-CBD9079DFD8E}" datafieldname="book_newamount" disabled="false" />
                       </cell>
                     </row>
                     <row>

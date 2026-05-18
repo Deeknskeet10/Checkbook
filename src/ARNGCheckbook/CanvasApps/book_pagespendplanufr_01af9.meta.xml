@@ -1,11 +1,11 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <CanvasApp xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
   <Name>book_pagespendplanufr_01af9</Name>
-  <AppVersion>2026-01-29T14:29:15Z</AppVersion>
+  <AppVersion>2026-05-05T15:11:15Z</AppVersion>
   <Status>Ready</Status>
-  <CreatedByClientVersion>3.26012.17.0</CreatedByClientVersion>
-  <MinClientVersion>3.26012.17.0</MinClientVersion>
-  <Tags>{"primaryDeviceWidth":"1366","primaryDeviceHeight":"320","supportsPortrait":"true","supportsLandscape":"true","primaryFormFactor":"Tablet","showStatusBar":"false","publisherVersion":"3.26012.17","minimumRequiredApiVersion":"2.2.0","hasComponent":"false","hasUnlockedComponent":"false","isUnifiedRootApp":"false","sienaVersion":"20260129T141140Z-3.26012.17.0"}</Tags>
+  <CreatedByClientVersion>3.26042.14.0</CreatedByClientVersion>
+  <MinClientVersion>3.26042.14.0</MinClientVersion>
+  <Tags>{"primaryDeviceWidth":"1366","primaryDeviceHeight":"320","supportsPortrait":"true","supportsLandscape":"true","primaryFormFactor":"Tablet","showStatusBar":"false","publisherVersion":"3.26042.14","minimumRequiredApiVersion":"2.2.0","hasComponent":"false","hasUnlockedComponent":"false","isUnifiedRootApp":"false","sienaVersion":"20260325T123620Z-3.26032.12.0","m365CopilotSettingValue":"0"}</Tags>
   <IsCdsUpgraded>0</IsCdsUpgraded>
   <GalleryItemId xsi:nil="true"></GalleryItemId>
   <BackgroundColor>RGBA(0,176,240,1)</BackgroundColor>
@@ -24,7 +24,7 @@
   <AdminControlBypassConsent>0</AdminControlBypassConsent>
   <EmbeddedApp xsi:nil="true"></EmbeddedApp>
   <IntroducedVersion>1.0</IntroducedVersion>
-  <CdsDependencies>{"cdsdependencies":[{"logicalname":"book_unfundedrequests","componenttype":1},{"logicalname":"book_prioritization","componenttype":1},{"logicalname":"book_spendplan","componenttype":1},{"logicalname":"","componenttype":10165,"componenttypeplatformname":"Bot"}]}</CdsDependencies>
+  <CdsDependencies>{"cdsdependencies":[{"logicalname":"book_unfundedrequests","componenttype":1},{"logicalname":"book_prioritization","componenttype":1},{"logicalname":"book_spendplan","componenttype":1}]}</CdsDependencies>
   <IsCustomizable>1</IsCustomizable>
   <BackgroundImageUri>/CanvasApps/book_pagespendplanufr_01af9_BackgroundImageUri</BackgroundImageUri>
   <DocumentUri>/CanvasApps/book_pagespendplanufr_01af9_DocumentUri.msapp</DocumentUri>

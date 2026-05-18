@@ -1,0 +1,143 @@
+/*
+ * ATTENTION: The "eval" devtool has been used (maybe by default in mode: "development").
+ * This devtool is neither made for production nor for readable output files.
+ * It uses "eval()" calls to create a separate source file in the browser devtools.
+ * If you are trying to read the output file, select a different devtool (https://webpack.js.org/configuration/devtool/)
+ * or disable the default devtool with "devtool: false".
+ * If you are looking for production-ready output files, see mode: "production" (https://webpack.js.org/configuration/mode/).
+ */
+var pcf_tools_652ac3f36e1e4bca82eb3c1dc44e6fad;
+/******/ (() => { // webpackBootstrap
+/******/ 	"use strict";
+/******/ 	var __webpack_modules__ = ({
+
+/***/ "./ValidateAndFundGrid/ValidateAndFundGridApp.tsx"
+/*!********************************************************!*\
+  !*** ./ValidateAndFundGrid/ValidateAndFundGridApp.tsx ***!
+  \********************************************************/
+(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+eval("{__webpack_require__.r(__webpack_exports__);\n/* harmony export */ __webpack_require__.d(__webpack_exports__, {\n/* harmony export */   ValidateAndFundGridApp: () => (/* binding */ ValidateAndFundGridApp)\n/* harmony export */ });\n/* harmony import */ var react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! react */ \"react\");\n/* harmony import */ var react__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_0__);\n/* harmony import */ var _fluentui_react_components__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @fluentui/react-components */ \"@fluentui/react-components\");\n/* harmony import */ var _fluentui_react_components__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(_fluentui_react_components__WEBPACK_IMPORTED_MODULE_1__);\nfunction _slicedToArray(r, e) { return _arrayWithHoles(r) || _iterableToArrayLimit(r, e) || _unsupportedIterableToArray(r, e) || _nonIterableRest(); }\nfunction _nonIterableRest() { throw new TypeError(\"Invalid attempt to destructure non-iterable instance.\\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.\"); }\nfunction _unsupportedIterableToArray(r, a) { if (r) { if (\"string\" == typeof r) return _arrayLikeToArray(r, a); var t = {}.toString.call(r).slice(8, -1); return \"Object\" === t && r.constructor && (t = r.constructor.name), \"Map\" === t || \"Set\" === t ? Array.from(r) : \"Arguments\" === t || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(t) ? _arrayLikeToArray(r, a) : void 0; } }\nfunction _arrayLikeToArray(r, a) { (null == a || a > r.length) && (a = r.length); for (var e = 0, n = Array(a); e < a; e++) n[e] = r[e]; return n; }\nfunction _iterableToArrayLimit(r, l) { var t = null == r ? null : \"undefined\" != typeof Symbol && r[Symbol.iterator] || r[\"@@iterator\"]; if (null != t) { var e, n, i, u, a = [], f = !0, o = !1; try { if (i = (t = t.call(r)).next, 0 === l) { if (Object(t) !== t) return; f = !1; } else for (; !(f = (e = i.call(t)).done) && (a.push(e.value), a.length !== l); f = !0); } catch (r) { o = !0, n = r; } finally { try { if (!f && null != t.return && (u = t.return(), Object(u) !== u)) return; } finally { if (o) throw n; } } return a; } }\nfunction _arrayWithHoles(r) { if (Array.isArray(r)) return r; }\nvar __awaiter = undefined && undefined.__awaiter || function (thisArg, _arguments, P, generator) {\n  function adopt(value) {\n    return value instanceof P ? value : new P(function (resolve) {\n      resolve(value);\n    });\n  }\n  return new (P || (P = Promise))(function (resolve, reject) {\n    function fulfilled(value) {\n      try {\n        step(generator.next(value));\n      } catch (e) {\n        reject(e);\n      }\n    }\n    function rejected(value) {\n      try {\n        step(generator[\"throw\"](value));\n      } catch (e) {\n        reject(e);\n      }\n    }\n    function step(result) {\n      result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected);\n    }\n    step((generator = generator.apply(thisArg, _arguments || [])).next());\n  });\n};\n\n\nvar fmtMoney = n => n == null ? \"$0.00\" : n.toLocaleString(\"en-US\", {\n  style: \"currency\",\n  currency: \"USD\",\n  minimumFractionDigits: 2,\n  maximumFractionDigits: 2\n});\nvar parseMoney = s => {\n  if (s == null) return 0;\n  var cleaned = String(s).replace(/[^0-9.\\-]/g, \"\");\n  var n = parseFloat(cleaned);\n  return isNaN(n) ? 0 : n;\n};\nvar getLookupName = v => {\n  var _a;\n  if (!v) return \"\";\n  if (Array.isArray(v)) return ((_a = v[0]) === null || _a === void 0 ? void 0 : _a.name) || \"\";\n  return v.name || \"\";\n};\nvar ValidateAndFundGridApp = props => {\n  var dataset = props.dataset,\n    webAPI = props.webAPI,\n    parentRequirementFundingId = props.parentRequirementFundingId,\n    parentRequirementFundingName = props.parentRequirementFundingName;\n  var initialRows = react__WEBPACK_IMPORTED_MODULE_0__.useMemo(() => {\n    return dataset.sortedRecordIds.map(id => dataset.records[id]).map(r => {\n      var _a, _b, _c, _d;\n      var requested = (_a = r.getValue(\"requestedAmount\")) !== null && _a !== void 0 ? _a : 0;\n      var validated = (_b = r.getValue(\"validatedAmount\")) !== null && _b !== void 0 ? _b : 0;\n      var funded = (_c = r.getValue(\"fundedAmount\")) !== null && _c !== void 0 ? _c : 0;\n      var unfunded = r.getValue(\"unfundedAmount\");\n      return {\n        id: r.getRecordId(),\n        stateName: getLookupName(r.getValue(\"state\")),\n        statePriority: (_d = r.getValue(\"statePriority\")) !== null && _d !== void 0 ? _d : null,\n        requested,\n        validated,\n        funded,\n        unfundedDisplay: unfunded != null ? unfunded : Math.max(requested - funded, 0)\n      };\n    }).sort((a, b) => {\n      var _a, _b;\n      if (a.statePriority !== b.statePriority) {\n        var pa = (_a = a.statePriority) !== null && _a !== void 0 ? _a : Number.MAX_SAFE_INTEGER;\n        var pb = (_b = b.statePriority) !== null && _b !== void 0 ? _b : Number.MAX_SAFE_INTEGER;\n        return pa - pb;\n      }\n      return a.stateName.localeCompare(b.stateName);\n    });\n  }, [dataset.sortedRecordIds.join(\"|\")]);\n  var _React$useState = react__WEBPACK_IMPORTED_MODULE_0__.useState(initialRows),\n    _React$useState2 = _slicedToArray(_React$useState, 2),\n    rows = _React$useState2[0],\n    setRows = _React$useState2[1];\n  var _React$useState3 = react__WEBPACK_IMPORTED_MODULE_0__.useState(false),\n    _React$useState4 = _slicedToArray(_React$useState3, 2),\n    editMode = _React$useState4[0],\n    setEditMode = _React$useState4[1];\n  var _React$useState5 = react__WEBPACK_IMPORTED_MODULE_0__.useState(false),\n    _React$useState6 = _slicedToArray(_React$useState5, 2),\n    saving = _React$useState6[0],\n    setSaving = _React$useState6[1];\n  var _React$useState7 = react__WEBPACK_IMPORTED_MODULE_0__.useState(null),\n    _React$useState8 = _slicedToArray(_React$useState7, 2),\n    err = _React$useState8[0],\n    setErr = _React$useState8[1];\n  var _React$useState9 = react__WEBPACK_IMPORTED_MODULE_0__.useState(null),\n    _React$useState0 = _slicedToArray(_React$useState9, 2),\n    ok = _React$useState0[0],\n    setOk = _React$useState0[1];\n  var _React$useState1 = react__WEBPACK_IMPORTED_MODULE_0__.useState(null),\n    _React$useState10 = _slicedToArray(_React$useState1, 2),\n    rfCtx = _React$useState10[0],\n    setRfCtx = _React$useState10[1];\n  react__WEBPACK_IMPORTED_MODULE_0__.useEffect(() => {\n    setRows(initialRows);\n  }, [initialRows]);\n  // Load the parent Requirement Funding header (TDP, Withholding)\n  react__WEBPACK_IMPORTED_MODULE_0__.useEffect(() => {\n    if (!parentRequirementFundingId) return;\n    var id = parentRequirementFundingId.replace(/[{}]/g, \"\");\n    webAPI.retrieveRecord(\"book_requirementfunding\", id, \"?$select=book_newtdp,book_newwithholding,book_withholdingreason,book_tdp,book_withholding\").then(rec => {\n      var _a, _b, _c, _d;\n      var tdp = (_b = (_a = rec.book_newtdp) !== null && _a !== void 0 ? _a : rec.book_tdp) !== null && _b !== void 0 ? _b : 0;\n      var wh = (_d = (_c = rec.book_newwithholding) !== null && _c !== void 0 ? _c : rec.book_withholding) !== null && _d !== void 0 ? _d : 0;\n      setRfCtx({\n        tdp: Number(tdp) || 0,\n        withholding: Number(wh) || 0,\n        withholdingReason: rec.book_withholdingreason || null\n      });\n    }).catch(() => {\n      // Header is decorative — okay to render without it\n      setRfCtx({\n        tdp: 0,\n        withholding: 0,\n        withholdingReason: null\n      });\n    });\n  }, [parentRequirementFundingId, webAPI]);\n  // Live totals across the in-memory rows (reflect un-saved edits)\n  var totals = react__WEBPACK_IMPORTED_MODULE_0__.useMemo(() => {\n    var req = 0,\n      val = 0,\n      fund = 0;\n    for (var r of rows) {\n      req += r.requested || 0;\n      val += r.validated || 0;\n      fund += r.funded || 0;\n    }\n    return {\n      requested: req,\n      validated: val,\n      funded: fund,\n      unfunded: Math.max(req - fund, 0)\n    };\n  }, [rows]);\n  var available = rfCtx ? rfCtx.tdp - rfCtx.withholding : 0;\n  var overAllocated = available > 0 && totals.funded > available;\n  var updateRow = (id, field, raw) => {\n    var next = parseMoney(raw);\n    setRows(prev => prev.map(r => r.id === id ? Object.assign(Object.assign({}, r), {\n      [field]: next,\n      unfundedDisplay: Math.max((r.requested || 0) - (field === \"funded\" ? next : r.funded), 0)\n    }) : r));\n  };\n  var onSave = () => __awaiter(void 0, void 0, void 0, function* () {\n    setErr(null);\n    setOk(null);\n    setSaving(true);\n    try {\n      // Patch every prioritization that changed\n      yield Promise.all(rows.map(r => webAPI.updateRecord(\"book_prioritization\", r.id, {\n        book_newvalidatedamount: r.validated,\n        book_newfundedamounttdp: r.funded\n      })));\n      // Roll up totals to the parent Requirement Funding\n      if (parentRequirementFundingId) {\n        var rfId = parentRequirementFundingId.replace(/[{}]/g, \"\");\n        yield webAPI.updateRecord(\"book_requirementfunding\", rfId, {\n          book_newvalidatedamount: totals.validated,\n          book_newfundedamount: totals.funded,\n          book_newunfundedamount: totals.unfunded\n        });\n      }\n      setOk(\"Validation & funding saved.\");\n      setEditMode(false);\n      dataset.refresh();\n    } catch (e) {\n      setErr((e === null || e === void 0 ? void 0 : e.message) || \"Save failed. Please try again or contact support.\");\n    } finally {\n      setSaving(false);\n    }\n  });\n  var onCancel = () => {\n    setRows(initialRows);\n    setEditMode(false);\n    setErr(null);\n    setOk(null);\n  };\n  var headerStat = function headerStat(label, value) {\n    var tone = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : \"neutral\";\n    var palette = {\n      neutral: {\n        bg: \"#FFFFFF\",\n        border: \"#EDEBE9\",\n        color: \"#323130\"\n      },\n      good: {\n        bg: \"#DFF6DD\",\n        border: \"#107C10\",\n        color: \"#0E5A0E\"\n      },\n      warn: {\n        bg: \"#FFF4CE\",\n        border: \"#797673\",\n        color: \"#5D5A58\"\n      },\n      bad: {\n        bg: \"#FDE7E9\",\n        border: \"#A4262C\",\n        color: \"#A4262C\"\n      }\n    }[tone];\n    return /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement(\"div\", {\n      style: {\n        flex: 1,\n        minWidth: 120,\n        padding: \"8px 12px\",\n        background: palette.bg,\n        border: \"1px solid \".concat(palette.border),\n        borderRadius: 4,\n        color: palette.color\n      }\n    }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement(\"div\", {\n      style: {\n        fontSize: 11,\n        opacity: 0.75,\n        textTransform: \"uppercase\",\n        letterSpacing: 0.5\n      }\n    }, label), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement(\"div\", {\n      style: {\n        fontSize: 16,\n        fontWeight: 600,\n        fontVariantNumeric: \"tabular-nums\"\n      }\n    }, value));\n  };\n  return /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement(_fluentui_react_components__WEBPACK_IMPORTED_MODULE_1__.FluentProvider, {\n    theme: _fluentui_react_components__WEBPACK_IMPORTED_MODULE_1__.webLightTheme\n  }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement(\"div\", {\n    className: \"arsc-validate-fund\",\n    style: {\n      padding: 12,\n      fontFamily: \"Segoe UI, sans-serif\",\n      fontSize: 13,\n      background: \"#FFFFFF\"\n    }\n  }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement(\"div\", {\n    style: {\n      display: \"flex\",\n      alignItems: \"center\",\n      gap: 12,\n      marginBottom: 10\n    }\n  }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement(\"span\", {\n    style: {\n      fontSize: 15,\n      fontWeight: 600\n    }\n  }, \"Validate & Fund\", parentRequirementFundingName ? \": \".concat(parentRequirementFundingName) : \"\"), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement(_fluentui_react_components__WEBPACK_IMPORTED_MODULE_1__.Badge, {\n    appearance: \"outline\",\n    color: \"informative\",\n    size: \"medium\"\n  }, rows.length, \" \", rows.length === 1 ? \"prioritization\" : \"prioritizations\"), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement(\"span\", {\n    style: {\n      flex: 1\n    }\n  }), !editMode && (/*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement(_fluentui_react_components__WEBPACK_IMPORTED_MODULE_1__.Button, {\n    appearance: \"primary\",\n    onClick: () => setEditMode(true),\n    disabled: saving || rows.length === 0\n  }, \"Edit\")), editMode && (/*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement(react__WEBPACK_IMPORTED_MODULE_0__.Fragment, null, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement(_fluentui_react_components__WEBPACK_IMPORTED_MODULE_1__.Button, {\n    onClick: onCancel,\n    disabled: saving\n  }, \"Cancel\"), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement(_fluentui_react_components__WEBPACK_IMPORTED_MODULE_1__.Button, {\n    appearance: \"primary\",\n    onClick: onSave,\n    disabled: saving\n  }, saving ? /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement(_fluentui_react_components__WEBPACK_IMPORTED_MODULE_1__.Spinner, {\n    size: \"extra-tiny\"\n  }) : \"Save\")))), rfCtx && (/*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement(\"div\", {\n    style: {\n      display: \"flex\",\n      gap: 8,\n      marginBottom: 10\n    }\n  }, headerStat(\"TDP\", fmtMoney(rfCtx.tdp)), headerStat(\"Withholding\", fmtMoney(rfCtx.withholding)), headerStat(\"Available TDP\", fmtMoney(available), available <= 0 ? \"warn\" : \"good\"), headerStat(\"Currently Funded\", fmtMoney(totals.funded), overAllocated ? \"bad\" : \"neutral\"))), overAllocated && (/*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement(_fluentui_react_components__WEBPACK_IMPORTED_MODULE_1__.MessageBar, {\n    intent: \"error\",\n    style: {\n      marginBottom: 10\n    }\n  }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement(_fluentui_react_components__WEBPACK_IMPORTED_MODULE_1__.MessageBarBody, null, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement(\"strong\", null, \"Over-allocated:\"), \" Funded total (\", fmtMoney(totals.funded), \") exceeds Available TDP (\", fmtMoney(available), \") by\", \" \", fmtMoney(totals.funded - available), \".\"))), err && (/*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement(_fluentui_react_components__WEBPACK_IMPORTED_MODULE_1__.MessageBar, {\n    intent: \"error\",\n    style: {\n      marginBottom: 10\n    }\n  }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement(_fluentui_react_components__WEBPACK_IMPORTED_MODULE_1__.MessageBarBody, null, err))), ok && (/*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement(_fluentui_react_components__WEBPACK_IMPORTED_MODULE_1__.MessageBar, {\n    intent: \"success\",\n    style: {\n      marginBottom: 10\n    }\n  }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement(_fluentui_react_components__WEBPACK_IMPORTED_MODULE_1__.MessageBarBody, null, ok))), rows.length === 0 ? (/*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement(\"div\", {\n    style: {\n      color: \"#605E5C\",\n      padding: \"16px 0\",\n      borderTop: \"1px solid #EDEBE9\"\n    }\n  }, \"No prioritizations under this requirement funding yet.\")) : (/*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement(\"div\", {\n    style: {\n      overflowX: \"auto\",\n      border: \"1px solid #EDEBE9\",\n      borderRadius: 4\n    }\n  }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement(\"table\", {\n    style: {\n      width: \"100%\",\n      borderCollapse: \"collapse\",\n      fontSize: 13\n    }\n  }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement(\"thead\", null, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement(\"tr\", {\n    style: {\n      background: \"#F3F2F1\",\n      color: \"#323130\"\n    }\n  }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement(\"th\", {\n    style: thStyle\n  }, \"State\"), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement(\"th\", {\n    style: thStyleNum\n  }, \"Requested\"), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement(\"th\", {\n    style: thStyleNum\n  }, \"Validated\"), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement(\"th\", {\n    style: thStyleNum\n  }, \"Funded (TDP)\"), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement(\"th\", {\n    style: thStyleNum\n  }, \"Unfunded\"))), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement(\"tbody\", null, rows.map(r => (/*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement(\"tr\", {\n    key: r.id,\n    style: {\n      borderTop: \"1px solid #EDEBE9\"\n    }\n  }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement(\"td\", {\n    style: tdStyle\n  }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement(\"div\", {\n    style: {\n      fontWeight: 600\n    }\n  }, r.stateName || \"—\"), r.statePriority != null && (/*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement(\"div\", {\n    style: {\n      color: \"#605E5C\",\n      fontSize: 11\n    }\n  }, \"Priority #\", r.statePriority))), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement(\"td\", {\n    style: tdStyleNum\n  }, fmtMoney(r.requested)), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement(\"td\", {\n    style: tdStyleNum\n  }, editMode ? (/*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement(_fluentui_react_components__WEBPACK_IMPORTED_MODULE_1__.Input, {\n    appearance: \"outline\",\n    value: String(r.validated),\n    onChange: (_e, d) => updateRow(r.id, \"validated\", d.value),\n    input: {\n      style: {\n        textAlign: \"right\",\n        fontVariantNumeric: \"tabular-nums\"\n      }\n    }\n  })) : fmtMoney(r.validated)), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement(\"td\", {\n    style: tdStyleNum\n  }, editMode ? (/*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement(_fluentui_react_components__WEBPACK_IMPORTED_MODULE_1__.Input, {\n    appearance: \"outline\",\n    value: String(r.funded),\n    onChange: (_e, d) => updateRow(r.id, \"funded\", d.value),\n    input: {\n      style: {\n        textAlign: \"right\",\n        fontVariantNumeric: \"tabular-nums\"\n      }\n    }\n  })) : fmtMoney(r.funded)), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement(\"td\", {\n    style: Object.assign(Object.assign({}, tdStyleNum), {\n      color: r.unfundedDisplay > 0 ? \"#A4262C\" : \"#107C10\"\n    })\n  }, fmtMoney(r.unfundedDisplay)))))), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement(\"tfoot\", null, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement(\"tr\", {\n    style: {\n      background: \"#FAF9F8\",\n      fontWeight: 700,\n      borderTop: \"2px solid #EDEBE9\"\n    }\n  }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement(\"td\", {\n    style: tdStyle\n  }, \"Total\"), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement(\"td\", {\n    style: tdStyleNum\n  }, fmtMoney(totals.requested)), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement(\"td\", {\n    style: tdStyleNum\n  }, fmtMoney(totals.validated)), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement(\"td\", {\n    style: Object.assign(Object.assign({}, tdStyleNum), {\n      color: overAllocated ? \"#A4262C\" : \"#323130\"\n    })\n  }, fmtMoney(totals.funded)), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement(\"td\", {\n    style: Object.assign(Object.assign({}, tdStyleNum), {\n      color: totals.unfunded > 0 ? \"#A4262C\" : \"#107C10\"\n    })\n  }, fmtMoney(totals.unfunded))))))), (rfCtx === null || rfCtx === void 0 ? void 0 : rfCtx.withholdingReason) && (/*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement(\"div\", {\n    style: {\n      marginTop: 10,\n      padding: \"8px 12px\",\n      background: \"#FAF9F8\",\n      border: \"1px solid #EDEBE9\",\n      borderRadius: 4\n    }\n  }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement(\"div\", {\n    style: {\n      fontSize: 11,\n      fontWeight: 600,\n      color: \"#605E5C\",\n      textTransform: \"uppercase\",\n      letterSpacing: 0.5\n    }\n  }, \"Withholding Reason\"), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement(\"div\", {\n    style: {\n      fontSize: 12,\n      color: \"#323130\"\n    }\n  }, rfCtx.withholdingReason)))));\n};\nvar thStyle = {\n  textAlign: \"left\",\n  padding: \"8px 12px\",\n  fontWeight: 600,\n  fontSize: 12,\n  borderBottom: \"1px solid #EDEBE9\"\n};\nvar thStyleNum = Object.assign(Object.assign({}, thStyle), {\n  textAlign: \"right\"\n});\nvar tdStyle = {\n  padding: \"8px 12px\",\n  verticalAlign: \"middle\"\n};\nvar tdStyleNum = Object.assign(Object.assign({}, tdStyle), {\n  textAlign: \"right\",\n  fontVariantNumeric: \"tabular-nums\"\n});\n\n//# sourceURL=webpack://pcf_tools_652ac3f36e1e4bca82eb3c1dc44e6fad/./ValidateAndFundGrid/ValidateAndFundGridApp.tsx?\n}");
+
+/***/ },
+
+/***/ "./ValidateAndFundGrid/index.ts"
+/*!**************************************!*\
+  !*** ./ValidateAndFundGrid/index.ts ***!
+  \**************************************/
+(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+eval("{__webpack_require__.r(__webpack_exports__);\n/* harmony export */ __webpack_require__.d(__webpack_exports__, {\n/* harmony export */   ValidateAndFundGrid: () => (/* binding */ ValidateAndFundGrid)\n/* harmony export */ });\n/* harmony import */ var react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! react */ \"react\");\n/* harmony import */ var react__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_0__);\n/* harmony import */ var _ValidateAndFundGridApp__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./ValidateAndFundGridApp */ \"./ValidateAndFundGrid/ValidateAndFundGridApp.tsx\");\n\n\nclass ValidateAndFundGrid {\n  init(context) {\n    this.context = context;\n    context.mode.trackContainerResize(true);\n  }\n  updateView(context) {\n    var _a, _b;\n    this.context = context;\n    var ctxAny = context.mode;\n    var props = {\n      dataset: context.parameters.prioritizations,\n      webAPI: context.webAPI,\n      navigation: context.navigation,\n      parentRequirementFundingId: (_a = ctxAny.contextInfo) === null || _a === void 0 ? void 0 : _a.entityId,\n      parentRequirementFundingName: (_b = ctxAny.contextInfo) === null || _b === void 0 ? void 0 : _b.entityRecordName\n    };\n    return /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement(_ValidateAndFundGridApp__WEBPACK_IMPORTED_MODULE_1__.ValidateAndFundGridApp, props);\n  }\n  getOutputs() {\n    return {};\n  }\n  destroy() {}\n}\n\n//# sourceURL=webpack://pcf_tools_652ac3f36e1e4bca82eb3c1dc44e6fad/./ValidateAndFundGrid/index.ts?\n}");
+
+/***/ },
+
+/***/ "@fluentui/react-components"
+/*!************************************!*\
+  !*** external "FluentUIReactv940" ***!
+  \************************************/
+(module) {
+
+module.exports = FluentUIReactv940;
+
+/***/ },
+
+/***/ "react"
+/*!***************************!*\
+  !*** external "Reactv16" ***!
+  \***************************/
+(module) {
+
+module.exports = Reactv16;
+
+/***/ }
+
+/******/ 	});
+/************************************************************************/
+/******/ 	// The module cache
+/******/ 	var __webpack_module_cache__ = {};
+/******/ 	
+/******/ 	// The require function
+/******/ 	function __webpack_require__(moduleId) {
+/******/ 		// Check if module is in cache
+/******/ 		var cachedModule = __webpack_module_cache__[moduleId];
+/******/ 		if (cachedModule !== undefined) {
+/******/ 			return cachedModule.exports;
+/******/ 		}
+/******/ 		// Create a new module (and put it into the cache)
+/******/ 		var module = __webpack_module_cache__[moduleId] = {
+/******/ 			// no module.id needed
+/******/ 			// no module.loaded needed
+/******/ 			exports: {}
+/******/ 		};
+/******/ 	
+/******/ 		// Execute the module function
+/******/ 		if (!(moduleId in __webpack_modules__)) {
+/******/ 			delete __webpack_module_cache__[moduleId];
+/******/ 			var e = new Error("Cannot find module '" + moduleId + "'");
+/******/ 			e.code = 'MODULE_NOT_FOUND';
+/******/ 			throw e;
+/******/ 		}
+/******/ 		__webpack_modules__[moduleId](module, module.exports, __webpack_require__);
+/******/ 	
+/******/ 		// Return the exports of the module
+/******/ 		return module.exports;
+/******/ 	}
+/******/ 	
+/************************************************************************/
+/******/ 	/* webpack/runtime/compat get default export */
+/******/ 	(() => {
+/******/ 		// getDefaultExport function for compatibility with non-harmony modules
+/******/ 		__webpack_require__.n = (module) => {
+/******/ 			var getter = module && module.__esModule ?
+/******/ 				() => (module['default']) :
+/******/ 				() => (module);
+/******/ 			__webpack_require__.d(getter, { a: getter });
+/******/ 			return getter;
+/******/ 		};
+/******/ 	})();
+/******/ 	
+/******/ 	/* webpack/runtime/define property getters */
+/******/ 	(() => {
+/******/ 		// define getter functions for harmony exports
+/******/ 		__webpack_require__.d = (exports, definition) => {
+/******/ 			for(var key in definition) {
+/******/ 				if(__webpack_require__.o(definition, key) && !__webpack_require__.o(exports, key)) {
+/******/ 					Object.defineProperty(exports, key, { enumerable: true, get: definition[key] });
+/******/ 				}
+/******/ 			}
+/******/ 		};
+/******/ 	})();
+/******/ 	
+/******/ 	/* webpack/runtime/hasOwnProperty shorthand */
+/******/ 	(() => {
+/******/ 		__webpack_require__.o = (obj, prop) => (Object.prototype.hasOwnProperty.call(obj, prop))
+/******/ 	})();
+/******/ 	
+/******/ 	/* webpack/runtime/make namespace object */
+/******/ 	(() => {
+/******/ 		// define __esModule on exports
+/******/ 		__webpack_require__.r = (exports) => {
+/******/ 			if(typeof Symbol !== 'undefined' && Symbol.toStringTag) {
+/******/ 				Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' });
+/******/ 			}
+/******/ 			Object.defineProperty(exports, '__esModule', { value: true });
+/******/ 		};
+/******/ 	})();
+/******/ 	
+/************************************************************************/
+/******/ 	
+/******/ 	// startup
+/******/ 	// Load entry module and return exports
+/******/ 	// This entry module can't be inlined because the eval devtool is used.
+/******/ 	var __webpack_exports__ = __webpack_require__("./ValidateAndFundGrid/index.ts");
+/******/ 	pcf_tools_652ac3f36e1e4bca82eb3c1dc44e6fad = __webpack_exports__;
+/******/ 	
+/******/ })()
+;
+if (window.ComponentFramework && window.ComponentFramework.registerControl) {
+	ComponentFramework.registerControl('ARNGCheckbook.ValidateAndFundGrid', pcf_tools_652ac3f36e1e4bca82eb3c1dc44e6fad.ValidateAndFundGrid);
+} else {
+	var ARNGCheckbook = ARNGCheckbook || {};
+	ARNGCheckbook.ValidateAndFundGrid = pcf_tools_652ac3f36e1e4bca82eb3c1dc44e6fad.ValidateAndFundGrid;
+	pcf_tools_652ac3f36e1e4bca82eb3c1dc44e6fad = undefined;
+}

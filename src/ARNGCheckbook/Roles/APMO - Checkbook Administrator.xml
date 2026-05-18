@@ -8,11 +8,13 @@
     <RolePrivilege name="prvAppendToapmo_GenericRVB" level="Global" />
     <RolePrivilege name="prvAppendToapmo_RVB" level="Global" />
     <RolePrivilege name="prvCreateSharePointData" level="Global" />
+    <RolePrivilege name="prvReadapmo_CAN" level="Global" />
     <RolePrivilege name="prvReadapmo_Contract" level="Global" />
     <RolePrivilege name="prvReadapmo_Directorate" level="Global" />
     <RolePrivilege name="prvReadapmo_Division" level="Global" />
     <RolePrivilege name="prvReadapmo_Funding" level="Global" />
     <RolePrivilege name="prvReadapmo_GenericRVB" level="Global" />
+    <RolePrivilege name="prvReadapmo_MDEPSAG" level="Global" />
     <RolePrivilege name="prvReadapmo_POC" level="Global" />
     <RolePrivilege name="prvReadapmo_PoP" level="Global" />
     <RolePrivilege name="prvReadapmo_Prejudice" level="Global" />

@@ -13,6 +13,7 @@
           <cell name="book_name" width="300" />
           <cell name="book_loe" width="100" />
           <cell name="book_focusarea" width="105" />
+          <cell name="book_mcploe" width="101" />
         </row>
       </grid>
     </layoutxml>
@@ -28,6 +29,7 @@
           </filter>
           <attribute name="book_loe" />
           <attribute name="book_focusarea" />
+          <attribute name="book_mcploe" />
         </entity>
       </fetch>
     </fetchxml>

@@ -162,7 +162,7 @@ namespace ARNGCheckbook.Plugins.Helpers
             {
                 Id = loaId,
                 Name = loaEntity.GetAttributeValue<string>(FundingLineAttributes.Name) ?? loaId.ToString(),
-                TotalTDP = loaEntity.GetAttributeValue<Money>(FundingLineAttributes.TDP)?.Value ?? 0m
+                TotalTDP = (decimal)loaEntity.GetAttributeValue<double>(FundingLineAttributes.TDP)
             };
         }
 
@@ -209,7 +209,7 @@ namespace ARNGCheckbook.Plugins.Helpers
                 {
                     Id = entity.Id,
                     Name = entity.GetAttributeValue<string>(FundingLineAttributes.Name) ?? entity.Id.ToString(),
-                    TotalTDP = entity.GetAttributeValue<Money>(FundingLineAttributes.TDP)?.Value ?? 0m
+                    TotalTDP = (decimal)entity.GetAttributeValue<double>(FundingLineAttributes.TDP)
                 });
             }
 
@@ -243,8 +243,8 @@ namespace ARNGCheckbook.Plugins.Helpers
             if (result.Entities.Count > 0)
             {
                 var aliasedValue = result.Entities[0].GetAttributeValue<AliasedValue>("totalTDP");
-                if (aliasedValue?.Value is Money money)
-                    return money.Value;
+                if (aliasedValue?.Value is double doubleValue)
+                    return (decimal)doubleValue;
                 if (aliasedValue?.Value is decimal decValue)
                     return decValue;
             }
@@ -336,12 +336,10 @@ namespace ARNGCheckbook.Plugins.Helpers
             if (result.Entities.Count > 0)
             {
                 var aliasedValue = result.Entities[0].GetAttributeValue<AliasedValue>("totalAmount");
-                if (aliasedValue?.Value is Money money)
-                    return money.Value;
-                if (aliasedValue?.Value is decimal decValue)
-                    return decValue;
                 if (aliasedValue?.Value is double doubleValue)
                     return (decimal)doubleValue;
+                if (aliasedValue?.Value is decimal decValue)
+                    return decValue;
             }
 
             return 0m;
@@ -376,8 +374,8 @@ namespace ARNGCheckbook.Plugins.Helpers
 
             // Update the LOA record
             var updateEntity = new Entity(EntityNames.FundingLine, loaId);
-            updateEntity[FundingLineAttributes.TDP] = new Money(totalTDP);
-            updateEntity[FundingLineAttributes.TDPRemaining] = new Money(tdpRemaining);
+            updateEntity[FundingLineAttributes.TDP] = (double)totalTDP;
+            updateEntity[FundingLineAttributes.TDPRemaining] = (double)tdpRemaining;
 
             service.Update(updateEntity);
             tracingService.Trace("LOA TDP values updated successfully");
@@ -418,7 +416,7 @@ namespace ARNGCheckbook.Plugins.Helpers
 
             // Update the LOA record
             var updateEntity = new Entity(EntityNames.FundingLine, loaId);
-            updateEntity[FundingLineAttributes.TDPRemaining] = new Money(tdpRemaining);
+            updateEntity[FundingLineAttributes.TDPRemaining] = (double)tdpRemaining;
 
             service.Update(updateEntity);
             tracingService.Trace("LOA TDP Remaining updated successfully");
@@ -458,8 +456,8 @@ namespace ARNGCheckbook.Plugins.Helpers
 
                 // Update the LOA record
                 var updateEntity = new Entity(EntityNames.FundingLine, loaId);
-                updateEntity[FundingLineAttributes.TDP] = new Money(totalTDP);
-                updateEntity[FundingLineAttributes.TDPRemaining] = new Money(tdpRemaining);
+                updateEntity[FundingLineAttributes.TDP] = (double)totalTDP;
+                updateEntity[FundingLineAttributes.TDPRemaining] = (double)tdpRemaining;
 
                 service.Update(updateEntity);
                 tracingService.Trace($"LOA {loaId}: TDP={totalTDP}, Remaining={tdpRemaining}");

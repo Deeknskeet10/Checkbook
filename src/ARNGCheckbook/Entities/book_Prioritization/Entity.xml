@@ -187,7 +187,7 @@
           <MaxValue>100000000000</MaxValue>
           <Accuracy>2</Accuracy>
           <displaynames>
-            <displayname description="Funded Amount (TDP)" languagecode="1033" />
+            <displayname description="Deprecated - Funded Amount (TDP)" languagecode="1033" />
           </displaynames>
           <Descriptions>
             <Description description="" languagecode="1033" />
@@ -268,6 +268,68 @@
           </displaynames>
           <Descriptions>
             <Description description="" languagecode="1033" />
+          </Descriptions>
+        </attribute>
+        <attribute PhysicalName="book_LockFunding">
+          <Type>bit</Type>
+          <Name>book_lockfunding</Name>
+          <LogicalName>book_lockfunding</LogicalName>
+          <RequiredLevel>none</RequiredLevel>
+          <DisplayMask>ValidForAdvancedFind|ValidForForm|ValidForGrid</DisplayMask>
+          <ImeMode>auto</ImeMode>
+          <ValidForUpdateApi>1</ValidForUpdateApi>
+          <ValidForReadApi>1</ValidForReadApi>
+          <ValidForCreateApi>1</ValidForCreateApi>
+          <IsCustomField>1</IsCustomField>
+          <IsAuditEnabled>1</IsAuditEnabled>
+          <IsSecured>1</IsSecured>
+          <IntroducedVersion>1.11.0.29</IntroducedVersion>
+          <IsCustomizable>1</IsCustomizable>
+          <IsRenameable>1</IsRenameable>
+          <CanModifySearchSettings>1</CanModifySearchSettings>
+          <CanModifyRequirementLevelSettings>1</CanModifyRequirementLevelSettings>
+          <CanModifyAdditionalSettings>1</CanModifyAdditionalSettings>
+          <SourceType>0</SourceType>
+          <IsGlobalFilterEnabled>0</IsGlobalFilterEnabled>
+          <IsSortableEnabled>0</IsSortableEnabled>
+          <CanModifyGlobalFilterSettings>1</CanModifyGlobalFilterSettings>
+          <CanModifyIsSortableSettings>1</CanModifyIsSortableSettings>
+          <IsDataSourceSecret>0</IsDataSourceSecret>
+          <AutoNumberFormat></AutoNumberFormat>
+          <IsSearchable>0</IsSearchable>
+          <IsFilterable>0</IsFilterable>
+          <IsRetrievable>0</IsRetrievable>
+          <IsLocalizable>0</IsLocalizable>
+          <AppDefaultValue>0</AppDefaultValue>
+          <optionset Name="book_prioritization_book_lockfunding">
+            <OptionSetType>bit</OptionSetType>
+            <IntroducedVersion>1.11.0.29</IntroducedVersion>
+            <IsCustomizable>1</IsCustomizable>
+            <ExternalTypeName></ExternalTypeName>
+            <displaynames>
+              <displayname description="Lock Funding" languagecode="1033" />
+            </displaynames>
+            <Descriptions>
+              <Description description="" languagecode="1033" />
+            </Descriptions>
+            <options>
+              <option value="1" ExternalValue="" IsHidden="0">
+                <labels>
+                  <label description="Yes" languagecode="1033" />
+                </labels>
+              </option>
+              <option value="0" ExternalValue="" IsHidden="0">
+                <labels>
+                  <label description="No" languagecode="1033" />
+                </labels>
+              </option>
+            </options>
+          </optionset>
+          <displaynames>
+            <displayname description="Lock Funding" languagecode="1033" />
+          </displaynames>
+          <Descriptions>
+            <Description description="Locks Validated and Funded" languagecode="1033" />
           </Descriptions>
         </attribute>
         <attribute PhysicalName="book_MDEP">
@@ -389,6 +451,86 @@
             <Description description="" languagecode="1033" />
           </Descriptions>
         </attribute>
+        <attribute PhysicalName="book_newFundedAmountTDP">
+          <Type>decimal</Type>
+          <Name>book_newfundedamounttdp</Name>
+          <LogicalName>book_newfundedamounttdp</LogicalName>
+          <RequiredLevel>none</RequiredLevel>
+          <DisplayMask>ValidForAdvancedFind|ValidForForm|ValidForGrid</DisplayMask>
+          <ImeMode>auto</ImeMode>
+          <ValidForUpdateApi>1</ValidForUpdateApi>
+          <ValidForReadApi>1</ValidForReadApi>
+          <ValidForCreateApi>1</ValidForCreateApi>
+          <IsCustomField>1</IsCustomField>
+          <IsAuditEnabled>1</IsAuditEnabled>
+          <IsSecured>0</IsSecured>
+          <IntroducedVersion>1.11.0.28</IntroducedVersion>
+          <IsCustomizable>1</IsCustomizable>
+          <IsRenameable>1</IsRenameable>
+          <CanModifySearchSettings>1</CanModifySearchSettings>
+          <CanModifyRequirementLevelSettings>1</CanModifyRequirementLevelSettings>
+          <CanModifyAdditionalSettings>1</CanModifyAdditionalSettings>
+          <SourceType>0</SourceType>
+          <IsGlobalFilterEnabled>0</IsGlobalFilterEnabled>
+          <IsSortableEnabled>0</IsSortableEnabled>
+          <CanModifyGlobalFilterSettings>1</CanModifyGlobalFilterSettings>
+          <CanModifyIsSortableSettings>1</CanModifyIsSortableSettings>
+          <IsDataSourceSecret>0</IsDataSourceSecret>
+          <AutoNumberFormat></AutoNumberFormat>
+          <IsSearchable>0</IsSearchable>
+          <IsFilterable>0</IsFilterable>
+          <IsRetrievable>0</IsRetrievable>
+          <IsLocalizable>0</IsLocalizable>
+          <MinValue>0</MinValue>
+          <MaxValue>100000000000</MaxValue>
+          <Accuracy>2</Accuracy>
+          <displaynames>
+            <displayname description="Funded Amount (TDP)" languagecode="1033" />
+          </displaynames>
+          <Descriptions>
+            <Description description="Amount of Funded provided to the Prioritization" languagecode="1033" />
+          </Descriptions>
+        </attribute>
+        <attribute PhysicalName="book_newRequestedAmount">
+          <Type>decimal</Type>
+          <Name>book_newrequestedamount</Name>
+          <LogicalName>book_newrequestedamount</LogicalName>
+          <RequiredLevel>none</RequiredLevel>
+          <DisplayMask>ValidForAdvancedFind|ValidForForm|ValidForGrid</DisplayMask>
+          <ImeMode>auto</ImeMode>
+          <ValidForUpdateApi>1</ValidForUpdateApi>
+          <ValidForReadApi>1</ValidForReadApi>
+          <ValidForCreateApi>1</ValidForCreateApi>
+          <IsCustomField>1</IsCustomField>
+          <IsAuditEnabled>1</IsAuditEnabled>
+          <IsSecured>1</IsSecured>
+          <IntroducedVersion>1.11.0.28</IntroducedVersion>
+          <IsCustomizable>1</IsCustomizable>
+          <IsRenameable>1</IsRenameable>
+          <CanModifySearchSettings>1</CanModifySearchSettings>
+          <CanModifyRequirementLevelSettings>1</CanModifyRequirementLevelSettings>
+          <CanModifyAdditionalSettings>1</CanModifyAdditionalSettings>
+          <SourceType>0</SourceType>
+          <IsGlobalFilterEnabled>0</IsGlobalFilterEnabled>
+          <IsSortableEnabled>0</IsSortableEnabled>
+          <CanModifyGlobalFilterSettings>1</CanModifyGlobalFilterSettings>
+          <CanModifyIsSortableSettings>1</CanModifyIsSortableSettings>
+          <IsDataSourceSecret>0</IsDataSourceSecret>
+          <AutoNumberFormat></AutoNumberFormat>
+          <IsSearchable>0</IsSearchable>
+          <IsFilterable>0</IsFilterable>
+          <IsRetrievable>0</IsRetrievable>
+          <IsLocalizable>0</IsLocalizable>
+          <MinValue>0</MinValue>
+          <MaxValue>100000000000</MaxValue>
+          <Accuracy>2</Accuracy>
+          <displaynames>
+            <displayname description="Requested Amount" languagecode="1033" />
+          </displaynames>
+          <Descriptions>
+            <Description description="Amount needed by the respective State" languagecode="1033" />
+          </Descriptions>
+        </attribute>
         <attribute PhysicalName="book_newUnfundedAmount">
           <Type>float</Type>
           <Name>book_newunfundedamount</Name>
@@ -423,7 +565,7 @@
           <MaxValue>100000000000</MaxValue>
           <Accuracy>2</Accuracy>
           <displaynames>
-            <displayname description="Unfunded Amount" languagecode="1033" />
+            <displayname description="Deprecated - Unfunded Amount" languagecode="1033" />
           </displaynames>
           <Descriptions>
             <Description description="Autocalc of Requested vs Funded" languagecode="1033" />
@@ -464,7 +606,7 @@
           <MaxValue>100000000000</MaxValue>
           <Accuracy>2</Accuracy>
           <displaynames>
-            <displayname description="Validated Amount" languagecode="1033" />
+            <displayname description="Deprecated - Validated Amount" languagecode="1033" />
           </displaynames>
           <Descriptions>
             <Description description="" languagecode="1033" />
@@ -671,7 +813,7 @@
           <Type>float</Type>
           <Name>book_requestedamount</Name>
           <LogicalName>book_requestedamount</LogicalName>
-          <RequiredLevel>required</RequiredLevel>
+          <RequiredLevel>none</RequiredLevel>
           <DisplayMask>ValidForAdvancedFind|ValidForForm|ValidForGrid</DisplayMask>
           <ImeMode>auto</ImeMode>
           <ValidForUpdateApi>1</ValidForUpdateApi>
@@ -679,7 +821,7 @@
           <ValidForCreateApi>1</ValidForCreateApi>
           <IsCustomField>1</IsCustomField>
           <IsAuditEnabled>1</IsAuditEnabled>
-          <IsSecured>1</IsSecured>
+          <IsSecured>0</IsSecured>
           <IntroducedVersion>1.9.4.1</IntroducedVersion>
           <IsCustomizable>1</IsCustomizable>
           <IsRenameable>1</IsRenameable>
@@ -701,7 +843,7 @@
           <MaxValue>100000000000</MaxValue>
           <Accuracy>2</Accuracy>
           <displaynames>
-            <displayname description="Requested Amount" languagecode="1033" />
+            <displayname description="Deprecated - Requested Amount" languagecode="1033" />
           </displaynames>
           <Descriptions>
             <Description description="" languagecode="1033" />
@@ -929,7 +1071,7 @@
           <Type>int</Type>
           <Name>book_statepriority</Name>
           <LogicalName>book_statepriority</LogicalName>
-          <RequiredLevel>required</RequiredLevel>
+          <RequiredLevel>recommended</RequiredLevel>
           <DisplayMask>ValidForAdvancedFind|ValidForForm|ValidForGrid</DisplayMask>
           <ImeMode>disabled</ImeMode>
           <ValidForUpdateApi>1</ValidForUpdateApi>
@@ -937,7 +1079,7 @@
           <ValidForCreateApi>1</ValidForCreateApi>
           <IsCustomField>1</IsCustomField>
           <IsAuditEnabled>1</IsAuditEnabled>
-          <IsSecured>1</IsSecured>
+          <IsSecured>0</IsSecured>
           <IntroducedVersion>1.0.0.0</IntroducedVersion>
           <IsCustomizable>1</IsCustomizable>
           <IsRenameable>1</IsRenameable>
@@ -1064,6 +1206,87 @@
           </displaynames>
           <Descriptions>
             <Description description="Boolean on whether a UFR has been generated already." languagecode="1033" />
+          </Descriptions>
+        </attribute>
+        <attribute PhysicalName="book_UnfundedAmount">
+          <Type>decimal</Type>
+          <Name>book_unfundedamount</Name>
+          <LogicalName>book_unfundedamount</LogicalName>
+          <RequiredLevel>none</RequiredLevel>
+          <DisplayMask>ValidForAdvancedFind|ValidForForm|ValidForGrid</DisplayMask>
+          <ImeMode>auto</ImeMode>
+          <ValidForUpdateApi>0</ValidForUpdateApi>
+          <ValidForReadApi>1</ValidForReadApi>
+          <ValidForCreateApi>0</ValidForCreateApi>
+          <IsCustomField>1</IsCustomField>
+          <IsAuditEnabled>0</IsAuditEnabled>
+          <IsSecured>0</IsSecured>
+          <IntroducedVersion>1.11.0.28</IntroducedVersion>
+          <IsCustomizable>1</IsCustomizable>
+          <IsRenameable>1</IsRenameable>
+          <CanModifySearchSettings>1</CanModifySearchSettings>
+          <CanModifyRequirementLevelSettings>1</CanModifyRequirementLevelSettings>
+          <CanModifyAdditionalSettings>1</CanModifyAdditionalSettings>
+          <SourceType>3</SourceType>
+          <IsGlobalFilterEnabled>0</IsGlobalFilterEnabled>
+          <IsSortableEnabled>0</IsSortableEnabled>
+          <CanModifyGlobalFilterSettings>1</CanModifyGlobalFilterSettings>
+          <CanModifyIsSortableSettings>1</CanModifyIsSortableSettings>
+          <IsDataSourceSecret>0</IsDataSourceSecret>
+          <AutoNumberFormat></AutoNumberFormat>
+          <IsSearchable>0</IsSearchable>
+          <IsFilterable>0</IsFilterable>
+          <IsRetrievable>0</IsRetrievable>
+          <IsLocalizable>0</IsLocalizable>
+          <MinValue>-100000000000</MinValue>
+          <MaxValue>100000000000</MaxValue>
+          <Accuracy>2</Accuracy>
+          <displaynames>
+            <displayname description="Unfunded Amount" languagecode="1033" />
+          </displaynames>
+          <Descriptions>
+            <Description description="Amount not yet funded" languagecode="1033" />
+          </Descriptions>
+          <FormulaDefinitionFileName>/Formulas/book_prioritization-FormulaDefinitions.yaml</FormulaDefinitionFileName>
+        </attribute>
+        <attribute PhysicalName="book_ValidatedAmount">
+          <Type>decimal</Type>
+          <Name>book_validatedamount</Name>
+          <LogicalName>book_validatedamount</LogicalName>
+          <RequiredLevel>none</RequiredLevel>
+          <DisplayMask>ValidForAdvancedFind|ValidForForm|ValidForGrid</DisplayMask>
+          <ImeMode>auto</ImeMode>
+          <ValidForUpdateApi>1</ValidForUpdateApi>
+          <ValidForReadApi>1</ValidForReadApi>
+          <ValidForCreateApi>1</ValidForCreateApi>
+          <IsCustomField>1</IsCustomField>
+          <IsAuditEnabled>1</IsAuditEnabled>
+          <IsSecured>0</IsSecured>
+          <IntroducedVersion>1.11.0.28</IntroducedVersion>
+          <IsCustomizable>1</IsCustomizable>
+          <IsRenameable>1</IsRenameable>
+          <CanModifySearchSettings>1</CanModifySearchSettings>
+          <CanModifyRequirementLevelSettings>1</CanModifyRequirementLevelSettings>
+          <CanModifyAdditionalSettings>1</CanModifyAdditionalSettings>
+          <SourceType>0</SourceType>
+          <IsGlobalFilterEnabled>0</IsGlobalFilterEnabled>
+          <IsSortableEnabled>0</IsSortableEnabled>
+          <CanModifyGlobalFilterSettings>1</CanModifyGlobalFilterSettings>
+          <CanModifyIsSortableSettings>1</CanModifyIsSortableSettings>
+          <IsDataSourceSecret>0</IsDataSourceSecret>
+          <AutoNumberFormat></AutoNumberFormat>
+          <IsSearchable>0</IsSearchable>
+          <IsFilterable>0</IsFilterable>
+          <IsRetrievable>0</IsRetrievable>
+          <IsLocalizable>0</IsLocalizable>
+          <MinValue>0</MinValue>
+          <MaxValue>100000000000</MaxValue>
+          <Accuracy>2</Accuracy>
+          <displaynames>
+            <displayname description="Validated Amount" languagecode="1033" />
+          </displaynames>
+          <Descriptions>
+            <Description description="Amount confirmed by NPM" languagecode="1033" />
           </Descriptions>
         </attribute>
         <attribute PhysicalName="book_WorkBreakdownStructureadditionalWBS">

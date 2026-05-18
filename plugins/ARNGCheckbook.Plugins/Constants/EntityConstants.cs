@@ -18,6 +18,9 @@ namespace ARNGCheckbook.Plugins.Constants
 
         // Requirements & Prioritization
         public const string Requirements = "book_requirements";
+        public const string RequirementDetails = "book_requirementdetails";
+        public const string ItemizedDetails = "book_itemizeddetails";
+        public const string Item = "book_item";
         public const string Prioritization = "book_prioritization";
         public const string SpendPlan = "book_spendplan";
         public const string UnfundedRequests = "book_unfundedrequests";
@@ -110,6 +113,14 @@ namespace ARNGCheckbook.Plugins.Constants
         public const string RequestedAmount = "book_requestedamount";
         public const string UnfundedAmount = "book_newunfundedamount";
         public const string ValidatedAmount = "book_newvalidatedamount";
+
+        // Decimal-typed funding fields — roll-up targets for Itemized Details.
+        // The float-typed twins above (RequestedAmount, FundedAmountTDP, ValidatedAmount)
+        // are being retired; do not use them for new logic.
+        public const string RolledRequestedAmount = "book_newrequestedamount";  // decimal
+        public const string RolledValidatedAmount = "book_validatedamount";     // decimal
+        public const string RolledFundedAmount = "book_newfundedamounttdp";     // decimal
+
         public const string RequirementFunding = "book_requirementfunding";
         public const string Requirement = "book_requirement";
         public const string State = "book_state";
@@ -125,6 +136,40 @@ namespace ARNGCheckbook.Plugins.Constants
         public const string Quantities = "book_quantities";
         public const string ReferenceNumber = "book_referencenumber";
         public const string StatutoryJustification = "book_statutoryjustification";
+        public const string StateCode = "statecode";
+    }
+
+    /// <summary>
+    /// Attribute schema names for book_requirementdetails entity.
+    /// Items an NPM adds to a Requirement; the source for Itemized Details.
+    /// </summary>
+    public static class RequirementDetailsAttributes
+    {
+        public const string Id = "book_requirementdetailsid";
+        public const string Name = "book_name";
+        public const string Requirement = "book_requirement";
+        public const string Item = "book_item";
+        public const string Category = "book_category";
+        public const string QuantityType = "book_quantitytype";
+        public const string TDC = "book_tdc";
+        public const string StateCode = "statecode";
+    }
+
+    /// <summary>
+    /// Attribute schema names for book_itemizeddetails entity.
+    /// Per-Prioritization copies of a Requirement's Requirement Details; their
+    /// funding amounts roll up to the parent Prioritization.
+    /// </summary>
+    public static class ItemizedDetailsAttributes
+    {
+        public const string Id = "book_itemizeddetailsid";
+        public const string Name = "book_name";
+        public const string Prioritization = "book_prioritization";
+        public const string RequirementItem = "book_requirementitem"; // lookup -> book_requirementdetails
+        public const string RequestedAmount = "book_requestedamount"; // decimal
+        public const string ValidatedAmount = "book_validatedamount"; // decimal
+        public const string FundedAmount = "book_fundedamount";       // decimal
+        public const string Quantity = "book_quantity";
         public const string StateCode = "statecode";
     }
 

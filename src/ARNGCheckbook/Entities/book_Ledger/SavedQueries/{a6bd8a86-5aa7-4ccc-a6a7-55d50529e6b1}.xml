@@ -10,8 +10,12 @@
     <layoutxml>
       <grid name="resultset" jump="book_name" select="1" icon="1" preview="1">
         <row name="result" id="book_ledgerid">
-          <cell name="book_name" width="300" />
-          <cell name="createdon" width="125" />
+          <cell name="book_lineofaccounting" width="150" />
+          <cell name="book_ledgertype" width="111" />
+          <cell name="book_ledgerdirection" width="137" />
+          <cell name="book_realignment" width="112" />
+          <cell name="book_turnin" width="100" />
+          <cell name="book_newamount" width="100" />
         </row>
       </grid>
     </layoutxml>
@@ -20,12 +24,15 @@
       <fetch version="1.0" mapping="logical">
         <entity name="book_ledger">
           <attribute name="book_ledgerid" />
-          <attribute name="book_name" />
-          <attribute name="createdon" />
-          <order attribute="book_name" descending="false" />
           <filter type="and">
             <condition attribute="statecode" operator="eq" value="1" />
           </filter>
+          <attribute name="book_realignment" />
+          <attribute name="book_turnin" />
+          <attribute name="book_lineofaccounting" />
+          <attribute name="book_ledgerdirection" />
+          <attribute name="book_ledgertype" />
+          <attribute name="book_newamount" />
         </entity>
       </fetch>
     </fetchxml>

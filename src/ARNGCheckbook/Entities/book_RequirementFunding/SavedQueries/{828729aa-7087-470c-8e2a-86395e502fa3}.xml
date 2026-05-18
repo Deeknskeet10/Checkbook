@@ -10,8 +10,8 @@
     <layoutxml>
       <grid name="book_requirementfundings" jump="book_name" select="1" icon="1" preview="0">
         <row name="book_requirementfunding" id="book_requirementfundingid">
-          <cell name="book_newfiscalyear" width="103" />
           <cell name="book_requirement" width="113" />
+          <cell name="book_newfiscalyear" width="103" />
           <cell name="book_name" width="300" />
         </row>
       </grid>

@@ -51,19 +51,19 @@
                       </cell>
                     </row>
                     <row>
-                      <cell id="{cc0cd4e4-b1ed-4275-a06b-eda6a943d13d}" locklevel="0" colspan="1" rowspan="1" labelid="{4c15fd34-8792-44db-83c4-e5c1335e1b68}">
+                      <cell id="{52a14036-9d25-4d12-a4e4-26ad358ebf96}" locklevel="0" colspan="1" rowspan="1">
                         <labels>
                           <label description="TDP" languagecode="1033" />
                         </labels>
-                        <control id="book_tdp" classid="{0D2C745A-E5A8-4C8F-BA63-C6D3BB604660}" datafieldname="book_tdp" disabled="false" />
+                        <control id="book_newtdp" classid="{C3EFE0C3-0EC6-42BE-8349-CBD9079DFD8E}" datafieldname="book_newtdp" disabled="false" />
                       </cell>
                     </row>
                     <row>
-                      <cell id="{199d3b84-b2ef-428d-bbc0-329e5f49e24e}" locklevel="0" colspan="1" rowspan="1" labelid="{fae50ffa-c61f-47d6-950a-98fd98f575e9}">
+                      <cell id="{13be7adb-0d40-4aac-b422-8b05969166c0}" locklevel="0" colspan="1" rowspan="1">
                         <labels>
                           <label description="TDP Remaining" languagecode="1033" />
                         </labels>
-                        <control id="book_tdpremaining" classid="{0D2C745A-E5A8-4C8F-BA63-C6D3BB604660}" datafieldname="book_tdpremaining" disabled="false" />
+                        <control id="book_newtdpremaining" classid="{C3EFE0C3-0EC6-42BE-8349-CBD9079DFD8E}" datafieldname="book_newtdpremaining" disabled="false" />
                       </cell>
                     </row>
                   </rows>

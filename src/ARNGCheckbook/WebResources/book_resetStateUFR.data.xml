@@ -1,0 +1,16 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<WebResource xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <WebResourceId>{e187b188-9827-f111-8341-001dd8204385}</WebResourceId>
+  <Name>book_resetStateUFR</Name>
+  <DisplayName>resetStateUFR</DisplayName>
+  <Description>Button process to reset a State UFR back to State Input</Description>
+  <LanguageCode>0</LanguageCode>
+  <WebResourceType>3</WebResourceType>
+  <IntroducedVersion>1.11.0.26</IntroducedVersion>
+  <IsEnabledForMobileClient>0</IsEnabledForMobileClient>
+  <IsAvailableForMobileOffline>0</IsAvailableForMobileOffline>
+  <IsCustomizable>1</IsCustomizable>
+  <CanBeDeleted>1</CanBeDeleted>
+  <IsHidden>0</IsHidden>
+  <FileName>/WebResources/book_resetStateUFRE187B188-9827-F111-8341-001DD8204385</FileName>
+</WebResource>

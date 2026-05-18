@@ -20,7 +20,7 @@
           "net462"
         ],
         "sources": {
-          "/nix/store/8xgg70dis4illcp0zxq1f2ifma90n07b-dotnet-sdk-10.0.103/share/dotnet/library-packs": {},
+          "/nix/store/rbrw06lpzjh3s5hf7rhl0hlnbc6xyfp8-dotnet-sdk-10.0.201/share/dotnet/library-packs": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
@@ -39,7 +39,7 @@
           "auditLevel": "low",
           "auditMode": "direct"
         },
-        "SdkAnalysisLevel": "10.0.100"
+        "SdkAnalysisLevel": "10.0.200"
       },
       "frameworks": {
         "net462": {
@@ -56,7 +56,7 @@
               "autoReferenced": true
             }
           },
-          "runtimeIdentifierGraphPath": "/nix/store/8xgg70dis4illcp0zxq1f2ifma90n07b-dotnet-sdk-10.0.103/share/dotnet/sdk/10.0.103/RuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "/nix/store/rbrw06lpzjh3s5hf7rhl0hlnbc6xyfp8-dotnet-sdk-10.0.201/share/dotnet/sdk/10.0.201/RuntimeIdentifierGraph.json"
         }
       }
     }

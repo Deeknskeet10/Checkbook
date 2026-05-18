@@ -1,0 +1,21 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<SdkMessageProcessingStep Name="Checkbook.Plugins.Recalculations.PrioritizationRollupToRequirementFunding: Update of book_prioritization" SdkMessageProcessingStepId="{590fe6af-b752-f111-bec5-001dd8204df7}" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <SdkMessageId>20bebb1b-ea3e-db11-86a7-000a3a5473e8</SdkMessageId>
+  <PluginTypeName>Checkbook.Plugins.Recalculations.PrioritizationRollupToRequirementFunding, Checkbook_Plugins, Version=1.1.0.0, Culture=neutral, PublicKeyToken=041fde141b612e28</PluginTypeName>
+  <PluginTypeId>368228d4-74ee-480a-b80d-b8f53ebd9582</PluginTypeId>
+  <PrimaryEntity>book_prioritization</PrimaryEntity>
+  <AsyncAutoDelete>0</AsyncAutoDelete>
+  <Description>Change to Funding on Prioritization</Description>
+  <FilteringAttributes>book_newfundedamounttdp,book_requirementfunding,book_validatedamount</FilteringAttributes>
+  <ImpersonatingUserIdName>Microsoft Flow CDS Integration Service DoD</ImpersonatingUserIdName>
+  <InvocationSource>1</InvocationSource>
+  <Mode>0</Mode>
+  <Rank>1</Rank>
+  <EventHandlerTypeCode>4602</EventHandlerTypeCode>
+  <Stage>40</Stage>
+  <IsCustomizable>1</IsCustomizable>
+  <IsHidden>0</IsHidden>
+  <SupportedDeployment>0</SupportedDeployment>
+  <IntroducedVersion>1.0</IntroducedVersion>
+  <SdkMessageProcessingStepImages />
+</SdkMessageProcessingStep>

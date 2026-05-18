@@ -100,14 +100,7 @@
                         </control>
                       </cell>
                     </row>
-                    <row>
-                      <cell id="{0dfd81c0-e40b-4568-a033-186654831a0c}" locklevel="0" colspan="1" rowspan="1">
-                        <labels>
-                          <label description="Amount" languagecode="1033" />
-                        </labels>
-                        <control id="book_amount" classid="{0D2C745A-E5A8-4C8F-BA63-C6D3BB604660}" datafieldname="book_amount" disabled="false" />
-                      </cell>
-                    </row>
+                    <row />
                   </rows>
                 </section>
                 <section name="null_section_4" id="29d3750e-2a4a-4015-9543-388558ccce2d" IsUserDefined="0" locklevel="0" showlabel="true" showbar="false" layout="varwidth" celllabelalignment="Left" celllabelposition="Left" columns="11" labelwidth="115">

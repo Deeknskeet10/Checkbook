@@ -7,6 +7,7 @@
     <RolePrivilege name="prvAppendActivity" level="Basic" />
     <RolePrivilege name="prvAppendactivityfileattachment" level="Basic" />
     <RolePrivilege name="prvAppendappnotification" level="Global" />
+    <RolePrivilege name="prvAppendAppUserSetting" level="Global" />
     <RolePrivilege name="prvAppendbook_APE" level="Global" />
     <RolePrivilege name="prvAppendbook_arngcheckbookdomopsapproval" level="Global" />
     <RolePrivilege name="prvAppendbook_arngcheckbookoprapprovalworkflow" level="Global" />
@@ -47,6 +48,7 @@
     <RolePrivilege name="prvAppendToActivity" level="Basic" />
     <RolePrivilege name="prvAppendToactivityfileattachment" level="Basic" />
     <RolePrivilege name="prvAppendToappnotification" level="Global" />
+    <RolePrivilege name="prvAppendToAppUserSetting" level="Global" />
     <RolePrivilege name="prvAppendToAsyncOperation" level="Deep" />
     <RolePrivilege name="prvAppendTobook_APE" level="Global" />
     <RolePrivilege name="prvAppendTobook_arngcheckbookdomopsapproval" level="Global" />
@@ -80,6 +82,7 @@
     <RolePrivilege name="prvAppendToNewProcess" level="Global" />
     <RolePrivilege name="prvAppendToNote" level="Global" />
     <RolePrivilege name="prvAppendToOfficeDocument" level="Global" />
+    <RolePrivilege name="prvAppendToSettingDefinition" level="Global" />
     <RolePrivilege name="prvAppendToSharePointDocument" level="Global" />
     <RolePrivilege name="prvAppendToSharePointDocumentLocation" level="Global" />
     <RolePrivilege name="prvAppendToSharePointSite" level="Global" />
@@ -115,6 +118,7 @@
     <RolePrivilege name="prvCreateActivity" level="Basic" />
     <RolePrivilege name="prvCreateactivityfileattachment" level="Basic" />
     <RolePrivilege name="prvCreateappnotification" level="Global" />
+    <RolePrivilege name="prvCreateAppUserSetting" level="Global" />
     <RolePrivilege name="prvCreateAsyncOperation" level="Deep" />
     <RolePrivilege name="prvCreatebook_arngcheckbookdomopsapproval" level="Global" />
     <RolePrivilege name="prvCreatebook_arngcheckbookoprapprovalworkflow" level="Global" />
@@ -175,6 +179,7 @@
     <RolePrivilege name="prvReadAppConfigMaster" level="Global" />
     <RolePrivilege name="prvReadAppModule" level="Global" />
     <RolePrivilege name="prvReadappnotification" level="Global" />
+    <RolePrivilege name="prvReadAppUserSetting" level="Global" />
     <RolePrivilege name="prvReadAsyncOperation" level="Deep" />
     <RolePrivilege name="prvReadAttribute" level="Global" />
     <RolePrivilege name="prvReadAttributeMap" level="Global" />
@@ -216,8 +221,6 @@
     <RolePrivilege name="prvReadbook_SAG" level="Global" />
     <RolePrivilege name="prvReadbook_SpendPlan" level="Global" />
     <RolePrivilege name="prvReadbook_State" level="Global" />
-    <RolePrivilege name="prvReadbook_Supplies" level="Global" />
-    <RolePrivilege name="prvReadbook_SupplyItems" level="Global" />
     <RolePrivilege name="prvReadbook_TDC" level="Global" />
     <RolePrivilege name="prvReadbook_Turnin" level="Global" />
     <RolePrivilege name="prvReadbook_turninapprovalprocess" level="Global" />
@@ -258,6 +261,7 @@
     <RolePrivilege name="prvReadSdkMessage" level="Global" />
     <RolePrivilege name="prvReadSdkMessageProcessingStep" level="Global" />
     <RolePrivilege name="prvReadSdkMessageProcessingStepImage" level="Global" />
+    <RolePrivilege name="prvReadSettingDefinition" level="Global" />
     <RolePrivilege name="prvReadSharePointData" level="Global" />
     <RolePrivilege name="prvReadSharePointDocument" level="Global" />
     <RolePrivilege name="prvReadSharePointDocumentLocation" level="Global" />
@@ -298,6 +302,7 @@
     <RolePrivilege name="prvWriteActivity" level="Basic" />
     <RolePrivilege name="prvWriteactivityfileattachment" level="Basic" />
     <RolePrivilege name="prvWriteappnotification" level="Global" />
+    <RolePrivilege name="prvWriteAppUserSetting" level="Global" />
     <RolePrivilege name="prvWriteAsyncOperation" level="Deep" />
     <RolePrivilege name="prvWritebook_arngcheckbookdomopsapproval" level="Global" />
     <RolePrivilege name="prvWritebook_arngcheckbookoprapprovalworkflow" level="Global" />
@@ -305,6 +310,7 @@
     <RolePrivilege name="prvWritebook_arngcheckbookufrvalidation" level="Global" />
     <RolePrivilege name="prvWritebook_ObligationAuthority" level="Local" />
     <RolePrivilege name="prvWritebook_Prioritization" level="Global" />
+    <RolePrivilege name="prvWritebook_PriorityBIN" level="Global" />
     <RolePrivilege name="prvWritebook_Realignments" level="Local" />
     <RolePrivilege name="prvWritebook_realignmentsreview" level="Global" />
     <RolePrivilege name="prvWritebook_RequirementFunding" level="Local" />

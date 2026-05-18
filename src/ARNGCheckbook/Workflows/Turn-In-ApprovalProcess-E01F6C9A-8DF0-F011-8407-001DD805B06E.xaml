@@ -93,7 +93,7 @@
                     <sco:Collection x:TypeArguments="Variable" x:Key="Variables" />
                     <sco:Collection x:TypeArguments="Activity" x:Key="Activities">
                       <Sequence DisplayName="ControlStep11">
-                        <mcwb:Control ClassId="0d2c745a-e5a8-4c8f-ba63-c6d3bb604660" ControlDisplayName="Amount" ControlId="book_amount" DataFieldName="book_amount" IsSystemControl="False" IsUnbound="False" SystemStepType="0">
+                        <mcwb:Control ClassId="c3efe0c3-0ec6-42be-8349-cbd9079dfd8e" ControlDisplayName="Amount" ControlId="book_newamount" DataFieldName="book_newamount" IsSystemControl="False" IsUnbound="False" SystemStepType="0">
                           <mcwb:Control.Parameters>
                             <InArgument x:TypeArguments="x:String">
                               <Literal x:TypeArguments="x:String" Value="" />

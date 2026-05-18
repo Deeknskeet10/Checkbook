@@ -1,9 +1,9 @@
-book_nameunfundedrequest: =If(IsBlank(book_HigherLevelUFR), Concatenate("UFR - ", book_RequirementFunding.book_name), Concatenate("UFR - ", book_StateRequirement.book_name))
 book_newrisk: |-
     =If(IsBlank(book_HigherLevelUFR), 
     Switch(book_Requirement.book_PriorityBIN.book_name, "1 - Must Do / Must Fund", [@global_book_risk].'0', "2 - Need to Do / Partially Fund", [@global_book_risk].'1', [@global_book_risk].'2'),
     
     Switch(book_unresourcedactions, [@global_book_unresourcedactions].'1', [@global_book_risk].'1', [@global_book_unresourcedactions].'0', [@global_book_risk].'0', [@global_book_risk].'2'))
 book_newunfundedamount: =If(IsBlank(book_State), book_RequirementFunding.book_unfundedamount, book_StateRequirement.book_newunfundedamount)
-book_oprunfundedamount: =If(book_StateRequirement.book_newvalidatedamount - book_StateRequirement.book_fundedamounttdp <= 0, 0, book_StateRequirement.book_newvalidatedamount - book_StateRequirement.book_fundedamounttdp)
-book_ufrstatusstate: =If(!IsBlank(book_stateaction), "State Actioned", If(!IsBlank(book_fundcenterreview) && IsBlank(book_stateaction), "Awaiting State Approval", If(IsBlank(book_fundcenterreview) && !IsBlank(book_staterecommendation), "Fund Center Review", If(IsBlank(book_staterecommendation), "State PM Review"))))
+book_oprunfundedamount: =If(book_StateRequirement.book_validatedamount - book_StateRequirement.book_newfundedamounttdp <= 0, 0, book_StateRequirement.book_validatedamount - book_StateRequirement.book_newfundedamounttdp)
+book_ufrstatusstate: =If(!IsBlank(book_stateaction), "State Actioned", If(!IsBlank(book_fundcenterreview) && IsBlank(book_stateaction), "Awaiting State Approval", If(IsBlank(book_fundcenterreview) && !IsBlank(book_staterecommendation), "Fund Center Review", If(IsBlank(book_staterecommendation), "State Input"))))
+book_unfundedamount: =If(IsBlank(book_State), book_RequirementFunding.book_newunfundedamount, book_StateRequirement.book_unfundedamount)

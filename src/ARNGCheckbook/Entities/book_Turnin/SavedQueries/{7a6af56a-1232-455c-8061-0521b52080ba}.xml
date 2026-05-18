@@ -13,7 +13,7 @@
           <cell name="book_fundcenter" width="110" />
           <cell name="book_fund" width="100" />
           <cell name="book_pg" width="100" />
-          <cell name="book_amount" width="100" />
+          <cell name="book_newamount" width="100" />
           <cell name="book_identifiedturninamount" width="191" />
           <cell name="book_stateapproved" width="128" />
           <cell name="book_beapproved" width="118" />
@@ -28,13 +28,13 @@
           <filter type="and">
             <condition attribute="statecode" operator="eq" value="0" />
           </filter>
-          <attribute name="book_amount" />
           <attribute name="book_stateapproved" />
           <attribute name="book_fundcenter" />
           <attribute name="book_fund" />
           <attribute name="book_pg" />
           <attribute name="book_identifiedturninamount" />
           <attribute name="book_beapproved" />
+          <attribute name="book_newamount" />
         </entity>
       </fetch>
     </fetchxml>

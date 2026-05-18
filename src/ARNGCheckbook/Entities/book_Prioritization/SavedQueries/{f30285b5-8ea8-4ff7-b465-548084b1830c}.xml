@@ -13,7 +13,7 @@
           <cell name="book_requirementfunding" width="163" />
           <cell name="book_state" width="120" />
           <cell name="book_fundcenter" width="148" />
-          <cell name="book_requestedamount" width="148" />
+          <cell name="book_newrequestedamount" width="148" />
         </row>
       </grid>
     </layoutxml>
@@ -27,8 +27,8 @@
           </filter>
           <attribute name="book_fundcenter" />
           <attribute name="book_state" />
-          <attribute name="book_requestedamount" />
           <attribute name="book_requirementfunding" />
+          <attribute name="book_newrequestedamount" />
         </entity>
       </fetch>
     </fetchxml>

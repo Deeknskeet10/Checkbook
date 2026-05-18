@@ -1,0 +1,30 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<SdkMessageProcessingStep Name="Checkbook.Plugins.Validation.RequirementFundingTDPValidator: Update of book_requirementfunding" SdkMessageProcessingStepId="{6182bc4a-b852-f111-bec6-001dd8204135}" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <SdkMessageId>20bebb1b-ea3e-db11-86a7-000a3a5473e8</SdkMessageId>
+  <PluginTypeName>Checkbook.Plugins.Validation.RequirementFundingTDPValidator, Checkbook_Plugins, Version=1.1.0.0, Culture=neutral, PublicKeyToken=041fde141b612e28</PluginTypeName>
+  <PluginTypeId>879601d7-38a3-4fcc-9e14-95d5c663c716</PluginTypeId>
+  <PrimaryEntity>book_requirementfunding</PrimaryEntity>
+  <AsyncAutoDelete>0</AsyncAutoDelete>
+  <Description>Update of RF</Description>
+  <FilteringAttributes>book_newfundedamount,book_lineofaccounting,book_newtdp</FilteringAttributes>
+  <ImpersonatingUserIdName>Microsoft Flow CDS Integration Service DoD</ImpersonatingUserIdName>
+  <InvocationSource>1</InvocationSource>
+  <Mode>0</Mode>
+  <Rank>1</Rank>
+  <EventHandlerTypeCode>4602</EventHandlerTypeCode>
+  <Stage>20</Stage>
+  <IsCustomizable>1</IsCustomizable>
+  <IsHidden>0</IsHidden>
+  <SupportedDeployment>0</SupportedDeployment>
+  <IntroducedVersion>1.0</IntroducedVersion>
+  <SdkMessageProcessingStepImages>
+    <SdkMessageProcessingStepImage Name="PreImage">
+      <SdkMessageProcessingStepImageId>{629f715d-b852-f111-bec5-001dd8204df7}</SdkMessageProcessingStepImageId>
+      <Attributes>book_newfundedamount,book_lineofaccounting,book_newtdp</Attributes>
+      <EntityAlias>PreImage</EntityAlias>
+      <ImageType>0</ImageType>
+      <MessagePropertyName>Target</MessagePropertyName>
+      <IsCustomizable>1</IsCustomizable>
+    </SdkMessageProcessingStepImage>
+  </SdkMessageProcessingStepImages>
+</SdkMessageProcessingStep>

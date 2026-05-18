@@ -10,8 +10,11 @@
     <layoutxml>
       <grid name="resultset" jump="book_name" select="1" icon="1" preview="1">
         <row name="result" id="book_realignmentsid">
-          <cell name="book_name" width="300" />
-          <cell name="createdon" width="125" />
+          <cell name="book_newdebitedrequirement" width="161" />
+          <cell name="book_newcreditedrequirement" width="165" />
+          <cell name="book_debitedprioritization" width="162" />
+          <cell name="book_creditedprioritization" width="166" />
+          <cell name="book_newamount" width="100" />
         </row>
       </grid>
     </layoutxml>
@@ -20,12 +23,14 @@
       <fetch version="1.0" mapping="logical">
         <entity name="book_realignments">
           <attribute name="book_realignmentsid" />
-          <attribute name="book_name" />
-          <attribute name="createdon" />
-          <order attribute="book_name" descending="false" />
           <filter type="and">
             <condition attribute="statecode" operator="eq" value="1" />
           </filter>
+          <attribute name="book_newcreditedrequirement" />
+          <attribute name="book_newdebitedrequirement" />
+          <attribute name="book_debitedprioritization" />
+          <attribute name="book_creditedprioritization" />
+          <attribute name="book_newamount" />
         </entity>
       </fetch>
     </fetchxml>

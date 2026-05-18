@@ -28,30 +28,17 @@
                       </cell>
                     </row>
                     <row>
-                      <cell locklevel="0" id="{6f6f9775-c2c8-493d-be8b-34f9cf054418}">
-                        <labels>
-                          <label description="" languagecode="1033" />
-                        </labels>
-                      </cell>
-                      <cell id="{7241650c-23a4-4b58-98f1-19930a5ddad4}" locklevel="0" colspan="1" rowspan="1">
-                        <labels>
-                          <label description="Unfunded Amount" languagecode="1033" />
-                        </labels>
-                        <control id="book_newunfundedamount" classid="{0D2C745A-E5A8-4C8F-BA63-C6D3BB604660}" datafieldname="book_newunfundedamount" disabled="false" />
-                      </cell>
-                    </row>
-                    <row>
                       <cell id="{a59bac5c-1a5e-47b7-8927-00621648bbbf}" locklevel="0" colspan="1" rowspan="1">
                         <labels>
                           <label description="State" languagecode="1033" />
                         </labels>
                         <control id="book_state" classid="{270BD3DB-D9AF-4782-9025-509E298DEC0A}" datafieldname="book_state" disabled="false" />
                       </cell>
-                      <cell id="{811bde8b-ff44-4294-8ad5-8e882bcbc980}" locklevel="0" colspan="1" rowspan="1">
+                      <cell id="{0d066030-4172-434f-8ed1-1e3475142e9b}" locklevel="0" colspan="1" rowspan="1">
                         <labels>
-                          <label description="Priority" languagecode="1033" />
+                          <label description="Unfunded Amount" languagecode="1033" />
                         </labels>
-                        <control id="book_priority" classid="{C6D124CA-7EDA-4A60-AEA9-7FB8D318B68F}" datafieldname="book_priority" disabled="false" />
+                        <control id="book_unfundedamount" classid="{C3EFE0C3-0EC6-42BE-8349-CBD9079DFD8E}" datafieldname="book_unfundedamount" disabled="false" />
                       </cell>
                     </row>
                     <row>
@@ -61,10 +48,11 @@
                         </labels>
                         <control id="book_dropdeaddate" classid="{5B773807-9FB2-42DB-97C3-7A91EFF8ADFF}" datafieldname="book_dropdeaddate" disabled="false" />
                       </cell>
-                      <cell locklevel="0" id="{0228c948-7f58-4ffa-813b-b44ab24a1469}">
+                      <cell id="{811bde8b-ff44-4294-8ad5-8e882bcbc980}" locklevel="0" colspan="1" rowspan="1">
                         <labels>
-                          <label description="" languagecode="1033" />
+                          <label description="Priority" languagecode="1033" />
                         </labels>
+                        <control id="book_priority" classid="{C6D124CA-7EDA-4A60-AEA9-7FB8D318B68F}" datafieldname="book_priority" disabled="false" />
                       </cell>
                     </row>
                     <row>

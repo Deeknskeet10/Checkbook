@@ -47,7 +47,7 @@
           <MaxValue>100000000000</MaxValue>
           <Accuracy>2</Accuracy>
           <displaynames>
-            <displayname description="Amount" languagecode="1033" />
+            <displayname description="deprecated- Amount" languagecode="1033" />
           </displaynames>
           <Descriptions>
             <Description description="" languagecode="1033" />
@@ -249,7 +249,7 @@
           <LookupStyle>single</LookupStyle>
           <LookupTypes />
           <displaynames>
-            <displayname description="Credited MDEP" languagecode="1033" />
+            <displayname description="Deprecated - Credited MDEP" languagecode="1033" />
           </displaynames>
           <Descriptions>
             <Description description="" languagecode="1033" />
@@ -327,7 +327,7 @@
           <LookupStyle>single</LookupStyle>
           <LookupTypes />
           <displaynames>
-            <displayname description="Debited MDEP" languagecode="1033" />
+            <displayname description="Deprecated - Debited MDEP" languagecode="1033" />
           </displaynames>
           <Descriptions>
             <Description description="" languagecode="1033" />
@@ -412,6 +412,44 @@
           </Descriptions>
           <FormulaDefinitionFileName>/Formulas/book_realignments-FormulaDefinitions.yaml</FormulaDefinitionFileName>
         </attribute>
+        <attribute PhysicalName="book_Fund">
+          <Type>lookup</Type>
+          <Name>book_fund</Name>
+          <LogicalName>book_fund</LogicalName>
+          <RequiredLevel>required</RequiredLevel>
+          <DisplayMask>ValidForAdvancedFind|ValidForForm|ValidForGrid</DisplayMask>
+          <ValidForUpdateApi>1</ValidForUpdateApi>
+          <ValidForReadApi>1</ValidForReadApi>
+          <ValidForCreateApi>1</ValidForCreateApi>
+          <IsCustomField>1</IsCustomField>
+          <IsAuditEnabled>0</IsAuditEnabled>
+          <IsSecured>0</IsSecured>
+          <IntroducedVersion>1.1.0.28</IntroducedVersion>
+          <IsCustomizable>1</IsCustomizable>
+          <IsRenameable>1</IsRenameable>
+          <CanModifySearchSettings>1</CanModifySearchSettings>
+          <CanModifyRequirementLevelSettings>1</CanModifyRequirementLevelSettings>
+          <CanModifyAdditionalSettings>1</CanModifyAdditionalSettings>
+          <SourceType>0</SourceType>
+          <IsGlobalFilterEnabled>0</IsGlobalFilterEnabled>
+          <IsSortableEnabled>0</IsSortableEnabled>
+          <CanModifyGlobalFilterSettings>1</CanModifyGlobalFilterSettings>
+          <CanModifyIsSortableSettings>1</CanModifyIsSortableSettings>
+          <IsDataSourceSecret>0</IsDataSourceSecret>
+          <AutoNumberFormat></AutoNumberFormat>
+          <IsSearchable>0</IsSearchable>
+          <IsFilterable>0</IsFilterable>
+          <IsRetrievable>0</IsRetrievable>
+          <IsLocalizable>0</IsLocalizable>
+          <LookupStyle>single</LookupStyle>
+          <LookupTypes />
+          <displaynames>
+            <displayname description="Fund" languagecode="1033" />
+          </displaynames>
+          <Descriptions>
+            <Description description="Fund to limit realignments by" languagecode="1033" />
+          </Descriptions>
+        </attribute>
         <attribute PhysicalName="book_Name">
           <Type>nvarchar</Type>
           <Name>book_name</Name>
@@ -453,11 +491,51 @@
             <Description description="" languagecode="1033" />
           </Descriptions>
         </attribute>
+        <attribute PhysicalName="book_newAmount">
+          <Type>decimal</Type>
+          <Name>book_newamount</Name>
+          <LogicalName>book_newamount</LogicalName>
+          <RequiredLevel>required</RequiredLevel>
+          <DisplayMask>ValidForAdvancedFind|ValidForForm|ValidForGrid</DisplayMask>
+          <ImeMode>auto</ImeMode>
+          <ValidForUpdateApi>1</ValidForUpdateApi>
+          <ValidForReadApi>1</ValidForReadApi>
+          <ValidForCreateApi>1</ValidForCreateApi>
+          <IsCustomField>1</IsCustomField>
+          <IsAuditEnabled>1</IsAuditEnabled>
+          <IsSecured>0</IsSecured>
+          <IntroducedVersion>1.1.0.28</IntroducedVersion>
+          <IsCustomizable>1</IsCustomizable>
+          <IsRenameable>1</IsRenameable>
+          <CanModifySearchSettings>1</CanModifySearchSettings>
+          <CanModifyRequirementLevelSettings>1</CanModifyRequirementLevelSettings>
+          <CanModifyAdditionalSettings>1</CanModifyAdditionalSettings>
+          <SourceType>0</SourceType>
+          <IsGlobalFilterEnabled>0</IsGlobalFilterEnabled>
+          <IsSortableEnabled>0</IsSortableEnabled>
+          <CanModifyGlobalFilterSettings>1</CanModifyGlobalFilterSettings>
+          <CanModifyIsSortableSettings>1</CanModifyIsSortableSettings>
+          <IsDataSourceSecret>0</IsDataSourceSecret>
+          <AutoNumberFormat></AutoNumberFormat>
+          <IsSearchable>0</IsSearchable>
+          <IsFilterable>0</IsFilterable>
+          <IsRetrievable>0</IsRetrievable>
+          <IsLocalizable>0</IsLocalizable>
+          <MinValue>-100000000000</MinValue>
+          <MaxValue>100000000000</MaxValue>
+          <Accuracy>2</Accuracy>
+          <displaynames>
+            <displayname description="Amount" languagecode="1033" />
+          </displaynames>
+          <Descriptions>
+            <Description description="Decimal amount requested to be realigned" languagecode="1033" />
+          </Descriptions>
+        </attribute>
         <attribute PhysicalName="book_newCreditedLOA">
           <Type>lookup</Type>
           <Name>book_newcreditedloa</Name>
           <LogicalName>book_newcreditedloa</LogicalName>
-          <RequiredLevel>none</RequiredLevel>
+          <RequiredLevel>required</RequiredLevel>
           <DisplayMask>ValidForAdvancedFind|ValidForForm|ValidForGrid</DisplayMask>
           <ImeMode>auto</ImeMode>
           <ValidForUpdateApi>1</ValidForUpdateApi>
@@ -496,7 +574,7 @@
           <Type>lookup</Type>
           <Name>book_newcreditedrequirement</Name>
           <LogicalName>book_newcreditedrequirement</LogicalName>
-          <RequiredLevel>none</RequiredLevel>
+          <RequiredLevel>required</RequiredLevel>
           <DisplayMask>ValidForAdvancedFind|ValidForForm|ValidForGrid</DisplayMask>
           <ImeMode>auto</ImeMode>
           <ValidForUpdateApi>1</ValidForUpdateApi>
@@ -535,7 +613,7 @@
           <Type>lookup</Type>
           <Name>book_newdebitedloa</Name>
           <LogicalName>book_newdebitedloa</LogicalName>
-          <RequiredLevel>none</RequiredLevel>
+          <RequiredLevel>required</RequiredLevel>
           <DisplayMask>ValidForAdvancedFind|ValidForForm|ValidForGrid</DisplayMask>
           <ImeMode>auto</ImeMode>
           <ValidForUpdateApi>1</ValidForUpdateApi>
@@ -574,7 +652,7 @@
           <Type>lookup</Type>
           <Name>book_newdebitedrequirement</Name>
           <LogicalName>book_newdebitedrequirement</LogicalName>
-          <RequiredLevel>none</RequiredLevel>
+          <RequiredLevel>required</RequiredLevel>
           <DisplayMask>ValidForAdvancedFind|ValidForForm|ValidForGrid</DisplayMask>
           <ImeMode>auto</ImeMode>
           <ValidForUpdateApi>1</ValidForUpdateApi>
@@ -607,6 +685,45 @@
           </displaynames>
           <Descriptions>
             <Description description="Requirement Funding where funding is removed from." languagecode="1033" />
+          </Descriptions>
+        </attribute>
+        <attribute PhysicalName="book_newStateApproved">
+          <Type>picklist</Type>
+          <Name>book_newstateapproved</Name>
+          <LogicalName>book_newstateapproved</LogicalName>
+          <RequiredLevel>none</RequiredLevel>
+          <DisplayMask>ValidForAdvancedFind|ValidForForm|ValidForGrid</DisplayMask>
+          <ImeMode>auto</ImeMode>
+          <ValidForUpdateApi>1</ValidForUpdateApi>
+          <ValidForReadApi>1</ValidForReadApi>
+          <ValidForCreateApi>1</ValidForCreateApi>
+          <IsCustomField>1</IsCustomField>
+          <IsAuditEnabled>1</IsAuditEnabled>
+          <IsSecured>1</IsSecured>
+          <IntroducedVersion>1.11.0.35</IntroducedVersion>
+          <IsCustomizable>1</IsCustomizable>
+          <IsRenameable>1</IsRenameable>
+          <CanModifySearchSettings>1</CanModifySearchSettings>
+          <CanModifyRequirementLevelSettings>1</CanModifyRequirementLevelSettings>
+          <CanModifyAdditionalSettings>1</CanModifyAdditionalSettings>
+          <SourceType>0</SourceType>
+          <IsGlobalFilterEnabled>0</IsGlobalFilterEnabled>
+          <IsSortableEnabled>0</IsSortableEnabled>
+          <CanModifyGlobalFilterSettings>1</CanModifyGlobalFilterSettings>
+          <CanModifyIsSortableSettings>1</CanModifyIsSortableSettings>
+          <IsDataSourceSecret>0</IsDataSourceSecret>
+          <AutoNumberFormat></AutoNumberFormat>
+          <IsSearchable>0</IsSearchable>
+          <IsFilterable>0</IsFilterable>
+          <IsRetrievable>0</IsRetrievable>
+          <IsLocalizable>0</IsLocalizable>
+          <AppDefaultValue>-1</AppDefaultValue>
+          <OptionSetName>book_approvals</OptionSetName>
+          <displaynames>
+            <displayname description="State Approved" languagecode="1033" />
+          </displaynames>
+          <Descriptions>
+            <Description description="Choice field for State Approved" languagecode="1033" />
           </Descriptions>
         </attribute>
         <attribute PhysicalName="book_PayeeConcurrence">
@@ -808,7 +925,7 @@
           <Type>ntext</Type>
           <Name>book_remarks</Name>
           <LogicalName>book_remarks</LogicalName>
-          <RequiredLevel>none</RequiredLevel>
+          <RequiredLevel>recommended</RequiredLevel>
           <DisplayMask>ValidForAdvancedFind|ValidForForm|ValidForGrid</DisplayMask>
           <ImeMode>auto</ImeMode>
           <ValidForUpdateApi>1</ValidForUpdateApi>
@@ -843,6 +960,68 @@
             <Description description="" languagecode="1033" />
           </Descriptions>
         </attribute>
+        <attribute PhysicalName="book_SameFundAndSAG">
+          <Type>bit</Type>
+          <Name>book_samefundandsag</Name>
+          <LogicalName>book_samefundandsag</LogicalName>
+          <RequiredLevel>none</RequiredLevel>
+          <DisplayMask>ValidForAdvancedFind|ValidForForm|ValidForGrid</DisplayMask>
+          <ImeMode>auto</ImeMode>
+          <ValidForUpdateApi>1</ValidForUpdateApi>
+          <ValidForReadApi>1</ValidForReadApi>
+          <ValidForCreateApi>1</ValidForCreateApi>
+          <IsCustomField>1</IsCustomField>
+          <IsAuditEnabled>1</IsAuditEnabled>
+          <IsSecured>0</IsSecured>
+          <IntroducedVersion>1.11.0.28</IntroducedVersion>
+          <IsCustomizable>1</IsCustomizable>
+          <IsRenameable>1</IsRenameable>
+          <CanModifySearchSettings>1</CanModifySearchSettings>
+          <CanModifyRequirementLevelSettings>1</CanModifyRequirementLevelSettings>
+          <CanModifyAdditionalSettings>1</CanModifyAdditionalSettings>
+          <SourceType>0</SourceType>
+          <IsGlobalFilterEnabled>0</IsGlobalFilterEnabled>
+          <IsSortableEnabled>0</IsSortableEnabled>
+          <CanModifyGlobalFilterSettings>1</CanModifyGlobalFilterSettings>
+          <CanModifyIsSortableSettings>1</CanModifyIsSortableSettings>
+          <IsDataSourceSecret>0</IsDataSourceSecret>
+          <AutoNumberFormat></AutoNumberFormat>
+          <IsSearchable>0</IsSearchable>
+          <IsFilterable>0</IsFilterable>
+          <IsRetrievable>0</IsRetrievable>
+          <IsLocalizable>0</IsLocalizable>
+          <AppDefaultValue>0</AppDefaultValue>
+          <optionset Name="book_realignments_book_samefundandsag">
+            <OptionSetType>bit</OptionSetType>
+            <IntroducedVersion>1.11.0.28</IntroducedVersion>
+            <IsCustomizable>1</IsCustomizable>
+            <ExternalTypeName></ExternalTypeName>
+            <displaynames>
+              <displayname description="Same SAG / Fund" languagecode="1033" />
+            </displaynames>
+            <Descriptions>
+              <Description description="" languagecode="1033" />
+            </Descriptions>
+            <options>
+              <option value="1" ExternalValue="" IsHidden="0">
+                <labels>
+                  <label description="Yes" languagecode="1033" />
+                </labels>
+              </option>
+              <option value="0" ExternalValue="" IsHidden="0">
+                <labels>
+                  <label description="No" languagecode="1033" />
+                </labels>
+              </option>
+            </options>
+          </optionset>
+          <displaynames>
+            <displayname description="Same SAG / Fund" languagecode="1033" />
+          </displaynames>
+          <Descriptions>
+            <Description description="Boolean Flag for same SAG / Fund between two Prioritizations" languagecode="1033" />
+          </Descriptions>
+        </attribute>
         <attribute PhysicalName="book_StateApproved">
           <Type>bit</Type>
           <Name>book_stateapproved</Name>
@@ -855,7 +1034,7 @@
           <ValidForCreateApi>1</ValidForCreateApi>
           <IsCustomField>1</IsCustomField>
           <IsAuditEnabled>1</IsAuditEnabled>
-          <IsSecured>1</IsSecured>
+          <IsSecured>0</IsSecured>
           <IntroducedVersion>1.11.0.17</IntroducedVersion>
           <IsCustomizable>1</IsCustomizable>
           <IsRenameable>1</IsRenameable>
@@ -899,7 +1078,7 @@
             </options>
           </optionset>
           <displaynames>
-            <displayname description="State Approved" languagecode="1033" />
+            <displayname description="Deprecated - State Approved" languagecode="1033" />
           </displaynames>
           <Descriptions>
             <Description description="State Approval of Realignment" languagecode="1033" />

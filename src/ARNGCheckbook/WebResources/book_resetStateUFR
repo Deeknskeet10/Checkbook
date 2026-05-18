@@ -1,0 +1,69 @@
+var UnfundedRequestActions = {
+    restartProcess: function (primaryControl) {
+        var formContext = primaryControl;
+        var recordId = formContext.data.entity.getId().replace("{", "").replace("}", "");
+        var activeProcess = formContext.data.process.getActiveProcess();
+
+        if (!activeProcess) {
+            console.log("No active Business Process Flow found.");
+            return;
+        }
+
+        var processInstanceId = formContext.data.process.getInstanceId();
+        var processDefinitionId = activeProcess.getId();
+
+        // 1. Confirm with the user
+        var confirmStrings = { text: "This will delete the current process progress and reset fields. Continue?", title: "Restart Process" };
+        var confirmOptions = { height: 200, width: 450 };
+
+        Xrm.Navigation.openConfirmDialog(confirmStrings, confirmOptions).then(function (success) {
+            if (success.confirmed) {
+                Xrm.Utility.showProgressIndicator("Restarting Process...");
+
+                // 2. Delete the BPF Instance record
+                // Note: The BPF entity name is usually the name of the BPF itself, 
+                // but we can target the instance ID directly if we know the BPF logical name.
+                Xrm.WebApi.deleteRecord("book_arngcheckbookufr", processInstanceId).then(
+                    function success(result) {
+                        // 3. Reset the fields on the Unfunded Request record
+                        var data = {
+                            "book_stateaction": null,
+                            "book_staterecommendation": null,
+                            /*"book_npmstaterecommendation": null,
+                            "book_outcome": null,
+                            "book_outcomenarrative": null, */ //Commented out pending clarification
+                            "book_fundcenterreview": null,
+                            "statecode": 0, // Set to Active
+                        };
+
+                        Xrm.WebApi.updateRecord("book_unfundedrequests", recordId, data).then(
+                            function success(result) {
+                                Xrm.Utility.closeProgressIndicator();
+                                // Define the entity and record to re-open
+                                var entityOptions = {
+                                    entityName: "book_unfundedrequests",
+                                    entityId: recordId
+                                };
+
+                                // Use openForm to force a clean UI reload
+                                Xrm.Navigation.openForm(entityOptions).then(
+                                    function (success) {
+                                        console.log("Form reloaded and BPF re-initialized.");
+                                    },
+                                    function (error) {
+                                        console.error("Reload Error: " + error.message);
+                                    }
+                                );
+
+                            },
+                            function (error) {
+                                Xrm.Utility.closeProgressIndicator();
+                                console.error("Error deleting BPF instance: " + error.message);
+                            }
+                        );
+                    });
+            }
+        });
+        
+    }
+}

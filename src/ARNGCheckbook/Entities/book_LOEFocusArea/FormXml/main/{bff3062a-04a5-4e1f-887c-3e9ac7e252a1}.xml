@@ -28,6 +28,14 @@
                       </cell>
                     </row>
                     <row>
+                      <cell id="{c5b5b3d8-11de-4be1-8e31-5684ff713ea2}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="Name" languagecode="1033" />
+                        </labels>
+                        <control id="book_name" classid="{4273EDBD-AC1D-40D3-9FB2-095C621B552D}" datafieldname="book_name" disabled="false" />
+                      </cell>
+                    </row>
+                    <row>
                       <cell id="{c46c4614-0998-4c89-a8e9-223df1b081ae}" locklevel="0" colspan="1" rowspan="1">
                         <labels>
                           <label description="LOE" languagecode="1033" />
@@ -41,6 +49,14 @@
                           <label description="Focus Area" languagecode="1033" />
                         </labels>
                         <control id="book_focusarea" classid="{3EF39988-22BB-4F0B-BBBE-64B5A3748AEE}" datafieldname="book_focusarea" disabled="false" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{79da7433-dfca-4d4b-8eb3-4c54e09f1574}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="MCP LOE" languagecode="1033" />
+                        </labels>
+                        <control id="book_mcploe" classid="{67FAC785-CD58-4F9F-ABB3-4B7DDC6ED5ED}" datafieldname="book_mcploe" disabled="false" />
                       </cell>
                     </row>
                   </rows>

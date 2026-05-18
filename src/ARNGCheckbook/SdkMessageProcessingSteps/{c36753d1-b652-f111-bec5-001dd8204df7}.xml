@@ -1,0 +1,30 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<SdkMessageProcessingStep Name="Checkbook.Plugins.Validation.RealignmentValidator: Update of book_realignments" SdkMessageProcessingStepId="{c36753d1-b652-f111-bec5-001dd8204df7}" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <SdkMessageId>20bebb1b-ea3e-db11-86a7-000a3a5473e8</SdkMessageId>
+  <PluginTypeName>Checkbook.Plugins.Validation.RealignmentValidator, Checkbook_Plugins, Version=1.1.0.0, Culture=neutral, PublicKeyToken=041fde141b612e28</PluginTypeName>
+  <PluginTypeId>01c69e47-a17a-4f3d-8ce6-ac4683a8ebda</PluginTypeId>
+  <PrimaryEntity>book_realignments</PrimaryEntity>
+  <AsyncAutoDelete>0</AsyncAutoDelete>
+  <Description>Validation of Realignment </Description>
+  <FilteringAttributes>book_bedecision,book_samefundandsag,book_newstateapproved</FilteringAttributes>
+  <ImpersonatingUserIdName>Microsoft Flow CDS Integration Service DoD</ImpersonatingUserIdName>
+  <InvocationSource>1</InvocationSource>
+  <Mode>0</Mode>
+  <Rank>1</Rank>
+  <EventHandlerTypeCode>4602</EventHandlerTypeCode>
+  <Stage>20</Stage>
+  <IsCustomizable>1</IsCustomizable>
+  <IsHidden>0</IsHidden>
+  <SupportedDeployment>0</SupportedDeployment>
+  <IntroducedVersion>1.0</IntroducedVersion>
+  <SdkMessageProcessingStepImages>
+    <SdkMessageProcessingStepImage Name="RealignmentPre">
+      <SdkMessageProcessingStepImageId>{53d0dbe7-b652-f111-bec6-001dd8204135}</SdkMessageProcessingStepImageId>
+      <Attributes>book_bedecision,book_creditedprioritization,book_debitedprioritization,book_samefundandsag,book_newstateapproved</Attributes>
+      <EntityAlias>PreImage</EntityAlias>
+      <ImageType>0</ImageType>
+      <MessagePropertyName>Target</MessagePropertyName>
+      <IsCustomizable>1</IsCustomizable>
+    </SdkMessageProcessingStepImage>
+  </SdkMessageProcessingStepImages>
+</SdkMessageProcessingStep>

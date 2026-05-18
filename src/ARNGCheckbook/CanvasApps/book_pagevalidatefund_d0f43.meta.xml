@@ -1,17 +1,17 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <CanvasApp xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
   <Name>book_pagevalidatefund_d0f43</Name>
-  <AppVersion>2026-01-05T18:33:02Z</AppVersion>
+  <AppVersion>2026-05-05T15:05:35Z</AppVersion>
   <Status>Ready</Status>
-  <CreatedByClientVersion>3.25111.6.0</CreatedByClientVersion>
-  <MinClientVersion>3.25111.6.0</MinClientVersion>
-  <Tags>{"primaryDeviceWidth":"910.6666666666666","primaryDeviceHeight":"768","supportsPortrait":"true","supportsLandscape":"true","primaryFormFactor":"Tablet","showStatusBar":"false","publisherVersion":"3.25111.6","minimumRequiredApiVersion":"2.2.0","hasComponent":"false","hasUnlockedComponent":"false","isUnifiedRootApp":"false","sienaVersion":"20251107T211042Z-3.25102.17.0"}</Tags>
+  <CreatedByClientVersion>3.26042.14.0</CreatedByClientVersion>
+  <MinClientVersion>3.26042.14.0</MinClientVersion>
+  <Tags>{"primaryDeviceWidth":"910.6666666666666","primaryDeviceHeight":"768","supportsPortrait":"true","supportsLandscape":"true","primaryFormFactor":"Tablet","showStatusBar":"false","publisherVersion":"3.26042.14","minimumRequiredApiVersion":"2.2.0","hasComponent":"false","hasUnlockedComponent":"false","isUnifiedRootApp":"false","sienaVersion":"20260429T020547Z-3.26042.14.0","m365CopilotSettingValue":"0"}</Tags>
   <IsCdsUpgraded>0</IsCdsUpgraded>
   <GalleryItemId xsi:nil="true"></GalleryItemId>
   <BackgroundColor>RGBA(0,176,240,1)</BackgroundColor>
   <DisplayName>Page - Validate &amp; Fund</DisplayName>
   <Description>Enables Funding data entry for Requirements and associated Prioritizations within the ARNG Checkbook.</Description>
-  <CommitMessage></CommitMessage>
+  <CommitMessage xsi:nil="true"></CommitMessage>
   <Publisher></Publisher>
   <AuthorizationReferences>[]</AuthorizationReferences>
   <ConnectionReferences>{}</ConnectionReferences>
@@ -24,7 +24,7 @@
   <AdminControlBypassConsent>0</AdminControlBypassConsent>
   <EmbeddedApp xsi:nil="true"></EmbeddedApp>
   <IntroducedVersion>1.0</IntroducedVersion>
-  <CdsDependencies>{"cdsdependencies":[{"componenttype":1,"logicalname":"book_prioritization"},{"componenttype":1,"logicalname":"book_state"},{"componenttype":1,"logicalname":"book_fundcenter"},{"componenttype":1,"logicalname":"book_requirementfunding"}]}</CdsDependencies>
+  <CdsDependencies>{"cdsdependencies":[{"logicalname":"book_prioritization","componenttype":1},{"logicalname":"book_state","componenttype":1},{"logicalname":"book_fundcenter","componenttype":1},{"logicalname":"book_requirementfunding","componenttype":1}]}</CdsDependencies>
   <IsCustomizable>1</IsCustomizable>
   <BackgroundImageUri>/CanvasApps/book_pagevalidatefund_d0f43_BackgroundImageUri</BackgroundImageUri>
   <DocumentUri>/CanvasApps/book_pagevalidatefund_d0f43_DocumentUri.msapp</DocumentUri>

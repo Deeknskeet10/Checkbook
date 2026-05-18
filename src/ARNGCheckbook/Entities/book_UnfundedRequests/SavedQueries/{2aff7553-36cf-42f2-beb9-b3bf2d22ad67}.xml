@@ -15,7 +15,7 @@
           <cell name="book_state" width="100" />
           <cell name="book_dropdeaddate" width="132" />
           <cell name="book_oprunfundedamount" width="177" />
-          <cell name="book_newunfundedamount" width="146" />
+          <cell name="book_unfundedamount" width="146" />
           <cell name="book_outcome" width="100" />
           <cell name="book_outcomenarrative" width="148" />
         </row>
@@ -33,10 +33,10 @@
           <attribute name="book_state" />
           <attribute name="book_name" />
           <attribute name="book_higherlevelufr" />
-          <attribute name="book_newunfundedamount" />
           <attribute name="book_outcome" />
           <attribute name="book_outcomenarrative" />
           <attribute name="book_oprunfundedamount" />
+          <attribute name="book_unfundedamount" />
         </entity>
       </fetch>
     </fetchxml>

@@ -11,7 +11,7 @@
       <grid name="resultset" jump="book_name" select="1" icon="1" preview="1">
         <row name="result" id="book_decisionid">
           <cell name="book_fundingline" width="178" />
-          <cell name="book_amount" width="99" />
+          <cell name="book_decisionamount" width="140" />
           <cell name="book_description" width="300" />
         </row>
       </grid>
@@ -25,8 +25,8 @@
             <condition attribute="statecode" operator="eq" value="0" />
           </filter>
           <attribute name="book_fundingline" />
-          <attribute name="book_amount" />
           <attribute name="book_description" />
+          <attribute name="book_decisionamount" />
         </entity>
       </fetch>
     </fetchxml>

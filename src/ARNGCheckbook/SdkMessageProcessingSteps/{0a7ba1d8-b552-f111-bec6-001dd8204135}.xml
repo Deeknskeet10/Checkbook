@@ -1,0 +1,21 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<SdkMessageProcessingStep Name="Checkbook.Plugins.Recalculations.LedgerCreateFundingLineUpdater: Create of book_ledger" SdkMessageProcessingStepId="{0a7ba1d8-b552-f111-bec6-001dd8204135}" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <SdkMessageId>9ebdbb1b-ea3e-db11-86a7-000a3a5473e8</SdkMessageId>
+  <PluginTypeName>Checkbook.Plugins.Recalculations.LedgerCreateFundingLineUpdater, Checkbook_Plugins, Version=1.1.0.0, Culture=neutral, PublicKeyToken=041fde141b612e28</PluginTypeName>
+  <PluginTypeId>4d178c0a-7eaf-474d-815d-9a127209ef9c</PluginTypeId>
+  <PrimaryEntity>book_ledger</PrimaryEntity>
+  <AsyncAutoDelete>0</AsyncAutoDelete>
+  <Description>Update of LOA when Ledger Creates</Description>
+  <FilteringAttributes></FilteringAttributes>
+  <ImpersonatingUserIdName>Microsoft Flow CDS Integration Service DoD</ImpersonatingUserIdName>
+  <InvocationSource>1</InvocationSource>
+  <Mode>0</Mode>
+  <Rank>1</Rank>
+  <EventHandlerTypeCode>4602</EventHandlerTypeCode>
+  <Stage>40</Stage>
+  <IsCustomizable>1</IsCustomizable>
+  <IsHidden>0</IsHidden>
+  <SupportedDeployment>0</SupportedDeployment>
+  <IntroducedVersion>1.0</IntroducedVersion>
+  <SdkMessageProcessingStepImages />
+</SdkMessageProcessingStep>

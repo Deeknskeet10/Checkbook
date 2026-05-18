@@ -54,11 +54,24 @@ Book.SpendPlan = Book.SpendPlan || {};
         });
 
         // Register onChange for total field
-        var totalAttr = formContext.getAttribute("book_total");
+        var totalAttr = formContext.getAttribute("book_newtotaltdp");
         if (totalAttr) {
             totalAttr.addOnChange(onMonthChange);
         }
 
+        // Hide Prioritization QV if not Prioritization UFR
+        var spendPlanType = formContext.getAttribute("book_spendplantype");
+        var qvToHide = formContext.getControl("qvPri");
+        if(qvToHide){
+            if (spendPlanType == "Prioritization") 
+            {
+                qvToHide.setVisibility(true);
+            }
+            else {
+                qvToHide.setVisibility(false);
+            }
+        }
+        
         // Run initial validation
         validateSpendPlan(formContext);
     };
@@ -128,7 +141,7 @@ Book.SpendPlan = Book.SpendPlan || {};
      * Calculates spend plan totals from form values
      */
     function calculateSpendPlanTotals(formContext) {
-        var total = formContext.getAttribute("book_total")?.getValue();
+        var total = formContext.getAttribute("book_newtotaltdp")?.getValue();
         
         var spendPlanTotal = 0;
         var monthlyBreakdown = {};

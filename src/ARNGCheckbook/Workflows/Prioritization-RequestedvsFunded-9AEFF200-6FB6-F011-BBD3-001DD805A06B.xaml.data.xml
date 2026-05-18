@@ -29,7 +29,7 @@
     <Description languagecode="1033" description="Prevent State Users from reducing Requested Amount below Funded Amount without submitting a Turn-In." />
   </Descriptions>
   <labels>
-    <steplabels id="{21ddb957-8a79-4a0f-8298-f88be6e3332e}">
+    <steplabels id="{a7ea35e0-2884-421a-bdfd-99370b97e972}">
       <label languagecode="1033" description="Requested Amount cannot be less than Funded Amount.  Create a Turn-In if reduction is necessary." />
     </steplabels>
   </labels>

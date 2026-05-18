@@ -1,0 +1,43 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<savedqueries xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <savedquery>
+    <IsCustomizable>1</IsCustomizable>
+    <CanBeDeleted>1</CanBeDeleted>
+    <isquickfindquery>0</isquickfindquery>
+    <isprivate>0</isprivate>
+    <isdefault>0</isdefault>
+    <savedqueryid>{ac0a2882-9924-f111-8341-001dd8204135}</savedqueryid>
+    <layoutxml>
+      <grid name="resultset" jump="book_name" select="1" icon="1" preview="1">
+        <row name="result" id="book_prioritybinid">
+          <cell name="book_name" width="200" />
+          <cell name="book_rwgbin" width="100" />
+          <cell name="book_description" width="106" />
+        </row>
+      </grid>
+    </layoutxml>
+    <querytype>0</querytype>
+    <fetchxml>
+      <fetch version="1.0" output-format="xml-platform" mapping="logical" distinct="true">
+        <entity name="book_prioritybin">
+          <attribute name="book_name" />
+          <attribute name="book_prioritybinid" />
+          <attribute name="book_rwgbin" />
+          <filter type="and">
+            <condition attribute="book_rwgbin" operator="eq" value="1" />
+            <condition attribute="statecode" operator="eq" value="0" />
+          </filter>
+          <order attribute="book_name" descending="true" />
+          <attribute name="book_description" />
+        </entity>
+      </fetch>
+    </fetchxml>
+    <IntroducedVersion>1.1.0.6</IntroducedVersion>
+    <LocalizedNames>
+      <LocalizedName description="RWG BIN" languagecode="1033" />
+    </LocalizedNames>
+    <Descriptions>
+      <Description description="RWG Bins" languagecode="1033" />
+    </Descriptions>
+  </savedquery>
+</savedqueries>

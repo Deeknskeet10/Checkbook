@@ -1,0 +1,52 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<savedqueries xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <savedquery>
+    <IsCustomizable>1</IsCustomizable>
+    <CanBeDeleted>0</CanBeDeleted>
+    <isquickfindquery>0</isquickfindquery>
+    <isprivate>0</isprivate>
+    <isdefault>1</isdefault>
+    <savedqueryid>{5e3fbf1f-16eb-4012-9113-02085d8ea79a}</savedqueryid>
+    <layoutxml>
+      <grid name="book_itemizeddetailses" jump="book_name" select="1" icon="1" preview="1">
+        <row name="book_itemizeddetails" id="book_itemizeddetailsid">
+          <cell name="book_requirementitem" width="142" />
+          <cell name="a_65de7bd019f14f668a96610e1739977d.book_category" width="206" />
+          <cell name="a_65de7bd019f14f668a96610e1739977d.book_tdc" width="183" />
+          <cell name="book_requestedamount" width="148" />
+          <cell name="book_validatedamount" width="143" />
+          <cell name="book_fundedamount" width="132" />
+          <cell name="a_65de7bd019f14f668a96610e1739977d.book_quantitytype" width="235" />
+          <cell name="book_quantity" width="100" />
+          <cell name="book_gfebsobsdoc" width="142" />
+        </row>
+      </grid>
+    </layoutxml>
+    <querytype>2</querytype>
+    <fetchxml>
+      <fetch version="1.0" mapping="logical">
+        <entity name="book_itemizeddetails">
+          <attribute name="book_itemizeddetailsid" />
+          <filter type="and">
+            <condition attribute="statecode" operator="eq" value="0" />
+          </filter>
+          <attribute name="book_fundedamount" />
+          <attribute name="book_gfebsobsdoc" />
+          <attribute name="book_quantity" />
+          <attribute name="book_validatedamount" />
+          <attribute name="book_requestedamount" />
+          <attribute name="book_requirementitem" />
+          <link-entity alias="a_65de7bd019f14f668a96610e1739977d" name="book_requirementdetails" to="book_requirementitem" from="book_requirementdetailsid" link-type="outer" visible="false">
+            <attribute name="book_category" />
+            <attribute name="book_quantitytype" />
+            <attribute name="book_tdc" />
+          </link-entity>
+        </entity>
+      </fetch>
+    </fetchxml>
+    <IntroducedVersion>1.11.0.35</IntroducedVersion>
+    <LocalizedNames>
+      <LocalizedName description="Itemized Details Associated View" languagecode="1033" />
+    </LocalizedNames>
+  </savedquery>
+</savedqueries>

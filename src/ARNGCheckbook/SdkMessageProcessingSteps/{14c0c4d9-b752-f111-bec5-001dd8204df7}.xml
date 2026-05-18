@@ -1,0 +1,21 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<SdkMessageProcessingStep Name="Checkbook.Plugins.Validation.PrioritizationFundingValidator: Create of book_prioritization" SdkMessageProcessingStepId="{14c0c4d9-b752-f111-bec5-001dd8204df7}" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <SdkMessageId>9ebdbb1b-ea3e-db11-86a7-000a3a5473e8</SdkMessageId>
+  <PluginTypeName>Checkbook.Plugins.Validation.PrioritizationFundingValidator, Checkbook_Plugins, Version=1.1.0.0, Culture=neutral, PublicKeyToken=041fde141b612e28</PluginTypeName>
+  <PluginTypeId>08410e6d-76a6-430d-a449-1715b5916e6d</PluginTypeId>
+  <PrimaryEntity>book_prioritization</PrimaryEntity>
+  <AsyncAutoDelete>0</AsyncAutoDelete>
+  <Description>Create of Prirotiation</Description>
+  <FilteringAttributes>book_newfundedamounttdp,book_validatedamount</FilteringAttributes>
+  <ImpersonatingUserIdName>Microsoft Flow CDS Integration Service DoD</ImpersonatingUserIdName>
+  <InvocationSource>1</InvocationSource>
+  <Mode>0</Mode>
+  <Rank>1</Rank>
+  <EventHandlerTypeCode>4602</EventHandlerTypeCode>
+  <Stage>20</Stage>
+  <IsCustomizable>1</IsCustomizable>
+  <IsHidden>0</IsHidden>
+  <SupportedDeployment>0</SupportedDeployment>
+  <IntroducedVersion>1.0</IntroducedVersion>
+  <SdkMessageProcessingStepImages />
+</SdkMessageProcessingStep>

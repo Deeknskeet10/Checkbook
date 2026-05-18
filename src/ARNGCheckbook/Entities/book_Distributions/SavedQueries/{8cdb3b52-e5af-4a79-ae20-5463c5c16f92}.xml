@@ -11,7 +11,11 @@
       <grid name="resultset" jump="book_name" select="1" icon="1" preview="1">
         <row name="result" id="book_distributionsid">
           <cell name="book_name" width="300" />
-          <cell name="createdon" width="125" />
+          <cell name="book_fund" width="100" />
+          <cell name="book_newpgsag" width="100" />
+          <cell name="book_fundcenter" width="110" />
+          <cell name="book_fundingevent" width="123" />
+          <cell name="book_newamount" width="100" />
         </row>
       </grid>
     </layoutxml>
@@ -21,11 +25,15 @@
         <entity name="book_distributions">
           <attribute name="book_distributionsid" />
           <attribute name="book_name" />
-          <attribute name="createdon" />
           <order attribute="book_name" descending="false" />
           <filter type="and">
             <condition attribute="statecode" operator="eq" value="1" />
           </filter>
+          <attribute name="book_fund" />
+          <attribute name="book_fundcenter" />
+          <attribute name="book_fundingevent" />
+          <attribute name="book_newpgsag" />
+          <attribute name="book_newamount" />
         </entity>
       </fetch>
     </fetchxml>

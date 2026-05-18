@@ -67,14 +67,5 @@
     <steplabels id="{bc6fbc71-0e30-4971-b9c1-9c821ce9ac29}">
       <label languagecode="1033" description="NPM Recommendation" />
     </steplabels>
-    <steplabels id="{7d5f4561-eb6b-4a11-b524-cb7c1d1b6ccd}">
-      <label languagecode="1033" description="Outcome" />
-    </steplabels>
-    <steplabels id="{d4dc7220-328d-4c3b-80dc-60c3c8ab91fa}">
-      <label languagecode="1033" description="Outcome" />
-    </steplabels>
-    <steplabels id="{693b5b0b-0012-4d34-9acd-ef1f22b7d69f}">
-      <label languagecode="1033" description="Outcome Narrative" />
-    </steplabels>
   </labels>
 </Workflow>

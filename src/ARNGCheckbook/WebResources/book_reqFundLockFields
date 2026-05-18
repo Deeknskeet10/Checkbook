@@ -2,8 +2,8 @@ function lockAmountFields(executionContext) {
   var formContext = executionContext.getFormContext();
   var requirement = formContext.getAttribute("book_requirement").getValue();
 
-  var validatedAmountControl = formContext.getControl("book_validatedamount");
-  var fundedAmountControl = formContext.getControl("book_fundedamount");
+  var validatedAmountControl = formContext.getControl("book_newvalidatedamount");
+  var fundedAmountControl = formContext.getControl("book_newfundedamount");
   var requestedAmountControl = formContext.getControl("book_requestedamount");
 
   if (requirement != null) {

@@ -14,7 +14,7 @@
           <cell name="book_newpgsag" width="100" />
           <cell name="book_fund" width="100" />
           <cell name="a_bc683a7e44e34d5dbf51ec61dfb8e0ea.book_fundkey" width="138" />
-          <cell name="book_amount" width="100" />
+          <cell name="book_newamount" width="100" />
           <cell name="book_disbursementdirection" width="175" />
           <cell name="book_remarks" width="300" />
           <cell name="book_fundingtype" width="118" />
@@ -28,7 +28,6 @@
       <fetch version="1.0" mapping="logical" distinct="true">
         <entity name="book_distributions">
           <attribute name="book_distributionsid" />
-          <attribute name="book_amount" />
           <attribute name="book_remarks" />
           <filter type="and">
             <condition attribute="statecode" operator="eq" value="0" />
@@ -43,6 +42,7 @@
           <attribute name="book_debiteddistribution" />
           <attribute name="book_disbursementdirection" />
           <attribute name="book_fund" />
+          <attribute name="book_newamount" />
         </entity>
       </fetch>
     </fetchxml>

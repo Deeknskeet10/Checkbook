@@ -58,8 +58,8 @@ namespace ARNGCheckbook.Plugins.Validation
             }
 
             // Get effective values (from target if changed, otherwise from pre-image)
-            var tdp = GetEffectiveMoney(target, preImage, RequirementFundingAttributes.TDP);
-            var fundedAmount = GetEffectiveMoney(target, preImage, RequirementFundingAttributes.FundedAmount);
+            var tdp = GetEffectiveDecimal(target, preImage, RequirementFundingAttributes.TDP);
+            var fundedAmount = GetEffectiveDecimal(target, preImage, RequirementFundingAttributes.FundedAmount);
             var loaRef = GetEffectiveEntityReference(target, preImage, RequirementFundingAttributes.LineOfAccounting);
 
             tracingService.Trace($"Effective values - TDP: {tdp}, FundedAmount: {fundedAmount}, LOA: {loaRef?.Id}");

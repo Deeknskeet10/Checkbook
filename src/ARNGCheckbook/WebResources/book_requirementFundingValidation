@@ -31,7 +31,7 @@ Book.RequirementFunding = Book.RequirementFunding || {};
     isValidatedSave = false;
     clearAllNotifications(formContext);
 
-    var tdpAttribute = formContext.getAttribute("book_tdp");
+    var tdpAttribute = formContext.getAttribute("book_newtdp");
     if (tdpAttribute) {
       tdpAttribute.addOnChange(onTDPChange);
     }
@@ -44,7 +44,7 @@ Book.RequirementFunding = Book.RequirementFunding || {};
     var loaLookup = formContext
       .getAttribute("book_lineofaccounting")
       ?.getValue();
-    var tdpValue = formContext.getAttribute("book_tdp")?.getValue();
+    var tdpValue = formContext.getAttribute("book_newtdp")?.getValue();
 
     if (loaLookup && loaLookup.length > 0 && tdpValue !== null) {
       validateTDPAllocation(formContext);
@@ -113,7 +113,7 @@ Book.RequirementFunding = Book.RequirementFunding || {};
       return;
     }
 
-    var currentTDP = formContext.getAttribute("book_tdp")?.getValue() || 0;
+    var currentTDP = formContext.getAttribute("book_newtdp")?.getValue() || 0;
 
     var currentRecordId = formContext.data.entity.getId();
     if (currentRecordId) {
@@ -146,7 +146,7 @@ Book.RequirementFunding = Book.RequirementFunding || {};
         "ERROR",
         NOTIFICATION_ID
       );
-      formContext.getControl("book_tdp")?.setFocus();
+      formContext.getControl("book_newtdp")?.setFocus();
     }
   };
 
@@ -162,7 +162,7 @@ Book.RequirementFunding = Book.RequirementFunding || {};
       return true;
     }
 
-    var currentTDP = formContext.getAttribute("book_tdp")?.getValue();
+    var currentTDP = formContext.getAttribute("book_newtdp")?.getValue();
     if (currentTDP === null || currentTDP === undefined) {
       clearAllNotifications(formContext);
       return true;
@@ -190,13 +190,15 @@ Book.RequirementFunding = Book.RequirementFunding || {};
 
       formContext.ui.clearFormNotification(NOTIFICATION_ID_LOADING);
 
-      var proposedTotal = otherAllocatedTDP + currentTDP;
-      var remainingTDP = loaTDP - otherAllocatedTDP;
+// Apply rounding here
+    var proposedTotal = roundCurrency(otherAllocatedTDP + currentTDP);
+    var roundedLoaTDP = roundCurrency(loaTDP);
+    var remainingTDP = roundCurrency(loaTDP - otherAllocatedTDP);
 
-      if (proposedTotal > loaTDP) {
+      if (proposedTotal > roundedLoaTDP) {
         var errorMessage = buildErrorMessage(
           currentTDP,
-          loaTDP,
+          roundedLoaTDP,
           otherAllocatedTDP,
           remainingTDP
         );
@@ -208,7 +210,7 @@ Book.RequirementFunding = Book.RequirementFunding || {};
         );
 
         formContext
-          .getControl("book_tdp")
+          .getControl("book_newtdp")
           ?.setNotification(
             "Exceeds available TDP (" +
               formatCurrency(remainingTDP) +
@@ -220,7 +222,7 @@ Book.RequirementFunding = Book.RequirementFunding || {};
       } else {
         formContext.ui.clearFormNotification(NOTIFICATION_ID);
         formContext
-          .getControl("book_tdp")
+          .getControl("book_newtdp")
           ?.clearNotification("tdp_field_error");
 
         var remainingAfterSave = remainingTDP - currentTDP;
@@ -264,10 +266,10 @@ Book.RequirementFunding = Book.RequirementFunding || {};
     var result = await Xrm.WebApi.retrieveRecord(
       "book_fundingline",
       loaId,
-      "?$select=book_tdp"
+      "?$select=book_newtdp"
     );
 
-    var tdp = result.book_tdp || 0;
+    var tdp = result.book_newtdp || 0;
     loaTDPCache = { loaId: loaId, tdp: tdp };
 
     return tdp;
@@ -283,7 +285,7 @@ Book.RequirementFunding = Book.RequirementFunding || {};
       filter += " and book_requirementfundingid ne " + excludeRecordId;
     }
 
-    var query = "?$select=book_tdp&$filter=" + filter;
+    var query = "?$select=book_newtdp&$filter=" + filter;
     var result = await Xrm.WebApi.retrieveMultipleRecords(
       "book_requirementfunding",
       query
@@ -292,7 +294,7 @@ Book.RequirementFunding = Book.RequirementFunding || {};
     var total = 0;
     if (result && result.entities) {
       result.entities.forEach(function (entity) {
-        total += entity.book_tdp || 0;
+        total += entity.book_newtdp || 0;
       });
     }
 
@@ -314,7 +316,7 @@ Book.RequirementFunding = Book.RequirementFunding || {};
       clientUrl +
         "/api/data/v9.2/book_fundinglines(" +
         loaId +
-        ")?$select=book_tdp",
+        ")?$select=book_newtdp",
       false
     );
     req.setRequestHeader("OData-MaxVersion", "4.0");
@@ -325,7 +327,7 @@ Book.RequirementFunding = Book.RequirementFunding || {};
     var tdp = 0;
     if (req.status === 200) {
       var data = JSON.parse(req.responseText);
-      tdp = data.book_tdp || 0;
+      tdp = data.book_newtdp || 0;
     }
 
     loaTDPCache = { loaId: loaId, tdp: tdp };
@@ -348,7 +350,7 @@ Book.RequirementFunding = Book.RequirementFunding || {};
     req.open(
       "GET",
       clientUrl +
-        "/api/data/v9.2/book_requirementfundings?$select=book_tdp&$filter=" +
+        "/api/data/v9.2/book_requirementfundings?$select=book_newtdp&$filter=" +
         encodeURIComponent(filter),
       false
     );
@@ -362,7 +364,7 @@ Book.RequirementFunding = Book.RequirementFunding || {};
       var data = JSON.parse(req.responseText);
       if (data.value) {
         data.value.forEach(function (entity) {
-          total += entity.book_tdp || 0;
+          total += entity.book_newtdp || 0;
         });
       }
     }
@@ -396,12 +398,18 @@ Book.RequirementFunding = Book.RequirementFunding || {};
     formContext.ui.clearFormNotification(NOTIFICATION_ID);
     formContext.ui.clearFormNotification(NOTIFICATION_ID_LOADING);
     formContext.ui.clearFormNotification(NOTIFICATION_ID_SUCCESS);
-    formContext.getControl("book_tdp")?.clearNotification("tdp_field_error");
+    formContext.getControl("book_newtdp")?.clearNotification("tdp_field_error");
   }
 
   function cleanGuid(guid) {
     if (!guid) return null;
     return guid.replace("{", "").replace("}", "").toLowerCase();
+  }
+
+  function roundCurrency(value) {
+    if (!value) return 0;
+    // Math.round combined with exponential notation accurately rounds to 2 decimals
+    return Number(Math.round(value + 'e2') + 'e-2');
   }
 
   function formatCurrency(value) {

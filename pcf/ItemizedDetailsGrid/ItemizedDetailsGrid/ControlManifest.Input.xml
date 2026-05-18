@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<manifest>
+  <control namespace="ARNGCheckbook" constructor="ItemizedDetailsGrid" version="0.1.0"
+           display-name-key="ItemizedDetailsGrid"
+           description-key="Editable grid for a Prioritization's Itemized Details: NPMs enter Quantity, Requested/Validated/Funded amounts and comments inline, with live totals. Read-only context columns (Item, TDC, Quantity Type, Category) are pulled from the linked Requirement Detail."
+           control-type="virtual" >
+    <external-service-usage enabled="false">
+    </external-service-usage>
+    <!-- Bound to the book_itemizeddetails subgrid on the Prioritization form. -->
+    <data-set name="itemizedDetails" display-name-key="Itemized Details">
+      <!-- Lookup back to book_requirementdetails — used as the row key and to fetch context columns. -->
+      <property-set name="requirementItem" display-name-key="Requirement Item"
+                    description-key="Lookup to the source Requirement Detail (book_requirementitem)."
+                    of-type="Lookup.Simple" usage="bound" required="true" />
+      <property-set name="quantity" display-name-key="Quantity"
+                    of-type="Whole.None" usage="bound" required="false" />
+      <property-set name="requestedAmount" display-name-key="Requested Amount"
+                    of-type="Decimal" usage="bound" required="false" />
+      <property-set name="validatedAmount" display-name-key="Validated Amount"
+                    of-type="Decimal" usage="bound" required="false" />
+      <property-set name="fundedAmount" display-name-key="Funded Amount"
+                    of-type="Decimal" usage="bound" required="false" />
+      <property-set name="npmComment" display-name-key="NPM Comment"
+                    of-type="Multiple" usage="bound" required="false" />
+      <property-set name="stateComment" display-name-key="State Comment"
+                    of-type="Multiple" usage="bound" required="false" />
+    </data-set>
+    <resources>
+      <code path="index.ts" order="1"/>
+      <css path="css/ItemizedDetailsGrid.css" order="1" />
+      <platform-library name="React" version="16.14.0" />
+      <platform-library name="Fluent" version="9.68.0" />
+    </resources>
+    <feature-usage>
+      <uses-feature name="WebAPI" required="true" />
+    </feature-usage>
+  </control>
+</manifest>

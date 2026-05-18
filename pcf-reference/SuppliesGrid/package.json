@@ -1,0 +1,24 @@
+{
+  "name": "supplies-grid",
+  "version": "0.1.0",
+  "description": "PCF dataset control for ARNG Checkbook Supplies subgrid with NSN entry and completeness gating.",
+  "scripts": {
+    "build": "pcf-scripts build",
+    "rebuild": "pcf-scripts rebuild",
+    "start": "pcf-scripts start",
+    "start:watch": "pcf-scripts start watch"
+  },
+  "dependencies": {
+    "@fluentui/react-components": "^9.46.2",
+    "react": "16.14.0",
+    "react-dom": "16.14.0"
+  },
+  "devDependencies": {
+    "@types/node": "^18.0.0",
+    "@types/react": "16.14.60",
+    "@types/react-dom": "16.9.24",
+    "pcf-scripts": "^1",
+    "pcf-start": "^1",
+    "typescript": "^5.4.5"
+  }
+}

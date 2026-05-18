@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest>
+  <control namespace="ARNGCheckbook" constructor="FundingTrackTimeline" version="0.1.1" display-name-key="FundingTrackTimeline" description-key="Horizontal timeline of book_fundingevent records across the fiscal year. Bars are colored by funding type; today is marked with a red line." control-type="virtual">
+    <data-set name="events" display-name-key="Funding Events">
+      <property-set name="name" display-name-key="Name" of-type="SingleLine.Text" usage="bound" required="true" />
+      <property-set name="startDate" display-name-key="Start Date" of-type="DateAndTime.DateOnly" usage="bound" required="true" />
+      <property-set name="endDate" display-name-key="End Date" of-type="DateAndTime.DateOnly" usage="bound" required="false" />
+      <property-set name="fundingType" display-name-key="Funding Type" of-type="OptionSet" usage="bound" required="false" />
+      <property-set name="fiscalYear" display-name-key="Fiscal Year" of-type="OptionSet" usage="bound" required="false" />
+      <property-set name="description" display-name-key="Description" of-type="Multiple" usage="bound" required="false" />
+    </data-set>
+    <resources>
+      <code path="index.ts" order="1" />
+      <css path="css/FundingTrackTimeline.css" order="1" />
+      <platform-library name="React" version="16.14.0" />
+      <platform-library name="Fluent" version="9.46.2" />
+    </resources>
+  </control>
+</manifest>

@@ -35,11 +35,11 @@
                       </cell>
                     </row>
                     <row>
-                      <cell id="{74e2d62e-e39f-4ac7-9e0a-9022d55c10c0}" locklevel="0" colspan="1" rowspan="1" labelid="{6b78635d-ec59-484c-8ecc-925c893920d1}">
+                      <cell id="{c57f8a4f-b136-4c5c-b900-b220969a8a56}" locklevel="0" colspan="1" rowspan="1">
                         <labels>
                           <label description="TDP" languagecode="1033" />
                         </labels>
-                        <control id="book_tdp" classid="{0D2C745A-E5A8-4C8F-BA63-C6D3BB604660}" datafieldname="book_tdp" disabled="false" />
+                        <control id="book_newtdp" classid="{C3EFE0C3-0EC6-42BE-8349-CBD9079DFD8E}" datafieldname="book_newtdp" disabled="false" />
                       </cell>
                     </row>
                     <row>
@@ -51,27 +51,27 @@
                       </cell>
                     </row>
                     <row>
-                      <cell id="{d7e99b3e-7ff1-40b0-a552-444333ac22a7}" locklevel="0" colspan="1" rowspan="1" labelid="{7bbf9f5f-105e-4a50-8304-847ada5b113f}">
+                      <cell id="{72db62a7-b4d4-46d3-bbb8-19a793079850}" locklevel="0" colspan="1" rowspan="1">
                         <labels>
                           <label description="Funded Amount" languagecode="1033" />
                         </labels>
-                        <control id="book_fundedamount" classid="{0D2C745A-E5A8-4C8F-BA63-C6D3BB604660}" datafieldname="book_fundedamount" disabled="false" />
+                        <control id="book_newfundedamount" classid="{C3EFE0C3-0EC6-42BE-8349-CBD9079DFD8E}" datafieldname="book_newfundedamount" disabled="false" />
                       </cell>
                     </row>
                     <row>
-                      <cell id="{a1226c3c-1cc8-43e7-a2ab-439523fefa57}" locklevel="0" colspan="1" rowspan="1" labelid="{b2314826-4533-4291-8623-b9d9395d7ec6}">
+                      <cell id="{1952ae23-e625-47f8-8af8-feae122045aa}" locklevel="0" colspan="1" rowspan="1">
                         <labels>
                           <label description="Validated Amount" languagecode="1033" />
                         </labels>
-                        <control id="book_validatedamount" classid="{0D2C745A-E5A8-4C8F-BA63-C6D3BB604660}" datafieldname="book_validatedamount" disabled="false" />
+                        <control id="book_newvalidatedamount" classid="{C3EFE0C3-0EC6-42BE-8349-CBD9079DFD8E}" datafieldname="book_newvalidatedamount" disabled="false" />
                       </cell>
                     </row>
                     <row>
-                      <cell id="{95e9d6bb-0200-426e-9dae-77e9d59817ee}" locklevel="0" colspan="1" rowspan="1" labelid="{21b83c48-0b77-456f-8116-830b49a0aca7}">
+                      <cell id="{54fb1866-5c85-4bcc-a288-3d24ae5d8435}" locklevel="0" colspan="1" rowspan="1">
                         <labels>
                           <label description="Unfunded Amount" languagecode="1033" />
                         </labels>
-                        <control id="book_unfundedamount" classid="{0D2C745A-E5A8-4C8F-BA63-C6D3BB604660}" datafieldname="book_unfundedamount" disabled="false" />
+                        <control id="book_newunfundedamount" classid="{C3EFE0C3-0EC6-42BE-8349-CBD9079DFD8E}" datafieldname="book_newunfundedamount" disabled="false" />
                       </cell>
                     </row>
                   </rows>

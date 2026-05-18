@@ -13,9 +13,9 @@
           <cell name="book_priority" width="100" />
           <cell name="a_bae92e31f4064ac9a8754269fa0d1f8a.book_name" width="191" />
           <cell name="book_dropdeaddate" width="132" />
-          <cell name="book_newunfundedamount" width="146" />
+          <cell name="book_unfundedamount" width="146" />
+          <cell name="book_newriskstatement" width="126" />
           <cell name="book_justification" width="109" />
-          <cell name="book_riskstatement" width="126" />
           <cell name="book_outcome" width="100" />
           <cell name="book_outcomenarrative" width="148" />
         </row>
@@ -30,7 +30,6 @@
           <attribute name="book_outcomenarrative" />
           <attribute name="book_justification" />
           <attribute name="book_priority" />
-          <attribute name="book_riskstatement" />
           <attribute name="book_dropdeaddate" />
           <order attribute="book_dropdeaddate" descending="false" />
           <filter type="and">
@@ -39,7 +38,8 @@
           <link-entity alias="a_bae92e31f4064ac9a8754269fa0d1f8a" name="book_prioritization" to="book_staterequirement" from="book_prioritizationid" link-type="outer" visible="false">
             <attribute name="book_name" />
           </link-entity>
-          <attribute name="book_newunfundedamount" />
+          <attribute name="book_newriskstatement" />
+          <attribute name="book_unfundedamount" />
         </entity>
       </fetch>
     </fetchxml>

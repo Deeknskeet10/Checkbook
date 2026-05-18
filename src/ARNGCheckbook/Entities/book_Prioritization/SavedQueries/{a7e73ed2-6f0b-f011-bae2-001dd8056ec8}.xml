@@ -15,9 +15,9 @@
           <cell name="book_fundcenter" width="110" />
           <cell name="a_4ad4e221111841989bc6d0df1b21f2b7.book_requirement" width="248" />
           <cell name="book_quantities" width="100" />
-          <cell name="book_requestedamount" width="148" />
-          <cell name="book_newvalidatedamount" width="143" />
-          <cell name="book_fundedamounttdp" width="171" />
+          <cell name="book_newrequestedamount" width="148" />
+          <cell name="book_validatedamount" width="143" />
+          <cell name="book_newfundedamounttdp" width="171" />
           <cell name="book_statutoryjustification" width="300" />
         </row>
       </grid>
@@ -35,12 +35,12 @@
           </filter>
           <attribute name="book_state" />
           <attribute name="book_quantities" />
-          <attribute name="book_requestedamount" />
-          <attribute name="book_newvalidatedamount" />
-          <attribute name="book_fundedamounttdp" />
           <link-entity alias="a_4ad4e221111841989bc6d0df1b21f2b7" name="book_requirementfunding" to="book_requirementfunding" from="book_requirementfundingid" link-type="outer" visible="false">
             <attribute name="book_requirement" />
           </link-entity>
+          <attribute name="book_newrequestedamount" />
+          <attribute name="book_validatedamount" />
+          <attribute name="book_newfundedamounttdp" />
         </entity>
       </fetch>
     </fetchxml>

@@ -1,0 +1,323 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Dashboard xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <LocalizedNames>
+    <LocalizedName description="ARNG Checkbook - Money Overview" languagecode="1033" />
+  </LocalizedNames>
+  <Descriptions>
+    <Description description="Side-by-side money visualizations: Distributions donut, Ledgers donut, Pending Realignments queue." languagecode="1033" />
+  </Descriptions>
+  <FormId>{0d82b4c1-154e-f111-bec7-7c1e52184e9d}</FormId>
+  <IsCustomizable>1</IsCustomizable>
+  <IsDefault>0</IsDefault>
+  <FormXml>
+    <forms type="dashboard">
+      <form>
+        <tabs>
+          <tab name="tab_overview" verticallayout="true" id="{6de25266-b9b4-4842-8d77-2202bd2fe024}">
+            <labels>
+              <label description="Overview" languagecode="1033" />
+            </labels>
+            <columns>
+              <column width="100%">
+                <sections>
+                  <section name="section_131d2f93-2e40-44e4-a633-bf799d5434fb" showlabel="true" showbar="false" id="{131d2f93-2e40-44e4-a633-bf799d5434fb}" layout="varwidth" columns="1">
+                    <labels>
+                      <label description="Distributions" languagecode="1033" />
+                    </labels>
+                    <rows>
+                      <row>
+                        <cell id="{bb1bebcb-5e41-4065-a31e-328dcb949757}" showlabel="false" rowspan="14" colspan="1">
+                          <labels>
+                            <label description="Distributions" languagecode="1033" />
+                          </labels>
+                          <control indicationOfSubgrid="true" id="grid_131d2f93-2e40-44e4-a633-bf799d5434fb" classid="{F9A8A302-114E-466A-B582-6771B2AE0D92}" uniqueid="{da758d18-518e-4175-b21d-e98c43583bc9}">
+                            <parameters>
+                              <RecordsPerPage>50</RecordsPerPage>
+                              <AutoExpand>Fixed</AutoExpand>
+                              <EnableQuickFind>false</EnableQuickFind>
+                              <EnableViewPicker>false</EnableViewPicker>
+                              <EnableChartPicker>false</EnableChartPicker>
+                              <ChartGridMode>All</ChartGridMode>
+                              <TargetEntityType>book_distributions</TargetEntityType>
+                              <ViewId>{DEF106FF-90BE-4364-9B20-CFA20594F343}</ViewId>
+                              <ViewIds>{DEF106FF-90BE-4364-9B20-CFA20594F343}</ViewIds>
+                            </parameters>
+                          </control>
+                        </cell>
+                      </row>
+                    </rows>
+                  </section>
+                  <section name="section_9c7f1563-1bec-4ad4-8aee-1dda2fa33af2" showlabel="true" showbar="false" id="{9c7f1563-1bec-4ad4-8aee-1dda2fa33af2}" layout="varwidth" columns="1">
+                    <labels>
+                      <label description="Ledgers" languagecode="1033" />
+                    </labels>
+                    <rows>
+                      <row>
+                        <cell id="{969f9ff6-f425-4f0c-b1df-aa323d226472}" showlabel="false" rowspan="14" colspan="1">
+                          <labels>
+                            <label description="Ledgers" languagecode="1033" />
+                          </labels>
+                          <control indicationOfSubgrid="true" id="grid_9c7f1563-1bec-4ad4-8aee-1dda2fa33af2" classid="{F9A8A302-114E-466A-B582-6771B2AE0D92}" uniqueid="{e3276208-fd6d-4782-b814-becc3e23e891}">
+                            <parameters>
+                              <RecordsPerPage>50</RecordsPerPage>
+                              <AutoExpand>Fixed</AutoExpand>
+                              <EnableQuickFind>false</EnableQuickFind>
+                              <EnableViewPicker>false</EnableViewPicker>
+                              <EnableChartPicker>false</EnableChartPicker>
+                              <ChartGridMode>All</ChartGridMode>
+                              <TargetEntityType>book_ledger</TargetEntityType>
+                              <ViewId>{3F869E1C-8E0D-404E-911C-749E9D92A11E}</ViewId>
+                              <ViewIds>{3F869E1C-8E0D-404E-911C-749E9D92A11E}</ViewIds>
+                            </parameters>
+                          </control>
+                        </cell>
+                      </row>
+                    </rows>
+                  </section>
+                  <section name="section_9edd9dc2-7718-4a53-98c4-60010a81cfb2" showlabel="true" showbar="false" id="{9edd9dc2-7718-4a53-98c4-60010a81cfb2}" layout="varwidth" columns="1">
+                    <labels>
+                      <label description="Pending Realignments" languagecode="1033" />
+                    </labels>
+                    <rows>
+                      <row>
+                        <cell id="{51084253-fc58-402b-94f1-72fccdfd7bf5}" showlabel="false" rowspan="14" colspan="1">
+                          <labels>
+                            <label description="Pending Realignments" languagecode="1033" />
+                          </labels>
+                          <control indicationOfSubgrid="true" id="grid_9edd9dc2-7718-4a53-98c4-60010a81cfb2" classid="{F9A8A302-114E-466A-B582-6771B2AE0D92}" uniqueid="{72013cc9-061c-48cf-b827-cda8fbdfa25d}">
+                            <parameters>
+                              <RecordsPerPage>50</RecordsPerPage>
+                              <AutoExpand>Fixed</AutoExpand>
+                              <EnableQuickFind>false</EnableQuickFind>
+                              <EnableViewPicker>false</EnableViewPicker>
+                              <EnableChartPicker>false</EnableChartPicker>
+                              <ChartGridMode>All</ChartGridMode>
+                              <TargetEntityType>book_realignments</TargetEntityType>
+                              <ViewId>{48A443AF-DEC3-4636-ABBD-820FE9FD88A7}</ViewId>
+                              <ViewIds>{48A443AF-DEC3-4636-ABBD-820FE9FD88A7}</ViewIds>
+                            </parameters>
+                          </control>
+                        </cell>
+                      </row>
+                    </rows>
+                  </section>
+                </sections>
+              </column>
+            </columns>
+          </tab>
+        </tabs>
+        <controlDescriptions>
+          <controlDescription forControl="{da758d18-518e-4175-b21d-e98c43583bc9}">
+            <customControl id="{E7A81278-8635-4D9E-8D4D-59480B391C5B}">
+              <parameters>
+                <RecordsPerPage>50</RecordsPerPage>
+                <AutoExpand>Fixed</AutoExpand>
+                <EnableQuickFind>false</EnableQuickFind>
+                <EnableViewPicker>false</EnableViewPicker>
+                <EnableChartPicker>false</EnableChartPicker>
+                <ChartGridMode>All</ChartGridMode>
+                <TargetEntityType>book_distributions</TargetEntityType>
+                <ViewId>{DEF106FF-90BE-4364-9B20-CFA20594F343}</ViewId>
+                <ViewIds>{DEF106FF-90BE-4364-9B20-CFA20594F343}</ViewIds>
+              </parameters>
+            </customControl>
+            <customControl formFactor="0" name="arsc_ARNGCheckbook.DistributionsDonut">
+              <parameters>
+                <data-set name="distributions">
+                  <ViewId>{def106ff-90be-4364-9b20-cfa20594f343}</ViewId>
+                  <TargetEntityType>book_distributions</TargetEntityType>
+                  <IsUserView>false</IsUserView>
+                  <EnableViewPicker>false</EnableViewPicker>
+                  <FilteredViewIds>{DEF106FF-90BE-4364-9B20-CFA20594F343}</FilteredViewIds>
+                  <amount>book_amount</amount>
+                  <fundCenter>book_fundcenter</fundCenter>
+                  <fund>book_fund</fund>
+                  <fundingType>book_fundingtype</fundingType>
+                  <disbursementDirection>book_disbursementdirection</disbursementDirection>
+                  <month>book_month</month>
+                </data-set>
+              </parameters>
+            </customControl>
+            <customControl formFactor="1" name="arsc_ARNGCheckbook.DistributionsDonut">
+              <parameters>
+                <data-set name="distributions">
+                  <ViewId>{def106ff-90be-4364-9b20-cfa20594f343}</ViewId>
+                  <TargetEntityType>book_distributions</TargetEntityType>
+                  <IsUserView>false</IsUserView>
+                  <EnableViewPicker>false</EnableViewPicker>
+                  <FilteredViewIds>{DEF106FF-90BE-4364-9B20-CFA20594F343}</FilteredViewIds>
+                  <amount>book_amount</amount>
+                  <fundCenter>book_fundcenter</fundCenter>
+                  <fund>book_fund</fund>
+                  <fundingType>book_fundingtype</fundingType>
+                  <disbursementDirection>book_disbursementdirection</disbursementDirection>
+                  <month>book_month</month>
+                </data-set>
+              </parameters>
+            </customControl>
+            <customControl formFactor="2" name="arsc_ARNGCheckbook.DistributionsDonut">
+              <parameters>
+                <data-set name="distributions">
+                  <ViewId>{def106ff-90be-4364-9b20-cfa20594f343}</ViewId>
+                  <TargetEntityType>book_distributions</TargetEntityType>
+                  <IsUserView>false</IsUserView>
+                  <EnableViewPicker>false</EnableViewPicker>
+                  <FilteredViewIds>{DEF106FF-90BE-4364-9B20-CFA20594F343}</FilteredViewIds>
+                  <amount>book_amount</amount>
+                  <fundCenter>book_fundcenter</fundCenter>
+                  <fund>book_fund</fund>
+                  <fundingType>book_fundingtype</fundingType>
+                  <disbursementDirection>book_disbursementdirection</disbursementDirection>
+                  <month>book_month</month>
+                </data-set>
+              </parameters>
+            </customControl>
+          </controlDescription>
+          <controlDescription forControl="{e3276208-fd6d-4782-b814-becc3e23e891}">
+            <customControl id="{E7A81278-8635-4D9E-8D4D-59480B391C5B}">
+              <parameters>
+                <RecordsPerPage>50</RecordsPerPage>
+                <AutoExpand>Fixed</AutoExpand>
+                <EnableQuickFind>false</EnableQuickFind>
+                <EnableViewPicker>false</EnableViewPicker>
+                <EnableChartPicker>false</EnableChartPicker>
+                <ChartGridMode>All</ChartGridMode>
+                <TargetEntityType>book_ledger</TargetEntityType>
+                <ViewId>{3F869E1C-8E0D-404E-911C-749E9D92A11E}</ViewId>
+                <ViewIds>{3F869E1C-8E0D-404E-911C-749E9D92A11E}</ViewIds>
+              </parameters>
+            </customControl>
+            <customControl formFactor="0" name="arsc_ARNGCheckbook.LedgersDonut">
+              <parameters>
+                <data-set name="ledgers">
+                  <ViewId>{3f869e1c-8e0d-404e-911c-749e9d92a11e}</ViewId>
+                  <TargetEntityType>book_ledger</TargetEntityType>
+                  <IsUserView>false</IsUserView>
+                  <EnableViewPicker>false</EnableViewPicker>
+                  <FilteredViewIds>{3F869E1C-8E0D-404E-911C-749E9D92A11E}</FilteredViewIds>
+                  <amount>book_amount</amount>
+                  <ledgerType>book_ledgertype</ledgerType>
+                  <direction>book_ledgerdirection</direction>
+                  <lineOfAccounting>book_lineofaccounting</lineOfAccounting>
+                  <fiscalYear>book_fiscalyear</fiscalYear>
+                  <realignment>book_realignment</realignment>
+                  <turnIn>book_turnin</turnIn>
+                </data-set>
+              </parameters>
+            </customControl>
+            <customControl formFactor="1" name="arsc_ARNGCheckbook.LedgersDonut">
+              <parameters>
+                <data-set name="ledgers">
+                  <ViewId>{3f869e1c-8e0d-404e-911c-749e9d92a11e}</ViewId>
+                  <TargetEntityType>book_ledger</TargetEntityType>
+                  <IsUserView>false</IsUserView>
+                  <EnableViewPicker>false</EnableViewPicker>
+                  <FilteredViewIds>{3F869E1C-8E0D-404E-911C-749E9D92A11E}</FilteredViewIds>
+                  <amount>book_amount</amount>
+                  <ledgerType>book_ledgertype</ledgerType>
+                  <direction>book_ledgerdirection</direction>
+                  <lineOfAccounting>book_lineofaccounting</lineOfAccounting>
+                  <fiscalYear>book_fiscalyear</fiscalYear>
+                  <realignment>book_realignment</realignment>
+                  <turnIn>book_turnin</turnIn>
+                </data-set>
+              </parameters>
+            </customControl>
+            <customControl formFactor="2" name="arsc_ARNGCheckbook.LedgersDonut">
+              <parameters>
+                <data-set name="ledgers">
+                  <ViewId>{3f869e1c-8e0d-404e-911c-749e9d92a11e}</ViewId>
+                  <TargetEntityType>book_ledger</TargetEntityType>
+                  <IsUserView>false</IsUserView>
+                  <EnableViewPicker>false</EnableViewPicker>
+                  <FilteredViewIds>{3F869E1C-8E0D-404E-911C-749E9D92A11E}</FilteredViewIds>
+                  <amount>book_amount</amount>
+                  <ledgerType>book_ledgertype</ledgerType>
+                  <direction>book_ledgerdirection</direction>
+                  <lineOfAccounting>book_lineofaccounting</lineOfAccounting>
+                  <fiscalYear>book_fiscalyear</fiscalYear>
+                  <realignment>book_realignment</realignment>
+                  <turnIn>book_turnin</turnIn>
+                </data-set>
+              </parameters>
+            </customControl>
+          </controlDescription>
+          <controlDescription forControl="{72013cc9-061c-48cf-b827-cda8fbdfa25d}">
+            <customControl id="{E7A81278-8635-4D9E-8D4D-59480B391C5B}">
+              <parameters>
+                <RecordsPerPage>50</RecordsPerPage>
+                <AutoExpand>Fixed</AutoExpand>
+                <EnableQuickFind>false</EnableQuickFind>
+                <EnableViewPicker>false</EnableViewPicker>
+                <EnableChartPicker>false</EnableChartPicker>
+                <ChartGridMode>All</ChartGridMode>
+                <TargetEntityType>book_realignments</TargetEntityType>
+                <ViewId>{48A443AF-DEC3-4636-ABBD-820FE9FD88A7}</ViewId>
+                <ViewIds>{48A443AF-DEC3-4636-ABBD-820FE9FD88A7}</ViewIds>
+              </parameters>
+            </customControl>
+            <customControl formFactor="0" name="arsc_ARNGCheckbook.PendingRealignmentsQueue">
+              <parameters>
+                <data-set name="realignments">
+                  <ViewId>{48a443af-dec3-4636-abbd-820fe9fd88a7}</ViewId>
+                  <TargetEntityType>book_realignments</TargetEntityType>
+                  <IsUserView>false</IsUserView>
+                  <EnableViewPicker>false</EnableViewPicker>
+                  <FilteredViewIds>{48A443AF-DEC3-4636-ABBD-820FE9FD88A7}</FilteredViewIds>
+                  <name>book_name</name>
+                  <amount>book_newamount</amount>
+                  <status>book_realignmentstatus</status>
+                  <debitedPrioritization>book_debitedprioritization</debitedPrioritization>
+                  <creditedPrioritization>book_creditedprioritization</creditedPrioritization>
+                  <payerConcurrence>book_payerconcurrence</payerConcurrence>
+                  <payeeConcurrence>book_payeeconcurrence</payeeConcurrence>
+                  <stateApproved>book_stateapproved</stateApproved>
+                </data-set>
+              </parameters>
+            </customControl>
+            <customControl formFactor="1" name="arsc_ARNGCheckbook.PendingRealignmentsQueue">
+              <parameters>
+                <data-set name="realignments">
+                  <ViewId>{48a443af-dec3-4636-abbd-820fe9fd88a7}</ViewId>
+                  <TargetEntityType>book_realignments</TargetEntityType>
+                  <IsUserView>false</IsUserView>
+                  <EnableViewPicker>false</EnableViewPicker>
+                  <FilteredViewIds>{48A443AF-DEC3-4636-ABBD-820FE9FD88A7}</FilteredViewIds>
+                  <name>book_name</name>
+                  <amount>book_newamount</amount>
+                  <status>book_realignmentstatus</status>
+                  <debitedPrioritization>book_debitedprioritization</debitedPrioritization>
+                  <creditedPrioritization>book_creditedprioritization</creditedPrioritization>
+                  <payerConcurrence>book_payerconcurrence</payerConcurrence>
+                  <payeeConcurrence>book_payeeconcurrence</payeeConcurrence>
+                  <stateApproved>book_stateapproved</stateApproved>
+                </data-set>
+              </parameters>
+            </customControl>
+            <customControl formFactor="2" name="arsc_ARNGCheckbook.PendingRealignmentsQueue">
+              <parameters>
+                <data-set name="realignments">
+                  <ViewId>{48a443af-dec3-4636-abbd-820fe9fd88a7}</ViewId>
+                  <TargetEntityType>book_realignments</TargetEntityType>
+                  <IsUserView>false</IsUserView>
+                  <EnableViewPicker>false</EnableViewPicker>
+                  <FilteredViewIds>{48A443AF-DEC3-4636-ABBD-820FE9FD88A7}</FilteredViewIds>
+                  <name>book_name</name>
+                  <amount>book_newamount</amount>
+                  <status>book_realignmentstatus</status>
+                  <debitedPrioritization>book_debitedprioritization</debitedPrioritization>
+                  <creditedPrioritization>book_creditedprioritization</creditedPrioritization>
+                  <payerConcurrence>book_payerconcurrence</payerConcurrence>
+                  <payeeConcurrence>book_payeeconcurrence</payeeConcurrence>
+                  <stateApproved>book_stateapproved</stateApproved>
+                </data-set>
+              </parameters>
+            </customControl>
+          </controlDescription>
+        </controlDescriptions>
+      </form>
+    </forms>
+  </FormXml>
+  <IntroducedVersion>1.0</IntroducedVersion>
+  <IsTabletEnabled>0</IsTabletEnabled>
+</Dashboard>

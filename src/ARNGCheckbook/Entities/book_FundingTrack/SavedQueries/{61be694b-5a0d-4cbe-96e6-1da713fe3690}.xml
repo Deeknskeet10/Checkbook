@@ -11,7 +11,12 @@
       <grid name="resultset" jump="book_name" select="1" icon="1" preview="1">
         <row name="result" id="book_fundingtrackid">
           <cell name="book_name" width="300" />
-          <cell name="createdon" width="125" />
+          <cell name="book_boc" width="100" />
+          <cell name="book_dollartype" width="108" />
+          <cell name="book_ape" width="100" />
+          <cell name="book_sag" width="100" />
+          <cell name="book_pg" width="100" />
+          <cell name="book_newresourceamount" width="142" />
         </row>
       </grid>
     </layoutxml>
@@ -21,11 +26,16 @@
         <entity name="book_fundingtrack">
           <attribute name="book_fundingtrackid" />
           <attribute name="book_name" />
-          <attribute name="createdon" />
           <order attribute="book_name" descending="false" />
           <filter type="and">
             <condition attribute="statecode" operator="eq" value="1" />
           </filter>
+          <attribute name="book_newresourceamount" />
+          <attribute name="book_ape" />
+          <attribute name="book_boc" />
+          <attribute name="book_dollartype" />
+          <attribute name="book_sag" />
+          <attribute name="book_pg" />
         </entity>
       </fetch>
     </fetchxml>

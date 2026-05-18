@@ -13,6 +13,45 @@
         <Description description="" languagecode="1033" />
       </Descriptions>
       <attributes>
+        <attribute PhysicalName="book_BackgroundJustification">
+          <Type>ntext</Type>
+          <Name>book_backgroundjustification</Name>
+          <LogicalName>book_backgroundjustification</LogicalName>
+          <RequiredLevel>none</RequiredLevel>
+          <DisplayMask>ValidForAdvancedFind|ValidForForm|ValidForGrid</DisplayMask>
+          <ImeMode>auto</ImeMode>
+          <ValidForUpdateApi>1</ValidForUpdateApi>
+          <ValidForReadApi>1</ValidForReadApi>
+          <ValidForCreateApi>1</ValidForCreateApi>
+          <IsCustomField>1</IsCustomField>
+          <IsAuditEnabled>1</IsAuditEnabled>
+          <IsSecured>0</IsSecured>
+          <IntroducedVersion>1.11.0.27</IntroducedVersion>
+          <IsCustomizable>1</IsCustomizable>
+          <IsRenameable>1</IsRenameable>
+          <CanModifySearchSettings>1</CanModifySearchSettings>
+          <CanModifyRequirementLevelSettings>1</CanModifyRequirementLevelSettings>
+          <CanModifyAdditionalSettings>1</CanModifyAdditionalSettings>
+          <SourceType>0</SourceType>
+          <IsGlobalFilterEnabled>0</IsGlobalFilterEnabled>
+          <IsSortableEnabled>0</IsSortableEnabled>
+          <CanModifyGlobalFilterSettings>1</CanModifyGlobalFilterSettings>
+          <CanModifyIsSortableSettings>1</CanModifyIsSortableSettings>
+          <IsDataSourceSecret>0</IsDataSourceSecret>
+          <AutoNumberFormat></AutoNumberFormat>
+          <IsSearchable>0</IsSearchable>
+          <IsFilterable>0</IsFilterable>
+          <IsRetrievable>0</IsRetrievable>
+          <IsLocalizable>0</IsLocalizable>
+          <Format>richtext</Format>
+          <MaxLength>2000</MaxLength>
+          <displaynames>
+            <displayname description="Background / Justification" languagecode="1033" />
+          </displaynames>
+          <Descriptions>
+            <Description description="Reasoning for UFR" languagecode="1033" />
+          </Descriptions>
+        </attribute>
         <attribute PhysicalName="book_DropDeadDate">
           <Type>datetime</Type>
           <Name>book_dropdeaddate</Name>
@@ -170,12 +209,88 @@
             <Description description="" languagecode="1033" />
           </Descriptions>
         </attribute>
+        <attribute PhysicalName="book_KeyColumnRequirementFunding">
+          <Type>lookup</Type>
+          <Name>book_keycolumnrequirementfunding</Name>
+          <LogicalName>book_keycolumnrequirementfunding</LogicalName>
+          <RequiredLevel>none</RequiredLevel>
+          <DisplayMask>ValidForAdvancedFind|ValidForForm|ValidForGrid</DisplayMask>
+          <ValidForUpdateApi>1</ValidForUpdateApi>
+          <ValidForReadApi>1</ValidForReadApi>
+          <ValidForCreateApi>1</ValidForCreateApi>
+          <IsCustomField>1</IsCustomField>
+          <IsAuditEnabled>0</IsAuditEnabled>
+          <IsSecured>0</IsSecured>
+          <IntroducedVersion>1.11.0.26</IntroducedVersion>
+          <IsCustomizable>1</IsCustomizable>
+          <IsRenameable>1</IsRenameable>
+          <CanModifySearchSettings>1</CanModifySearchSettings>
+          <CanModifyRequirementLevelSettings>1</CanModifyRequirementLevelSettings>
+          <CanModifyAdditionalSettings>1</CanModifyAdditionalSettings>
+          <SourceType>0</SourceType>
+          <IsGlobalFilterEnabled>0</IsGlobalFilterEnabled>
+          <IsSortableEnabled>0</IsSortableEnabled>
+          <CanModifyGlobalFilterSettings>1</CanModifyGlobalFilterSettings>
+          <CanModifyIsSortableSettings>1</CanModifyIsSortableSettings>
+          <IsDataSourceSecret>0</IsDataSourceSecret>
+          <AutoNumberFormat></AutoNumberFormat>
+          <IsSearchable>0</IsSearchable>
+          <IsFilterable>0</IsFilterable>
+          <IsRetrievable>0</IsRetrievable>
+          <IsLocalizable>0</IsLocalizable>
+          <LookupStyle>single</LookupStyle>
+          <LookupTypes />
+          <displaynames>
+            <displayname description="Key Column - Requirement Funding" languagecode="1033" />
+          </displaynames>
+          <Descriptions>
+            <Description description="Column solely for checking uniqueness of Requirement Funding UFRs" languagecode="1033" />
+          </Descriptions>
+        </attribute>
+        <attribute PhysicalName="book_LineofAccounting">
+          <Type>lookup</Type>
+          <Name>book_lineofaccounting</Name>
+          <LogicalName>book_lineofaccounting</LogicalName>
+          <RequiredLevel>none</RequiredLevel>
+          <DisplayMask>ValidForAdvancedFind|ValidForForm|ValidForGrid</DisplayMask>
+          <ValidForUpdateApi>1</ValidForUpdateApi>
+          <ValidForReadApi>1</ValidForReadApi>
+          <ValidForCreateApi>1</ValidForCreateApi>
+          <IsCustomField>1</IsCustomField>
+          <IsAuditEnabled>0</IsAuditEnabled>
+          <IsSecured>0</IsSecured>
+          <IntroducedVersion>1.1.0.15</IntroducedVersion>
+          <IsCustomizable>1</IsCustomizable>
+          <IsRenameable>1</IsRenameable>
+          <CanModifySearchSettings>1</CanModifySearchSettings>
+          <CanModifyRequirementLevelSettings>1</CanModifyRequirementLevelSettings>
+          <CanModifyAdditionalSettings>1</CanModifyAdditionalSettings>
+          <SourceType>0</SourceType>
+          <IsGlobalFilterEnabled>0</IsGlobalFilterEnabled>
+          <IsSortableEnabled>0</IsSortableEnabled>
+          <CanModifyGlobalFilterSettings>1</CanModifyGlobalFilterSettings>
+          <CanModifyIsSortableSettings>1</CanModifyIsSortableSettings>
+          <IsDataSourceSecret>0</IsDataSourceSecret>
+          <AutoNumberFormat></AutoNumberFormat>
+          <IsSearchable>0</IsSearchable>
+          <IsFilterable>0</IsFilterable>
+          <IsRetrievable>0</IsRetrievable>
+          <IsLocalizable>0</IsLocalizable>
+          <LookupStyle>single</LookupStyle>
+          <LookupTypes />
+          <displaynames>
+            <displayname description="Line of Accounting" languagecode="1033" />
+          </displaynames>
+          <Descriptions>
+            <Description description="" languagecode="1033" />
+          </Descriptions>
+        </attribute>
         <attribute PhysicalName="book_Name">
           <Type>nvarchar</Type>
           <Name>book_name</Name>
           <LogicalName>book_name</LogicalName>
           <RequiredLevel>recommended</RequiredLevel>
-          <DisplayMask>ActivityPointerRegardingName|PrimaryName|ReadOnlyInUI|ValidForAdvancedFind|ValidForForm|ValidForGrid|RequiredForForm</DisplayMask>
+          <DisplayMask>ActivityPointerRegardingName|PrimaryName|ValidForAdvancedFind|ValidForForm|ValidForGrid|RequiredForForm</DisplayMask>
           <ImeMode>auto</ImeMode>
           <ValidForUpdateApi>1</ValidForUpdateApi>
           <ValidForReadApi>1</ValidForReadApi>
@@ -196,7 +311,7 @@
           <CanModifyIsSortableSettings>1</CanModifyIsSortableSettings>
           <ExternalName></ExternalName>
           <IsDataSourceSecret>0</IsDataSourceSecret>
-          <AutoNumberFormat>Unfunded Request-{SEQNUM:4}</AutoNumberFormat>
+          <AutoNumberFormat></AutoNumberFormat>
           <IsSearchable>1</IsSearchable>
           <IsFilterable>0</IsFilterable>
           <IsRetrievable>1</IsRetrievable>
@@ -210,47 +325,6 @@
           <Descriptions>
             <Description description="" languagecode="1033" />
           </Descriptions>
-        </attribute>
-        <attribute PhysicalName="book_nameUnfundedRequest">
-          <Type>nvarchar</Type>
-          <Name>book_nameunfundedrequest</Name>
-          <LogicalName>book_nameunfundedrequest</LogicalName>
-          <RequiredLevel>none</RequiredLevel>
-          <DisplayMask>ValidForAdvancedFind|ValidForForm|ValidForGrid</DisplayMask>
-          <ImeMode>auto</ImeMode>
-          <ValidForUpdateApi>0</ValidForUpdateApi>
-          <ValidForReadApi>1</ValidForReadApi>
-          <ValidForCreateApi>0</ValidForCreateApi>
-          <IsCustomField>1</IsCustomField>
-          <IsAuditEnabled>0</IsAuditEnabled>
-          <IsSecured>0</IsSecured>
-          <IntroducedVersion>1.11.0.24</IntroducedVersion>
-          <IsCustomizable>1</IsCustomizable>
-          <IsRenameable>1</IsRenameable>
-          <CanModifySearchSettings>1</CanModifySearchSettings>
-          <CanModifyRequirementLevelSettings>1</CanModifyRequirementLevelSettings>
-          <CanModifyAdditionalSettings>1</CanModifyAdditionalSettings>
-          <SourceType>3</SourceType>
-          <IsGlobalFilterEnabled>0</IsGlobalFilterEnabled>
-          <IsSortableEnabled>0</IsSortableEnabled>
-          <CanModifyGlobalFilterSettings>1</CanModifyGlobalFilterSettings>
-          <CanModifyIsSortableSettings>1</CanModifyIsSortableSettings>
-          <IsDataSourceSecret>0</IsDataSourceSecret>
-          <AutoNumberFormat></AutoNumberFormat>
-          <IsSearchable>0</IsSearchable>
-          <IsFilterable>0</IsFilterable>
-          <IsRetrievable>0</IsRetrievable>
-          <IsLocalizable>0</IsLocalizable>
-          <Format>text</Format>
-          <MaxLength>4000</MaxLength>
-          <Length>8000</Length>
-          <displaynames>
-            <displayname description="Unfunded Request" languagecode="1033" />
-          </displaynames>
-          <Descriptions>
-            <Description description="Formula column to concatenate a readable name for UFRs" languagecode="1033" />
-          </Descriptions>
-          <FormulaDefinitionFileName>/Formulas/book_unfundedrequests-FormulaDefinitions.yaml</FormulaDefinitionFileName>
         </attribute>
         <attribute PhysicalName="book_newRisk">
           <Type>picklist</Type>
@@ -291,6 +365,45 @@
           </Descriptions>
           <FormulaDefinitionFileName>/Formulas/book_unfundedrequests-FormulaDefinitions.yaml</FormulaDefinitionFileName>
         </attribute>
+        <attribute PhysicalName="book_newRiskStatement">
+          <Type>ntext</Type>
+          <Name>book_newriskstatement</Name>
+          <LogicalName>book_newriskstatement</LogicalName>
+          <RequiredLevel>none</RequiredLevel>
+          <DisplayMask>ValidForAdvancedFind|ValidForForm|ValidForGrid</DisplayMask>
+          <ImeMode>auto</ImeMode>
+          <ValidForUpdateApi>1</ValidForUpdateApi>
+          <ValidForReadApi>1</ValidForReadApi>
+          <ValidForCreateApi>1</ValidForCreateApi>
+          <IsCustomField>1</IsCustomField>
+          <IsAuditEnabled>1</IsAuditEnabled>
+          <IsSecured>0</IsSecured>
+          <IntroducedVersion>1.11.0.27</IntroducedVersion>
+          <IsCustomizable>1</IsCustomizable>
+          <IsRenameable>1</IsRenameable>
+          <CanModifySearchSettings>1</CanModifySearchSettings>
+          <CanModifyRequirementLevelSettings>1</CanModifyRequirementLevelSettings>
+          <CanModifyAdditionalSettings>1</CanModifyAdditionalSettings>
+          <SourceType>0</SourceType>
+          <IsGlobalFilterEnabled>0</IsGlobalFilterEnabled>
+          <IsSortableEnabled>0</IsSortableEnabled>
+          <CanModifyGlobalFilterSettings>1</CanModifyGlobalFilterSettings>
+          <CanModifyIsSortableSettings>1</CanModifyIsSortableSettings>
+          <IsDataSourceSecret>0</IsDataSourceSecret>
+          <AutoNumberFormat></AutoNumberFormat>
+          <IsSearchable>0</IsSearchable>
+          <IsFilterable>0</IsFilterable>
+          <IsRetrievable>0</IsRetrievable>
+          <IsLocalizable>0</IsLocalizable>
+          <Format>richtext</Format>
+          <MaxLength>2000</MaxLength>
+          <displaynames>
+            <displayname description="Risk Statement" languagecode="1033" />
+          </displaynames>
+          <Descriptions>
+            <Description description="Rich Text section for Risk description" languagecode="1033" />
+          </Descriptions>
+        </attribute>
         <attribute PhysicalName="book_newUnfundedAmount">
           <Type>float</Type>
           <Name>book_newunfundedamount</Name>
@@ -325,7 +438,7 @@
           <MaxValue>100000000000</MaxValue>
           <Accuracy>2</Accuracy>
           <displaynames>
-            <displayname description="Unfunded Amount" languagecode="1033" />
+            <displayname description="Deprecated - Unfunded Amount" languagecode="1033" />
           </displaynames>
           <Descriptions>
             <Description description="Amount remaining to be funded" languagecode="1033" />
@@ -488,6 +601,89 @@
           </displaynames>
           <Descriptions>
             <Description description="Action taken on UFR" languagecode="1033" />
+          </Descriptions>
+        </attribute>
+        <attribute PhysicalName="book_OutcomeAmount">
+          <Type>money</Type>
+          <Name>book_outcomeamount</Name>
+          <LogicalName>book_outcomeamount</LogicalName>
+          <RequiredLevel>none</RequiredLevel>
+          <DisplayMask>ValidForAdvancedFind|ValidForForm|ValidForGrid</DisplayMask>
+          <ImeMode>auto</ImeMode>
+          <ValidForUpdateApi>1</ValidForUpdateApi>
+          <ValidForReadApi>1</ValidForReadApi>
+          <ValidForCreateApi>1</ValidForCreateApi>
+          <IsCustomField>1</IsCustomField>
+          <IsAuditEnabled>1</IsAuditEnabled>
+          <IsSecured>1</IsSecured>
+          <IntroducedVersion>1.1.0.6</IntroducedVersion>
+          <IsCustomizable>1</IsCustomizable>
+          <IsRenameable>1</IsRenameable>
+          <CanModifySearchSettings>1</CanModifySearchSettings>
+          <CanModifyRequirementLevelSettings>1</CanModifyRequirementLevelSettings>
+          <CanModifyAdditionalSettings>1</CanModifyAdditionalSettings>
+          <SourceType>0</SourceType>
+          <IsGlobalFilterEnabled>0</IsGlobalFilterEnabled>
+          <IsSortableEnabled>0</IsSortableEnabled>
+          <CanModifyGlobalFilterSettings>1</CanModifyGlobalFilterSettings>
+          <CanModifyIsSortableSettings>1</CanModifyIsSortableSettings>
+          <IsDataSourceSecret>0</IsDataSourceSecret>
+          <AutoNumberFormat></AutoNumberFormat>
+          <IsSearchable>0</IsSearchable>
+          <IsFilterable>0</IsFilterable>
+          <IsRetrievable>0</IsRetrievable>
+          <IsLocalizable>0</IsLocalizable>
+          <MinValue>0</MinValue>
+          <MaxValue>922337203685477</MaxValue>
+          <Accuracy>2</Accuracy>
+          <AccuracySource>2</AccuracySource>
+          <displaynames>
+            <displayname description="Outcome Amount" languagecode="1033" />
+          </displaynames>
+          <Descriptions>
+            <Description description="Amount of Funding to be applied to UFR" languagecode="1033" />
+          </Descriptions>
+        </attribute>
+        <attribute PhysicalName="book_outcomeamount_Base">
+          <Type>money</Type>
+          <Name>book_outcomeamount_base</Name>
+          <LogicalName>book_outcomeamount_base</LogicalName>
+          <RequiredLevel>none</RequiredLevel>
+          <DisplayMask>ValidForAdvancedFind|ValidForForm|ValidForGrid</DisplayMask>
+          <ImeMode>disabled</ImeMode>
+          <ValidForUpdateApi>0</ValidForUpdateApi>
+          <ValidForReadApi>1</ValidForReadApi>
+          <ValidForCreateApi>0</ValidForCreateApi>
+          <IsCustomField>1</IsCustomField>
+          <IsAuditEnabled>1</IsAuditEnabled>
+          <IsSecured>0</IsSecured>
+          <IntroducedVersion>1.1.0.6</IntroducedVersion>
+          <IsCustomizable>1</IsCustomizable>
+          <IsRenameable>1</IsRenameable>
+          <CanModifySearchSettings>1</CanModifySearchSettings>
+          <CanModifyRequirementLevelSettings>1</CanModifyRequirementLevelSettings>
+          <CanModifyAdditionalSettings>1</CanModifyAdditionalSettings>
+          <SourceType>0</SourceType>
+          <IsGlobalFilterEnabled>0</IsGlobalFilterEnabled>
+          <IsSortableEnabled>0</IsSortableEnabled>
+          <CanModifyGlobalFilterSettings>1</CanModifyGlobalFilterSettings>
+          <CanModifyIsSortableSettings>1</CanModifyIsSortableSettings>
+          <IsDataSourceSecret>0</IsDataSourceSecret>
+          <AutoNumberFormat></AutoNumberFormat>
+          <IsSearchable>0</IsSearchable>
+          <IsFilterable>0</IsFilterable>
+          <IsRetrievable>0</IsRetrievable>
+          <IsLocalizable>0</IsLocalizable>
+          <MinValue>-922337203685477</MinValue>
+          <MaxValue>922337203685477</MaxValue>
+          <Accuracy>2</Accuracy>
+          <AccuracySource>2</AccuracySource>
+          <CalculationOf>book_OutcomeAmount</CalculationOf>
+          <displaynames>
+            <displayname description="Outcome Amount (Base)" languagecode="1033" />
+          </displaynames>
+          <Descriptions>
+            <Description description="Value of the Outcome Amount in base currency." languagecode="1033" />
           </Descriptions>
         </attribute>
         <attribute PhysicalName="book_OutcomeNarrative">
@@ -724,6 +920,193 @@
             <Description description="Funding the UFR is associated to" languagecode="1033" />
           </Descriptions>
         </attribute>
+        <attribute PhysicalName="book_ResourcingPriority">
+          <Type>int</Type>
+          <Name>book_resourcingpriority</Name>
+          <LogicalName>book_resourcingpriority</LogicalName>
+          <RequiredLevel>none</RequiredLevel>
+          <DisplayMask>ValidForAdvancedFind|ValidForForm|ValidForGrid</DisplayMask>
+          <ImeMode>disabled</ImeMode>
+          <ValidForUpdateApi>1</ValidForUpdateApi>
+          <ValidForReadApi>1</ValidForReadApi>
+          <ValidForCreateApi>1</ValidForCreateApi>
+          <IsCustomField>1</IsCustomField>
+          <IsAuditEnabled>1</IsAuditEnabled>
+          <IsSecured>1</IsSecured>
+          <IntroducedVersion>1.1.0.6</IntroducedVersion>
+          <IsCustomizable>1</IsCustomizable>
+          <IsRenameable>1</IsRenameable>
+          <CanModifySearchSettings>1</CanModifySearchSettings>
+          <CanModifyRequirementLevelSettings>1</CanModifyRequirementLevelSettings>
+          <CanModifyAdditionalSettings>1</CanModifyAdditionalSettings>
+          <SourceType>0</SourceType>
+          <IsGlobalFilterEnabled>0</IsGlobalFilterEnabled>
+          <IsSortableEnabled>0</IsSortableEnabled>
+          <CanModifyGlobalFilterSettings>1</CanModifyGlobalFilterSettings>
+          <CanModifyIsSortableSettings>1</CanModifyIsSortableSettings>
+          <IsDataSourceSecret>0</IsDataSourceSecret>
+          <AutoNumberFormat></AutoNumberFormat>
+          <IsSearchable>0</IsSearchable>
+          <IsFilterable>0</IsFilterable>
+          <IsRetrievable>0</IsRetrievable>
+          <IsLocalizable>0</IsLocalizable>
+          <Format>none</Format>
+          <MinValue>0</MinValue>
+          <MaxValue>2147483647</MaxValue>
+          <displaynames>
+            <displayname description="Resourcing Priority" languagecode="1033" />
+          </displaynames>
+          <Descriptions>
+            <Description description="RWG Initiated Resourcing Priority" languagecode="1033" />
+          </Descriptions>
+        </attribute>
+        <attribute PhysicalName="book_ResourcingStrategy">
+          <Type>picklist</Type>
+          <Name>book_resourcingstrategy</Name>
+          <LogicalName>book_resourcingstrategy</LogicalName>
+          <RequiredLevel>none</RequiredLevel>
+          <DisplayMask>ValidForAdvancedFind|ValidForForm|ValidForGrid</DisplayMask>
+          <ImeMode>auto</ImeMode>
+          <ValidForUpdateApi>1</ValidForUpdateApi>
+          <ValidForReadApi>1</ValidForReadApi>
+          <ValidForCreateApi>1</ValidForCreateApi>
+          <IsCustomField>1</IsCustomField>
+          <IsAuditEnabled>1</IsAuditEnabled>
+          <IsSecured>1</IsSecured>
+          <IntroducedVersion>1.1.0.6</IntroducedVersion>
+          <IsCustomizable>1</IsCustomizable>
+          <IsRenameable>1</IsRenameable>
+          <CanModifySearchSettings>1</CanModifySearchSettings>
+          <CanModifyRequirementLevelSettings>1</CanModifyRequirementLevelSettings>
+          <CanModifyAdditionalSettings>1</CanModifyAdditionalSettings>
+          <SourceType>0</SourceType>
+          <IsGlobalFilterEnabled>0</IsGlobalFilterEnabled>
+          <IsSortableEnabled>0</IsSortableEnabled>
+          <CanModifyGlobalFilterSettings>1</CanModifyGlobalFilterSettings>
+          <CanModifyIsSortableSettings>1</CanModifyIsSortableSettings>
+          <IsDataSourceSecret>0</IsDataSourceSecret>
+          <AutoNumberFormat></AutoNumberFormat>
+          <IsSearchable>0</IsSearchable>
+          <IsFilterable>0</IsFilterable>
+          <IsRetrievable>0</IsRetrievable>
+          <IsLocalizable>0</IsLocalizable>
+          <AppDefaultValue>-1</AppDefaultValue>
+          <optionset Name="book_unfundedrequests_book_resourcingstrategy">
+            <OptionSetType>picklist</OptionSetType>
+            <IntroducedVersion>1.1.0.6</IntroducedVersion>
+            <IsCustomizable>1</IsCustomizable>
+            <ExternalTypeName></ExternalTypeName>
+            <displaynames>
+              <displayname description="Resourcing Strategy" languagecode="1033" />
+            </displaynames>
+            <Descriptions>
+              <Description description="" languagecode="1033" />
+            </Descriptions>
+            <options>
+              <option value="0" ExternalValue="" IsHidden="0">
+                <labels>
+                  <label description="Enterprise Strategy" languagecode="1033" />
+                </labels>
+                <Descriptions>
+                  <Description description="" languagecode="1033" />
+                </Descriptions>
+              </option>
+              <option value="1" ExternalValue="" IsHidden="0">
+                <labels>
+                  <label description="Fund Internal to OPR" languagecode="1033" />
+                </labels>
+                <Descriptions>
+                  <Description description="" languagecode="1033" />
+                </Descriptions>
+              </option>
+              <option value="2" ExternalValue="" IsHidden="0">
+                <labels>
+                  <label description="Lower Priority / Reduce TDP" languagecode="1033" />
+                </labels>
+                <Descriptions>
+                  <Description description="" languagecode="1033" />
+                </Descriptions>
+              </option>
+              <option value="3" ExternalValue="" IsHidden="0">
+                <labels>
+                  <label description="Omnibus" languagecode="1033" />
+                </labels>
+                <Descriptions>
+                  <Description description="" languagecode="1033" />
+                </Descriptions>
+              </option>
+              <option value="4" ExternalValue="" IsHidden="0">
+                <labels>
+                  <label description="Other OPR Support" languagecode="1033" />
+                </labels>
+                <Descriptions>
+                  <Description description="" languagecode="1033" />
+                </Descriptions>
+              </option>
+              <option value="5" ExternalValue="" IsHidden="0">
+                <labels>
+                  <label description="Reprogramming / ATR" languagecode="1033" />
+                </labels>
+                <Descriptions>
+                  <Description description="" languagecode="1033" />
+                </Descriptions>
+              </option>
+              <option value="6" IsHidden="0">
+                <labels>
+                  <label description="Do Not Resource UFR" languagecode="1033" />
+                </labels>
+                <Descriptions>
+                  <Description description="" languagecode="1033" />
+                </Descriptions>
+              </option>
+            </options>
+          </optionset>
+          <displaynames>
+            <displayname description="Resourcing Strategy" languagecode="1033" />
+          </displaynames>
+          <Descriptions>
+            <Description description="Options selected by the RWG for Resourcing of UFR" languagecode="1033" />
+          </Descriptions>
+        </attribute>
+        <attribute PhysicalName="book_ReturnonInvestment">
+          <Type>ntext</Type>
+          <Name>book_returnoninvestment</Name>
+          <LogicalName>book_returnoninvestment</LogicalName>
+          <RequiredLevel>none</RequiredLevel>
+          <DisplayMask>ValidForAdvancedFind|ValidForForm|ValidForGrid</DisplayMask>
+          <ImeMode>auto</ImeMode>
+          <ValidForUpdateApi>1</ValidForUpdateApi>
+          <ValidForReadApi>1</ValidForReadApi>
+          <ValidForCreateApi>1</ValidForCreateApi>
+          <IsCustomField>1</IsCustomField>
+          <IsAuditEnabled>1</IsAuditEnabled>
+          <IsSecured>0</IsSecured>
+          <IntroducedVersion>1.11.0.27</IntroducedVersion>
+          <IsCustomizable>1</IsCustomizable>
+          <IsRenameable>1</IsRenameable>
+          <CanModifySearchSettings>1</CanModifySearchSettings>
+          <CanModifyRequirementLevelSettings>1</CanModifyRequirementLevelSettings>
+          <CanModifyAdditionalSettings>1</CanModifyAdditionalSettings>
+          <SourceType>0</SourceType>
+          <IsGlobalFilterEnabled>0</IsGlobalFilterEnabled>
+          <IsSortableEnabled>0</IsSortableEnabled>
+          <CanModifyGlobalFilterSettings>1</CanModifyGlobalFilterSettings>
+          <CanModifyIsSortableSettings>1</CanModifyIsSortableSettings>
+          <IsDataSourceSecret>0</IsDataSourceSecret>
+          <AutoNumberFormat></AutoNumberFormat>
+          <IsSearchable>0</IsSearchable>
+          <IsFilterable>0</IsFilterable>
+          <IsRetrievable>0</IsRetrievable>
+          <IsLocalizable>0</IsLocalizable>
+          <Format>richtext</Format>
+          <MaxLength>2000</MaxLength>
+          <displaynames>
+            <displayname description="Return on Investment" languagecode="1033" />
+          </displaynames>
+          <Descriptions>
+            <Description description="ROI for this UFR" languagecode="1033" />
+          </Descriptions>
+        </attribute>
         <attribute PhysicalName="book_RIAction">
           <Type>picklist</Type>
           <Name>book_riaction</Name>
@@ -841,6 +1224,84 @@
             <Description description="" languagecode="1033" />
           </Descriptions>
         </attribute>
+        <attribute PhysicalName="book_RiskifNotFunded">
+          <Type>ntext</Type>
+          <Name>book_riskifnotfunded</Name>
+          <LogicalName>book_riskifnotfunded</LogicalName>
+          <RequiredLevel>none</RequiredLevel>
+          <DisplayMask>ValidForAdvancedFind|ValidForForm|ValidForGrid</DisplayMask>
+          <ImeMode>auto</ImeMode>
+          <ValidForUpdateApi>1</ValidForUpdateApi>
+          <ValidForReadApi>1</ValidForReadApi>
+          <ValidForCreateApi>1</ValidForCreateApi>
+          <IsCustomField>1</IsCustomField>
+          <IsAuditEnabled>1</IsAuditEnabled>
+          <IsSecured>0</IsSecured>
+          <IntroducedVersion>1.11.0.27</IntroducedVersion>
+          <IsCustomizable>1</IsCustomizable>
+          <IsRenameable>1</IsRenameable>
+          <CanModifySearchSettings>1</CanModifySearchSettings>
+          <CanModifyRequirementLevelSettings>1</CanModifyRequirementLevelSettings>
+          <CanModifyAdditionalSettings>1</CanModifyAdditionalSettings>
+          <SourceType>0</SourceType>
+          <IsGlobalFilterEnabled>0</IsGlobalFilterEnabled>
+          <IsSortableEnabled>0</IsSortableEnabled>
+          <CanModifyGlobalFilterSettings>1</CanModifyGlobalFilterSettings>
+          <CanModifyIsSortableSettings>1</CanModifyIsSortableSettings>
+          <IsDataSourceSecret>0</IsDataSourceSecret>
+          <AutoNumberFormat></AutoNumberFormat>
+          <IsSearchable>0</IsSearchable>
+          <IsFilterable>0</IsFilterable>
+          <IsRetrievable>0</IsRetrievable>
+          <IsLocalizable>0</IsLocalizable>
+          <Format>richtext</Format>
+          <MaxLength>2000</MaxLength>
+          <displaynames>
+            <displayname description="Risk if Not Funded" languagecode="1033" />
+          </displaynames>
+          <Descriptions>
+            <Description description="Risk specific column for NOT receiving funding" languagecode="1033" />
+          </Descriptions>
+        </attribute>
+        <attribute PhysicalName="book_RiskifPartiallyFunded">
+          <Type>ntext</Type>
+          <Name>book_riskifpartiallyfunded</Name>
+          <LogicalName>book_riskifpartiallyfunded</LogicalName>
+          <RequiredLevel>none</RequiredLevel>
+          <DisplayMask>ValidForAdvancedFind|ValidForForm|ValidForGrid</DisplayMask>
+          <ImeMode>auto</ImeMode>
+          <ValidForUpdateApi>1</ValidForUpdateApi>
+          <ValidForReadApi>1</ValidForReadApi>
+          <ValidForCreateApi>1</ValidForCreateApi>
+          <IsCustomField>1</IsCustomField>
+          <IsAuditEnabled>1</IsAuditEnabled>
+          <IsSecured>0</IsSecured>
+          <IntroducedVersion>1.11.0.27</IntroducedVersion>
+          <IsCustomizable>1</IsCustomizable>
+          <IsRenameable>1</IsRenameable>
+          <CanModifySearchSettings>1</CanModifySearchSettings>
+          <CanModifyRequirementLevelSettings>1</CanModifyRequirementLevelSettings>
+          <CanModifyAdditionalSettings>1</CanModifyAdditionalSettings>
+          <SourceType>0</SourceType>
+          <IsGlobalFilterEnabled>0</IsGlobalFilterEnabled>
+          <IsSortableEnabled>0</IsSortableEnabled>
+          <CanModifyGlobalFilterSettings>1</CanModifyGlobalFilterSettings>
+          <CanModifyIsSortableSettings>1</CanModifyIsSortableSettings>
+          <IsDataSourceSecret>0</IsDataSourceSecret>
+          <AutoNumberFormat></AutoNumberFormat>
+          <IsSearchable>0</IsSearchable>
+          <IsFilterable>0</IsFilterable>
+          <IsRetrievable>0</IsRetrievable>
+          <IsLocalizable>0</IsLocalizable>
+          <Format>richtext</Format>
+          <MaxLength>2000</MaxLength>
+          <displaynames>
+            <displayname description="Risk if Partially Funded" languagecode="1033" />
+          </displaynames>
+          <Descriptions>
+            <Description description="Partial Funding Risk" languagecode="1033" />
+          </Descriptions>
+        </attribute>
         <attribute PhysicalName="book_RiskStatement">
           <Type>ntext</Type>
           <Name>book_riskstatement</Name>
@@ -874,10 +1335,49 @@
           <Format>text</Format>
           <MaxLength>2000</MaxLength>
           <displaynames>
-            <displayname description="Risk Statement" languagecode="1033" />
+            <displayname description="Deprecated - Risk Statement" languagecode="1033" />
           </displaynames>
           <Descriptions>
             <Description description="If Unfunded, what are the Risks?" languagecode="1033" />
+          </Descriptions>
+        </attribute>
+        <attribute PhysicalName="book_RWGIdentifiedRisk">
+          <Type>picklist</Type>
+          <Name>book_rwgidentifiedrisk</Name>
+          <LogicalName>book_rwgidentifiedrisk</LogicalName>
+          <RequiredLevel>none</RequiredLevel>
+          <DisplayMask>ValidForAdvancedFind|ValidForForm|ValidForGrid</DisplayMask>
+          <ImeMode>auto</ImeMode>
+          <ValidForUpdateApi>1</ValidForUpdateApi>
+          <ValidForReadApi>1</ValidForReadApi>
+          <ValidForCreateApi>1</ValidForCreateApi>
+          <IsCustomField>1</IsCustomField>
+          <IsAuditEnabled>1</IsAuditEnabled>
+          <IsSecured>1</IsSecured>
+          <IntroducedVersion>1.1.0.6</IntroducedVersion>
+          <IsCustomizable>1</IsCustomizable>
+          <IsRenameable>1</IsRenameable>
+          <CanModifySearchSettings>1</CanModifySearchSettings>
+          <CanModifyRequirementLevelSettings>1</CanModifyRequirementLevelSettings>
+          <CanModifyAdditionalSettings>1</CanModifyAdditionalSettings>
+          <SourceType>0</SourceType>
+          <IsGlobalFilterEnabled>0</IsGlobalFilterEnabled>
+          <IsSortableEnabled>0</IsSortableEnabled>
+          <CanModifyGlobalFilterSettings>1</CanModifyGlobalFilterSettings>
+          <CanModifyIsSortableSettings>1</CanModifyIsSortableSettings>
+          <IsDataSourceSecret>0</IsDataSourceSecret>
+          <AutoNumberFormat></AutoNumberFormat>
+          <IsSearchable>0</IsSearchable>
+          <IsFilterable>0</IsFilterable>
+          <IsRetrievable>0</IsRetrievable>
+          <IsLocalizable>0</IsLocalizable>
+          <AppDefaultValue>-1</AppDefaultValue>
+          <OptionSetName>book_risk</OptionSetName>
+          <displaynames>
+            <displayname description="RWG Identified Risk" languagecode="1033" />
+          </displaynames>
+          <Descriptions>
+            <Description description="" languagecode="1033" />
           </Descriptions>
         </attribute>
         <attribute PhysicalName="book_RWGOutcome">
@@ -917,6 +1417,44 @@
           </displaynames>
           <Descriptions>
             <Description description="" languagecode="1033" />
+          </Descriptions>
+        </attribute>
+        <attribute PhysicalName="book_RWGPriorityBIN">
+          <Type>lookup</Type>
+          <Name>book_rwgprioritybin</Name>
+          <LogicalName>book_rwgprioritybin</LogicalName>
+          <RequiredLevel>none</RequiredLevel>
+          <DisplayMask>ValidForAdvancedFind|ValidForForm|ValidForGrid</DisplayMask>
+          <ValidForUpdateApi>1</ValidForUpdateApi>
+          <ValidForReadApi>1</ValidForReadApi>
+          <ValidForCreateApi>1</ValidForCreateApi>
+          <IsCustomField>1</IsCustomField>
+          <IsAuditEnabled>0</IsAuditEnabled>
+          <IsSecured>1</IsSecured>
+          <IntroducedVersion>1.1.0.6</IntroducedVersion>
+          <IsCustomizable>1</IsCustomizable>
+          <IsRenameable>1</IsRenameable>
+          <CanModifySearchSettings>1</CanModifySearchSettings>
+          <CanModifyRequirementLevelSettings>1</CanModifyRequirementLevelSettings>
+          <CanModifyAdditionalSettings>1</CanModifyAdditionalSettings>
+          <SourceType>0</SourceType>
+          <IsGlobalFilterEnabled>0</IsGlobalFilterEnabled>
+          <IsSortableEnabled>0</IsSortableEnabled>
+          <CanModifyGlobalFilterSettings>1</CanModifyGlobalFilterSettings>
+          <CanModifyIsSortableSettings>1</CanModifyIsSortableSettings>
+          <IsDataSourceSecret>0</IsDataSourceSecret>
+          <AutoNumberFormat></AutoNumberFormat>
+          <IsSearchable>0</IsSearchable>
+          <IsFilterable>0</IsFilterable>
+          <IsRetrievable>0</IsRetrievable>
+          <IsLocalizable>0</IsLocalizable>
+          <LookupStyle>single</LookupStyle>
+          <LookupTypes />
+          <displaynames>
+            <displayname description="RWG Priority BIN" languagecode="1033" />
+          </displaynames>
+          <Descriptions>
+            <Description description="BIN specific for RWG" languagecode="1033" />
           </Descriptions>
         </attribute>
         <attribute PhysicalName="book_SpendPlanComments">
@@ -1285,6 +1823,47 @@
             <Description description="" languagecode="1033" />
           </Descriptions>
         </attribute>
+        <attribute PhysicalName="book_UnfundedAmount">
+          <Type>decimal</Type>
+          <Name>book_unfundedamount</Name>
+          <LogicalName>book_unfundedamount</LogicalName>
+          <RequiredLevel>none</RequiredLevel>
+          <DisplayMask>ValidForAdvancedFind|ValidForForm|ValidForGrid</DisplayMask>
+          <ImeMode>auto</ImeMode>
+          <ValidForUpdateApi>0</ValidForUpdateApi>
+          <ValidForReadApi>1</ValidForReadApi>
+          <ValidForCreateApi>0</ValidForCreateApi>
+          <IsCustomField>1</IsCustomField>
+          <IsAuditEnabled>0</IsAuditEnabled>
+          <IsSecured>0</IsSecured>
+          <IntroducedVersion>1.1.0.39</IntroducedVersion>
+          <IsCustomizable>1</IsCustomizable>
+          <IsRenameable>1</IsRenameable>
+          <CanModifySearchSettings>1</CanModifySearchSettings>
+          <CanModifyRequirementLevelSettings>1</CanModifyRequirementLevelSettings>
+          <CanModifyAdditionalSettings>1</CanModifyAdditionalSettings>
+          <SourceType>3</SourceType>
+          <IsGlobalFilterEnabled>0</IsGlobalFilterEnabled>
+          <IsSortableEnabled>0</IsSortableEnabled>
+          <CanModifyGlobalFilterSettings>1</CanModifyGlobalFilterSettings>
+          <CanModifyIsSortableSettings>1</CanModifyIsSortableSettings>
+          <IsDataSourceSecret>0</IsDataSourceSecret>
+          <AutoNumberFormat></AutoNumberFormat>
+          <IsSearchable>0</IsSearchable>
+          <IsFilterable>0</IsFilterable>
+          <IsRetrievable>0</IsRetrievable>
+          <IsLocalizable>0</IsLocalizable>
+          <MinValue>-100000000000</MinValue>
+          <MaxValue>100000000000</MaxValue>
+          <Accuracy>2</Accuracy>
+          <displaynames>
+            <displayname description="Unfunded Amount" languagecode="1033" />
+          </displaynames>
+          <Descriptions>
+            <Description description="Amount remaining to be funded" languagecode="1033" />
+          </Descriptions>
+          <FormulaDefinitionFileName>/Formulas/book_unfundedrequests-FormulaDefinitions.yaml</FormulaDefinitionFileName>
+        </attribute>
         <attribute PhysicalName="book_UnfundedRequestsId">
           <Type>primarykey</Type>
           <Name>book_unfundedrequestsid</Name>
@@ -1477,6 +2056,46 @@
           </displaynames>
           <Descriptions>
             <Description description="Unique identifier of the delegate user who created the record." languagecode="1033" />
+          </Descriptions>
+        </attribute>
+        <attribute PhysicalName="ExchangeRate">
+          <Type>decimal</Type>
+          <Name>exchangerate</Name>
+          <LogicalName>exchangerate</LogicalName>
+          <RequiredLevel>none</RequiredLevel>
+          <DisplayMask>ValidForAdvancedFind|ValidForForm|ValidForGrid</DisplayMask>
+          <ImeMode>disabled</ImeMode>
+          <ValidForUpdateApi>0</ValidForUpdateApi>
+          <ValidForReadApi>1</ValidForReadApi>
+          <ValidForCreateApi>0</ValidForCreateApi>
+          <IsCustomField>0</IsCustomField>
+          <IsAuditEnabled>1</IsAuditEnabled>
+          <IsSecured>0</IsSecured>
+          <IntroducedVersion>1.1.0.6</IntroducedVersion>
+          <IsCustomizable>1</IsCustomizable>
+          <IsRenameable>1</IsRenameable>
+          <CanModifySearchSettings>1</CanModifySearchSettings>
+          <CanModifyRequirementLevelSettings>1</CanModifyRequirementLevelSettings>
+          <CanModifyAdditionalSettings>1</CanModifyAdditionalSettings>
+          <SourceType>0</SourceType>
+          <IsGlobalFilterEnabled>0</IsGlobalFilterEnabled>
+          <IsSortableEnabled>0</IsSortableEnabled>
+          <CanModifyGlobalFilterSettings>1</CanModifyGlobalFilterSettings>
+          <CanModifyIsSortableSettings>1</CanModifyIsSortableSettings>
+          <IsDataSourceSecret>0</IsDataSourceSecret>
+          <AutoNumberFormat></AutoNumberFormat>
+          <IsSearchable>0</IsSearchable>
+          <IsFilterable>0</IsFilterable>
+          <IsRetrievable>0</IsRetrievable>
+          <IsLocalizable>0</IsLocalizable>
+          <MinValue>1E-10</MinValue>
+          <MaxValue>100000000000</MaxValue>
+          <Accuracy>12</Accuracy>
+          <displaynames>
+            <displayname description="Exchange Rate" languagecode="1033" />
+          </displaynames>
+          <Descriptions>
+            <Description description="Exchange rate for the currency associated with the entity with respect to the base currency." languagecode="1033" />
           </Descriptions>
         </attribute>
         <attribute PhysicalName="ImportSequenceNumber">
@@ -2069,6 +2688,45 @@
             <Description description="For internal use only." languagecode="1033" />
           </Descriptions>
         </attribute>
+        <attribute PhysicalName="TransactionCurrencyId">
+          <Type>lookup</Type>
+          <Name>transactioncurrencyid</Name>
+          <LogicalName>transactioncurrencyid</LogicalName>
+          <RequiredLevel>none</RequiredLevel>
+          <DisplayMask>ValidForAdvancedFind|ValidForForm|ValidForGrid</DisplayMask>
+          <ImeMode>auto</ImeMode>
+          <ValidForUpdateApi>1</ValidForUpdateApi>
+          <ValidForReadApi>1</ValidForReadApi>
+          <ValidForCreateApi>1</ValidForCreateApi>
+          <IsCustomField>0</IsCustomField>
+          <IsAuditEnabled>1</IsAuditEnabled>
+          <IsSecured>0</IsSecured>
+          <IntroducedVersion>1.1.0.6</IntroducedVersion>
+          <IsCustomizable>1</IsCustomizable>
+          <IsRenameable>1</IsRenameable>
+          <CanModifySearchSettings>1</CanModifySearchSettings>
+          <CanModifyRequirementLevelSettings>1</CanModifyRequirementLevelSettings>
+          <CanModifyAdditionalSettings>1</CanModifyAdditionalSettings>
+          <SourceType>0</SourceType>
+          <IsGlobalFilterEnabled>0</IsGlobalFilterEnabled>
+          <IsSortableEnabled>0</IsSortableEnabled>
+          <CanModifyGlobalFilterSettings>1</CanModifyGlobalFilterSettings>
+          <CanModifyIsSortableSettings>1</CanModifyIsSortableSettings>
+          <IsDataSourceSecret>0</IsDataSourceSecret>
+          <AutoNumberFormat></AutoNumberFormat>
+          <IsSearchable>0</IsSearchable>
+          <IsFilterable>0</IsFilterable>
+          <IsRetrievable>0</IsRetrievable>
+          <IsLocalizable>0</IsLocalizable>
+          <LookupStyle>single</LookupStyle>
+          <LookupTypes />
+          <displaynames>
+            <displayname description="Currency" languagecode="1033" />
+          </displaynames>
+          <Descriptions>
+            <Description description="Unique identifier of the currency associated with the entity." languagecode="1033" />
+          </Descriptions>
+        </attribute>
         <attribute PhysicalName="traversedpath">
           <Type>nvarchar</Type>
           <Name>traversedpath</Name>
@@ -2151,17 +2809,29 @@
       </attributes>
       <EntityKeys>
         <EntityKey>
-          <Name>book_uniquePriUFR</Name>
-          <LogicalName>book_uniquepriufr</LogicalName>
-          <IntroducedVersion>1.11.0.24</IntroducedVersion>
+          <Name>book_prioritizationUFR</Name>
+          <LogicalName>book_prioritizationufr</LogicalName>
+          <IntroducedVersion>1.11.0.26</IntroducedVersion>
           <IsCustomizable>0</IsCustomizable>
           <EntityKeyAttributes>
-            <AttributeName>book_requirementfunding</AttributeName>
             <AttributeName>book_staterequirement</AttributeName>
             <AttributeName>book_ufrtype</AttributeName>
           </EntityKeyAttributes>
           <displaynames>
-            <displayname description="uniquePriUFR" languagecode="1033" />
+            <displayname description="prioritizationUFR" languagecode="1033" />
+          </displaynames>
+        </EntityKey>
+        <EntityKey>
+          <Name>book_requirementUFR</Name>
+          <LogicalName>book_requirementufr</LogicalName>
+          <IntroducedVersion>1.11.0.26</IntroducedVersion>
+          <IsCustomizable>0</IsCustomizable>
+          <EntityKeyAttributes>
+            <AttributeName>book_keycolumnrequirementfunding</AttributeName>
+            <AttributeName>book_ufrtype</AttributeName>
+          </EntityKeyAttributes>
+          <displaynames>
+            <displayname description="requirementUFR" languagecode="1033" />
           </displaynames>
         </EntityKey>
       </EntityKeys>

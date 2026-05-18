@@ -40,7 +40,7 @@
                         <labels>
                           <label description="Risk Statement" languagecode="1033" />
                         </labels>
-                        <control id="bpf_book_unfundedrequests_book_arngcheckbookufr:book_riskstatement" classid="{4273edbd-ac1d-40d3-9fb2-095c621b552d}" datafieldname="book_riskstatement" disabled="false" relationship="bpf_book_unfundedrequests_book_arngcheckbookufr" isrequired="true" />
+                        <control id="bpf_book_unfundedrequests_book_arngcheckbookufr:book_newriskstatement" classid="{4273edbd-ac1d-40d3-9fb2-095c621b552d}" datafieldname="book_newriskstatement" disabled="false" relationship="bpf_book_unfundedrequests_book_arngcheckbookufr" isrequired="true" />
                       </cell>
                     </row>
                     <row>
@@ -143,40 +143,6 @@
                           <label description="NPM Recommendation" languagecode="1033" />
                         </labels>
                         <control id="bpf_book_unfundedrequests_book_arngcheckbookufr:book_npmstaterecommendation" classid="{67fac785-cd58-4f9f-abb3-4b7ddc6ed5ed}" datafieldname="book_npmstaterecommendation" disabled="false" relationship="bpf_book_unfundedrequests_book_arngcheckbookufr" isrequired="true" />
-                      </cell>
-                    </row>
-                  </rows>
-                </section>
-              </sections>
-            </column>
-          </columns>
-        </tab>
-        <tab verticallayout="true" id="{7d5f4561-eb6b-4a11-b524-cb7c1d1b6ccd}" name="StageStep30" locklevel="0" expanded="true" visible="false" labelid="{fe9a5bf2-8688-4a88-851f-acba70f0abc0}">
-          <labels>
-            <label description="Outcome" languagecode="1033" />
-          </labels>
-          <columns>
-            <column width="100%">
-              <sections>
-                <section showbar="false" columns="1" id="{96cea259-26cc-8006-080d-e37281c11079}" name="StageStep30_section1" labelid="{aab6006c-5b70-4f7c-a254-306fa4e6ae90}">
-                  <labels>
-                    <label description="Outcome" languagecode="1033" />
-                  </labels>
-                  <rows>
-                    <row>
-                      <cell id="{d4dc7220-328d-4c3b-80dc-60c3c8ab91fa}" showlabel="true" visible="true" labelid="{f1c4eac6-b4f1-4a89-9d77-d7a75851c8ae}">
-                        <labels>
-                          <label description="Outcome" languagecode="1033" />
-                        </labels>
-                        <control id="bpf_book_unfundedrequests_book_arngcheckbookufr:book_outcome" classid="{3ef39988-22bb-4f0b-bbbe-64b5a3748aee}" datafieldname="book_outcome" disabled="false" relationship="bpf_book_unfundedrequests_book_arngcheckbookufr" isrequired="true" />
-                      </cell>
-                    </row>
-                    <row>
-                      <cell id="{693b5b0b-0012-4d34-9acd-ef1f22b7d69f}" showlabel="true" visible="true" labelid="{7f6fc46e-dea2-4f9d-9f9b-df358d1e450f}">
-                        <labels>
-                          <label description="Outcome Narrative" languagecode="1033" />
-                        </labels>
-                        <control id="bpf_book_unfundedrequests_book_arngcheckbookufr:book_outcomenarrative" classid="{4273edbd-ac1d-40d3-9fb2-095c621b552d}" datafieldname="book_outcomenarrative" disabled="false" relationship="bpf_book_unfundedrequests_book_arngcheckbookufr" isrequired="true" />
                       </cell>
                     </row>
                   </rows>

@@ -13,7 +13,7 @@
           <cell name="book_fiscalyear" width="103" />
           <cell name="book_newdebitedloa" width="117" />
           <cell name="book_newcreditedloa" width="121" />
-          <cell name="book_amount" width="100" />
+          <cell name="book_newamount" width="100" />
           <cell name="book_remarks" width="100" />
         </row>
       </grid>
@@ -26,11 +26,11 @@
           <filter type="and">
             <condition attribute="statecode" operator="eq" value="0" />
           </filter>
-          <attribute name="book_amount" />
           <attribute name="book_newdebitedloa" />
           <attribute name="book_newcreditedloa" />
           <attribute name="book_fiscalyear" />
           <attribute name="book_remarks" />
+          <attribute name="book_newamount" />
         </entity>
       </fetch>
     </fetchxml>

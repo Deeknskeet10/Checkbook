@@ -167,22 +167,47 @@ namespace ARNGCheckbook.Plugins
         /// <summary>
         /// Gets the effective decimal value from target or pre-image.
         /// Returns target value if present, otherwise falls back to pre-image.
+        /// Handles both decimal and double (float) column types from Dataverse.
         /// </summary>
         protected static decimal GetEffectiveDecimal(Entity target, Entity preImage, string attributeName)
         {
             // Check target first (changed value)
             if (target.Contains(attributeName))
             {
-                return target.GetAttributeValue<decimal>(attributeName);
+                return ConvertToDecimal(target[attributeName]);
             }
 
             // Fall back to pre-image (unchanged value)
             if (preImage != null && preImage.Contains(attributeName))
             {
-                return preImage.GetAttributeValue<decimal>(attributeName);
+                return ConvertToDecimal(preImage[attributeName]);
             }
 
             return 0m;
+        }
+
+        /// <summary>
+        /// Converts a Dataverse numeric value to decimal.
+        /// Handles double (float columns), decimal, and int types.
+        /// </summary>
+        private static decimal ConvertToDecimal(object value)
+        {
+            if (value == null)
+                return 0m;
+
+            switch (value)
+            {
+                case double d:
+                    return (decimal)d;
+                case decimal dec:
+                    return dec;
+                case int i:
+                    return i;
+                case float f:
+                    return (decimal)f;
+                default:
+                    return 0m;
+            }
         }
 
         /// <summary>

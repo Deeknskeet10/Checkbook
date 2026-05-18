@@ -7,8 +7,8 @@
         <fetch mapping="logical" aggregate="true">
           <entity name="book_prioritization">
             <attribute name="book_state" groupby="true" alias="_CRMAutoGen_groupby_column_Num_0" />
-            <attribute name="book_requestedamount" aggregate="sum" alias="_CRMAutoGen_aggregate_column_Num_0" />
-            <attribute name="book_fundedamounttdp" aggregate="sum" alias="_CRMAutoGen_aggregate_column_Num_13" />
+            <attribute name="book_newrequestedamount" aggregate="sum" alias="_CRMAutoGen_aggregate_column_Num_0" />
+            <attribute name="book_newfundedamounttdp" aggregate="sum" alias="_CRMAutoGen_aggregate_column_Num_13" />
           </entity>
         </fetch>
       </fetchcollection>

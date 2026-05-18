@@ -48,7 +48,7 @@
                         <labels>
                           <label description="Risk Statement" languagecode="1033" />
                         </labels>
-                        <control id="bpf_book_unfundedrequests_book_arngcheckbookufrvalidation:book_riskstatement" classid="{4273edbd-ac1d-40d3-9fb2-095c621b552d}" datafieldname="book_riskstatement" disabled="false" relationship="bpf_book_unfundedrequests_book_arngcheckbookufrvalidation" isrequired="true" />
+                        <control id="bpf_book_unfundedrequests_book_arngcheckbookufrvalidation:book_newriskstatement" classid="{4273edbd-ac1d-40d3-9fb2-095c621b552d}" datafieldname="book_newriskstatement" disabled="false" relationship="bpf_book_unfundedrequests_book_arngcheckbookufrvalidation" isrequired="true" />
                       </cell>
                     </row>
                     <row>
@@ -213,6 +213,14 @@
                           <label description="Outcome" languagecode="1033" />
                         </labels>
                         <control id="bpf_book_unfundedrequests_book_arngcheckbookufrvalidation:book_outcome" classid="{3ef39988-22bb-4f0b-bbbe-64b5a3748aee}" datafieldname="book_outcome" disabled="false" relationship="bpf_book_unfundedrequests_book_arngcheckbookufrvalidation" isrequired="true" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{169f2073-45a7-4f8c-b430-f0b32410460f}" showlabel="true" visible="true" labelid="{2938d5b6-e3d5-479e-914a-befc766752bd}">
+                        <labels>
+                          <label description="Outcome Amount" languagecode="1033" />
+                        </labels>
+                        <control id="bpf_book_unfundedrequests_book_arngcheckbookufrvalidation:book_outcomeamount" classid="{533b9e00-756b-4312-95a0-dc888637ac78}" datafieldname="book_outcomeamount" disabled="false" relationship="bpf_book_unfundedrequests_book_arngcheckbookufrvalidation" isrequired="true" />
                       </cell>
                     </row>
                     <row>

@@ -7,17 +7,24 @@ This document provides context for AI agents working on the ARNG Checkbook Power
 ## Solution Overview
 
 **Name:** ARNG Checkbook
-**Version:** 1.11.0.26
-**Publisher Prefix:** `book`
+**Version:** 1.11.0.40
+**Publisher:** `ARNGCheckbook` — prefix `book`, option-value prefix `74649`
 **Description:** Army National Guard resource management and budget execution tracking system
 
 The ARNG Checkbook is a comprehensive financial management solution for tracking requirements, funding allocations, prioritizations, spend plans, and budget execution across state National Guard units.
+
+> **Companion solution:** the 11 PCF code components used by this app currently
+> ship in a separate solution, `ARNGCheckbookSupplyCodes` (publisher
+> `ArmySupplyCodes`, prefix `arsc`), unpacked to `src/ARNGCheckbookSupplyCodes/`.
+> The project goal is to merge these into this solution under the `book`
+> publisher so the whole application ships as one `.zip`. See the repo-root
+> `CLAUDE.md` → "Merging the PCF solution" for the open questions.
 
 ---
 
 ## Domain Model
 
-### Core Entities (45 total)
+### Core Entities (47 custom `book_*` tables)
 
 #### Financial Structure
 | Entity | Schema Name | Purpose |
@@ -134,13 +141,13 @@ State Input (0) → FC Review (1) → State Review (2) → State Approved (3) �
 
 ### Workflows
 
-**Power Automate Flows (31 total):**
+**Power Automate Flows (29 total):**
 - Notification flows: Distribution sent, Funded amount altered, Realignment/Turn-in created
 - Calculation flows: LOA TDP recalculation, Spend plan roll-up, Funding aggregation
 - Generation flows: UFR generation, Distribution generation, LOA generation
 - Data maintenance: MDEP maintenance, Deactivation handlers
 
-**Classic CRM Workflows (48 total):**
+**Classic CRM Workflows (55 total):**
 - Form field show/hide logic
 - Record naming conventions
 - Field initialization and locking
@@ -158,118 +165,76 @@ State Input (0) → FC Review (1) → State Review (2) → State Approved (3) �
 
 ---
 
-## Plugin Integration Opportunities
+## Plugins (Implemented)
 
-### High Priority — Server-Side Validation
+The C# plugin project lives **outside this solution folder** at
+`plugins/ARNGCheckbook.Plugins/` (targets .NET Framework 4.6.2). Earlier
+versions of this doc framed plugins as future "opportunities" — they now exist.
+The solution's registration metadata is under `PluginAssemblies/` and
+`SdkMessageProcessingSteps/`; `plugins/ARNGCheckbook.Plugins/PluginRegistration.json`
+is the source-of-truth step manifest.
 
-1. **TDP Allocation Validation** (`book_RequirementFunding`)
-   - Current: Client-side validation in `book_requirementFundingValidation`
-   - Issue: Synchronous XHR calls, bypassable validation
-   - Plugin: Pre-operation on Create/Update to validate TDP doesn't exceed LOA
-   - Trigger: `book_tdp` or `book_lineofaccounting` changes
+```
+plugins/ARNGCheckbook.Plugins/
+├── PluginBase.cs                       # Shared IPlugin base class
+├── Validation/
+│   ├── RequirementFundingTDPValidator.cs   # PreOp sync, book_requirementfunding
+│   ├── PrioritizationValidator.cs          # PreOp sync, book_prioritization
+│   ├── SpendPlanValidator.cs
+│   ├── DistributionValidator.cs
+│   └── ValidationMessages.cs
+├── BusinessLogic/
+│   ├── LedgerEntryCreator.cs
+│   ├── NameBuilder.cs
+│   └── RecordInitializer.cs
+├── Realignments/
+│   └── SetSameFundSagFlagPlugin.cs
+├── LOATDPRecalculator.cs
+├── Helpers/TDPCalculationHelper.cs
+└── Constants/EntityConstants.cs
+```
 
-2. **Unique Priority Enforcement** (`book_Prioritization`)
-   - Current: Client-side async check in `book_verifyUniquePri`
-   - Issue: Race conditions, bypassable
-   - Plugin: Pre-operation on Create/Update to enforce unique `book_statepriority` per FY/State/FundCenter
+### Registered steps (from `PluginRegistration.json`)
 
-3. **Spend Plan Total Validation** (`book_SpendPlan`)
-   - Current: Client-side in `book_spendPlanValidate`
-   - Issue: Monthly allocations must not exceed total budget
-   - Plugin: Pre-operation validation summing month fields vs `book_total`
+| Plugin | Message | Entity | Stage / Mode |
+|--------|---------|--------|--------------|
+| `RequirementFundingTDPValidator` | Create, Update | `book_requirementfunding` | PreOperation / Sync |
+| `PrioritizationValidator` | Create, Update | `book_prioritization` | PreOperation / Sync |
 
-4. **Approval Status Transitions** (`book_Prioritization`)
-   - Current: Client-side role checks in `book_checkbookButtons`
-   - Issue: Status can be modified via API bypassing role checks
-   - Plugin: Pre-operation to enforce valid state transitions based on user roles
+Update steps register a `PreImage`. Filtering attributes scope execution to the
+relevant fields (e.g. `book_tdp`, `book_lineofaccounting`, `book_statepriority`).
 
-### Medium Priority — Business Logic
+### Build & register
 
-5. **Ledger Entry Creation** (`book_Realignments`, `book_Turnin`)
-   - Current: Power Automate flows
-   - Benefit: Transactional integrity, immediate ledger updates
-   - Plugin: Post-operation to create ledger entries atomically
-
-6. **Roll-up Calculations** (`book_RequirementFunding`, `book_Prioritization`)
-   - Current: Power Automate flows triggered on change
-   - Issue: Eventual consistency, potential timing issues
-   - Plugin: Post-operation async to aggregate funding amounts
-
-7. **LOA TDP Remaining Calculation** (`book_FundingLine`)
-   - Current: Flow-based recalculation
-   - Plugin: Post-operation on related RequirementFunding changes
-
-### Plugin Architecture Recommendation
-
-```csharp
-// Suggested plugin structure
-Plugins/
-├── ARNGCheckbook.Plugins/
-│   ├── Validation/
-│   │   ├── RequirementFundingTDPValidator.cs
-│   │   ├── PrioritizationUniqueValidator.cs
-│   │   ├── SpendPlanTotalValidator.cs
-│   │   └── ApprovalStatusTransitionValidator.cs
-│   ├── BusinessLogic/
-│   │   ├── LedgerEntryCreator.cs
-│   │   ├── FundingRollupCalculator.cs
-│   │   └── LOATDPRecalculator.cs
-│   └── Shared/
-│       ├── ValidationHelper.cs
-│       └── EntityExtensions.cs
+```bash
+cd plugins/ARNGCheckbook.Plugins && dotnet build      # → bin/Debug/net462/*.dll
+pwsh plugins/ARNGCheckbook.Plugins/Register-Plugins.ps1
 ```
 
 ---
 
-## PCF Component Opportunities
+## PCF Code Components
 
-### High Impact Components
+The 11 PCF controls used by this app currently ship in the separate
+`ARNGCheckbookSupplyCodes` solution (`src/ARNGCheckbookSupplyCodes/Controls/`).
+All use the `ARNGCheckbook` namespace; their solution-component names carry the
+`arsc_` publisher prefix.
 
-1. **Prioritization Grid with Drag-Drop Reordering**
-   - Replace standard subgrid for prioritization records
-   - Drag-drop to set `book_statepriority` values
-   - Visual indicators for approval status
-   - Automatic renumbering on reorder
+| Control | Notes |
+|---------|-------|
+| `ARNGCheckbook.SpendPlanGrid` | Used on the `book_Requirements` main form |
+| `ARNGCheckbook.PrioritizationsForRequirement` | Used on the `book_Requirements` main form |
+| `ARNGCheckbook.LedgerBalance` · `DecisionLedgerBalance` | Ledger balance displays |
+| `ARNGCheckbook.LedgersDonut` · `DistributionsDonut` | Chart visualizations |
+| `ARNGCheckbook.PendingRealignmentsQueue` · `RealignmentsFlow` | Realignment UI |
+| `ARNGCheckbook.ValidateAndFundGrid` | Validate-and-fund grid |
+| `ARNGCheckbook.UnfundedRequestsRank` | UFR ranking grid |
+| `ARNGCheckbook.LINRequestsGrid` | LIN requests grid |
 
-2. **Spend Plan Monthly Calendar**
-   - 12-month visual editor for spend allocation
-   - Real-time total validation with progress bar
-   - Color coding: under/at/over budget
-   - Replace 12 separate currency fields with single visual control
-
-3. **Funding Allocation Visualization**
-   - Sankey diagram: Fund → Fund Center → Requirements
-   - Interactive drill-down
-   - Show allocated vs available at each level
-
-4. **TDP Allocation Meter**
-   - Gauge/meter showing LOA utilization
-   - Real-time update as user enters TDP
-   - Threshold warnings (80%, 95%, 100%)
-   - Replace form notification with visual indicator
-
-5. **Approval Status Timeline**
-   - Horizontal timeline showing approval stages
-   - Current position highlighted
-   - Click to view/take action
-   - Shows who approved and when
-
-### Medium Impact Components
-
-6. **State Fund Center Tree View**
-   - Hierarchical navigation: State → Fund Centers → Requirements
-   - Expandable/collapsible nodes
-   - Aggregate totals at each level
-
-7. **Ledger Transaction Log**
-   - Timeline view of ledger entries for an LOA
-   - Running balance display
-   - Filter by transaction type
-
-8. **UFR Priority Matrix**
-   - 2D grid: Priority vs Funding Status
-   - Quick bulk status updates
-   - Export capability
+This solution's forms reference `arsc_ARNGCheckbook.SpendPlanGrid` and
+`arsc_ARNGCheckbook.PrioritizationsForRequirement` directly
+(`Entities/book_Requirements/FormXml/main/`). When the PCF components are merged
+under the `book` publisher, every such reference must be updated in lockstep.
 
 ---
 
@@ -374,11 +339,17 @@ Plugins/
 
 ---
 
-## Next Steps (Recommended Order)
+## Current Focus
 
-1. **Set up plugin project** — Create .NET project with SDK references
-2. **Implement TDP validation plugin** — Highest impact, removes sync XHR
-3. **Implement priority uniqueness plugin** — Prevents data integrity issues
-4. **Create Spend Plan calendar PCF** — Highest UX improvement
-5. **Create TDP allocation meter PCF** — Visual feedback for validation
-6. **Migrate classic workflows** — Reduce technical debt
+The plugin project and PCF components from the older "Next Steps" list have
+been built. The active work item is:
+
+1. **Consolidate to a single solution** — merge the `ARNGCheckbookSupplyCodes`
+   PCF solution into ARNGCheckbook under the `book` publisher, update all
+   `arsc_` control references, and produce one importable `.zip`. See repo-root
+   `CLAUDE.md` → "Merging the PCF solution".
+
+Still-open improvements from earlier analysis:
+- Migrate the 55 classic XAML workflows to business rules / modern flows.
+- Replace remaining synchronous XHR in `book_requirementFundingValidation` now
+  that server-side validation plugins exist.

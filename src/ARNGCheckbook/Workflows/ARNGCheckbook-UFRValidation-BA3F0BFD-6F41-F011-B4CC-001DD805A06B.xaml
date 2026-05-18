@@ -93,7 +93,7 @@
                     <sco:Collection x:TypeArguments="Variable" x:Key="Variables" />
                     <sco:Collection x:TypeArguments="Activity" x:Key="Activities">
                       <Sequence DisplayName="ControlStep11">
-                        <mcwb:Control ClassId="4273edbd-ac1d-40d3-9fb2-095c621b552d" ControlDisplayName="Risk Statement" ControlId="book_riskstatement" DataFieldName="book_riskstatement" IsSystemControl="False" IsUnbound="False" SystemStepType="0">
+                        <mcwb:Control ClassId="e0dece4b-6fc8-4a8f-a065-082708572369" ControlDisplayName="Risk Statement" ControlId="book_newriskstatement" DataFieldName="book_newriskstatement" IsSystemControl="False" IsUnbound="False" SystemStepType="0">
                           <mcwb:Control.Parameters>
                             <InArgument x:TypeArguments="x:String">
                               <Literal x:TypeArguments="x:String" Value="" />
@@ -174,18 +174,18 @@
                     <x:Boolean x:Key="IsProcessRequired">True</x:Boolean>
                   </mxswa:ActivityReference.Properties>
                 </mxswa:ActivityReference>
-                <mxswa:ActivityReference AssemblyQualifiedName="Microsoft.Crm.Workflow.Activities.ConditionSequence, Microsoft.Crm.Workflow, Version=9.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35" DisplayName="ConditionStep44">
+                <mxswa:ActivityReference AssemblyQualifiedName="Microsoft.Crm.Workflow.Activities.ConditionSequence, Microsoft.Crm.Workflow, Version=9.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35" DisplayName="ConditionStep46">
                   <mxswa:ActivityReference.Arguments>
                     <InArgument x:TypeArguments="x:Boolean" x:Key="Wait">False</InArgument>
                   </mxswa:ActivityReference.Arguments>
                   <mxswa:ActivityReference.Properties>
                     <sco:Collection x:TypeArguments="Variable" x:Key="Variables">
-                      <Variable x:TypeArguments="x:Boolean" Default="False" Name="ConditionBranchStep45_condition" />
-                      <Variable x:TypeArguments="x:Object" Name="ConditionBranchStep45_1" />
-                      <Variable x:TypeArguments="x:Object" Name="ConditionBranchStep45_2" />
+                      <Variable x:TypeArguments="x:Boolean" Default="False" Name="ConditionBranchStep47_condition" />
+                      <Variable x:TypeArguments="x:Object" Name="ConditionBranchStep47_1" />
+                      <Variable x:TypeArguments="x:Object" Name="ConditionBranchStep47_2" />
                     </sco:Collection>
                     <sco:Collection x:TypeArguments="Activity" x:Key="Activities">
-                      <mxswa:GetEntityProperty Attribute="book_riaction" Entity="[InputEntities(&quot;primaryEntity&quot;)]" EntityName="book_unfundedrequests" Value="[ConditionBranchStep45_1]">
+                      <mxswa:GetEntityProperty Attribute="book_riaction" Entity="[InputEntities(&quot;primaryEntity&quot;)]" EntityName="book_unfundedrequests" Value="[ConditionBranchStep47_1]">
                         <mxswa:GetEntityProperty.TargetType>
                           <InArgument x:TypeArguments="s:Type">
                             <mxswa:ReferenceLiteral x:TypeArguments="s:Type">
@@ -201,27 +201,27 @@
                           <InArgument x:TypeArguments="s:Type" x:Key="TargetType">
                             <mxswa:ReferenceLiteral x:TypeArguments="s:Type" Value="mxs:OptionSetValue" />
                           </InArgument>
-                          <OutArgument x:TypeArguments="x:Object" x:Key="Result">[ConditionBranchStep45_2]</OutArgument>
+                          <OutArgument x:TypeArguments="x:Object" x:Key="Result">[ConditionBranchStep47_2]</OutArgument>
                         </mxswa:ActivityReference.Arguments>
                       </mxswa:ActivityReference>
                       <mxswa:ActivityReference AssemblyQualifiedName="Microsoft.Crm.Workflow.Activities.EvaluateCondition, Microsoft.Crm.Workflow, Version=9.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35" DisplayName="EvaluateCondition">
                         <mxswa:ActivityReference.Arguments>
                           <InArgument x:TypeArguments="mxsq:ConditionOperator" x:Key="ConditionOperator">Equal</InArgument>
-                          <InArgument x:TypeArguments="s:Object[]" x:Key="Parameters">[New Object() { ConditionBranchStep45_2 }]</InArgument>
-                          <InArgument x:TypeArguments="x:Object" x:Key="Operand">[ConditionBranchStep45_1]</InArgument>
-                          <OutArgument x:TypeArguments="x:Boolean" x:Key="Result">[ConditionBranchStep45_condition]</OutArgument>
+                          <InArgument x:TypeArguments="s:Object[]" x:Key="Parameters">[New Object() { ConditionBranchStep47_2 }]</InArgument>
+                          <InArgument x:TypeArguments="x:Object" x:Key="Operand">[ConditionBranchStep47_1]</InArgument>
+                          <OutArgument x:TypeArguments="x:Boolean" x:Key="Result">[ConditionBranchStep47_condition]</OutArgument>
                         </mxswa:ActivityReference.Arguments>
                       </mxswa:ActivityReference>
-                      <mxswa:ActivityReference AssemblyQualifiedName="Microsoft.Crm.Workflow.Activities.ConditionBranch, Microsoft.Crm.Workflow, Version=9.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35" DisplayName="ConditionBranchStep45">
+                      <mxswa:ActivityReference AssemblyQualifiedName="Microsoft.Crm.Workflow.Activities.ConditionBranch, Microsoft.Crm.Workflow, Version=9.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35" DisplayName="ConditionBranchStep47">
                         <mxswa:ActivityReference.Arguments>
-                          <InArgument x:TypeArguments="x:Boolean" x:Key="Condition">[ConditionBranchStep45_condition]</InArgument>
+                          <InArgument x:TypeArguments="x:Boolean" x:Key="Condition">[ConditionBranchStep47_condition]</InArgument>
                         </mxswa:ActivityReference.Arguments>
                         <mxswa:ActivityReference.Properties>
-                          <mxswa:ActivityReference x:Key="Then" AssemblyQualifiedName="Microsoft.Crm.Workflow.Activities.Composite, Microsoft.Crm.Workflow, Version=9.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35" DisplayName="ConditionBranchStep45">
+                          <mxswa:ActivityReference x:Key="Then" AssemblyQualifiedName="Microsoft.Crm.Workflow.Activities.Composite, Microsoft.Crm.Workflow, Version=9.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35" DisplayName="ConditionBranchStep47">
                             <mxswa:ActivityReference.Properties>
                               <sco:Collection x:TypeArguments="Variable" x:Key="Variables" />
                               <sco:Collection x:TypeArguments="Activity" x:Key="Activities">
-                                <Sequence DisplayName="SetNextStageStep46">
+                                <Sequence DisplayName="SetNextStageStep48">
                                   <mcwc:SetNextStage ParentStageId="c37a189b-7b66-4533-9f39-71e96d4b26b0" StageId="60f31a50-ae35-4eca-b242-24de6daf3bf1" />
                                 </Sequence>
                               </sco:Collection>
@@ -293,18 +293,18 @@
                     <x:Null x:Key="ActionControl" />
                   </mxswa:ActivityReference.Properties>
                 </mxswa:ActivityReference>
-                <mxswa:ActivityReference AssemblyQualifiedName="Microsoft.Crm.Workflow.Activities.ConditionSequence, Microsoft.Crm.Workflow, Version=9.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35" DisplayName="ConditionStep47">
+                <mxswa:ActivityReference AssemblyQualifiedName="Microsoft.Crm.Workflow.Activities.ConditionSequence, Microsoft.Crm.Workflow, Version=9.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35" DisplayName="ConditionStep49">
                   <mxswa:ActivityReference.Arguments>
                     <InArgument x:TypeArguments="x:Boolean" x:Key="Wait">False</InArgument>
                   </mxswa:ActivityReference.Arguments>
                   <mxswa:ActivityReference.Properties>
                     <sco:Collection x:TypeArguments="Variable" x:Key="Variables">
-                      <Variable x:TypeArguments="x:Boolean" Default="False" Name="ConditionBranchStep48_condition" />
-                      <Variable x:TypeArguments="x:Object" Name="ConditionBranchStep48_1" />
-                      <Variable x:TypeArguments="x:Object" Name="ConditionBranchStep48_2" />
+                      <Variable x:TypeArguments="x:Boolean" Default="False" Name="ConditionBranchStep50_condition" />
+                      <Variable x:TypeArguments="x:Object" Name="ConditionBranchStep50_1" />
+                      <Variable x:TypeArguments="x:Object" Name="ConditionBranchStep50_2" />
                     </sco:Collection>
                     <sco:Collection x:TypeArguments="Activity" x:Key="Activities">
-                      <mxswa:GetEntityProperty Attribute="book_rwgoutcome" Entity="[InputEntities(&quot;primaryEntity&quot;)]" EntityName="book_unfundedrequests" Value="[ConditionBranchStep48_1]">
+                      <mxswa:GetEntityProperty Attribute="book_rwgoutcome" Entity="[InputEntities(&quot;primaryEntity&quot;)]" EntityName="book_unfundedrequests" Value="[ConditionBranchStep50_1]">
                         <mxswa:GetEntityProperty.TargetType>
                           <InArgument x:TypeArguments="s:Type">
                             <mxswa:ReferenceLiteral x:TypeArguments="s:Type">
@@ -320,27 +320,27 @@
                           <InArgument x:TypeArguments="s:Type" x:Key="TargetType">
                             <mxswa:ReferenceLiteral x:TypeArguments="s:Type" Value="mxs:OptionSetValue" />
                           </InArgument>
-                          <OutArgument x:TypeArguments="x:Object" x:Key="Result">[ConditionBranchStep48_2]</OutArgument>
+                          <OutArgument x:TypeArguments="x:Object" x:Key="Result">[ConditionBranchStep50_2]</OutArgument>
                         </mxswa:ActivityReference.Arguments>
                       </mxswa:ActivityReference>
                       <mxswa:ActivityReference AssemblyQualifiedName="Microsoft.Crm.Workflow.Activities.EvaluateCondition, Microsoft.Crm.Workflow, Version=9.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35" DisplayName="EvaluateCondition">
                         <mxswa:ActivityReference.Arguments>
                           <InArgument x:TypeArguments="mxsq:ConditionOperator" x:Key="ConditionOperator">Equal</InArgument>
-                          <InArgument x:TypeArguments="s:Object[]" x:Key="Parameters">[New Object() { ConditionBranchStep48_2 }]</InArgument>
-                          <InArgument x:TypeArguments="x:Object" x:Key="Operand">[ConditionBranchStep48_1]</InArgument>
-                          <OutArgument x:TypeArguments="x:Boolean" x:Key="Result">[ConditionBranchStep48_condition]</OutArgument>
+                          <InArgument x:TypeArguments="s:Object[]" x:Key="Parameters">[New Object() { ConditionBranchStep50_2 }]</InArgument>
+                          <InArgument x:TypeArguments="x:Object" x:Key="Operand">[ConditionBranchStep50_1]</InArgument>
+                          <OutArgument x:TypeArguments="x:Boolean" x:Key="Result">[ConditionBranchStep50_condition]</OutArgument>
                         </mxswa:ActivityReference.Arguments>
                       </mxswa:ActivityReference>
-                      <mxswa:ActivityReference AssemblyQualifiedName="Microsoft.Crm.Workflow.Activities.ConditionBranch, Microsoft.Crm.Workflow, Version=9.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35" DisplayName="ConditionBranchStep48">
+                      <mxswa:ActivityReference AssemblyQualifiedName="Microsoft.Crm.Workflow.Activities.ConditionBranch, Microsoft.Crm.Workflow, Version=9.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35" DisplayName="ConditionBranchStep50">
                         <mxswa:ActivityReference.Arguments>
-                          <InArgument x:TypeArguments="x:Boolean" x:Key="Condition">[ConditionBranchStep48_condition]</InArgument>
+                          <InArgument x:TypeArguments="x:Boolean" x:Key="Condition">[ConditionBranchStep50_condition]</InArgument>
                         </mxswa:ActivityReference.Arguments>
                         <mxswa:ActivityReference.Properties>
-                          <mxswa:ActivityReference x:Key="Then" AssemblyQualifiedName="Microsoft.Crm.Workflow.Activities.Composite, Microsoft.Crm.Workflow, Version=9.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35" DisplayName="ConditionBranchStep48">
+                          <mxswa:ActivityReference x:Key="Then" AssemblyQualifiedName="Microsoft.Crm.Workflow.Activities.Composite, Microsoft.Crm.Workflow, Version=9.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35" DisplayName="ConditionBranchStep50">
                             <mxswa:ActivityReference.Properties>
                               <sco:Collection x:TypeArguments="Variable" x:Key="Variables" />
                               <sco:Collection x:TypeArguments="Activity" x:Key="Activities">
-                                <Sequence DisplayName="SetNextStageStep49">
+                                <Sequence DisplayName="SetNextStageStep51">
                                   <mcwc:SetNextStage ParentStageId="60f31a50-ae35-4eca-b242-24de6daf3bf1" StageId="5e5062e6-136d-44eb-a562-411017fb1ddb" />
                                 </Sequence>
                               </sco:Collection>
@@ -373,7 +373,7 @@
       <mxswa:ActivityReference.Properties>
         <sco:Collection x:TypeArguments="Variable" x:Key="Variables" />
         <sco:Collection x:TypeArguments="Activity" x:Key="Activities">
-          <mxswa:ActivityReference AssemblyQualifiedName="Microsoft.Crm.Workflow.Activities.StageComposite, Microsoft.Crm.Workflow, Version=9.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35" DisplayName="StageStep24: RCoC Review">
+          <mxswa:ActivityReference AssemblyQualifiedName="Microsoft.Crm.Workflow.Activities.StageComposite, Microsoft.Crm.Workflow, Version=9.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35" DisplayName="StageStep24: Rcoc Review">
             <mxswa:ActivityReference.Properties>
               <sco:Collection x:TypeArguments="Variable" x:Key="Variables" />
               <sco:Collection x:TypeArguments="Activity" x:Key="Activities">
@@ -412,18 +412,18 @@
                     <x:Null x:Key="ActionControl" />
                   </mxswa:ActivityReference.Properties>
                 </mxswa:ActivityReference>
-                <mxswa:ActivityReference AssemblyQualifiedName="Microsoft.Crm.Workflow.Activities.ConditionSequence, Microsoft.Crm.Workflow, Version=9.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35" DisplayName="ConditionStep50">
+                <mxswa:ActivityReference AssemblyQualifiedName="Microsoft.Crm.Workflow.Activities.ConditionSequence, Microsoft.Crm.Workflow, Version=9.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35" DisplayName="ConditionStep52">
                   <mxswa:ActivityReference.Arguments>
                     <InArgument x:TypeArguments="x:Boolean" x:Key="Wait">False</InArgument>
                   </mxswa:ActivityReference.Arguments>
                   <mxswa:ActivityReference.Properties>
                     <sco:Collection x:TypeArguments="Variable" x:Key="Variables">
-                      <Variable x:TypeArguments="x:Boolean" Default="False" Name="ConditionBranchStep51_condition" />
-                      <Variable x:TypeArguments="x:Object" Name="ConditionBranchStep51_1" />
-                      <Variable x:TypeArguments="x:Object" Name="ConditionBranchStep51_2" />
+                      <Variable x:TypeArguments="x:Boolean" Default="False" Name="ConditionBranchStep53_condition" />
+                      <Variable x:TypeArguments="x:Object" Name="ConditionBranchStep53_1" />
+                      <Variable x:TypeArguments="x:Object" Name="ConditionBranchStep53_2" />
                     </sco:Collection>
                     <sco:Collection x:TypeArguments="Activity" x:Key="Activities">
-                      <mxswa:GetEntityProperty Attribute="book_rcocoutcome" Entity="[InputEntities(&quot;primaryEntity&quot;)]" EntityName="book_unfundedrequests" Value="[ConditionBranchStep51_1]">
+                      <mxswa:GetEntityProperty Attribute="book_rcocoutcome" Entity="[InputEntities(&quot;primaryEntity&quot;)]" EntityName="book_unfundedrequests" Value="[ConditionBranchStep53_1]">
                         <mxswa:GetEntityProperty.TargetType>
                           <InArgument x:TypeArguments="s:Type">
                             <mxswa:ReferenceLiteral x:TypeArguments="s:Type">
@@ -439,27 +439,27 @@
                           <InArgument x:TypeArguments="s:Type" x:Key="TargetType">
                             <mxswa:ReferenceLiteral x:TypeArguments="s:Type" Value="mxs:OptionSetValue" />
                           </InArgument>
-                          <OutArgument x:TypeArguments="x:Object" x:Key="Result">[ConditionBranchStep51_2]</OutArgument>
+                          <OutArgument x:TypeArguments="x:Object" x:Key="Result">[ConditionBranchStep53_2]</OutArgument>
                         </mxswa:ActivityReference.Arguments>
                       </mxswa:ActivityReference>
                       <mxswa:ActivityReference AssemblyQualifiedName="Microsoft.Crm.Workflow.Activities.EvaluateCondition, Microsoft.Crm.Workflow, Version=9.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35" DisplayName="EvaluateCondition">
                         <mxswa:ActivityReference.Arguments>
                           <InArgument x:TypeArguments="mxsq:ConditionOperator" x:Key="ConditionOperator">Equal</InArgument>
-                          <InArgument x:TypeArguments="s:Object[]" x:Key="Parameters">[New Object() { ConditionBranchStep51_2 }]</InArgument>
-                          <InArgument x:TypeArguments="x:Object" x:Key="Operand">[ConditionBranchStep51_1]</InArgument>
-                          <OutArgument x:TypeArguments="x:Boolean" x:Key="Result">[ConditionBranchStep51_condition]</OutArgument>
+                          <InArgument x:TypeArguments="s:Object[]" x:Key="Parameters">[New Object() { ConditionBranchStep53_2 }]</InArgument>
+                          <InArgument x:TypeArguments="x:Object" x:Key="Operand">[ConditionBranchStep53_1]</InArgument>
+                          <OutArgument x:TypeArguments="x:Boolean" x:Key="Result">[ConditionBranchStep53_condition]</OutArgument>
                         </mxswa:ActivityReference.Arguments>
                       </mxswa:ActivityReference>
-                      <mxswa:ActivityReference AssemblyQualifiedName="Microsoft.Crm.Workflow.Activities.ConditionBranch, Microsoft.Crm.Workflow, Version=9.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35" DisplayName="ConditionBranchStep51">
+                      <mxswa:ActivityReference AssemblyQualifiedName="Microsoft.Crm.Workflow.Activities.ConditionBranch, Microsoft.Crm.Workflow, Version=9.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35" DisplayName="ConditionBranchStep53">
                         <mxswa:ActivityReference.Arguments>
-                          <InArgument x:TypeArguments="x:Boolean" x:Key="Condition">[ConditionBranchStep51_condition]</InArgument>
+                          <InArgument x:TypeArguments="x:Boolean" x:Key="Condition">[ConditionBranchStep53_condition]</InArgument>
                         </mxswa:ActivityReference.Arguments>
                         <mxswa:ActivityReference.Properties>
-                          <mxswa:ActivityReference x:Key="Then" AssemblyQualifiedName="Microsoft.Crm.Workflow.Activities.Composite, Microsoft.Crm.Workflow, Version=9.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35" DisplayName="ConditionBranchStep51">
+                          <mxswa:ActivityReference x:Key="Then" AssemblyQualifiedName="Microsoft.Crm.Workflow.Activities.Composite, Microsoft.Crm.Workflow, Version=9.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35" DisplayName="ConditionBranchStep53">
                             <mxswa:ActivityReference.Properties>
                               <sco:Collection x:TypeArguments="Variable" x:Key="Variables" />
                               <sco:Collection x:TypeArguments="Activity" x:Key="Activities">
-                                <Sequence DisplayName="SetNextStageStep52">
+                                <Sequence DisplayName="SetNextStageStep54">
                                   <mcwc:SetNextStage ParentStageId="5e5062e6-136d-44eb-a562-411017fb1ddb" StageId="e5a7be0e-9dbb-44c5-a40e-421c97045a98" />
                                 </Sequence>
                               </sco:Collection>
@@ -531,18 +531,18 @@
                     <x:Null x:Key="ActionControl" />
                   </mxswa:ActivityReference.Properties>
                 </mxswa:ActivityReference>
-                <mxswa:ActivityReference AssemblyQualifiedName="Microsoft.Crm.Workflow.Activities.ConditionSequence, Microsoft.Crm.Workflow, Version=9.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35" DisplayName="ConditionStep53">
+                <mxswa:ActivityReference AssemblyQualifiedName="Microsoft.Crm.Workflow.Activities.ConditionSequence, Microsoft.Crm.Workflow, Version=9.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35" DisplayName="ConditionStep55">
                   <mxswa:ActivityReference.Arguments>
                     <InArgument x:TypeArguments="x:Boolean" x:Key="Wait">False</InArgument>
                   </mxswa:ActivityReference.Arguments>
                   <mxswa:ActivityReference.Properties>
                     <sco:Collection x:TypeArguments="Variable" x:Key="Variables">
-                      <Variable x:TypeArguments="x:Boolean" Default="False" Name="ConditionBranchStep54_condition" />
-                      <Variable x:TypeArguments="x:Object" Name="ConditionBranchStep54_1" />
-                      <Variable x:TypeArguments="x:Object" Name="ConditionBranchStep54_2" />
+                      <Variable x:TypeArguments="x:Boolean" Default="False" Name="ConditionBranchStep56_condition" />
+                      <Variable x:TypeArguments="x:Object" Name="ConditionBranchStep56_1" />
+                      <Variable x:TypeArguments="x:Object" Name="ConditionBranchStep56_2" />
                     </sco:Collection>
                     <sco:Collection x:TypeArguments="Activity" x:Key="Activities">
-                      <mxswa:GetEntityProperty Attribute="book_riscoutcome" Entity="[InputEntities(&quot;primaryEntity&quot;)]" EntityName="book_unfundedrequests" Value="[ConditionBranchStep54_1]">
+                      <mxswa:GetEntityProperty Attribute="book_riscoutcome" Entity="[InputEntities(&quot;primaryEntity&quot;)]" EntityName="book_unfundedrequests" Value="[ConditionBranchStep56_1]">
                         <mxswa:GetEntityProperty.TargetType>
                           <InArgument x:TypeArguments="s:Type">
                             <mxswa:ReferenceLiteral x:TypeArguments="s:Type">
@@ -558,27 +558,27 @@
                           <InArgument x:TypeArguments="s:Type" x:Key="TargetType">
                             <mxswa:ReferenceLiteral x:TypeArguments="s:Type" Value="mxs:OptionSetValue" />
                           </InArgument>
-                          <OutArgument x:TypeArguments="x:Object" x:Key="Result">[ConditionBranchStep54_2]</OutArgument>
+                          <OutArgument x:TypeArguments="x:Object" x:Key="Result">[ConditionBranchStep56_2]</OutArgument>
                         </mxswa:ActivityReference.Arguments>
                       </mxswa:ActivityReference>
                       <mxswa:ActivityReference AssemblyQualifiedName="Microsoft.Crm.Workflow.Activities.EvaluateCondition, Microsoft.Crm.Workflow, Version=9.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35" DisplayName="EvaluateCondition">
                         <mxswa:ActivityReference.Arguments>
                           <InArgument x:TypeArguments="mxsq:ConditionOperator" x:Key="ConditionOperator">Equal</InArgument>
-                          <InArgument x:TypeArguments="s:Object[]" x:Key="Parameters">[New Object() { ConditionBranchStep54_2 }]</InArgument>
-                          <InArgument x:TypeArguments="x:Object" x:Key="Operand">[ConditionBranchStep54_1]</InArgument>
-                          <OutArgument x:TypeArguments="x:Boolean" x:Key="Result">[ConditionBranchStep54_condition]</OutArgument>
+                          <InArgument x:TypeArguments="s:Object[]" x:Key="Parameters">[New Object() { ConditionBranchStep56_2 }]</InArgument>
+                          <InArgument x:TypeArguments="x:Object" x:Key="Operand">[ConditionBranchStep56_1]</InArgument>
+                          <OutArgument x:TypeArguments="x:Boolean" x:Key="Result">[ConditionBranchStep56_condition]</OutArgument>
                         </mxswa:ActivityReference.Arguments>
                       </mxswa:ActivityReference>
-                      <mxswa:ActivityReference AssemblyQualifiedName="Microsoft.Crm.Workflow.Activities.ConditionBranch, Microsoft.Crm.Workflow, Version=9.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35" DisplayName="ConditionBranchStep54">
+                      <mxswa:ActivityReference AssemblyQualifiedName="Microsoft.Crm.Workflow.Activities.ConditionBranch, Microsoft.Crm.Workflow, Version=9.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35" DisplayName="ConditionBranchStep56">
                         <mxswa:ActivityReference.Arguments>
-                          <InArgument x:TypeArguments="x:Boolean" x:Key="Condition">[ConditionBranchStep54_condition]</InArgument>
+                          <InArgument x:TypeArguments="x:Boolean" x:Key="Condition">[ConditionBranchStep56_condition]</InArgument>
                         </mxswa:ActivityReference.Arguments>
                         <mxswa:ActivityReference.Properties>
-                          <mxswa:ActivityReference x:Key="Then" AssemblyQualifiedName="Microsoft.Crm.Workflow.Activities.Composite, Microsoft.Crm.Workflow, Version=9.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35" DisplayName="ConditionBranchStep54">
+                          <mxswa:ActivityReference x:Key="Then" AssemblyQualifiedName="Microsoft.Crm.Workflow.Activities.Composite, Microsoft.Crm.Workflow, Version=9.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35" DisplayName="ConditionBranchStep56">
                             <mxswa:ActivityReference.Properties>
                               <sco:Collection x:TypeArguments="Variable" x:Key="Variables" />
                               <sco:Collection x:TypeArguments="Activity" x:Key="Activities">
-                                <Sequence DisplayName="SetNextStageStep55">
+                                <Sequence DisplayName="SetNextStageStep57">
                                   <mcwc:SetNextStage ParentStageId="e5a7be0e-9dbb-44c5-a40e-421c97045a98" StageId="e1175d1b-d5ad-4175-b3e9-3c7bc52753ee" />
                                 </Sequence>
                               </sco:Collection>
@@ -699,6 +699,27 @@
                     <sco:Collection x:TypeArguments="Variable" x:Key="Variables" />
                     <sco:Collection x:TypeArguments="Activity" x:Key="Activities">
                       <Sequence DisplayName="ControlStep43">
+                        <mcwb:Control ClassId="533b9e00-756b-4312-95a0-dc888637ac78" ControlDisplayName="Outcome Amount" ControlId="book_outcomeamount" DataFieldName="book_outcomeamount" IsSystemControl="False" IsUnbound="False" SystemStepType="0">
+                          <mcwb:Control.Parameters>
+                            <InArgument x:TypeArguments="x:String">
+                              <Literal x:TypeArguments="x:String" Value="" />
+                            </InArgument>
+                          </mcwb:Control.Parameters>
+                        </mcwb:Control>
+                      </Sequence>
+                    </sco:Collection>
+                    <sco:Collection x:TypeArguments="mcwo:StepLabel" x:Key="StepLabels">
+                      <mcwo:StepLabel Description="Outcome Amount" LabelId="169f2073-45a7-4f8c-b430-f0b32410460f" LanguageCode="1033" />
+                    </sco:Collection>
+                    <x:String x:Key="ProcessStepId">169f2073-45a7-4f8c-b430-f0b32410460f</x:String>
+                    <x:Boolean x:Key="IsProcessRequired">True</x:Boolean>
+                  </mxswa:ActivityReference.Properties>
+                </mxswa:ActivityReference>
+                <mxswa:ActivityReference AssemblyQualifiedName="Microsoft.Crm.Workflow.Activities.StepComposite, Microsoft.Crm.Workflow, Version=9.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35" DisplayName="StepStep44: New Step">
+                  <mxswa:ActivityReference.Properties>
+                    <sco:Collection x:TypeArguments="Variable" x:Key="Variables" />
+                    <sco:Collection x:TypeArguments="Activity" x:Key="Activities">
+                      <Sequence DisplayName="ControlStep45">
                         <mcwb:Control ClassId="4273edbd-ac1d-40d3-9fb2-095c621b552d" ControlDisplayName="Outcome Narrative" ControlId="book_outcomenarrative" DataFieldName="book_outcomenarrative" IsSystemControl="False" IsUnbound="False" SystemStepType="0">
                           <mcwb:Control.Parameters>
                             <InArgument x:TypeArguments="x:String">

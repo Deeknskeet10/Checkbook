@@ -12,7 +12,7 @@
         <row name="result" id="book_decisionid">
           <cell name="book_event" width="100" />
           <cell name="book_fundingline" width="178" />
-          <cell name="book_amount" width="99" />
+          <cell name="book_decisionamount" width="140" />
           <cell name="book_description" width="300" />
         </row>
       </grid>
@@ -27,8 +27,8 @@
           </filter>
           <attribute name="book_fundingline" />
           <attribute name="book_event" />
-          <attribute name="book_amount" />
           <attribute name="book_description" />
+          <attribute name="book_decisionamount" />
         </entity>
       </fetch>
     </fetchxml>

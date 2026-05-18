@@ -14,7 +14,7 @@
           <columns>
             <column width="40%">
               <sections>
-                <section showlabel="false" showbar="false" IsUserDefined="0" id="{64aaaeed-862b-4c39-b6b8-9c608ca22a36}" columns="11" labelid="{7a2445a4-9efe-4f7e-8ec5-8676830f8e65}" visible="true">
+                <section showlabel="true" showbar="false" IsUserDefined="0" id="{64aaaeed-862b-4c39-b6b8-9c608ca22a36}" columns="1" labelid="{7a2445a4-9efe-4f7e-8ec5-8676830f8e65}" visible="true">
                   <labels>
                     <label description="General" languagecode="1033" />
                   </labels>
@@ -25,12 +25,6 @@
                           <label description="" languagecode="1033" />
                         </labels>
                       </cell>
-                      <cell id="{909c1416-370e-464f-b067-d650be4941cc}" locklevel="0" colspan="1" rowspan="1">
-                        <labels>
-                          <label description="Unfunded Amount" languagecode="1033" />
-                        </labels>
-                        <control id="book_newunfundedamount" classid="{0D2C745A-E5A8-4C8F-BA63-C6D3BB604660}" datafieldname="book_newunfundedamount" disabled="false" />
-                      </cell>
                     </row>
                     <row>
                       <cell id="{b686f3ca-3641-4cf4-8bcf-a9ce0aff2ced}" locklevel="0" colspan="1" rowspan="1" labelid="{633c2e73-7e52-493c-a431-1f4e8c65ea27}">
@@ -39,6 +33,23 @@
                         </labels>
                         <control id="book_dropdeaddate" classid="{5B773807-9FB2-42DB-97C3-7A91EFF8ADFF}" datafieldname="book_dropdeaddate" disabled="false" />
                       </cell>
+                    </row>
+                    <row>
+                      <cell locklevel="0" id="{c3b2e865-5294-4318-ac92-fd3a782f446d}">
+                        <labels>
+                          <label description="" languagecode="1033" />
+                        </labels>
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{f675b72a-117f-4662-b6c2-1ceb735fcaba}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="Unfunded Amount" languagecode="1033" />
+                        </labels>
+                        <control id="book_unfundedamount" classid="{C3EFE0C3-0EC6-42BE-8349-CBD9079DFD8E}" datafieldname="book_unfundedamount" disabled="false" />
+                      </cell>
+                    </row>
+                    <row>
                       <cell id="{811bde8b-ff44-4294-8ad5-8e882bcbc980}" locklevel="0" colspan="1" rowspan="1" labelid="{c80ceebb-d3cb-4a1e-bea4-13429f9f18cb}">
                         <labels>
                           <label description="Priority" languagecode="1033" />
@@ -47,12 +58,6 @@
                       </cell>
                     </row>
                     <row>
-                      <cell id="{a388bd25-447e-4104-a5d0-a2b24ce6aaac}" locklevel="0" colspan="1" rowspan="5" labelid="{6d32a3fa-9bfa-4d3d-a37e-0cd5cc8ac978}">
-                        <labels>
-                          <label description="Justification" languagecode="1033" />
-                        </labels>
-                        <control id="book_justification" classid="{E0DECE4B-6FC8-4A8F-A065-082708572369}" datafieldname="book_justification" disabled="false" />
-                      </cell>
                       <cell id="{96f98e40-5967-4ac2-a164-79b200f78a1f}" locklevel="0" colspan="1" rowspan="1">
                         <labels>
                           <label description="Risk" languagecode="1033" />
@@ -61,22 +66,19 @@
                       </cell>
                     </row>
                     <row>
-                      <cell id="{71f02cd6-2fa2-4363-8dba-7ab79f19a5a3}" locklevel="0" colspan="1" rowspan="4" labelid="{4ee4da39-59b5-4ed6-a7b1-64136ecf09d1}">
+                      <cell locklevel="0" id="{ed2aa14d-1a87-4578-a884-f3dac372ab61}" colspan="1" rowspan="1">
                         <labels>
-                          <label description="Risk Statement" languagecode="1033" />
+                          <label description="New QV control 1774472650221" languagecode="1033" />
                         </labels>
-                        <control id="book_riskstatement" classid="{E0DECE4B-6FC8-4A8F-A065-082708572369}" datafieldname="book_riskstatement" disabled="false" />
+                        <control id="QuickviewControl1774472650221" classid="{5C5600E0-1D6E-4205-A272-BE80DA87FD42}" datafieldname="book_requirement">
+                          <parameters>
+                            <DisplayAsCustomer360Tile>false</DisplayAsCustomer360Tile>
+                            <QuickForms>&lt;QuickFormIds&gt;&lt;QuickFormId entityname="book_requirements"&gt;fb49523a-8f28-f111-8341-001dd8204385&lt;/QuickFormId&gt;&lt;/QuickFormIds&gt;</QuickForms>
+                          </parameters>
+                        </control>
                       </cell>
                     </row>
-                    <row />
-                    <row />
-                    <row />
                     <row>
-                      <cell locklevel="0" id="{c3b2e865-5294-4318-ac92-fd3a782f446d}">
-                        <labels>
-                          <label description="" languagecode="1033" />
-                        </labels>
-                      </cell>
                       <cell id="{a4b83232-a1e2-4ed3-971a-7a9be6cd6083}" locklevel="0" colspan="1" rowspan="1" visible="false">
                         <labels>
                           <label description="Higher Level UFR" languagecode="1033" />
@@ -110,7 +112,13 @@
                         <labels>
                           <label description="Requirement Funding" languagecode="1033" />
                         </labels>
-                        <control id="book_requirementfunding" classid="{270BD3DB-D9AF-4782-9025-509E298DEC0A}" datafieldname="book_requirementfunding" disabled="false" />
+                        <control id="book_requirementfunding" classid="{270BD3DB-D9AF-4782-9025-509E298DEC0A}" datafieldname="book_requirementfunding" disabled="false">
+                          <parameters>
+                            <DefaultViewId>{94D96091-C743-F111-88B4-001DD8201529}</DefaultViewId>
+                            <AvailableViewIds>{2ADC352B-25CA-4F16-9770-E39CF2A9BE92},{5364425C-A52A-4ED1-B483-8DAEF39312A6},{94D96091-C743-F111-88B4-001DD8201529},{DFD3F5A5-8C3D-F111-88B3-001DD8204135},{86380E4E-C0CF-F011-BBD3-001DD805A06B},{828729AA-7087-470C-8E2A-86395E502FA3}</AvailableViewIds>
+                            <DisableViewPicker>true</DisableViewPicker>
+                          </parameters>
+                        </control>
                       </cell>
                     </row>
                     <row>
@@ -126,6 +134,42 @@
                         </control>
                       </cell>
                     </row>
+                  </rows>
+                </section>
+              </sections>
+            </column>
+            <column width="60%">
+              <sections>
+                <section name="_section_458" id="a5e783a0-bd3f-49b5-a2b0-aee62eec3dec" IsUserDefined="0" locklevel="0" showlabel="true" showbar="false" layout="varwidth" celllabelalignment="Left" celllabelposition="Left" columns="1" labelwidth="115">
+                  <labels>
+                    <label description="State Unfunded Requests" languagecode="1033" />
+                  </labels>
+                  <rows>
+                    <row />
+                    <row>
+                      <cell locklevel="0" id="{425e9f15-1da4-4426-859f-1780b0c0f7cb}" rowspan="4" colspan="1" auto="false" showlabel="false">
+                        <labels>
+                          <label description="New SG control 1772803511570" languagecode="1033" />
+                        </labels>
+                        <control indicationOfSubgrid="true" id="Subgrid_new_2" classid="{E7A81278-8635-4D9E-8D4D-59480B391C5B}">
+                          <parameters>
+                            <RecordsPerPage>20</RecordsPerPage>
+                            <AutoExpand>Fixed</AutoExpand>
+                            <EnableQuickFind>false</EnableQuickFind>
+                            <EnableViewPicker>true</EnableViewPicker>
+                            <EnableChartPicker>true</EnableChartPicker>
+                            <ChartGridMode>All</ChartGridMode>
+                            <RelationshipName>book_unfundedrequests_HigherLevelUFR_book_unfundedrequests</RelationshipName>
+                            <TargetEntityType>book_unfundedrequests</TargetEntityType>
+                            <ViewId>{A783030D-FF66-F011-BEC2-001DD805A06B}</ViewId>
+                            <ViewIds>{2AFF7553-36CF-42F2-BEB9-B3BF2D22AD67},{A783030D-FF66-F011-BEC2-001DD805A06B}</ViewIds>
+                          </parameters>
+                        </control>
+                      </cell>
+                    </row>
+                    <row />
+                    <row />
+                    <row />
                   </rows>
                 </section>
                 <section name="null_section_3" id="8bfed17f-0465-4e88-9f8b-ca5cec2a86f8" IsUserDefined="0" locklevel="0" showlabel="false" showbar="false" layout="varwidth" celllabelalignment="Left" celllabelposition="Left" columns="1" labelwidth="115" labelid="{ea47d858-91c2-4165-aa7e-ccbd5efc4281}">
@@ -168,38 +212,69 @@
                 </section>
               </sections>
             </column>
-            <column width="60%">
+          </columns>
+        </tab>
+        <tab name="tab_4" id="41bac23d-9c28-4e99-a8c0-7074acf915b8" IsUserDefined="0" locklevel="0" showlabel="true">
+          <labels>
+            <label description="Risk / Justification" languagecode="1033" />
+          </labels>
+          <columns>
+            <column width="100%">
               <sections>
-                <section name="_section_458" id="a5e783a0-bd3f-49b5-a2b0-aee62eec3dec" IsUserDefined="0" locklevel="0" showlabel="true" showbar="false" layout="varwidth" celllabelalignment="Left" celllabelposition="Left" columns="1" labelwidth="115">
+                <section name="tab_4_section_1" id="ed59ccd3-ca85-4448-b542-6ff1344553fd" IsUserDefined="0" locklevel="0" showlabel="true" showbar="false" layout="varwidth" celllabelalignment="Left" celllabelposition="Left" columns="1" labelwidth="115">
                   <labels>
-                    <label description="State Unfunded Requests" languagecode="1033" />
+                    <label description="Background" languagecode="1033" />
                   </labels>
                   <rows>
                     <row />
                     <row>
-                      <cell locklevel="0" id="{425e9f15-1da4-4426-859f-1780b0c0f7cb}" rowspan="4" colspan="1" auto="false" showlabel="false">
+                      <cell id="{175f35cb-663e-488a-a2f5-0c37e48c2a15}" locklevel="0" colspan="1" rowspan="1">
                         <labels>
-                          <label description="New SG control 1772803511570" languagecode="1033" />
+                          <label description="Background / Justification" languagecode="1033" />
                         </labels>
-                        <control indicationOfSubgrid="true" id="Subgrid_new_2" classid="{E7A81278-8635-4D9E-8D4D-59480B391C5B}">
-                          <parameters>
-                            <RecordsPerPage>20</RecordsPerPage>
-                            <AutoExpand>Fixed</AutoExpand>
-                            <EnableQuickFind>false</EnableQuickFind>
-                            <EnableViewPicker>true</EnableViewPicker>
-                            <EnableChartPicker>true</EnableChartPicker>
-                            <ChartGridMode>All</ChartGridMode>
-                            <RelationshipName>book_unfundedrequests_HigherLevelUFR_book_unfundedrequests</RelationshipName>
-                            <TargetEntityType>book_unfundedrequests</TargetEntityType>
-                            <ViewId>{A783030D-FF66-F011-BEC2-001DD805A06B}</ViewId>
-                            <ViewIds>{2AFF7553-36CF-42F2-BEB9-B3BF2D22AD67},{A783030D-FF66-F011-BEC2-001DD805A06B}</ViewIds>
-                          </parameters>
-                        </control>
+                        <control id="book_backgroundjustification" classid="{E0DECE4B-6FC8-4A8F-A065-082708572369}" datafieldname="book_backgroundjustification" disabled="false" />
                       </cell>
                     </row>
+                    <row>
+                      <cell id="{1f8e671c-a7b1-4991-8b71-5a29670b8d05}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="Return on Investment" languagecode="1033" />
+                        </labels>
+                        <control id="book_returnoninvestment" classid="{E0DECE4B-6FC8-4A8F-A065-082708572369}" datafieldname="book_returnoninvestment" disabled="false" />
+                      </cell>
+                    </row>
+                  </rows>
+                </section>
+                <section name="tab_4_section_3" id="8ea722d7-a50e-425c-819c-3a3d18c8e49f" IsUserDefined="0" locklevel="0" showlabel="true" showbar="false" layout="varwidth" celllabelalignment="Left" celllabelposition="Left" columns="1" labelwidth="115">
+                  <labels>
+                    <label description="Risk" languagecode="1033" />
+                  </labels>
+                  <rows>
                     <row />
-                    <row />
-                    <row />
+                    <row>
+                      <cell id="{7a88d942-930f-4483-8528-2b137bb4c5b5}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="Risk Statement" languagecode="1033" />
+                        </labels>
+                        <control id="book_newriskstatement" classid="{E0DECE4B-6FC8-4A8F-A065-082708572369}" datafieldname="book_newriskstatement" disabled="false" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{b2934fde-2f53-4846-baed-49cf8a8d18cd}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="Risk if Partially Funded" languagecode="1033" />
+                        </labels>
+                        <control id="book_riskifpartiallyfunded" classid="{E0DECE4B-6FC8-4A8F-A065-082708572369}" datafieldname="book_riskifpartiallyfunded" disabled="false" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{d1110199-4440-4149-903d-f23de12f178b}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="Risk if Not Funded" languagecode="1033" />
+                        </labels>
+                        <control id="book_riskifnotfunded" classid="{E0DECE4B-6FC8-4A8F-A065-082708572369}" datafieldname="book_riskifnotfunded" disabled="false" />
+                      </cell>
+                    </row>
                   </rows>
                 </section>
               </sections>
@@ -243,6 +318,63 @@
                     <row />
                     <row />
                     <row />
+                  </rows>
+                </section>
+              </sections>
+            </column>
+          </columns>
+        </tab>
+        <tab name="tab_3" id="3fd0a970-02e9-49bb-9c4c-953e2d3d1052" IsUserDefined="0" locklevel="0" showlabel="true">
+          <labels>
+            <label description="RWG Evaluation" languagecode="1033" />
+          </labels>
+          <columns>
+            <column width="100%">
+              <sections>
+                <section name="tab_3_section_1" id="980d2f13-112f-46fb-8783-bc25b4f66b72" IsUserDefined="0" locklevel="0" showlabel="true" showbar="false" layout="varwidth" celllabelalignment="Left" celllabelposition="Left" columns="1" labelwidth="115">
+                  <labels>
+                    <label description="Evaluation" languagecode="1033" />
+                  </labels>
+                  <rows>
+                    <row />
+                    <row>
+                      <cell id="{dd128d1d-2a7b-44b2-a0c7-88d05318313b}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="Resourcing Priority" languagecode="1033" />
+                        </labels>
+                        <control id="book_resourcingpriority" classid="{C6D124CA-7EDA-4A60-AEA9-7FB8D318B68F}" datafieldname="book_resourcingpriority" disabled="false" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{a294dd91-7afa-4d74-a345-c80ac74f9a4c}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="RWG Priority BIN" languagecode="1033" />
+                        </labels>
+                        <control id="book_rwgprioritybin" classid="{270BD3DB-D9AF-4782-9025-509E298DEC0A}" datafieldname="book_rwgprioritybin" disabled="false">
+                          <parameters>
+                            <DefaultViewId>{AC0A2882-9924-F111-8341-001DD8204135}</DefaultViewId>
+                            <AvailableViewIds>{F6BAEB9D-D221-4226-AF0A-3093ECABD562},{0773956F-40B7-4F40-8F29-E9F3FFC85F86},{19AA304F-147B-4B94-B24E-CA63961D9476},{AC0A2882-9924-F111-8341-001DD8204135}</AvailableViewIds>
+                            <DisableViewPicker>true</DisableViewPicker>
+                          </parameters>
+                        </control>
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{1b3ee20b-896b-431f-9e19-fb2c01f1b011}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="RWG Identified Risk" languagecode="1033" />
+                        </labels>
+                        <control id="book_rwgidentifiedrisk" classid="{3EF39988-22BB-4F0B-BBBE-64B5A3748AEE}" datafieldname="book_rwgidentifiedrisk" disabled="false" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{37069b32-9569-4392-baf7-87422f4caf24}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="Resourcing Strategy" languagecode="1033" />
+                        </labels>
+                        <control id="book_resourcingstrategy" classid="{3EF39988-22BB-4F0B-BBBE-64B5A3748AEE}" datafieldname="book_resourcingstrategy" disabled="false" />
+                      </cell>
+                    </row>
                   </rows>
                 </section>
               </sections>

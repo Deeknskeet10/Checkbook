@@ -14,7 +14,7 @@
           <columns>
             <column width="100%">
               <sections>
-                <section showlabel="false" showbar="false" IsUserDefined="0" id="{64aaaeed-862b-4c39-b6b8-9c608ca22a36}" columns="11" labelid="{b5e5dd00-f898-41ce-8e9a-51435249fd91}">
+                <section showlabel="true" showbar="false" IsUserDefined="0" id="{64aaaeed-862b-4c39-b6b8-9c608ca22a36}" columns="11" labelid="{b5e5dd00-f898-41ce-8e9a-51435249fd91}" name="general">
                   <labels>
                     <label description="General" languagecode="1033" />
                   </labels>
@@ -26,15 +26,31 @@
                         </labels>
                         <control id="book_state" classid="{270BD3DB-D9AF-4782-9025-509E298DEC0A}" datafieldname="book_state" disabled="true" />
                       </cell>
-                      <cell id="{b50f6062-6005-4a06-88a3-cf9025cfdb1f}" locklevel="0" colspan="1" rowspan="1">
+                    </row>
+                    <row>
+                      <cell id="{b686f3ca-3641-4cf4-8bcf-a9ce0aff2ced}" locklevel="0" colspan="1" rowspan="1" labelid="{f083d31d-8149-4493-abdd-8e9aa073cf88}">
                         <labels>
-                          <label description="State Unfunded Amount" languagecode="1033" />
+                          <label description="Drop Dead Date" languagecode="1033" />
                         </labels>
-                        <control id="book_newunfundedamount" classid="{0D2C745A-E5A8-4C8F-BA63-C6D3BB604660}" datafieldname="book_newunfundedamount" disabled="false" />
+                        <control id="book_dropdeaddate" classid="{5B773807-9FB2-42DB-97C3-7A91EFF8ADFF}" datafieldname="book_dropdeaddate" disabled="false" />
                       </cell>
                     </row>
                     <row>
-                      <cell locklevel="0" id="{0c73bc8b-01cf-4107-9348-5fae73fde0c7}">
+                      <cell id="{811bde8b-ff44-4294-8ad5-8e882bcbc980}" locklevel="0" colspan="1" rowspan="1" labelid="{6aad7790-68b5-4418-8da6-dcf619b25e83}">
+                        <labels>
+                          <label description="Priority" languagecode="1033" />
+                        </labels>
+                        <control id="book_priority" classid="{C6D124CA-7EDA-4A60-AEA9-7FB8D318B68F}" datafieldname="book_priority" disabled="false" />
+                      </cell>
+                      <cell id="{652f151c-f38c-47ed-abdf-b86d2f6f26f9}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="State Unfunded Amount" languagecode="1033" />
+                        </labels>
+                        <control id="book_unfundedamount" classid="{C3EFE0C3-0EC6-42BE-8349-CBD9079DFD8E}" datafieldname="book_unfundedamount" disabled="false" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell locklevel="0" id="{5280e0a1-bc36-4c3c-98f9-0416a6fb1c83}">
                         <labels>
                           <label description="" languagecode="1033" />
                         </labels>
@@ -47,27 +63,26 @@
                       </cell>
                     </row>
                     <row>
-                      <cell id="{b686f3ca-3641-4cf4-8bcf-a9ce0aff2ced}" locklevel="0" colspan="1" rowspan="1" labelid="{f083d31d-8149-4493-abdd-8e9aa073cf88}">
+                      <cell locklevel="0" id="{7f57eb8d-cf54-4144-96ff-0fea31230f84}">
                         <labels>
-                          <label description="Drop Dead Date" languagecode="1033" />
+                          <label description="" languagecode="1033" />
                         </labels>
-                        <control id="book_dropdeaddate" classid="{5B773807-9FB2-42DB-97C3-7A91EFF8ADFF}" datafieldname="book_dropdeaddate" disabled="false" />
+                      </cell>
+                      <cell id="{6896e85a-a089-4e0e-8b31-61f16495061e}" locklevel="0" colspan="1" rowspan="1" visible="false">
+                        <labels>
+                          <label description="Higher Level UFR" languagecode="1033" />
+                        </labels>
+                        <control id="book_higherlevelufr" classid="{270BD3DB-D9AF-4782-9025-509E298DEC0A}" datafieldname="book_higherlevelufr" disabled="false" />
                       </cell>
                     </row>
-                    <row>
-                      <cell id="{a388bd25-447e-4104-a5d0-a2b24ce6aaac}" locklevel="0" colspan="1" rowspan="5" labelid="{c717e63b-347e-4c7c-a661-d90c2d530927}">
-                        <labels>
-                          <label description="Justification" languagecode="1033" />
-                        </labels>
-                        <control id="book_justification" classid="{E0DECE4B-6FC8-4A8F-A065-082708572369}" datafieldname="book_justification" disabled="false" />
-                      </cell>
-                      <cell id="{811bde8b-ff44-4294-8ad5-8e882bcbc980}" locklevel="0" colspan="1" rowspan="1" labelid="{6aad7790-68b5-4418-8da6-dcf619b25e83}">
-                        <labels>
-                          <label description="Priority" languagecode="1033" />
-                        </labels>
-                        <control id="book_priority" classid="{C6D124CA-7EDA-4A60-AEA9-7FB8D318B68F}" datafieldname="book_priority" disabled="true" />
-                      </cell>
-                    </row>
+                  </rows>
+                </section>
+                <section name="null_section_5" id="3c8ec78e-0a1f-4052-a046-5e1126acb337" IsUserDefined="0" locklevel="0" showlabel="true" showbar="false" layout="varwidth" celllabelalignment="Left" celllabelposition="Left" columns="1" labelwidth="115">
+                  <labels>
+                    <label description="Risk" languagecode="1033" />
+                  </labels>
+                  <rows>
+                    <row />
                     <row>
                       <cell id="{5d5e3d7e-e49f-4f92-b4ea-585149409ac3}" locklevel="0" colspan="1" rowspan="1">
                         <labels>
@@ -85,39 +100,89 @@
                       </cell>
                     </row>
                     <row>
-                      <cell id="{71f02cd6-2fa2-4363-8dba-7ab79f19a5a3}" locklevel="0" colspan="1" rowspan="4" labelid="{079c1018-374e-4874-9dcc-3ab32c766a9b}">
+                      <cell id="{5ba1e4fb-9be8-48ef-98af-478f5e4fcde3}" locklevel="0" colspan="1" rowspan="1">
                         <labels>
                           <label description="Risk Statement" languagecode="1033" />
                         </labels>
-                        <control id="book_riskstatement" classid="{E0DECE4B-6FC8-4A8F-A065-082708572369}" datafieldname="book_riskstatement" disabled="false" />
+                        <control id="book_newriskstatement" classid="{E0DECE4B-6FC8-4A8F-A065-082708572369}" datafieldname="book_newriskstatement" disabled="false" />
+                      </cell>
+                    </row>
+                  </rows>
+                </section>
+                <section name="null_section_3" id="8bfed17f-0465-4e88-9f8b-ca5cec2a86f8" IsUserDefined="0" locklevel="0" showlabel="false" showbar="false" layout="varwidth" celllabelalignment="Left" celllabelposition="Left" columns="1" labelwidth="115" labelid="{6c944596-b115-4a30-bd60-806817ac5e51}">
+                  <labels>
+                    <label description="Timeline" languagecode="1033" />
+                  </labels>
+                  <rows>
+                    <row />
+                    <row>
+                      <cell locklevel="0" id="{e5c3bc97-23e5-4a6e-88aa-24eef1b619ab}" rowspan="15" colspan="1" labelid="{61dee1fd-1fbe-4d93-8175-cc4ff4f58b84}">
+                        <labels>
+                          <label description="Note Text" languagecode="1033" />
+                        </labels>
+                        <control id="notescontrol" classid="{06375649-C143-495E-A496-C962E5B4488E}" disabled="false">
+                          <parameters>
+                            <UClientUniqueName>Notes</UClientUniqueName>
+                          </parameters>
+                        </control>
                       </cell>
                     </row>
                     <row />
+                    <row />
+                    <row />
+                    <row />
+                    <row />
+                    <row />
+                    <row />
+                    <row />
+                    <row />
+                    <row />
+                    <row />
+                    <row />
+                    <row />
+                    <row />
+                  </rows>
+                </section>
+              </sections>
+            </column>
+          </columns>
+        </tab>
+        <tab name="tab_2" id="2a856daa-117b-46ee-9db1-d9e2d10ee9ee" IsUserDefined="0" locklevel="0" showlabel="true">
+          <labels>
+            <label description="Requirements" languagecode="1033" />
+          </labels>
+          <columns>
+            <column width="100%">
+              <sections>
+                <section name="tab_2_section_1" id="5e9743dc-221e-4ab2-b125-d2c9cd91d24f" IsUserDefined="0" locklevel="0" showlabel="true" showbar="false" layout="varwidth" celllabelalignment="Left" celllabelposition="Left" columns="11" labelwidth="115">
+                  <labels>
+                    <label description="Unfunded Amounts" languagecode="1033" />
+                  </labels>
+                  <rows>
                     <row>
-                      <cell locklevel="0" id="{a9cf548b-b929-460b-9a1e-f59e3db4973f}">
+                      <cell locklevel="0" id="{2d0f26cd-e86d-4a7a-a422-004a5fadcd25}">
+                        <labels>
+                          <label description="" languagecode="1033" />
+                        </labels>
+                      </cell>
+                      <cell locklevel="0" id="{1738e7f1-8f33-4bde-b7c0-c382602d68cd}">
                         <labels>
                           <label description="" languagecode="1033" />
                         </labels>
                       </cell>
                     </row>
                     <row>
-                      <cell locklevel="0" id="{a3ef1bfb-9f8c-4b92-a37a-28a303e5f5f8}">
+                      <cell id="{ac9865dd-7a3e-4d4a-b027-86036f3b8feb}" locklevel="0" colspan="1" rowspan="1">
                         <labels>
-                          <label description="" languagecode="1033" />
+                          <label description="Deprecated - Unfunded Amount" languagecode="1033" />
                         </labels>
+                        <control id="book_newunfundedamount" classid="{0D2C745A-E5A8-4C8F-BA63-C6D3BB604660}" datafieldname="book_newunfundedamount" disabled="false" />
                       </cell>
-                    </row>
-                    <row>
-                      <cell locklevel="0" id="{c57cd73a-adad-4cba-b664-c8346c5dbecf}">
+                      <cell id="{db532596-966e-4f9b-a41c-598c8c5fa22d}" locklevel="0" colspan="1" rowspan="1">
                         <labels>
-                          <label description="" languagecode="1033" />
+                          <label description="OPR Unfunded Amount" languagecode="1033" />
                         </labels>
-                      </cell>
-                      <cell id="{6896e85a-a089-4e0e-8b31-61f16495061e}" locklevel="0" colspan="1" rowspan="1" visible="false">
-                        <labels>
-                          <label description="Higher Level UFR" languagecode="1033" />
-                        </labels>
-                        <control id="book_higherlevelufr" classid="{270BD3DB-D9AF-4782-9025-509E298DEC0A}" datafieldname="book_higherlevelufr" disabled="false" />
+                        <control id="book_oprunfundedamount" classid="{C3EFE0C3-0EC6-42BE-8349-CBD9079DFD8E}" datafieldname="book_oprunfundedamount" disabled="false" />
                       </cell>
                     </row>
                   </rows>
@@ -181,34 +246,55 @@
                     </row>
                   </rows>
                 </section>
-                <section name="null_section_3" id="8bfed17f-0465-4e88-9f8b-ca5cec2a86f8" IsUserDefined="0" locklevel="0" showlabel="false" showbar="false" layout="varwidth" celllabelalignment="Left" celllabelposition="Left" columns="1" labelwidth="115" labelid="{6c944596-b115-4a30-bd60-806817ac5e51}">
+              </sections>
+            </column>
+          </columns>
+        </tab>
+        <tab name="tab_3" id="908bfc35-6216-4789-99e5-53dde2ccd600" IsUserDefined="0" locklevel="0" showlabel="true">
+          <labels>
+            <label description="Outcome" languagecode="1033" />
+          </labels>
+          <columns>
+            <column width="100%">
+              <sections>
+                <section name="tab_3_section_1" id="76063be7-2795-473e-bafd-42518c33204d" IsUserDefined="0" locklevel="0" showlabel="true" showbar="false" layout="varwidth" celllabelalignment="Left" celllabelposition="Left" columns="1" labelwidth="115">
                   <labels>
-                    <label description="Timeline" languagecode="1033" />
+                    <label description="Resourcing Outcome" languagecode="1033" />
                   </labels>
                   <rows>
                     <row />
                     <row>
-                      <cell locklevel="0" id="{e5c3bc97-23e5-4a6e-88aa-24eef1b619ab}" rowspan="15" colspan="1" labelid="{61dee1fd-1fbe-4d93-8175-cc4ff4f58b84}">
+                      <cell id="{c001a7df-37bd-49a3-98cb-50d9b7ff6940}" locklevel="0" colspan="1" rowspan="1">
                         <labels>
-                          <label description="Note Text" languagecode="1033" />
+                          <label description="NPM State Recommendation" languagecode="1033" />
                         </labels>
-                        <control id="notescontrol" classid="{06375649-C143-495E-A496-C962E5B4488E}" disabled="false">
-                          <parameters>
-                            <UClientUniqueName>Notes</UClientUniqueName>
-                          </parameters>
-                        </control>
+                        <control id="book_npmstaterecommendation" classid="{3EF39988-22BB-4F0B-BBBE-64B5A3748AEE}" datafieldname="book_npmstaterecommendation" disabled="false" />
                       </cell>
                     </row>
-                    <row />
-                    <row />
-                    <row />
-                    <row />
-                    <row />
-                    <row />
-                    <row />
-                    <row />
-                    <row />
-                    <row />
+                    <row>
+                      <cell id="{5c73c371-4ded-42bf-ad17-7574714fe7ce}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="Outcome" languagecode="1033" />
+                        </labels>
+                        <control id="book_outcome" classid="{3EF39988-22BB-4F0B-BBBE-64B5A3748AEE}" datafieldname="book_outcome" disabled="false" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{c438fd30-dac5-45b5-98bd-90f4055b8707}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="Outcome Amount" languagecode="1033" />
+                        </labels>
+                        <control id="book_outcomeamount" classid="{533B9E00-756B-4312-95A0-DC888637AC78}" datafieldname="book_outcomeamount" disabled="false" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{6881f92f-71ac-4939-a9a5-d7303bac7f9f}" locklevel="0" colspan="1" rowspan="5">
+                        <labels>
+                          <label description="Outcome Narrative" languagecode="1033" />
+                        </labels>
+                        <control id="book_outcomenarrative" classid="{E0DECE4B-6FC8-4A8F-A065-082708572369}" datafieldname="book_outcomenarrative" disabled="false" />
+                      </cell>
+                    </row>
                     <row />
                     <row />
                     <row />

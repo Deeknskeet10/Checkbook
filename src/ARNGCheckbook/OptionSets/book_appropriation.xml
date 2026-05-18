@@ -12,6 +12,14 @@
     <Description description="" languagecode="1033" />
   </Descriptions>
   <options>
+    <option value="10" IsHidden="0">
+      <labels>
+        <label description="FPP" languagecode="1033" />
+      </labels>
+      <Descriptions>
+        <Description description="" languagecode="1033" />
+      </Descriptions>
+    </option>
     <option value="9" IsHidden="0">
       <labels>
         <label description="FWFC" languagecode="1033" />

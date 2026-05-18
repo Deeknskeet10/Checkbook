@@ -123,36 +123,36 @@
                       </cell>
                     </row>
                     <row>
-                      <cell locklevel="0" id="{ea0d508d-f277-408a-9a04-1df1b0dc7a1e}">
+                      <cell locklevel="0" id="{e4857ee4-2e30-479d-96d6-c9963b93df91}">
                         <labels>
                           <label description="" languagecode="1033" />
                         </labels>
                       </cell>
-                      <cell id="{d5914289-4cb3-4849-afa4-b1dcf68d4dac}" locklevel="0" colspan="1" rowspan="1">
+                      <cell id="{63f6cb4b-053f-4a07-ae87-e92cda3a0f49}" locklevel="0" colspan="1" rowspan="1">
                         <labels>
                           <label description="TDP" languagecode="1033" />
                         </labels>
-                        <control id="book_tdp" classid="{0D2C745A-E5A8-4C8F-BA63-C6D3BB604660}" datafieldname="book_tdp" disabled="false" />
+                        <control id="book_newtdp" classid="{C3EFE0C3-0EC6-42BE-8349-CBD9079DFD8E}" datafieldname="book_newtdp" disabled="false" />
                       </cell>
-                      <cell locklevel="0" id="{7c229b50-1198-4f1b-af26-572960a4b0a7}">
+                      <cell locklevel="0" id="{75382abb-fdf7-4ed8-9fb1-bdcdfdc41e4d}">
                         <labels>
                           <label description="" languagecode="1033" />
                         </labels>
                       </cell>
                     </row>
                     <row>
-                      <cell locklevel="0" id="{e4857ee4-2e30-479d-96d6-c9963b93df91}">
+                      <cell locklevel="0" id="{4182ef14-36a0-4ffb-bd61-c80cc7651db3}">
                         <labels>
                           <label description="" languagecode="1033" />
                         </labels>
                       </cell>
-                      <cell id="{db6160a5-e17b-4acb-aa96-e3b711b0136e}" locklevel="0" colspan="1" rowspan="1">
+                      <cell id="{687c6f42-e888-4b14-b187-fb70f6c253d3}" locklevel="0" colspan="1" rowspan="1">
                         <labels>
                           <label description="TDP Remaining" languagecode="1033" />
                         </labels>
-                        <control id="book_tdpremaining" classid="{0D2C745A-E5A8-4C8F-BA63-C6D3BB604660}" datafieldname="book_tdpremaining" disabled="false" />
+                        <control id="book_newtdpremaining" classid="{C3EFE0C3-0EC6-42BE-8349-CBD9079DFD8E}" datafieldname="book_newtdpremaining" disabled="false" />
                       </cell>
-                      <cell locklevel="0" id="{75382abb-fdf7-4ed8-9fb1-bdcdfdc41e4d}">
+                      <cell locklevel="0" id="{3049651c-c864-4563-a39f-208414752051}">
                         <labels>
                           <label description="" languagecode="1033" />
                         </labels>

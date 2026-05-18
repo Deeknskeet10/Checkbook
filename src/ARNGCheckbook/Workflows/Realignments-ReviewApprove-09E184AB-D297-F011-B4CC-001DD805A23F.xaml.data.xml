@@ -49,25 +49,49 @@
     <steplabels id="{ef919f3a-b471-413e-8d6b-011ba2a72b3e}">
       <label languagecode="1033" description="Remarks" />
     </steplabels>
+    <steplabels id="{c84ebf9d-d623-4de0-9709-2309e49d7133}">
+      <label languagecode="1033" description="Same SAG / Fund" />
+    </steplabels>
     <steplabels id="{273e9c6d-3d66-4442-8eb1-cf8b76802851}">
       <label languagecode="1033" description="State Approval" />
     </steplabels>
     <steplabels id="{b2e9ce8d-fc88-4533-ba19-f02775123955}">
       <label languagecode="1033" description="State Approval" />
     </steplabels>
-    <steplabels id="{366b0b6f-bd96-48f6-b832-a7e44a5d134d}">
+    <steplabels id="{2382fbb4-ac50-4f44-bf28-459f43f844e4}">
+      <label languagecode="1033" description="State Approval" />
+    </steplabels>
+    <steplabels id="{c7ff25b2-223a-40b8-a695-153174fae978}">
+      <label languagecode="1033" description="State Approved" />
+    </steplabels>
+    <steplabels id="{832a5ab4-024d-4520-84c9-8e36c819137e}">
       <label languagecode="1033" description="NPM Concurrence" />
     </steplabels>
-    <steplabels id="{9c2e78ac-a88c-4470-8e46-3449351700d8}">
+    <steplabels id="{89d5ac48-6863-4f20-9c08-e403d2212e1e}">
       <label languagecode="1033" description="Payee Concurrence" />
     </steplabels>
-    <steplabels id="{3291f255-2168-4df9-b616-e594aec6356c}">
+    <steplabels id="{314b5839-c6d2-41de-bf90-bfdeb6ebeabf}">
       <label languagecode="1033" description="Payer Concurrence" />
     </steplabels>
-    <steplabels id="{6fc35dfb-0782-416a-b37a-961923b24246}">
+    <steplabels id="{c58e7fba-14d0-451a-89ed-9fbc84d9ca43}">
       <label languagecode="1033" description="BE Approval" />
     </steplabels>
-    <steplabels id="{67914da4-db1e-46bd-af1c-b7d20cd2ca6c}">
+    <steplabels id="{766bae1d-f58b-4eed-bf3a-7fc37225d062}">
+      <label languagecode="1033" description="BE Decision" />
+    </steplabels>
+    <steplabels id="{51153ce7-0ef1-4769-9deb-c00c5f883c01}">
+      <label languagecode="1033" description="NPM Concurrence" />
+    </steplabels>
+    <steplabels id="{115d45ea-fe35-4e34-b165-984c63c10cee}">
+      <label languagecode="1033" description="Payee Concurrence" />
+    </steplabels>
+    <steplabels id="{8c1dc12f-c497-4b66-92ce-e7d2aff21a9a}">
+      <label languagecode="1033" description="Payer Concurrence" />
+    </steplabels>
+    <steplabels id="{3182c37f-5355-4a50-af81-a78299e9600b}">
+      <label languagecode="1033" description="BE Approval" />
+    </steplabels>
+    <steplabels id="{37d05666-47cf-412d-8dac-ac971c5ca8fa}">
       <label languagecode="1033" description="BE Decision" />
     </steplabels>
   </labels>

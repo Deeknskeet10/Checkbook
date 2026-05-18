@@ -18,7 +18,7 @@
           <cell name="book_dollartype" width="108" />
           <cell name="book_sag" width="100" />
           <cell name="book_ape" width="100" />
-          <cell name="book_resourceamount" width="142" />
+          <cell name="book_newresourceamount" width="142" />
         </row>
       </grid>
     </layoutxml>
@@ -36,9 +36,9 @@
           <attribute name="book_dollartype" />
           <attribute name="book_fiscalyear" />
           <attribute name="book_mdep" />
-          <attribute name="book_resourceamount" />
           <attribute name="book_sag" />
           <attribute name="book_name" />
+          <attribute name="book_newresourceamount" />
         </entity>
       </fetch>
     </fetchxml>

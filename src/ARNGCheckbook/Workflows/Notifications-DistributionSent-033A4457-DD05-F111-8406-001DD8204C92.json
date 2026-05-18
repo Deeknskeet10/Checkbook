@@ -57,7 +57,11 @@
       },
       "actions": {
         "Get_Distribution": {
-          "runAfter": {},
+          "runAfter": {
+            "varEnv": [
+              "Succeeded"
+            ]
+          },
           "metadata": {
             "operationMetadataId": "46a1ec5d-c805-47da-a218-f0b1a76aa96c"
           },
@@ -109,7 +113,7 @@
                   "entityName": "appnotifications",
                   "item/title": "Distribution Completed",
                   "item/body": "A Distribution for Fund: '@{outputs('Get_Fund')?['body/book_name']}' and PG: '@{outputs('Get_PG')?['body/book_name']}' for '@{outputs('Get_Distribution')?['body/book_amount']}' has been completed.  EDN: '@{outputs('Get_Distribution')?['body/book_entrydocumentnumber']}'",
-                  "item/data": "{\n  \"actions\": [\n    {\n      \"title\": \"Funded Amount Updated\",\n      \"data\": {\n        \"type\": \"url\",\n        \"url\": \"@{concat(parameters('ARNG Checkbook - Environment (book_ARNGCheckbookEnvironment)'), '/main.aspx?etn=book_distributions&id=', triggerOutputs()?['body/book_distributionsid'], '&pagetype=entityrecord')}\",\n        \"navigationTarget\": \"dialog\"\n      }\n    }\n  ]\n}",
+                  "item/data": "{\n  \"actions\": [\n    {\n      \"title\": \"Funded Amount Updated\",\n      \"data\": {\n        \"type\": \"url\",\n        \"url\": \"@{concat(variables('varEnv'), 'main.aspx?etn=book_distributions&id=', triggerOutputs()?['body/book_distributionsid'], '&pagetype=entityrecord')}\",\n        \"navigationTarget\": \"dialog\"\n      }\n    }\n  ]\n}",
                   "item/icontype": 100000000,
                   "item/ownerid@odata.bind": "systemusers(@{items('Loop_through_Users')?['systemuserid']})",
                   "item/owningbusinessunit@odata.bind": "businessunits(@{outputs('Get_Distribution')?['body/_owningbusinessunit_value']})",
@@ -176,6 +180,22 @@
               "operationId": "GetItem",
               "connectionName": "shared_commondataserviceforapps"
             }
+          }
+        },
+        "varEnv": {
+          "runAfter": {},
+          "metadata": {
+            "operationMetadataId": "33132ff6-5c2b-41ad-82b6-bc80eb253aa7"
+          },
+          "type": "InitializeVariable",
+          "inputs": {
+            "variables": [
+              {
+                "name": "varEnv",
+                "type": "string",
+                "value": "@parameters('ARNG Checkbook - Environment (book_ARNGCheckbookEnvironment)')"
+              }
+            ]
           }
         }
       }

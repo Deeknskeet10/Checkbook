@@ -1,0 +1,109 @@
+{
+  "properties": {
+    "connectionReferences": {
+      "shared_commondataserviceforapps": {
+        "runtimeSource": "embedded",
+        "connection": {
+          "connectionReferenceLogicalName": "book_sharedcommondataserviceforapps_9388f"
+        },
+        "api": {
+          "name": "shared_commondataserviceforapps"
+        }
+      }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "1.0.0.0",
+      "parameters": {
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        },
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        }
+      },
+      "triggers": {
+        "When_a_row_is_added,_modified_or_deleted": {
+          "metadata": {
+            "operationMetadataId": "26e94226-d893-40a4-bfad-2c4fb679440c"
+          },
+          "type": "OpenApiConnectionWebhook",
+          "inputs": {
+            "host": {
+              "connectionName": "shared_commondataserviceforapps",
+              "operationId": "SubscribeWebhookTrigger",
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
+            },
+            "parameters": {
+              "subscriptionRequest/message": 3,
+              "subscriptionRequest/entityname": "book_unfundedrequests",
+              "subscriptionRequest/scope": 4,
+              "subscriptionRequest/filteringattributes": "book_outcome"
+            },
+            "authentication": "@parameters('$authentication')"
+          }
+        }
+      },
+      "actions": {
+        "List_children_UFRs": {
+          "runAfter": {},
+          "metadata": {
+            "operationMetadataId": "cf4ebae1-df13-42d3-b974-56506b384f0b"
+          },
+          "type": "OpenApiConnection",
+          "inputs": {
+            "host": {
+              "connectionName": "shared_commondataserviceforapps",
+              "operationId": "ListRecords",
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
+            },
+            "parameters": {
+              "entityName": "book_unfundedrequestses",
+              "$filter": "_book_higherlevelufr_value eq @{triggerOutputs()?['body/book_unfundedrequestsid']}"
+            },
+            "authentication": "@parameters('$authentication')"
+          }
+        },
+        "Apply_to_each": {
+          "foreach": "@outputs('List_children_UFRs')?['body/value']",
+          "actions": {
+            "Update_Outcome": {
+              "runAfter": {},
+              "metadata": {
+                "operationMetadataId": "86f5e928-4b76-4389-a077-5dfedd68b8d5"
+              },
+              "type": "OpenApiConnection",
+              "inputs": {
+                "host": {
+                  "connectionName": "shared_commondataserviceforapps",
+                  "operationId": "UpdateOnlyRecord",
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
+                },
+                "parameters": {
+                  "entityName": "book_unfundedrequestses",
+                  "recordId": "@items('Apply_to_each')?['book_unfundedrequestsid']",
+                  "item/book_outcome": "@triggerOutputs()?['body/book_outcome']",
+                  "item/book_outcomenarrative": "@triggerOutputs()?['body/book_outcomenarrative']"
+                },
+                "authentication": "@parameters('$authentication')"
+              }
+            }
+          },
+          "runAfter": {
+            "List_children_UFRs": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "b0f8311c-6120-4245-929d-a81adfbdf2e1"
+          },
+          "type": "Foreach"
+        }
+      }
+    },
+    "templateName": null
+  },
+  "schemaVersion": "1.0.0.0"
+}

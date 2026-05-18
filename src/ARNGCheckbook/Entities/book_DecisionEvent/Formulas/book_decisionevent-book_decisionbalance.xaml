@@ -57,7 +57,7 @@
           <Variable x:TypeArguments="x:Object" Name="RollupRuleStep1_4" />
           <Variable x:TypeArguments="x:Object" Name="RollupRuleStep1_5" />
         </Sequence.Variables>
-        <mxswa:GetEntityProperty Attribute="book_amount" Entity="[InputEntities(&quot;primaryEntity&quot;)]" EntityName="book_decision" Value="[RollupRuleStep1_5]">
+        <mxswa:GetEntityProperty Attribute="book_decisionamount" Entity="[InputEntities(&quot;primaryEntity&quot;)]" EntityName="book_decision" Value="[RollupRuleStep1_5]">
           <mxswa:GetEntityProperty.TargetType>
             <InArgument x:TypeArguments="s:Type">
               <mxswa:ReferenceLiteral x:TypeArguments="s:Type">

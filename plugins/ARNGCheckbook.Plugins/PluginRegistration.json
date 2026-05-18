@@ -1,0 +1,436 @@
+{
+  "$schema": "https://raw.githubusercontent.com/microsoft/PowerApps-Tools/master/PluginRegistration/pluginpackage.schema.json",
+  "assemblyName": "ARNGCheckbook.Plugins",
+  "assemblyVersion": "1.0.0.0",
+  "assemblyPath": "bin/Debug/net462/ARNGCheckbook.Plugins.dll",
+  "isolationMode": "Sandbox",
+  "plugins": [
+    {
+      "typeName": "ARNGCheckbook.Plugins.Validation.RequirementFundingTDPValidator",
+      "name": "RequirementFundingTDPValidator",
+      "description": "Validates TDP allocation rules on RequirementFunding records",
+      "steps": [
+        {
+          "name": "RequirementFundingTDPValidator: Create",
+          "message": "Create",
+          "primaryEntity": "book_requirementfunding",
+          "stage": "PreOperation",
+          "executionMode": "Synchronous",
+          "filteringAttributes": "book_tdp,book_lineofaccounting,book_fundedamount"
+        },
+        {
+          "name": "RequirementFundingTDPValidator: Update",
+          "message": "Update",
+          "primaryEntity": "book_requirementfunding",
+          "stage": "PreOperation",
+          "executionMode": "Synchronous",
+          "filteringAttributes": "book_tdp,book_lineofaccounting,book_fundedamount",
+          "images": [
+            {
+              "name": "PreImage",
+              "type": "PreImage",
+              "attributes": "book_tdp,book_lineofaccounting,book_fundedamount"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "typeName": "ARNGCheckbook.Plugins.Validation.PrioritizationValidator",
+      "name": "PrioritizationValidator",
+      "description": "Validates priority uniqueness within State/FY/FundCenter scope",
+      "steps": [
+        {
+          "name": "PrioritizationValidator: Create",
+          "message": "Create",
+          "primaryEntity": "book_prioritization",
+          "stage": "PreOperation",
+          "executionMode": "Synchronous",
+          "filteringAttributes": "book_statepriority,book_state,book_newfiscalyear,book_fundcenter"
+        },
+        {
+          "name": "PrioritizationValidator: Update",
+          "message": "Update",
+          "primaryEntity": "book_prioritization",
+          "stage": "PreOperation",
+          "executionMode": "Synchronous",
+          "filteringAttributes": "book_statepriority,book_state,book_newfiscalyear,book_fundcenter",
+          "images": [
+            {
+              "name": "PreImage",
+              "type": "PreImage",
+              "attributes": "book_statepriority,book_state,book_newfiscalyear,book_fundcenter"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "typeName": "ARNGCheckbook.Plugins.Validation.SpendPlanValidator",
+      "name": "SpendPlanValidator",
+      "description": "Validates monthly spend plan allocations",
+      "steps": [
+        {
+          "name": "SpendPlanValidator: Create",
+          "message": "Create",
+          "primaryEntity": "book_spendplan",
+          "stage": "PreOperation",
+          "executionMode": "Synchronous",
+          "filteringAttributes": "book_total,book_october,book_november,book_december,book_january,book_february,book_march,book_april,book_may,book_june,book_july,book_august,book_september,book_availableamount"
+        },
+        {
+          "name": "SpendPlanValidator: Update",
+          "message": "Update",
+          "primaryEntity": "book_spendplan",
+          "stage": "PreOperation",
+          "executionMode": "Synchronous",
+          "filteringAttributes": "book_total,book_october,book_november,book_december,book_january,book_february,book_march,book_april,book_may,book_june,book_july,book_august,book_september,book_availableamount",
+          "images": [
+            {
+              "name": "PreImage",
+              "type": "PreImage",
+              "attributes": "book_total,book_october,book_november,book_december,book_january,book_february,book_march,book_april,book_may,book_june,book_july,book_august,book_september,book_availableamount,book_spendplantotal"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "typeName": "ARNGCheckbook.Plugins.Validation.DistributionValidator",
+      "name": "DistributionValidator",
+      "description": "Validates Distribution records require Fund, FundCenter, PGSAG, and FundingEvent",
+      "steps": [
+        {
+          "name": "DistributionValidator: Create",
+          "message": "Create",
+          "primaryEntity": "book_distribution",
+          "stage": "PreOperation",
+          "executionMode": "Synchronous",
+          "filteringAttributes": "book_fundingevent,book_newpgsag,book_fund,book_fundcenter,book_amount"
+        },
+        {
+          "name": "DistributionValidator: Update",
+          "message": "Update",
+          "primaryEntity": "book_distribution",
+          "stage": "PreOperation",
+          "executionMode": "Synchronous",
+          "filteringAttributes": "book_fundingevent,book_newpgsag,book_fund,book_fundcenter,book_amount",
+          "images": [
+            {
+              "name": "PreImage",
+              "type": "PreImage",
+              "attributes": "book_fundingevent,book_newpgsag,book_fund,book_fundcenter,book_amount,book_manualentry"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "typeName": "ARNGCheckbook.Plugins.LOATDPRecalculator",
+      "name": "LOATDPRecalculator",
+      "description": "Recalculates TDP and TDP Remaining on LOA records when related records change",
+      "steps": [
+        {
+          "name": "LOATDPRecalculator: FundingTrack Create",
+          "message": "Create",
+          "primaryEntity": "book_fundingtrack",
+          "stage": "PostOperation",
+          "executionMode": "Asynchronous",
+          "filteringAttributes": "book_resourceamount,book_lineofaccountingloa"
+        },
+        {
+          "name": "LOATDPRecalculator: FundingTrack Update",
+          "message": "Update",
+          "primaryEntity": "book_fundingtrack",
+          "stage": "PostOperation",
+          "executionMode": "Asynchronous",
+          "filteringAttributes": "book_resourceamount,book_lineofaccountingloa",
+          "images": [
+            {
+              "name": "PreImage",
+              "type": "PreImage",
+              "attributes": "book_lineofaccountingloa"
+            }
+          ]
+        },
+        {
+          "name": "LOATDPRecalculator: FundingTrack Delete",
+          "message": "Delete",
+          "primaryEntity": "book_fundingtrack",
+          "stage": "PreOperation",
+          "executionMode": "Synchronous",
+          "images": [
+            {
+              "name": "PreImage",
+              "type": "PreImage",
+              "attributes": "book_lineofaccountingloa,book_resourceamount"
+            }
+          ]
+        },
+        {
+          "name": "LOATDPRecalculator: RequirementFunding Create",
+          "message": "Create",
+          "primaryEntity": "book_requirementfunding",
+          "stage": "PostOperation",
+          "executionMode": "Asynchronous",
+          "filteringAttributes": "book_tdp,book_lineofaccounting"
+        },
+        {
+          "name": "LOATDPRecalculator: RequirementFunding Update",
+          "message": "Update",
+          "primaryEntity": "book_requirementfunding",
+          "stage": "PostOperation",
+          "executionMode": "Asynchronous",
+          "filteringAttributes": "book_tdp,book_lineofaccounting",
+          "images": [
+            {
+              "name": "PreImage",
+              "type": "PreImage",
+              "attributes": "book_lineofaccounting"
+            }
+          ]
+        },
+        {
+          "name": "LOATDPRecalculator: RequirementFunding Delete",
+          "message": "Delete",
+          "primaryEntity": "book_requirementfunding",
+          "stage": "PreOperation",
+          "executionMode": "Synchronous",
+          "images": [
+            {
+              "name": "PreImage",
+              "type": "PreImage",
+              "attributes": "book_lineofaccounting,book_tdp"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "typeName": "ARNGCheckbook.Plugins.BusinessLogic.NameBuilder",
+      "name": "NameBuilder",
+      "description": "Auto-generates Name field for various entities on creation",
+      "steps": [
+        {
+          "name": "NameBuilder: Fund Create",
+          "message": "Create",
+          "primaryEntity": "book_fund",
+          "stage": "PreOperation",
+          "executionMode": "Synchronous"
+        },
+        {
+          "name": "NameBuilder: LOEFocusArea Create",
+          "message": "Create",
+          "primaryEntity": "book_loefocusarea",
+          "stage": "PreOperation",
+          "executionMode": "Synchronous"
+        },
+        {
+          "name": "NameBuilder: FundingTrack Create",
+          "message": "Create",
+          "primaryEntity": "book_fundingtrack",
+          "stage": "PreOperation",
+          "executionMode": "Synchronous"
+        },
+        {
+          "name": "NameBuilder: Distributions Create",
+          "message": "Create",
+          "primaryEntity": "book_distribution",
+          "stage": "PreOperation",
+          "executionMode": "Synchronous"
+        },
+        {
+          "name": "NameBuilder: LINRequests Create",
+          "message": "Create",
+          "primaryEntity": "book_linrequests",
+          "stage": "PreOperation",
+          "executionMode": "Synchronous"
+        },
+        {
+          "name": "NameBuilder: Realignments Create",
+          "message": "Create",
+          "primaryEntity": "book_realignments",
+          "stage": "PreOperation",
+          "executionMode": "Synchronous"
+        },
+        {
+          "name": "NameBuilder: RequirementFunding Create",
+          "message": "Create",
+          "primaryEntity": "book_requirementfunding",
+          "stage": "PreOperation",
+          "executionMode": "Synchronous"
+        },
+        {
+          "name": "NameBuilder: Prioritization Create",
+          "message": "Create",
+          "primaryEntity": "book_prioritization",
+          "stage": "PreOperation",
+          "executionMode": "Synchronous"
+        }
+      ]
+    },
+    {
+      "typeName": "ARNGCheckbook.Plugins.BusinessLogic.RecordInitializer",
+      "name": "RecordInitializer",
+      "description": "Initializes records with default values on creation",
+      "steps": [
+        {
+          "name": "RecordInitializer: RequirementFunding Create",
+          "message": "Create",
+          "primaryEntity": "book_requirementfunding",
+          "stage": "PreOperation",
+          "executionMode": "Synchronous"
+        },
+        {
+          "name": "RecordInitializer: FundingLine Create",
+          "message": "Create",
+          "primaryEntity": "book_fundingline",
+          "stage": "PreOperation",
+          "executionMode": "Synchronous"
+        },
+        {
+          "name": "RecordInitializer: Turnin Create",
+          "message": "Create",
+          "primaryEntity": "book_turnin",
+          "stage": "PreOperation",
+          "executionMode": "Synchronous"
+        },
+        {
+          "name": "RecordInitializer: Prioritization Create",
+          "message": "Create",
+          "primaryEntity": "book_prioritization",
+          "stage": "PreOperation",
+          "executionMode": "Synchronous"
+        },
+        {
+          "name": "RecordInitializer: SpendPlan Create",
+          "message": "Create",
+          "primaryEntity": "book_spendplan",
+          "stage": "PreOperation",
+          "executionMode": "Synchronous"
+        }
+      ]
+    },
+    {
+      "typeName": "ARNGCheckbook.Plugins.BusinessLogic.LedgerEntryCreator",
+      "name": "LedgerEntryCreator",
+      "description": "Creates Ledger entries atomically for Realignments and Turn-ins",
+      "steps": [
+        {
+          "name": "LedgerEntryCreator: Realignments Create",
+          "message": "Create",
+          "primaryEntity": "book_realignments",
+          "stage": "PostOperation",
+          "executionMode": "Asynchronous"
+        },
+        {
+          "name": "LedgerEntryCreator: Turnin Create",
+          "message": "Create",
+          "primaryEntity": "book_turnin",
+          "stage": "PostOperation",
+          "executionMode": "Asynchronous"
+        }
+      ]
+    },
+    {
+      "typeName": "ARNGCheckbook.Plugins.Realignments.SetSameFundSagFlagPlugin",
+      "name": "SetSameFundSagFlagPlugin",
+      "description": "Sets book_samefundandsag flag based on Fund/SAG comparison of debited vs credited LOA",
+      "steps": [
+        {
+          "name": "SetSameFundSagFlagPlugin: Create",
+          "message": "Create",
+          "primaryEntity": "book_realignments",
+          "stage": "PreOperation",
+          "executionMode": "Synchronous"
+        },
+        {
+          "name": "SetSameFundSagFlagPlugin: Update",
+          "message": "Update",
+          "primaryEntity": "book_realignments",
+          "stage": "PreOperation",
+          "executionMode": "Synchronous",
+          "filteringAttributes": "book_debitedloa,book_creditedloa,book_newdebitedrequirement,book_newcreditedrequirement,book_debitedprioritization,book_creditedprioritization",
+          "images": [
+            {
+              "name": "PreImage",
+              "type": "PreImage",
+              "attributes": "book_debitedloa,book_creditedloa,book_newdebitedrequirement,book_newcreditedrequirement,book_debitedprioritization,book_creditedprioritization"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "typeName": "ARNGCheckbook.Plugins.BusinessLogic.ItemizedDetailsSynchronizer",
+      "name": "ItemizedDetailsSynchronizer",
+      "description": "Syncs Itemized Details to Prioritizations when Requirement Details or Prioritizations change",
+      "steps": [
+        {
+          "name": "ItemizedDetailsSynchronizer: RequirementDetails Create",
+          "message": "Create",
+          "primaryEntity": "book_requirementdetails",
+          "stage": "PostOperation",
+          "executionMode": "Asynchronous"
+        },
+        {
+          "name": "ItemizedDetailsSynchronizer: RequirementDetails Delete",
+          "message": "Delete",
+          "primaryEntity": "book_requirementdetails",
+          "stage": "PreOperation",
+          "executionMode": "Synchronous"
+        },
+        {
+          "name": "ItemizedDetailsSynchronizer: Prioritization Create",
+          "message": "Create",
+          "primaryEntity": "book_prioritization",
+          "stage": "PostOperation",
+          "executionMode": "Asynchronous"
+        }
+      ]
+    },
+    {
+      "typeName": "ARNGCheckbook.Plugins.BusinessLogic.PrioritizationItemizedRollup",
+      "name": "PrioritizationItemizedRollup",
+      "description": "Rolls Itemized Details Requested/Validated/Funded amounts up to the parent Prioritization (decimal fields)",
+      "steps": [
+        {
+          "name": "PrioritizationItemizedRollup: ItemizedDetails Create",
+          "message": "Create",
+          "primaryEntity": "book_itemizeddetails",
+          "stage": "PostOperation",
+          "executionMode": "Synchronous"
+        },
+        {
+          "name": "PrioritizationItemizedRollup: ItemizedDetails Update",
+          "message": "Update",
+          "primaryEntity": "book_itemizeddetails",
+          "stage": "PostOperation",
+          "executionMode": "Synchronous",
+          "filteringAttributes": "book_requestedamount,book_validatedamount,book_fundedamount,book_prioritization",
+          "images": [
+            {
+              "name": "PreImage",
+              "type": "PreImage",
+              "attributes": "book_prioritization"
+            }
+          ]
+        },
+        {
+          "name": "PrioritizationItemizedRollup: ItemizedDetails Delete",
+          "message": "Delete",
+          "primaryEntity": "book_itemizeddetails",
+          "stage": "PostOperation",
+          "executionMode": "Synchronous",
+          "images": [
+            {
+              "name": "PreImage",
+              "type": "PreImage",
+              "attributes": "book_prioritization"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

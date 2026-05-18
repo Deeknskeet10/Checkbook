@@ -1,0 +1,49 @@
+<appaction uniquename="book__ResetUFR!0a4445c4ff504aeaa6e3f37c92ff4696!book_ARNGCheckbookUnfundedRequests!book_unfundedrequests!0">
+  <appmoduleid>
+    <uniquename>book_ARNGCheckbookUnfundedRequests</uniquename>
+  </appmoduleid>
+  <buttonaccessibilitytext default="Reset UFR to State Input">
+    <label description="Reset UFR to State Input" languagecode="1033" />
+  </buttonaccessibilitytext>
+  <buttonlabeltext default="Reset UFR">
+    <label description="Reset UFR" languagecode="1033" />
+  </buttonlabeltext>
+  <buttontooltipdescription default="Returns BPF to State Input, resets values and reactivates record.">
+    <label description="Returns BPF to State Input, resets values and reactivates record." languagecode="1033" />
+  </buttontooltipdescription>
+  <buttontooltiptitle default="Reset UFR to State Input">
+    <label description="Reset UFR to State Input" languagecode="1033" />
+  </buttontooltiptitle>
+  <context>1</context>
+  <contextentity>
+    <logicalname>book_unfundedrequests</logicalname>
+  </contextentity>
+  <contextvalue>book_unfundedrequests</contextvalue>
+  <fonticon>RestoreArticle</fonticon>
+  <hidden>0</hidden>
+  <iscustomizable>1</iscustomizable>
+  <isdisabled>0</isdisabled>
+  <isgrouptitlehidden>0</isgrouptitlehidden>
+  <location>0</location>
+  <name>ResetUFR!0a4445c4ff504aeaa6e3f37c92ff4696</name>
+  <onclickeventjavascriptfunctionname>UnfundedRequestActions.restartProcess</onclickeventjavascriptfunctionname>
+  <onclickeventjavascriptparameters>[{"type":5}]</onclickeventjavascriptparameters>
+  <onclickeventjavascriptwebresourceid>
+    <webresourceid>e187b188-9827-f111-8341-001dd8204385</webresourceid>
+  </onclickeventjavascriptwebresourceid>
+  <onclickeventtype>2</onclickeventtype>
+  <origin>0</origin>
+  <parentappactionid>
+    <uniquename>book__Reset!5fbd8e89e0a94a888ebc05cbe64f9db2!book_ARNGCheckbookUnfundedRequests!book_unfundedrequests!0</uniquename>
+  </parentappactionid>
+  <sequence>10000.0000000000</sequence>
+  <statecode>0</statecode>
+  <statuscode>1</statuscode>
+  <type>0</type>
+  <visibilityformulacomponentlibraryid>
+    <name>book_arngcheckbookunfundedrequestsdefaultcommandlibrary_49d1e</name>
+  </visibilityformulacomponentlibraryid>
+  <visibilityformulacomponentname>814225b24f8541c3ab92a13ab2a35051</visibilityformulacomponentname>
+  <visibilityformulafunctionname>Visible</visibilityformulafunctionname>
+  <visibilitytype>1</visibilitytype>
+</appaction>

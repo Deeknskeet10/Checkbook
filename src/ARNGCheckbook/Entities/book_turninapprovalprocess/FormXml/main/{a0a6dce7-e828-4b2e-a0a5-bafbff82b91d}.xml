@@ -24,7 +24,7 @@
                         <labels>
                           <label description="Fund Center" languagecode="1033" />
                         </labels>
-                        <control id="bpf_book_turnin_book_turninapprovalprocess:book_fundcenter" classid="{270bd3db-d9af-4782-9025-509e298dec0a}" datafieldname="book_fundcenter" relationship="bpf_book_turnin_book_turninapprovalprocess" isrequired="true" disabled="false" />
+                        <control id="bpf_book_turnin_book_turninapprovalprocess:book_fundcenter" classid="{270bd3db-d9af-4782-9025-509e298dec0a}" datafieldname="book_fundcenter" disabled="false" relationship="bpf_book_turnin_book_turninapprovalprocess" isrequired="true" />
                       </cell>
                     </row>
                     <row>
@@ -32,7 +32,7 @@
                         <labels>
                           <label description="Fund" languagecode="1033" />
                         </labels>
-                        <control id="bpf_book_turnin_book_turninapprovalprocess:book_fund" classid="{270bd3db-d9af-4782-9025-509e298dec0a}" datafieldname="book_fund" relationship="bpf_book_turnin_book_turninapprovalprocess" isrequired="true" disabled="false" />
+                        <control id="bpf_book_turnin_book_turninapprovalprocess:book_fund" classid="{270bd3db-d9af-4782-9025-509e298dec0a}" datafieldname="book_fund" disabled="false" relationship="bpf_book_turnin_book_turninapprovalprocess" isrequired="true" />
                       </cell>
                     </row>
                     <row>
@@ -40,7 +40,7 @@
                         <labels>
                           <label description="PG" languagecode="1033" />
                         </labels>
-                        <control id="bpf_book_turnin_book_turninapprovalprocess:book_pg" classid="{270bd3db-d9af-4782-9025-509e298dec0a}" datafieldname="book_pg" relationship="bpf_book_turnin_book_turninapprovalprocess" isrequired="true" disabled="false" />
+                        <control id="bpf_book_turnin_book_turninapprovalprocess:book_pg" classid="{270bd3db-d9af-4782-9025-509e298dec0a}" datafieldname="book_pg" disabled="false" relationship="bpf_book_turnin_book_turninapprovalprocess" isrequired="true" />
                       </cell>
                     </row>
                     <row>
@@ -48,7 +48,7 @@
                         <labels>
                           <label description="Amount" languagecode="1033" />
                         </labels>
-                        <control id="bpf_book_turnin_book_turninapprovalprocess:book_amount" classid="{0d2c745a-e5a8-4c8f-ba63-c6d3bb604660}" datafieldname="book_amount" relationship="bpf_book_turnin_book_turninapprovalprocess" isrequired="true" disabled="false" />
+                        <control id="bpf_book_turnin_book_turninapprovalprocess:book_newamount" classid="{0d2c745a-e5a8-4c8f-ba63-c6d3bb604660}" datafieldname="book_newamount" disabled="false" relationship="bpf_book_turnin_book_turninapprovalprocess" isrequired="true" />
                       </cell>
                     </row>
                   </rows>
@@ -74,7 +74,7 @@
                         <labels>
                           <label description="Identified Turn-In Amount" languagecode="1033" />
                         </labels>
-                        <control id="bpf_book_turnin_book_turninapprovalprocess:book_identifiedturninamount" classid="{c3efe0c3-0ec6-42be-8349-cbd9079dfd8e}" datafieldname="book_identifiedturninamount" relationship="bpf_book_turnin_book_turninapprovalprocess" isrequired="false" disabled="false" />
+                        <control id="bpf_book_turnin_book_turninapprovalprocess:book_identifiedturninamount" classid="{c3efe0c3-0ec6-42be-8349-cbd9079dfd8e}" datafieldname="book_identifiedturninamount" disabled="false" relationship="bpf_book_turnin_book_turninapprovalprocess" isrequired="false" />
                       </cell>
                     </row>
                   </rows>
@@ -100,7 +100,7 @@
                         <labels>
                           <label description="State Approved" languagecode="1033" />
                         </labels>
-                        <control id="bpf_book_turnin_book_turninapprovalprocess:book_stateapproved" classid="{67fac785-cd58-4f9f-abb3-4b7ddc6ed5ed}" datafieldname="book_stateapproved" relationship="bpf_book_turnin_book_turninapprovalprocess" isrequired="true" disabled="false" />
+                        <control id="bpf_book_turnin_book_turninapprovalprocess:book_stateapproved" classid="{67fac785-cd58-4f9f-abb3-4b7ddc6ed5ed}" datafieldname="book_stateapproved" disabled="false" relationship="bpf_book_turnin_book_turninapprovalprocess" isrequired="true" />
                       </cell>
                     </row>
                   </rows>
@@ -126,7 +126,7 @@
                         <labels>
                           <label description="BE Approved" languagecode="1033" />
                         </labels>
-                        <control id="bpf_book_turnin_book_turninapprovalprocess:book_beapproved" classid="{67fac785-cd58-4f9f-abb3-4b7ddc6ed5ed}" datafieldname="book_beapproved" relationship="bpf_book_turnin_book_turninapprovalprocess" isrequired="true" disabled="false" />
+                        <control id="bpf_book_turnin_book_turninapprovalprocess:book_beapproved" classid="{67fac785-cd58-4f9f-abb3-4b7ddc6ed5ed}" datafieldname="book_beapproved" disabled="false" relationship="bpf_book_turnin_book_turninapprovalprocess" isrequired="true" />
                       </cell>
                     </row>
                   </rows>

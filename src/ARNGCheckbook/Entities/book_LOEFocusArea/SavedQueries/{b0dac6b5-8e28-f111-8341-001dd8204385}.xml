@@ -1,0 +1,37 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<savedqueries xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <savedquery>
+    <IsCustomizable>1</IsCustomizable>
+    <CanBeDeleted>1</CanBeDeleted>
+    <isquickfindquery>0</isquickfindquery>
+    <isprivate>0</isprivate>
+    <isdefault>0</isdefault>
+    <savedqueryid>{b0dac6b5-8e28-f111-8341-001dd8204385}</savedqueryid>
+    <layoutxml>
+      <grid name="resultset" jump="book_name" select="1" icon="1" preview="1">
+        <row name="result" id="book_loefocusareaid">
+          <cell name="book_name" width="200" />
+        </row>
+      </grid>
+    </layoutxml>
+    <querytype>0</querytype>
+    <fetchxml>
+      <fetch version="1.0" output-format="xml-platform" mapping="logical" distinct="true">
+        <entity name="book_loefocusarea">
+          <attribute name="book_name" />
+          <attribute name="book_loefocusareaid" />
+          <filter type="and">
+            <condition attribute="book_mcploe" operator="eq" value="1" />
+          </filter>
+        </entity>
+      </fetch>
+    </fetchxml>
+    <IntroducedVersion>1.11.0.27</IntroducedVersion>
+    <LocalizedNames>
+      <LocalizedName description="MCP LOE Lookup View" languagecode="1033" />
+    </LocalizedNames>
+    <Descriptions>
+      <Description description="Lookup View specifically for MCP LOEs" languagecode="1033" />
+    </Descriptions>
+  </savedquery>
+</savedqueries>

@@ -44,6 +44,14 @@
         <Description description="" languagecode="1033" />
       </Descriptions>
     </option>
+    <option value="27" IsHidden="0">
+      <labels>
+        <label description="Closed Account Adjustment" languagecode="1033" />
+      </labels>
+      <Descriptions>
+        <Description description="" languagecode="1033" />
+      </Descriptions>
+    </option>
     <option value="4" ExternalValue="" IsHidden="0">
       <labels>
         <label description="Cyberspace Operations" languagecode="1033" />

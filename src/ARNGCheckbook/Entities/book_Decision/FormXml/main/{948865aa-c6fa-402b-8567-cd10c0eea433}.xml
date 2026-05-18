@@ -52,11 +52,11 @@
                       </cell>
                     </row>
                     <row>
-                      <cell id="{d9e0e5d3-b9c3-4f4c-a120-06a285fa3878}" locklevel="0" colspan="1" rowspan="1">
+                      <cell id="{5977870a-00af-4470-bfe2-6c5e4ece50b2}" locklevel="0" colspan="1" rowspan="1">
                         <labels>
-                          <label description="Amount" languagecode="1033" />
+                          <label description="Decision Amount" languagecode="1033" />
                         </labels>
-                        <control id="book_amount" classid="{0D2C745A-E5A8-4C8F-BA63-C6D3BB604660}" datafieldname="book_amount" disabled="false" />
+                        <control id="book_decisionamount" classid="{C3EFE0C3-0EC6-42BE-8349-CBD9079DFD8E}" datafieldname="book_decisionamount" disabled="false" />
                       </cell>
                     </row>
                     <row>
@@ -149,6 +149,18 @@
               <labels>
                 <label description="" languagecode="1033" />
               </labels>
+            </cell>
+            <cell id="{e9ad7cd6-0731-42a1-961c-05f589e0251d}" locklevel="0" colspan="1" rowspan="1">
+              <labels>
+                <label description="Status" languagecode="1033" />
+              </labels>
+              <control id="header_statecode" classid="{3EF39988-22BB-4F0B-BBBE-64B5A3748AEE}" datafieldname="statecode" disabled="false" />
+            </cell>
+            <cell id="{f7340f93-bb2d-4db0-9fc6-01bd15a8f97f}" locklevel="0" colspan="1" rowspan="1">
+              <labels>
+                <label description="Owning Business Unit" languagecode="1033" />
+              </labels>
+              <control id="header_owningbusinessunit" classid="{270BD3DB-D9AF-4782-9025-509E298DEC0A}" datafieldname="owningbusinessunit" disabled="false" />
             </cell>
           </row>
         </rows>

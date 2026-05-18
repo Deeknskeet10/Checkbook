@@ -66,13 +66,13 @@
                   <sco:Collection x:TypeArguments="Variable" x:Key="Variables" />
                   <sco:Collection x:TypeArguments="Activity" x:Key="Activities">
                     <Sequence DisplayName="SetVisibilityStep4: Hide Funded">
-                      <mcwc:SetVisibility ControlId="book_fundedamounttdp" ControlType="standard" Entity="[InputEntities(&quot;primaryEntity&quot;)]" EntityName="book_prioritization" IsVisible="False" />
+                      <mcwc:SetVisibility ControlId="book_newfundedamounttdp" ControlType="standard" Entity="[InputEntities(&quot;primaryEntity&quot;)]" EntityName="book_prioritization" IsVisible="False" />
                     </Sequence>
                     <Sequence DisplayName="SetVisibilityStep5: Hide Validated">
-                      <mcwc:SetVisibility ControlId="book_newvalidatedamount" ControlType="standard" Entity="[InputEntities(&quot;primaryEntity&quot;)]" EntityName="book_prioritization" IsVisible="False" />
+                      <mcwc:SetVisibility ControlId="book_validatedamount" ControlType="standard" Entity="[InputEntities(&quot;primaryEntity&quot;)]" EntityName="book_prioritization" IsVisible="False" />
                     </Sequence>
                     <Sequence DisplayName="SetVisibilityStep7: Hide Unfunded">
-                      <mcwc:SetVisibility ControlId="book_newunfundedamount" ControlType="standard" Entity="[InputEntities(&quot;primaryEntity&quot;)]" EntityName="book_prioritization" IsVisible="False" />
+                      <mcwc:SetVisibility ControlId="book_unfundedamount" ControlType="standard" Entity="[InputEntities(&quot;primaryEntity&quot;)]" EntityName="book_prioritization" IsVisible="False" />
                     </Sequence>
                   </sco:Collection>
                 </mxswa:ActivityReference.Properties>
@@ -138,13 +138,13 @@
                   <sco:Collection x:TypeArguments="Variable" x:Key="Variables" />
                   <sco:Collection x:TypeArguments="Activity" x:Key="Activities">
                     <Sequence DisplayName="SetVisibilityStep12: Hide Funded">
-                      <mcwc:SetVisibility ControlId="book_fundedamounttdp" ControlType="standard" Entity="[InputEntities(&quot;primaryEntity&quot;)]" EntityName="book_prioritization" IsVisible="False" />
+                      <mcwc:SetVisibility ControlId="book_newfundedamounttdp" ControlType="standard" Entity="[InputEntities(&quot;primaryEntity&quot;)]" EntityName="book_prioritization" IsVisible="False" />
                     </Sequence>
                     <Sequence DisplayName="SetVisibilityStep13: Hide Validated">
-                      <mcwc:SetVisibility ControlId="book_newvalidatedamount" ControlType="standard" Entity="[InputEntities(&quot;primaryEntity&quot;)]" EntityName="book_prioritization" IsVisible="False" />
+                      <mcwc:SetVisibility ControlId="book_validatedamount" ControlType="standard" Entity="[InputEntities(&quot;primaryEntity&quot;)]" EntityName="book_prioritization" IsVisible="False" />
                     </Sequence>
                     <Sequence DisplayName="SetVisibilityStep14: Hide Unfunded">
-                      <mcwc:SetVisibility ControlId="book_newunfundedamount" ControlType="standard" Entity="[InputEntities(&quot;primaryEntity&quot;)]" EntityName="book_prioritization" IsVisible="False" />
+                      <mcwc:SetVisibility ControlId="book_unfundedamount" ControlType="standard" Entity="[InputEntities(&quot;primaryEntity&quot;)]" EntityName="book_prioritization" IsVisible="False" />
                     </Sequence>
                   </sco:Collection>
                 </mxswa:ActivityReference.Properties>
@@ -173,13 +173,13 @@
                   <sco:Collection x:TypeArguments="Variable" x:Key="Variables" />
                   <sco:Collection x:TypeArguments="Activity" x:Key="Activities">
                     <Sequence DisplayName="SetVisibilityStep6: Show Validated">
-                      <mcwc:SetVisibility ControlId="book_newvalidatedamount" ControlType="standard" Entity="[InputEntities(&quot;primaryEntity&quot;)]" EntityName="book_prioritization" IsVisible="True" />
+                      <mcwc:SetVisibility ControlId="book_validatedamount" ControlType="standard" Entity="[InputEntities(&quot;primaryEntity&quot;)]" EntityName="book_prioritization" IsVisible="True" />
                     </Sequence>
                     <Sequence DisplayName="SetVisibilityStep3: Show Funded">
-                      <mcwc:SetVisibility ControlId="book_fundedamounttdp" ControlType="standard" Entity="[InputEntities(&quot;primaryEntity&quot;)]" EntityName="book_prioritization" IsVisible="True" />
+                      <mcwc:SetVisibility ControlId="book_newfundedamounttdp" ControlType="standard" Entity="[InputEntities(&quot;primaryEntity&quot;)]" EntityName="book_prioritization" IsVisible="True" />
                     </Sequence>
                     <Sequence DisplayName="SetVisibilityStep8: Show Unfunded">
-                      <mcwc:SetVisibility ControlId="book_newunfundedamount" ControlType="standard" Entity="[InputEntities(&quot;primaryEntity&quot;)]" EntityName="book_prioritization" IsVisible="True" />
+                      <mcwc:SetVisibility ControlId="book_unfundedamount" ControlType="standard" Entity="[InputEntities(&quot;primaryEntity&quot;)]" EntityName="book_prioritization" IsVisible="True" />
                     </Sequence>
                   </sco:Collection>
                 </mxswa:ActivityReference.Properties>

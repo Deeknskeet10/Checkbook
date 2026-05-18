@@ -36,19 +36,19 @@
                       </cell>
                     </row>
                     <row>
-                      <cell id="{56538aee-9470-4cc9-8c35-15ea91495a5c}" locklevel="0" colspan="1" rowspan="1" labelid="{8018aca3-90a7-4dab-a0a5-88b840f7565a}">
+                      <cell id="{c15be844-54d8-4f20-afcf-08621159f215}" locklevel="0" colspan="1" rowspan="1">
                         <labels>
                           <label description="TDP" languagecode="1033" />
                         </labels>
-                        <control id="book_tdp" classid="{0D2C745A-E5A8-4C8F-BA63-C6D3BB604660}" datafieldname="book_tdp" disabled="false" />
+                        <control id="book_newtdp" classid="{C3EFE0C3-0EC6-42BE-8349-CBD9079DFD8E}" datafieldname="book_newtdp" disabled="false" />
                       </cell>
                     </row>
                     <row>
-                      <cell id="{75c498df-4eab-4e68-b1f0-d836bc76af54}" locklevel="0" colspan="1" rowspan="1" labelid="{80a65ad2-6d41-4864-a739-78409c0b0318}">
+                      <cell id="{a8907a77-b4ae-4be1-9ff4-5e223fc7f2ba}" locklevel="0" colspan="1" rowspan="1">
                         <labels>
                           <label description="Funded Amount" languagecode="1033" />
                         </labels>
-                        <control id="book_fundedamount" classid="{0D2C745A-E5A8-4C8F-BA63-C6D3BB604660}" datafieldname="book_fundedamount" disabled="false" />
+                        <control id="book_newfundedamount" classid="{C3EFE0C3-0EC6-42BE-8349-CBD9079DFD8E}" datafieldname="book_newfundedamount" disabled="false" />
                       </cell>
                     </row>
                   </rows>

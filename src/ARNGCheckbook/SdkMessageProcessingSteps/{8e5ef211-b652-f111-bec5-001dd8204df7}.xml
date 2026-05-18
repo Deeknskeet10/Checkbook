@@ -1,0 +1,30 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<SdkMessageProcessingStep Name="Checkbook.Plugins.Recalculations.RequirementFundingTDPRemainingUpdater: Delete of book_requirementfunding" SdkMessageProcessingStepId="{8e5ef211-b652-f111-bec5-001dd8204df7}" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <SdkMessageId>a1bdbb1b-ea3e-db11-86a7-000a3a5473e8</SdkMessageId>
+  <PluginTypeName>Checkbook.Plugins.Recalculations.RequirementFundingTDPRemainingUpdater, Checkbook_Plugins, Version=1.1.0.0, Culture=neutral, PublicKeyToken=041fde141b612e28</PluginTypeName>
+  <PluginTypeId>f8d95f77-daa2-4dfa-84ed-fe66d401063a</PluginTypeId>
+  <PrimaryEntity>book_requirementfunding</PrimaryEntity>
+  <AsyncAutoDelete>0</AsyncAutoDelete>
+  <Description>Deletion of RF</Description>
+  <FilteringAttributes></FilteringAttributes>
+  <ImpersonatingUserIdName>Microsoft Flow CDS Integration Service DoD</ImpersonatingUserIdName>
+  <InvocationSource>1</InvocationSource>
+  <Mode>0</Mode>
+  <Rank>1</Rank>
+  <EventHandlerTypeCode>4602</EventHandlerTypeCode>
+  <Stage>40</Stage>
+  <IsCustomizable>1</IsCustomizable>
+  <IsHidden>0</IsHidden>
+  <SupportedDeployment>0</SupportedDeployment>
+  <IntroducedVersion>1.0</IntroducedVersion>
+  <SdkMessageProcessingStepImages>
+    <SdkMessageProcessingStepImage Name="RFPre">
+      <SdkMessageProcessingStepImageId>{f6dacb2f-b652-f111-bec5-001dd8204df7}</SdkMessageProcessingStepImageId>
+      <Attributes>book_newfundedamount,book_lineofaccounting,book_requirement,book_requirementfundingid,book_newtdp,book_newunfundedamount,book_newvalidatedamount,book_newwithholding</Attributes>
+      <EntityAlias>PreImage</EntityAlias>
+      <ImageType>0</ImageType>
+      <MessagePropertyName>Target</MessagePropertyName>
+      <IsCustomizable>1</IsCustomizable>
+    </SdkMessageProcessingStepImage>
+  </SdkMessageProcessingStepImages>
+</SdkMessageProcessingStep>

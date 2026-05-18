@@ -13,10 +13,10 @@
         <Description description="Congressional, Risk Management and UPR Ledger" languagecode="1033" />
       </Descriptions>
       <attributes>
-        <attribute PhysicalName="book_Amount">
-          <Type>float</Type>
-          <Name>book_amount</Name>
-          <LogicalName>book_amount</LogicalName>
+        <attribute PhysicalName="book_DecisionAmount">
+          <Type>decimal</Type>
+          <Name>book_decisionamount</Name>
+          <LogicalName>book_decisionamount</LogicalName>
           <RequiredLevel>none</RequiredLevel>
           <DisplayMask>ValidForAdvancedFind|ValidForForm|ValidForGrid</DisplayMask>
           <ImeMode>auto</ImeMode>
@@ -26,7 +26,7 @@
           <IsCustomField>1</IsCustomField>
           <IsAuditEnabled>1</IsAuditEnabled>
           <IsSecured>0</IsSecured>
-          <IntroducedVersion>1.0.0.0</IntroducedVersion>
+          <IntroducedVersion>1.11.0.28</IntroducedVersion>
           <IsCustomizable>1</IsCustomizable>
           <IsRenameable>1</IsRenameable>
           <CanModifySearchSettings>1</CanModifySearchSettings>
@@ -47,10 +47,10 @@
           <MaxValue>100000000000</MaxValue>
           <Accuracy>2</Accuracy>
           <displaynames>
-            <displayname description="Amount" languagecode="1033" />
+            <displayname description="Decision Amount" languagecode="1033" />
           </displaynames>
           <Descriptions>
-            <Description description="" languagecode="1033" />
+            <Description description="Monetary amount associated with Decision" languagecode="1033" />
           </Descriptions>
         </attribute>
         <attribute PhysicalName="book_DecisionId">

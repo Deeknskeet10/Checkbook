@@ -92,11 +92,11 @@
                       </cell>
                     </row>
                     <row>
-                      <cell id="{ccd073f7-39bc-4dd6-8e0d-691acdcc9603}" locklevel="0" colspan="1" rowspan="1">
+                      <cell id="{0cc8f74d-31dc-41a6-8328-f6d67538abfa}" locklevel="0" colspan="1" rowspan="1">
                         <labels>
                           <label description="Resource Amount" languagecode="1033" />
                         </labels>
-                        <control id="book_resourceamount" classid="{0D2C745A-E5A8-4C8F-BA63-C6D3BB604660}" datafieldname="book_resourceamount" disabled="false" />
+                        <control id="book_newresourceamount" classid="{C3EFE0C3-0EC6-42BE-8349-CBD9079DFD8E}" datafieldname="book_newresourceamount" disabled="false" />
                       </cell>
                     </row>
                   </rows>

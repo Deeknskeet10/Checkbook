@@ -1,0 +1,46 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<savedqueries xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <savedquery>
+    <IsCustomizable>1</IsCustomizable>
+    <CanBeDeleted>1</CanBeDeleted>
+    <isquickfindquery>0</isquickfindquery>
+    <isprivate>0</isprivate>
+    <isdefault>0</isdefault>
+    <savedqueryid>{dfd3f5a5-8c3d-f111-88b3-001dd8204135}</savedqueryid>
+    <layoutxml>
+      <grid name="resultset" jump="book_name" select="1" icon="1" preview="1">
+        <row name="result" id="book_requirementfundingid">
+          <cell name="book_requirement" width="251" />
+          <cell name="book_newfiscalyear" width="103" />
+        </row>
+      </grid>
+    </layoutxml>
+    <querytype>0</querytype>
+    <fetchxml>
+      <fetch version="1.0" output-format="xml-platform" mapping="logical" distinct="true">
+        <entity name="book_requirementfunding">
+          <attribute name="book_requirementfundingid" />
+          <attribute name="book_requirement" />
+          <attribute name="book_newfiscalyear" />
+          <filter type="and">
+            <condition attribute="statecode" operator="eq" value="0" />
+          </filter>
+          <link-entity name="book_requirements" alias="aa" link-type="inner" from="book_requirementsid" to="book_requirement">
+            <filter type="and">
+              <condition attribute="book_approvalstatus" operator="eq" value="7" />
+              <condition attribute="book_requirementapproved" operator="eq" value="1" />
+              <condition attribute="statecode" operator="eq" value="0" />
+            </filter>
+          </link-entity>
+        </entity>
+      </fetch>
+    </fetchxml>
+    <IntroducedVersion>1.1.0.28</IntroducedVersion>
+    <LocalizedNames>
+      <LocalizedName description="Realignment LookUp View" languagecode="1033" />
+    </LocalizedNames>
+    <Descriptions>
+      <Description description="Requirement Funding LookUp View specifically for Realignments" languagecode="1033" />
+    </Descriptions>
+  </savedquery>
+</savedqueries>

@@ -1,0 +1,36 @@
+<appaction uniquename="book__UFRActions!4dfb18786d934ee080cab72684e5e9b5!book_ARNGCheckbookUnfundedRequests!book_unfundedrequests!0">
+  <appmoduleid>
+    <uniquename>book_ARNGCheckbookUnfundedRequests</uniquename>
+  </appmoduleid>
+  <buttonaccessibilitytext default="Dropdown to access Actionable UFR Buttons">
+    <label description="Dropdown to access Actionable UFR Buttons" languagecode="1033" />
+  </buttonaccessibilitytext>
+  <buttonlabeltext default="UFR Actions">
+    <label description="UFR Actions" languagecode="1033" />
+  </buttonlabeltext>
+  <buttontooltipdescription default="Dropdown to access Actionable UFR Buttons">
+    <label description="Dropdown to access Actionable UFR Buttons" languagecode="1033" />
+  </buttontooltipdescription>
+  <buttontooltiptitle default="Dropdown to access Actionable UFR Buttons">
+    <label description="Dropdown to access Actionable UFR Buttons" languagecode="1033" />
+  </buttontooltiptitle>
+  <context>1</context>
+  <contextentity>
+    <logicalname>book_unfundedrequests</logicalname>
+  </contextentity>
+  <contextvalue>book_unfundedrequests</contextvalue>
+  <fonticon>CreateInvoice</fonticon>
+  <hidden>0</hidden>
+  <iscustomizable>1</iscustomizable>
+  <isdisabled>0</isdisabled>
+  <isgrouptitlehidden>0</isgrouptitlehidden>
+  <location>0</location>
+  <name>UFRActions!4dfb18786d934ee080cab72684e5e9b5</name>
+  <onclickeventtype>0</onclickeventtype>
+  <origin>0</origin>
+  <sequence>100100012.5000000000</sequence>
+  <statecode>0</statecode>
+  <statuscode>1</statuscode>
+  <type>1</type>
+  <visibilitytype>0</visibilitytype>
+</appaction>

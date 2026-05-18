@@ -25,7 +25,7 @@
           <Variable x:TypeArguments="x:Object" Name="RollupRuleStep1_1" />
           <Variable x:TypeArguments="x:Object" Name="RollupRuleStep1_2" />
         </Sequence.Variables>
-        <mxswa:GetEntityProperty Attribute="book_tdp" Entity="[InputEntities(&quot;primaryEntity&quot;)]" EntityName="book_fundingline" Value="[RollupRuleStep1_2]">
+        <mxswa:GetEntityProperty Attribute="book_newtdp" Entity="[InputEntities(&quot;primaryEntity&quot;)]" EntityName="book_fundingline" Value="[RollupRuleStep1_2]">
           <mxswa:GetEntityProperty.TargetType>
             <InArgument x:TypeArguments="s:Type">
               <mxswa:ReferenceLiteral x:TypeArguments="s:Type">

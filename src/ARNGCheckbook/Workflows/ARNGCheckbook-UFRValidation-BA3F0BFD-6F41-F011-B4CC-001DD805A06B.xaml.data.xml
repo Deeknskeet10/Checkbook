@@ -82,6 +82,9 @@
     <steplabels id="{b30fc124-096d-4b2d-849f-0142975435b0}">
       <label languagecode="1033" description="Outcome" />
     </steplabels>
+    <steplabels id="{169f2073-45a7-4f8c-b430-f0b32410460f}">
+      <label languagecode="1033" description="Outcome Amount" />
+    </steplabels>
     <steplabels id="{ae9f54bb-06ef-47ca-9173-1d1ba39e645c}">
       <label languagecode="1033" description="Outcome Narrative" />
     </steplabels>

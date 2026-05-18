@@ -14,7 +14,7 @@
           <columns>
             <column width="100%">
               <sections>
-                <section name="null_section_3" id="9c312382-33b7-4bc9-8293-70064592c4fd" IsUserDefined="0" locklevel="0" showlabel="true" showbar="false" layout="varwidth" celllabelalignment="Left" celllabelposition="Left" columns="111" labelwidth="115">
+                <section name="null_section_3" id="9c312382-33b7-4bc9-8293-70064592c4fd" IsUserDefined="0" locklevel="0" showlabel="true" showbar="false" layout="varwidth" celllabelalignment="Left" celllabelposition="Left" columns="11" labelwidth="115">
                   <labels>
                     <label description="Related Record" languagecode="1033" />
                   </labels>
@@ -26,11 +26,16 @@
                         </labels>
                         <control id="book_prioritization" classid="{270BD3DB-D9AF-4782-9025-509E298DEC0A}" datafieldname="book_prioritization" disabled="false" />
                       </cell>
-                      <cell id="{6221c11c-31b0-41c3-b16c-ee1c863e1bcd}" locklevel="0" colspan="1" rowspan="1">
+                      <cell locklevel="0" id="{e8322114-a782-4b64-977b-d22b85b47575}" colspan="1" rowspan="1">
                         <labels>
-                          <label description="Unfunded Request" languagecode="1033" />
+                          <label description="qvPri" languagecode="1033" />
                         </labels>
-                        <control id="book_unfundedrequest" classid="{270BD3DB-D9AF-4782-9025-509E298DEC0A}" datafieldname="book_unfundedrequest" disabled="false" />
+                        <control id="qvPri" classid="{5C5600E0-1D6E-4205-A272-BE80DA87FD42}" datafieldname="book_prioritization">
+                          <parameters>
+                            <DisplayAsCustomer360Tile>false</DisplayAsCustomer360Tile>
+                            <QuickForms>&lt;QuickFormIds&gt;&lt;QuickFormId entityname="book_prioritization"&gt;87483b79-2d34-f111-88b3-001dd8207e07&lt;/QuickFormId&gt;&lt;/QuickFormIds&gt;</QuickForms>
+                          </parameters>
+                        </control>
                       </cell>
                     </row>
                     <row>
@@ -40,13 +45,34 @@
                         </labels>
                         <control id="book_requirementfunding" classid="{270BD3DB-D9AF-4782-9025-509E298DEC0A}" datafieldname="book_requirementfunding" disabled="false" />
                       </cell>
-                      <cell id="{aa2a4e6b-5e41-45c3-bc56-b970a1148536}" locklevel="0" colspan="1" rowspan="1">
+                      <cell id="{946a100d-8eb1-4a79-9f68-a74bb151ebc1}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="Total (TDP)" languagecode="1033" />
+                        </labels>
+                        <control id="book_newtotaltdp" classid="{C3EFE0C3-0EC6-42BE-8349-CBD9079DFD8E}" datafieldname="book_newtotaltdp" disabled="false" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{5e87ad86-e9b9-2d21-0921-e40e6a301d09}" showlabel="true" locklevel="0">
+                        <labels>
+                          <label description="Unfunded Request" languagecode="1033" />
+                        </labels>
+                        <control id="book_unfundedrequest" classid="{270BD3DB-D9AF-4782-9025-509E298DEC0A}" datafieldname="book_unfundedrequest" disabled="false" />
+                      </cell>
+                      <cell locklevel="0" id="{057a4056-f6a8-4096-8d6d-0dbb0d6ff77b}">
+                        <labels>
+                          <label description="" languagecode="1033" />
+                        </labels>
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{eea4a75e-2631-2dc4-907b-8bd01bd849c6}" showlabel="true" locklevel="0">
                         <labels>
                           <label description="Unfunded Request (Parent)" languagecode="1033" />
                         </labels>
                         <control id="book_unfundedrequestparent" classid="{270BD3DB-D9AF-4782-9025-509E298DEC0A}" datafieldname="book_unfundedrequestparent" disabled="false" />
                       </cell>
-                      <cell locklevel="0" id="{5d31ed1e-184b-4188-bd1a-566b1e8c04df}">
+                      <cell locklevel="0" id="{d15d00b6-940b-45b4-a38f-8b29d0266e56}">
                         <labels>
                           <label description="" languagecode="1033" />
                         </labels>
@@ -146,6 +172,24 @@
                         </labels>
                         <control id="book_spendplantotal" classid="{0D2C745A-E5A8-4C8F-BA63-C6D3BB604660}" datafieldname="book_spendplantotal" disabled="false" />
                       </cell>
+                      <cell locklevel="0" id="{7530acaa-d2ad-4dfd-8b15-43b367a06858}">
+                        <labels>
+                          <label description="" languagecode="1033" />
+                        </labels>
+                      </cell>
+                      <cell locklevel="0" id="{d87ce324-d565-4bc6-8874-8b90ca1297e8}">
+                        <labels>
+                          <label description="" languagecode="1033" />
+                        </labels>
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{6a7c5912-0f55-4794-8aa0-75239aaa2ebb}" locklevel="0" colspan="1" rowspan="1" visible="false">
+                        <labels>
+                          <label description="Total (TDP)" languagecode="1033" />
+                        </labels>
+                        <control id="book_newtotaltdp" classid="{C3EFE0C3-0EC6-42BE-8349-CBD9079DFD8E}" datafieldname="book_newtotaltdp" disabled="false" />
+                      </cell>
                       <cell id="{0288b526-8dcd-4022-85bc-4f792b8a3bb7}" locklevel="0" colspan="2" rowspan="4">
                         <labels>
                           <label description="Spend Plan Comments" languagecode="1033" />
@@ -153,23 +197,9 @@
                         <control id="book_spendplancomments" classid="{E0DECE4B-6FC8-4A8F-A065-082708572369}" datafieldname="book_spendplancomments" disabled="false" />
                       </cell>
                     </row>
+                    <row />
                     <row>
-                      <cell id="{d5bbc141-bfe8-4212-952b-9336affa0f4d}" locklevel="0" colspan="1" rowspan="1" visible="false">
-                        <labels>
-                          <label description="Total (TDP)" languagecode="1033" />
-                        </labels>
-                        <control id="book_total" classid="{0D2C745A-E5A8-4C8F-BA63-C6D3BB604660}" datafieldname="book_total" disabled="false" />
-                      </cell>
-                    </row>
-                    <row>
-                      <cell locklevel="0" id="{46ef9c27-8061-4f2e-9c72-800a65717675}" showlabel="false">
-                        <labels>
-                          <label description="" languagecode="1033" />
-                        </labels>
-                      </cell>
-                    </row>
-                    <row>
-                      <cell id="{bb4ddd6e-c9b8-644b-2399-196da0328086}" showlabel="false">
+                      <cell locklevel="0" id="{61597a68-5702-40aa-8f91-cc092b1ba48c}">
                         <labels>
                           <label description="" languagecode="1033" />
                         </labels>
@@ -181,13 +211,20 @@
                           <label description="" languagecode="1033" />
                         </labels>
                       </cell>
+                    </row>
+                    <row>
+                      <cell locklevel="0" id="{81fc4a3c-1177-462c-a286-ec2657f17edc}">
+                        <labels>
+                          <label description="" languagecode="1033" />
+                        </labels>
+                      </cell>
                       <cell id="{e682dc56-7c79-4a03-9adf-b0238d090da0}" visible="false">
                         <labels>
                           <label description="Owner" languagecode="1033" />
                         </labels>
                         <control id="ownerid" classid="{270BD3DB-D9AF-4782-9025-509E298DEC0A}" datafieldname="ownerid" />
                       </cell>
-                      <cell id="{bcc1bd29-b4bd-d6c2-5955-5ee8e2715672}" showlabel="false">
+                      <cell locklevel="0" id="{168b2807-4efd-4b08-b8f1-9d453effe9de}">
                         <labels>
                           <label description="" languagecode="1033" />
                         </labels>
@@ -296,9 +333,6 @@
           </NavBarArea>
         </NavBarAreas>
       </Navigation>
-      <DisplayConditions Order="0" FallbackForm="true">
-        <Everyone />
-      </DisplayConditions>
       <formLibraries>
         <Library name="book_spendPlanValidate" libraryUniqueId="{ee963f64-b746-4714-a5d7-25c804498a8e}" />
       </formLibraries>
@@ -314,6 +348,9 @@
           </Handlers>
         </event>
       </events>
+      <DisplayConditions Order="0" FallbackForm="true">
+        <Everyone />
+      </DisplayConditions>
     </form>
     <IsCustomizable>1</IsCustomizable>
     <CanBeDeleted>1</CanBeDeleted>

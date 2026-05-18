@@ -1,4 +1,5 @@
-book_loatdp: =book_LineofAccounting.book_tdpremaining
+book_newunfundedamount: =If(book_newvalidatedamount - book_newfundedamount < 0, 0, book_newvalidatedamount - book_newfundedamount)
+book_newwithholding: =book_newtdp - book_newfundedamount
 book_orderloa: =Concatenate("021 ", book_LineofAccounting.book_Fund.book_name, " ", book_Requirement.book_FundCenter.book_name, " 1198/1199/1250 ", book_LineofAccounting.book_PG.book_name, book_Requirement.book_APE.book_name, book_LineofAccounting.book_MDEP.book_name, " ", book_Requirement.book_costcenter, " 021001 ", "ODS ")
 book_priority: =book_Requirement.book_priority
 book_unfundedamount: =If(book_validatedamount - book_fundedamount < 0, Float(0), book_validatedamount - book_fundedamount)

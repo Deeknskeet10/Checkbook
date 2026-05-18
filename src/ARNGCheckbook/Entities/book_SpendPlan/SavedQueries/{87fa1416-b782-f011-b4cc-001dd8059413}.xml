@@ -25,7 +25,7 @@
           <cell name="book_august" width="100" />
           <cell name="book_september" width="100" />
           <cell name="book_spendplantotal" width="136" />
-          <cell name="book_total" width="100" />
+          <cell name="book_newtotaltdp" width="108" />
           <cell name="book_availableamount" width="143" />
         </row>
       </grid>
@@ -46,7 +46,6 @@
           <attribute name="book_august" />
           <attribute name="book_november" />
           <attribute name="book_october" />
-          <attribute name="book_total" />
           <attribute name="book_september" />
           <filter type="and">
             <condition attribute="statecode" operator="eq" value="0" />
@@ -56,6 +55,7 @@
           <attribute name="book_unfundedrequestparent" />
           <attribute name="book_spendplantotal" />
           <attribute name="book_availableamount" />
+          <attribute name="book_newtotaltdp" />
         </entity>
       </fetch>
     </fetchxml>

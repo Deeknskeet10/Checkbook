@@ -1,0 +1,143 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ImportExportXml version="9.2.26041.182" SolutionPackageVersion="9.2" languagecode="1033" generatedBy="CrmLive" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" OrganizationVersion="9.2.26041.182" OrganizationSchemaType="Standard" CRMServerServiceabilityVersion="9.2.26041.00182">
+  <SolutionManifest>
+    <UniqueName>ARNGCheckbookSupplyCodes</UniqueName>
+    <LocalizedNames>
+      <LocalizedName description="ARNG Checkbook - Supply Codes" languagecode="1033" />
+    </LocalizedNames>
+    <Descriptions>
+      <Description description="Adds Army supply codes (NSN/FSC/DODIC/LIN/EIC), classes of supply, and supply-completeness gating to ARNG Checkbook." languagecode="1033" />
+    </Descriptions>
+    <Version>2.8.0.2</Version>
+    <Managed>0</Managed>
+    <Publisher>
+      <UniqueName>ArmySupplyCodes</UniqueName>
+      <LocalizedNames>
+        <LocalizedName description="Army Supply Codes" languagecode="1033" />
+      </LocalizedNames>
+      <Descriptions>
+        <Description description="Publisher for Army supply code extensions to ARNG Checkbook." languagecode="1033" />
+      </Descriptions>
+      <EMailAddress xsi:nil="true"></EMailAddress>
+      <SupportingWebsiteUrl xsi:nil="true"></SupportingWebsiteUrl>
+      <CustomizationPrefix>arsc</CustomizationPrefix>
+      <CustomizationOptionValuePrefix>91000</CustomizationOptionValuePrefix>
+      <Addresses>
+        <Address>
+          <AddressNumber>1</AddressNumber>
+          <AddressTypeCode>1</AddressTypeCode>
+          <City xsi:nil="true"></City>
+          <County xsi:nil="true"></County>
+          <Country xsi:nil="true"></Country>
+          <Fax xsi:nil="true"></Fax>
+          <FreightTermsCode xsi:nil="true"></FreightTermsCode>
+          <ImportSequenceNumber xsi:nil="true"></ImportSequenceNumber>
+          <Latitude xsi:nil="true"></Latitude>
+          <Line1 xsi:nil="true"></Line1>
+          <Line2 xsi:nil="true"></Line2>
+          <Line3 xsi:nil="true"></Line3>
+          <Longitude xsi:nil="true"></Longitude>
+          <Name xsi:nil="true"></Name>
+          <PostalCode xsi:nil="true"></PostalCode>
+          <PostOfficeBox xsi:nil="true"></PostOfficeBox>
+          <PrimaryContactName xsi:nil="true"></PrimaryContactName>
+          <ShippingMethodCode>1</ShippingMethodCode>
+          <StateOrProvince xsi:nil="true"></StateOrProvince>
+          <Telephone1 xsi:nil="true"></Telephone1>
+          <Telephone2 xsi:nil="true"></Telephone2>
+          <Telephone3 xsi:nil="true"></Telephone3>
+          <TimeZoneRuleVersionNumber xsi:nil="true"></TimeZoneRuleVersionNumber>
+          <UPSZone xsi:nil="true"></UPSZone>
+          <UTCOffset xsi:nil="true"></UTCOffset>
+          <UTCConversionTimeZoneCode xsi:nil="true"></UTCConversionTimeZoneCode>
+        </Address>
+        <Address>
+          <AddressNumber>2</AddressNumber>
+          <AddressTypeCode>1</AddressTypeCode>
+          <City xsi:nil="true"></City>
+          <County xsi:nil="true"></County>
+          <Country xsi:nil="true"></Country>
+          <Fax xsi:nil="true"></Fax>
+          <FreightTermsCode xsi:nil="true"></FreightTermsCode>
+          <ImportSequenceNumber xsi:nil="true"></ImportSequenceNumber>
+          <Latitude xsi:nil="true"></Latitude>
+          <Line1 xsi:nil="true"></Line1>
+          <Line2 xsi:nil="true"></Line2>
+          <Line3 xsi:nil="true"></Line3>
+          <Longitude xsi:nil="true"></Longitude>
+          <Name xsi:nil="true"></Name>
+          <PostalCode xsi:nil="true"></PostalCode>
+          <PostOfficeBox xsi:nil="true"></PostOfficeBox>
+          <PrimaryContactName xsi:nil="true"></PrimaryContactName>
+          <ShippingMethodCode>1</ShippingMethodCode>
+          <StateOrProvince xsi:nil="true"></StateOrProvince>
+          <Telephone1 xsi:nil="true"></Telephone1>
+          <Telephone2 xsi:nil="true"></Telephone2>
+          <Telephone3 xsi:nil="true"></Telephone3>
+          <TimeZoneRuleVersionNumber xsi:nil="true"></TimeZoneRuleVersionNumber>
+          <UPSZone xsi:nil="true"></UPSZone>
+          <UTCOffset xsi:nil="true"></UTCOffset>
+          <UTCConversionTimeZoneCode xsi:nil="true"></UTCConversionTimeZoneCode>
+        </Address>
+      </Addresses>
+    </Publisher>
+    <RootComponents>
+      <RootComponent type="60" id="{0116cf12-084e-f111-bec7-7c1e52184e9d}" behavior="0" />
+      <RootComponent type="60" id="{0d82b4c1-154e-f111-bec7-7c1e52184e9d}" behavior="0" />
+      <RootComponent type="60" id="{1c82b4c1-154e-f111-bec7-7c1e52184e9d}" behavior="0" />
+      <RootComponent type="66" schemaName="arsc_ARNGCheckbook.DecisionLedgerBalance" behavior="0" />
+      <RootComponent type="66" schemaName="arsc_ARNGCheckbook.DistributionsDonut" behavior="0" />
+      <RootComponent type="66" schemaName="arsc_ARNGCheckbook.LedgerBalance" behavior="0" />
+      <RootComponent type="66" schemaName="arsc_ARNGCheckbook.LedgersDonut" behavior="0" />
+      <RootComponent type="66" schemaName="arsc_ARNGCheckbook.LINRequestsGrid" behavior="0" />
+      <RootComponent type="66" schemaName="arsc_ARNGCheckbook.PendingRealignmentsQueue" behavior="0" />
+      <RootComponent type="66" schemaName="arsc_ARNGCheckbook.PrioritizationsForRequirement" behavior="0" />
+      <RootComponent type="66" schemaName="arsc_ARNGCheckbook.RealignmentsFlow" behavior="0" />
+      <RootComponent type="66" schemaName="arsc_ARNGCheckbook.SpendPlanGrid" behavior="0" />
+      <RootComponent type="66" schemaName="arsc_ARNGCheckbook.UnfundedRequestsRank" behavior="0" />
+      <RootComponent type="66" schemaName="arsc_ARNGCheckbook.ValidateAndFundGrid" behavior="0" />
+    </RootComponents>
+    <MissingDependencies>
+      <MissingDependency>
+        <Required type="1" schemaName="book_distributions" displayName="Distributions" solution="Active" />
+        <Dependent type="60" displayName="ARNG Checkbook - Distributions" id="{0116cf12-084e-f111-bec7-7c1e52184e9d}" />
+      </MissingDependency>
+      <MissingDependency>
+        <Required type="1" schemaName="book_distributions" displayName="Distributions" solution="Active" />
+        <Dependent type="60" displayName="ARNG Checkbook - Money Overview" id="{0d82b4c1-154e-f111-bec7-7c1e52184e9d}" />
+      </MissingDependency>
+      <MissingDependency>
+        <Required type="1" schemaName="book_ledger" displayName="Ledger" solution="Active" />
+        <Dependent type="60" displayName="ARNG Checkbook - Money Overview" id="{0d82b4c1-154e-f111-bec7-7c1e52184e9d}" />
+      </MissingDependency>
+      <MissingDependency>
+        <Required type="1" schemaName="book_realignments" displayName="Realignments" solution="Active" />
+        <Dependent type="60" displayName="ARNG Checkbook - Money Overview" id="{0d82b4c1-154e-f111-bec7-7c1e52184e9d}" />
+      </MissingDependency>
+      <MissingDependency>
+        <Required type="1" schemaName="book_realignments" displayName="Realignments" solution="Active" />
+        <Dependent type="60" displayName="ARNG Checkbook - Pending Money Movements" id="{1c82b4c1-154e-f111-bec7-7c1e52184e9d}" />
+      </MissingDependency>
+      <MissingDependency>
+        <Required type="26" schemaName="Active Distributions" displayName="Active Distributions" parentSchemaName="book_distributions" parentDisplayName="Distributions" solution="Active" id="{def106ff-90be-4364-9b20-cfa20594f343}" />
+        <Dependent type="60" displayName="ARNG Checkbook - Distributions" id="{0116cf12-084e-f111-bec7-7c1e52184e9d}" />
+      </MissingDependency>
+      <MissingDependency>
+        <Required type="26" schemaName="Active Distributions" displayName="Active Distributions" parentSchemaName="book_distributions" parentDisplayName="Distributions" solution="Active" id="{def106ff-90be-4364-9b20-cfa20594f343}" />
+        <Dependent type="60" displayName="ARNG Checkbook - Money Overview" id="{0d82b4c1-154e-f111-bec7-7c1e52184e9d}" />
+      </MissingDependency>
+      <MissingDependency>
+        <Required type="26" schemaName="Active Ledgers" displayName="Active Ledgers" parentSchemaName="book_ledger" parentDisplayName="Ledger" solution="Active" id="{3f869e1c-8e0d-404e-911c-749e9d92a11e}" />
+        <Dependent type="60" displayName="ARNG Checkbook - Money Overview" id="{0d82b4c1-154e-f111-bec7-7c1e52184e9d}" />
+      </MissingDependency>
+      <MissingDependency>
+        <Required type="26" schemaName="Active Realignments" displayName="Active Realignments" parentSchemaName="book_realignments" parentDisplayName="Realignments" solution="Active" id="{48a443af-dec3-4636-abbd-820fe9fd88a7}" />
+        <Dependent type="60" displayName="ARNG Checkbook - Money Overview" id="{0d82b4c1-154e-f111-bec7-7c1e52184e9d}" />
+      </MissingDependency>
+      <MissingDependency>
+        <Required type="26" schemaName="Active Realignments" displayName="Active Realignments" parentSchemaName="book_realignments" parentDisplayName="Realignments" solution="Active" id="{48a443af-dec3-4636-abbd-820fe9fd88a7}" />
+        <Dependent type="60" displayName="ARNG Checkbook - Pending Money Movements" id="{1c82b4c1-154e-f111-bec7-7c1e52184e9d}" />
+      </MissingDependency>
+    </MissingDependencies>
+  </SolutionManifest>
+</ImportExportXml>

@@ -26,7 +26,7 @@
                         </labels>
                         <control id="book_name" classid="{4273EDBD-AC1D-40d3-9FB2-095C621B552D}" datafieldname="book_name" />
                       </cell>
-                      <cell locklevel="0" id="{ad42f292-95aa-4173-a95f-4b1395e5a6ad}">
+                      <cell locklevel="0" id="{ad42f292-95aa-4173-a95f-4b1395e5a6ad}" showlabel="false">
                         <labels>
                           <label description="" languagecode="1033" />
                         </labels>
@@ -81,7 +81,7 @@
                         </labels>
                         <control id="book_mdep" classid="{270BD3DB-D9AF-4782-9025-509E298DEC0A}" datafieldname="book_mdep" disabled="false" />
                       </cell>
-                      <cell locklevel="0" id="{17ca3f4f-e635-4d57-bdfb-763776a44057}">
+                      <cell locklevel="0" id="{17ca3f4f-e635-4d57-bdfb-763776a44057}" showlabel="false">
                         <labels>
                           <label description="" languagecode="1033" />
                         </labels>
@@ -94,7 +94,13 @@
                     <label description="Line of Accounting" languagecode="1033" />
                   </labels>
                   <rows>
-                    <row />
+                    <row>
+                      <cell id="{f11c675d-1c6c-42e0-a6d0-c7a920f9f76b}">
+                        <labels>
+                          <label description="" languagecode="1033" />
+                        </labels>
+                      </cell>
+                    </row>
                     <row>
                       <cell id="{14d0c446-f727-4def-8bd7-77d466383ae1}" locklevel="0" colspan="1" rowspan="1">
                         <labels>
@@ -115,29 +121,30 @@
                   </labels>
                   <rows>
                     <row>
-                      <cell locklevel="0" id="{6e29a726-3dfa-47e8-9501-55e8d1ae11c3}">
-                        <labels>
-                          <label description="" languagecode="1033" />
-                        </labels>
-                      </cell>
-                      <cell locklevel="0" id="{03323cf1-6689-46e2-be12-9bdee085cda1}">
-                        <labels>
-                          <label description="" languagecode="1033" />
-                        </labels>
-                      </cell>
-                    </row>
-                    <row>
                       <cell id="{93479f1e-1f85-42a8-9f15-4d5e097c351b}" locklevel="0" colspan="1" rowspan="1">
                         <labels>
                           <label description="Beginning Balance (Read-Only)" languagecode="1033" />
                         </labels>
                         <control id="book_beginningbalancereadonly" classid="{C3EFE0C3-0EC6-42BE-8349-CBD9079DFD8E}" datafieldname="book_beginningbalancereadonly" disabled="true" />
                       </cell>
-                      <cell id="{1bf08880-9b52-4a4f-8233-e6dd0d076db5}" locklevel="0" colspan="1" rowspan="1">
+                      <cell id="{3695e20c-50b7-42f1-9d17-90340ba933f7}" locklevel="0" colspan="1" rowspan="1">
                         <labels>
                           <label description="Resource Amount" languagecode="1033" />
                         </labels>
-                        <control id="book_resourceamount" classid="{0D2C745A-E5A8-4C8F-BA63-C6D3BB604660}" datafieldname="book_resourceamount" disabled="false" />
+                        <control id="book_newresourceamount" classid="{C3EFE0C3-0EC6-42BE-8349-CBD9079DFD8E}" datafieldname="book_newresourceamount" disabled="false" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{930c63c3-00c7-4d80-bcdc-3b8a7f672b2a}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="Decision Total" languagecode="1033" />
+                        </labels>
+                        <control id="book_newdecisiontotal" classid="{C3EFE0C3-0EC6-42BE-8349-CBD9079DFD8E}" datafieldname="book_newdecisiontotal" disabled="false" />
+                      </cell>
+                      <cell locklevel="0" id="{a3363742-7729-4c80-a8d7-52010fa9a045}">
+                        <labels>
+                          <label description="" languagecode="1033" />
+                        </labels>
                       </cell>
                     </row>
                     <row>
@@ -161,6 +168,9 @@
                         </control>
                       </cell>
                     </row>
+                    <row />
+                    <row />
+                    <row />
                   </rows>
                 </section>
               </sections>
@@ -228,6 +238,36 @@
           </row>
         </rows>
       </footer>
+      <Navigation>
+        <NavBar />
+        <NavBarAreas>
+          <NavBarArea Id="Info">
+            <Titles>
+              <Title LCID="1033" Text="Common" />
+            </Titles>
+          </NavBarArea>
+          <NavBarArea Id="Sales">
+            <Titles>
+              <Title LCID="1033" Text="Sales" />
+            </Titles>
+          </NavBarArea>
+          <NavBarArea Id="Service">
+            <Titles>
+              <Title LCID="1033" Text="Service" />
+            </Titles>
+          </NavBarArea>
+          <NavBarArea Id="Marketing">
+            <Titles>
+              <Title LCID="1033" Text="Marketing" />
+            </Titles>
+          </NavBarArea>
+          <NavBarArea Id="ProcessCenter">
+            <Titles>
+              <Title LCID="1033" Text="Process Sessions" />
+            </Titles>
+          </NavBarArea>
+        </NavBarAreas>
+      </Navigation>
       <DisplayConditions Order="0" FallbackForm="true">
         <Everyone />
       </DisplayConditions>

@@ -10,8 +10,8 @@
     <layoutxml>
       <grid name="book_funds" jump="book_name" select="1" icon="1" preview="0">
         <row name="book_fund" id="book_fundid">
-          <cell name="book_name" width="220" />
           <cell name="book_fundkey" width="100" />
+          <cell name="book_name" width="220" />
           <cell name="book_fundedprogram" width="134" />
         </row>
       </grid>

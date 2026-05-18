@@ -48,7 +48,7 @@
                       </cell>
                       <cell id="{c92cdc09-7904-489d-b747-6d057aa00344}" locklevel="0" colspan="1" rowspan="1">
                         <labels>
-                          <label description="Fund Center" languagecode="1033" />
+                          <label description="Deprecated - Fund Center" languagecode="1033" />
                         </labels>
                         <control id="book_fundcenter" classid="{270BD3DB-D9AF-4782-9025-509E298DEC0A}" datafieldname="book_fundcenter" disabled="false" />
                       </cell>
@@ -85,11 +85,17 @@
                         </labels>
                         <control id="book_category" classid="{3EF39988-22BB-4F0B-BBBE-64B5A3748AEE}" datafieldname="book_category" disabled="false" />
                       </cell>
-                      <cell id="{5b8df754-a246-4f5d-89c1-cbc2c4ff65ff}" locklevel="0" colspan="1" rowspan="5">
+                      <cell id="{d63735da-e13a-4897-bb33-85bb1b742f3b}" locklevel="0" colspan="1" rowspan="1">
                         <labels>
-                          <label description="Description" languagecode="1033" />
+                          <label description="MCP LOE" languagecode="1033" />
                         </labels>
-                        <control id="book_description" classid="{E0DECE4B-6FC8-4A8F-A065-082708572369}" datafieldname="book_description" disabled="false" />
+                        <control id="book_mcploe" classid="{270BD3DB-D9AF-4782-9025-509E298DEC0A}" datafieldname="book_mcploe" disabled="false">
+                          <parameters>
+                            <DefaultViewId>{B0DAC6B5-8E28-F111-8341-001DD8204385}</DefaultViewId>
+                            <AvailableViewIds>{B6E4D48C-2D39-4F60-896D-C28D089A0468},{3A3A4705-D994-4A87-92CA-8414990C4757},{9029B816-C5F4-4AC1-A744-5CA4DC41B772},{B0DAC6B5-8E28-F111-8341-001DD8204385}</AvailableViewIds>
+                            <DisableViewPicker>true</DisableViewPicker>
+                          </parameters>
+                        </control>
                       </cell>
                       <cell id="{8325ce5e-39d6-4046-ba6b-23f5fe44bd54}" locklevel="0" colspan="1" rowspan="5">
                         <labels>
@@ -98,7 +104,19 @@
                         <control id="book_statutoryjustification" classid="{E0DECE4B-6FC8-4A8F-A065-082708572369}" datafieldname="book_statutoryjustification" disabled="false" />
                       </cell>
                     </row>
-                    <row />
+                    <row>
+                      <cell locklevel="0" id="{42d243b6-6631-4727-81fe-625f49c7ae13}">
+                        <labels>
+                          <label description="" languagecode="1033" />
+                        </labels>
+                      </cell>
+                      <cell id="{5b8df754-a246-4f5d-89c1-cbc2c4ff65ff}" locklevel="0" colspan="1" rowspan="5">
+                        <labels>
+                          <label description="Description" languagecode="1033" />
+                        </labels>
+                        <control id="book_description" classid="{E0DECE4B-6FC8-4A8F-A065-082708572369}" datafieldname="book_description" disabled="false" />
+                      </cell>
+                    </row>
                     <row>
                       <cell id="{3c9c3c06-7bc5-48a5-9f03-9a775522d3bb}" locklevel="0" colspan="1" rowspan="1">
                         <labels>
@@ -129,12 +147,6 @@
                           <label description="" languagecode="1033" />
                         </labels>
                       </cell>
-                      <cell id="{3e2140ad-dc37-456a-9fa0-07b118fdf77f}" locklevel="0" colspan="1" rowspan="1" visible="false">
-                        <labels>
-                          <label description="Requirement Approved" languagecode="1033" />
-                        </labels>
-                        <control id="book_requirementapproved" classid="{67FAC785-CD58-4F9F-ABB3-4B7DDC6ED5ED}" datafieldname="book_requirementapproved" disabled="false" />
-                      </cell>
                       <cell locklevel="0" id="{62640b12-6e06-480a-a662-597140d92179}" showlabel="false">
                         <labels>
                           <label description="" languagecode="1033" />
@@ -147,13 +159,31 @@
                           <label description="" languagecode="1033" />
                         </labels>
                       </cell>
+                      <cell id="{3e2140ad-dc37-456a-9fa0-07b118fdf77f}" locklevel="0" colspan="1" rowspan="1" visible="false">
+                        <labels>
+                          <label description="Requirement Approved" languagecode="1033" />
+                        </labels>
+                        <control id="book_requirementapproved" classid="{67FAC785-CD58-4F9F-ABB3-4B7DDC6ED5ED}" datafieldname="book_requirementapproved" disabled="false" />
+                      </cell>
+                      <cell id="{ae3b4566-10e6-3946-b2db-0074928633c7}" showlabel="false">
+                        <labels>
+                          <label description="" languagecode="1033" />
+                        </labels>
+                      </cell>
+                    </row>
+                    <row>
+                      <cell locklevel="0" id="{09d65e50-d522-4111-a45e-8d4b028ce524}">
+                        <labels>
+                          <label description="" languagecode="1033" />
+                        </labels>
+                      </cell>
                       <cell id="{1ea3eb23-134f-4cef-ad1f-6063b7bf92c0}" locklevel="0" colspan="1" rowspan="1" visible="false">
                         <labels>
                           <label description="RI Validated" languagecode="1033" />
                         </labels>
                         <control id="book_rivalidated" classid="{67FAC785-CD58-4F9F-ABB3-4B7DDC6ED5ED}" datafieldname="book_rivalidated" disabled="false" />
                       </cell>
-                      <cell id="{ae3b4566-10e6-3946-b2db-0074928633c7}" showlabel="false">
+                      <cell locklevel="0" id="{665b43e6-de6d-4629-8f8d-8e1ece82a67e}">
                         <labels>
                           <label description="" languagecode="1033" />
                         </labels>
@@ -339,6 +369,38 @@
           <columns>
             <column width="100%">
               <sections>
+                <section name="reqFundingTab_section_3" id="8d34bd2c-ad2c-4b92-8b07-73544267bfe8" IsUserDefined="0" locklevel="0" showlabel="true" showbar="false" layout="varwidth" celllabelalignment="Left" celllabelposition="Left" columns="1" labelwidth="115">
+                  <labels>
+                    <label description="Funding Details" languagecode="1033" />
+                  </labels>
+                  <rows>
+                    <row />
+                    <row>
+                      <cell locklevel="0" id="{97623d36-25c4-4f25-98c1-ca3cf27b88b1}" rowspan="4" colspan="1" auto="false" showlabel="false">
+                        <labels>
+                          <label description="New SG control 1779059908279" languagecode="1033" />
+                        </labels>
+                        <control indicationOfSubgrid="true" id="Subgrid_new_5" classid="{E7A81278-8635-4D9E-8D4D-59480B391C5B}">
+                          <parameters>
+                            <RecordsPerPage>4</RecordsPerPage>
+                            <AutoExpand>Fixed</AutoExpand>
+                            <EnableQuickFind>false</EnableQuickFind>
+                            <EnableViewPicker>false</EnableViewPicker>
+                            <EnableChartPicker>true</EnableChartPicker>
+                            <ChartGridMode>All</ChartGridMode>
+                            <RelationshipName>book_requirementdetails_Requirement_book_requirements</RelationshipName>
+                            <TargetEntityType>book_requirementdetails</TargetEntityType>
+                            <ViewId>{DD8AD28A-DE14-4843-8364-00BB6DB81556}</ViewId>
+                            <ViewIds>{DD8AD28A-DE14-4843-8364-00BB6DB81556}</ViewIds>
+                          </parameters>
+                        </control>
+                      </cell>
+                    </row>
+                    <row />
+                    <row />
+                    <row />
+                  </rows>
+                </section>
                 <section name="tab_4_section_1" id="6b0d7306-d435-4fef-9e70-22aedcfb71b7" IsUserDefined="0" locklevel="0" showlabel="true" showbar="false" layout="varwidth" celllabelalignment="Left" celllabelposition="Left" columns="1" labelwidth="115">
                   <labels>
                     <label description="Funding by Fiscal Year" languagecode="1033" />
@@ -490,6 +552,84 @@
             </column>
           </columns>
         </tab>
+        <tab name="tab_Subgrid_PrioritizationsForReq" verticallayout="true" id="{7d1c379e-e618-4f2e-bdb2-d5cf80fd4bbe}" IsUserDefined="0">
+          <labels>
+            <label description="Prioritizations" languagecode="1033" />
+          </labels>
+          <columns>
+            <column width="100%">
+              <sections>
+                <section name="section_Subgrid_PrioritizationsForReq" showlabel="true" showbar="false" IsUserDefined="0" id="{fd3fdde0-70e7-4a68-b4bc-5b2dd831a36a}" layout="varwidth" columns="1">
+                  <labels>
+                    <label description="Prioritizations" languagecode="1033" />
+                  </labels>
+                  <rows>
+                    <row>
+                      <cell id="{4338ade8-4bc1-44d9-bb7e-ab8fcd3d5a0b}" showlabel="false" rowspan="6" colspan="1">
+                        <labels>
+                          <label description="Requirement Fundings" languagecode="1033" />
+                        </labels>
+                        <control indicationOfSubgrid="true" id="Subgrid_PrioritizationsForReq" classid="{F9A8A302-114E-466A-B582-6771B2AE0D92}" uniqueid="{4c69590b-1c1c-4316-a366-7885ee4845ce}">
+                          <parameters>
+                            <RecordsPerPage>10</RecordsPerPage>
+                            <AutoExpand>Fixed</AutoExpand>
+                            <EnableQuickFind>false</EnableQuickFind>
+                            <EnableViewPicker>false</EnableViewPicker>
+                            <EnableChartPicker>true</EnableChartPicker>
+                            <ChartGridMode>All</ChartGridMode>
+                            <RelationshipName>book_prioritization_Requirement_book_requirements</RelationshipName>
+                            <TargetEntityType>book_prioritization</TargetEntityType>
+                            <ViewId>{398AFC57-8540-F011-B4CC-001DD805A06B}</ViewId>
+                            <ViewIds>{398AFC57-8540-F011-B4CC-001DD805A06B}</ViewIds>
+                          </parameters>
+                        </control>
+                      </cell>
+                    </row>
+                  </rows>
+                </section>
+              </sections>
+            </column>
+          </columns>
+        </tab>
+        <tab name="tab_Subgrid_SpendPlanForReq" verticallayout="true" id="{aa2115ea-91d3-4ed9-9017-65154e437cf2}" IsUserDefined="0">
+          <labels>
+            <label description="Spend Plan" languagecode="1033" />
+          </labels>
+          <columns>
+            <column width="100%">
+              <sections>
+                <section name="section_Subgrid_SpendPlanForReq" showlabel="true" showbar="false" IsUserDefined="0" id="{9b60625a-29df-4d64-a88e-44cb8a99f5b0}" layout="varwidth" columns="1">
+                  <labels>
+                    <label description="Spend Plan" languagecode="1033" />
+                  </labels>
+                  <rows>
+                    <row>
+                      <cell id="{374a3ca7-a9e6-4550-8eb5-73cfe493732b}" showlabel="false" rowspan="6" colspan="1">
+                        <labels>
+                          <label description="Spend Plan" languagecode="1033" />
+                        </labels>
+                        <control indicationOfSubgrid="true" id="Subgrid_SpendPlanForReq" classid="{F9A8A302-114E-466A-B582-6771B2AE0D92}" uniqueid="{71e0a3b3-c2e4-4915-b0ae-7e719533886e}">
+                          <parameters>
+                            <RecordsPerPage>10</RecordsPerPage>
+                            <AutoExpand>Fixed</AutoExpand>
+                            <EnableQuickFind>false</EnableQuickFind>
+                            <EnableViewPicker>false</EnableViewPicker>
+                            <EnableChartPicker>true</EnableChartPicker>
+                            <ChartGridMode>All</ChartGridMode>
+                            <RelationshipName>book_spendplan_Requirement_book_requirements</RelationshipName>
+                            <TargetEntityType>book_spendplan</TargetEntityType>
+                            <ViewId>{158751D2-B582-F011-B4CC-001DD805A06B}</ViewId>
+                            <ViewIds>{158751D2-B582-F011-B4CC-001DD805A06B}</ViewIds>
+                          </parameters>
+                        </control>
+                      </cell>
+                    </row>
+                  </rows>
+                </section>
+              </sections>
+            </column>
+          </columns>
+        </tab>
       </tabs>
       <header id="{a39a3743-f64d-4ba0-84c1-98d9d6cc209a}" celllabelposition="Top" columns="111" labelwidth="115" celllabelalignment="Left">
         <rows>
@@ -587,7 +727,181 @@
           </NavBarArea>
         </NavBarAreas>
       </Navigation>
-      <controlDescriptions />
+      <controlDescriptions>
+        <controlDescription forControl="{71e0a3b3-c2e4-4915-b0ae-7e719533886e}">
+          <customControl id="{E7A81278-8635-4D9E-8D4D-59480B391C5B}">
+            <parameters>
+              <RecordsPerPage>10</RecordsPerPage>
+              <AutoExpand>Fixed</AutoExpand>
+              <EnableQuickFind>false</EnableQuickFind>
+              <EnableViewPicker>false</EnableViewPicker>
+              <EnableChartPicker>true</EnableChartPicker>
+              <ChartGridMode>All</ChartGridMode>
+              <RelationshipName>book_spendplan_Requirement_book_requirements</RelationshipName>
+              <TargetEntityType>book_spendplan</TargetEntityType>
+              <ViewId>{158751D2-B582-F011-B4CC-001DD805A06B}</ViewId>
+              <ViewIds>{158751D2-B582-F011-B4CC-001DD805A06B}</ViewIds>
+            </parameters>
+          </customControl>
+          <customControl formFactor="0" name="arsc_ARNGCheckbook.SpendPlanGrid">
+            <parameters>
+              <data-set name="spendplans">
+                <ViewId>{158751d2-b582-f011-b4cc-001dd805a06b}</ViewId>
+                <TargetEntityType>book_spendplan</TargetEntityType>
+                <IsUserView>false</IsUserView>
+                <EnableViewPicker>false</EnableViewPicker>
+                <RelationshipName>book_spendplan_Requirement_book_requirements</RelationshipName>
+                <FilteredViewIds>{158751D2-B582-F011-B4CC-001DD805A06B}</FilteredViewIds>
+                <name>book_name</name>
+                <lineOfAccounting>book_lineofaccountingloa</lineOfAccounting>
+                <requirement>book_requirement</requirement>
+                <total>book_total</total>
+                <october>book_october</october>
+                <november>book_november</november>
+                <december>book_december</december>
+                <january>book_january</january>
+                <february>book_february</february>
+                <march>book_march</march>
+                <april>book_april</april>
+                <may>book_may</may>
+                <june>book_june</june>
+                <july>book_july</july>
+                <august>book_august</august>
+                <september>book_september</september>
+              </data-set>
+            </parameters>
+          </customControl>
+          <customControl formFactor="1" name="arsc_ARNGCheckbook.SpendPlanGrid">
+            <parameters>
+              <data-set name="spendplans">
+                <ViewId>{158751d2-b582-f011-b4cc-001dd805a06b}</ViewId>
+                <TargetEntityType>book_spendplan</TargetEntityType>
+                <IsUserView>false</IsUserView>
+                <EnableViewPicker>false</EnableViewPicker>
+                <RelationshipName>book_spendplan_Requirement_book_requirements</RelationshipName>
+                <FilteredViewIds>{158751D2-B582-F011-B4CC-001DD805A06B}</FilteredViewIds>
+                <name>book_name</name>
+                <lineOfAccounting>book_lineofaccountingloa</lineOfAccounting>
+                <requirement>book_requirement</requirement>
+                <total>book_total</total>
+                <october>book_october</october>
+                <november>book_november</november>
+                <december>book_december</december>
+                <january>book_january</january>
+                <february>book_february</february>
+                <march>book_march</march>
+                <april>book_april</april>
+                <may>book_may</may>
+                <june>book_june</june>
+                <july>book_july</july>
+                <august>book_august</august>
+                <september>book_september</september>
+              </data-set>
+            </parameters>
+          </customControl>
+          <customControl formFactor="2" name="arsc_ARNGCheckbook.SpendPlanGrid">
+            <parameters>
+              <data-set name="spendplans">
+                <ViewId>{158751d2-b582-f011-b4cc-001dd805a06b}</ViewId>
+                <TargetEntityType>book_spendplan</TargetEntityType>
+                <IsUserView>false</IsUserView>
+                <EnableViewPicker>false</EnableViewPicker>
+                <RelationshipName>book_spendplan_Requirement_book_requirements</RelationshipName>
+                <FilteredViewIds>{158751D2-B582-F011-B4CC-001DD805A06B}</FilteredViewIds>
+                <name>book_name</name>
+                <lineOfAccounting>book_lineofaccountingloa</lineOfAccounting>
+                <requirement>book_requirement</requirement>
+                <total>book_total</total>
+                <october>book_october</october>
+                <november>book_november</november>
+                <december>book_december</december>
+                <january>book_january</january>
+                <february>book_february</february>
+                <march>book_march</march>
+                <april>book_april</april>
+                <may>book_may</may>
+                <june>book_june</june>
+                <july>book_july</july>
+                <august>book_august</august>
+                <september>book_september</september>
+              </data-set>
+            </parameters>
+          </customControl>
+        </controlDescription>
+        <controlDescription forControl="{4c69590b-1c1c-4316-a366-7885ee4845ce}">
+          <customControl id="{E7A81278-8635-4D9E-8D4D-59480B391C5B}">
+            <parameters>
+              <RecordsPerPage>10</RecordsPerPage>
+              <AutoExpand>Fixed</AutoExpand>
+              <EnableQuickFind>false</EnableQuickFind>
+              <EnableViewPicker>false</EnableViewPicker>
+              <EnableChartPicker>true</EnableChartPicker>
+              <ChartGridMode>All</ChartGridMode>
+              <RelationshipName>book_prioritization_Requirement_book_requirements</RelationshipName>
+              <TargetEntityType>book_prioritization</TargetEntityType>
+              <ViewId>{398AFC57-8540-F011-B4CC-001DD805A06B}</ViewId>
+              <ViewIds>{398AFC57-8540-F011-B4CC-001DD805A06B}</ViewIds>
+            </parameters>
+          </customControl>
+          <customControl formFactor="0" name="arsc_ARNGCheckbook.PrioritizationsForRequirement">
+            <parameters>
+              <data-set name="prioritizations">
+                <ViewId>{398afc57-8540-f011-b4cc-001dd805a06b}</ViewId>
+                <TargetEntityType>book_prioritization</TargetEntityType>
+                <IsUserView>false</IsUserView>
+                <EnableViewPicker>false</EnableViewPicker>
+                <RelationshipName>book_prioritization_Requirement_book_requirements</RelationshipName>
+                <FilteredViewIds>{398AFC57-8540-F011-B4CC-001DD805A06B}</FilteredViewIds>
+                <name>book_name</name>
+                <statePriority>book_statepriority</statePriority>
+                <approvalStatus>book_approvalstatus</approvalStatus>
+                <fundedAmount>book_newfundedamounttdp</fundedAmount>
+                <unfundedAmount>book_newunfundedamount</unfundedAmount>
+                <requirementType>book_requirementtype</requirementType>
+                <createdOn>createdon</createdOn>
+              </data-set>
+            </parameters>
+          </customControl>
+          <customControl formFactor="1" name="arsc_ARNGCheckbook.PrioritizationsForRequirement">
+            <parameters>
+              <data-set name="prioritizations">
+                <ViewId>{398afc57-8540-f011-b4cc-001dd805a06b}</ViewId>
+                <TargetEntityType>book_prioritization</TargetEntityType>
+                <IsUserView>false</IsUserView>
+                <EnableViewPicker>false</EnableViewPicker>
+                <RelationshipName>book_prioritization_Requirement_book_requirements</RelationshipName>
+                <FilteredViewIds>{398AFC57-8540-F011-B4CC-001DD805A06B}</FilteredViewIds>
+                <name>book_name</name>
+                <statePriority>book_statepriority</statePriority>
+                <approvalStatus>book_approvalstatus</approvalStatus>
+                <fundedAmount>book_newfundedamounttdp</fundedAmount>
+                <unfundedAmount>book_newunfundedamount</unfundedAmount>
+                <requirementType>book_requirementtype</requirementType>
+                <createdOn>createdon</createdOn>
+              </data-set>
+            </parameters>
+          </customControl>
+          <customControl formFactor="2" name="arsc_ARNGCheckbook.PrioritizationsForRequirement">
+            <parameters>
+              <data-set name="prioritizations">
+                <ViewId>{398afc57-8540-f011-b4cc-001dd805a06b}</ViewId>
+                <TargetEntityType>book_prioritization</TargetEntityType>
+                <IsUserView>false</IsUserView>
+                <EnableViewPicker>false</EnableViewPicker>
+                <RelationshipName>book_prioritization_Requirement_book_requirements</RelationshipName>
+                <FilteredViewIds>{398AFC57-8540-F011-B4CC-001DD805A06B}</FilteredViewIds>
+                <name>book_name</name>
+                <statePriority>book_statepriority</statePriority>
+                <approvalStatus>book_approvalstatus</approvalStatus>
+                <fundedAmount>book_newfundedamounttdp</fundedAmount>
+                <unfundedAmount>book_newunfundedamount</unfundedAmount>
+                <requirementType>book_requirementtype</requirementType>
+                <createdOn>createdon</createdOn>
+              </data-set>
+            </parameters>
+          </customControl>
+        </controlDescription>
+      </controlDescriptions>
       <formLibraries>
         <Library name="book_toggleReqTab" libraryUniqueId="{d425f382-854b-493c-ab9b-c2c5e17d275b}" />
         <Library name="book_showHideDOMOPs" libraryUniqueId="{216ea925-5505-4b7a-bb96-e65619c36c3d}" />

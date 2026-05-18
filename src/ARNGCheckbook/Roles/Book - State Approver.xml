@@ -7,6 +7,7 @@
     <RolePrivilege name="prvAppendActivity" level="Basic" />
     <RolePrivilege name="prvAppendactivityfileattachment" level="Basic" />
     <RolePrivilege name="prvAppendappnotification" level="Global" />
+    <RolePrivilege name="prvAppendAppUserSetting" level="Global" />
     <RolePrivilege name="prvAppendbook_APE" level="Global" />
     <RolePrivilege name="prvAppendbook_arngcheckbookoprapprovalworkflow" level="Global" />
     <RolePrivilege name="prvAppendbook_arngcheckbookufr" level="Global" />
@@ -26,8 +27,6 @@
     <RolePrivilege name="prvAppendbook_realignmentsreview" level="Global" />
     <RolePrivilege name="prvAppendbook_SAG" level="Global" />
     <RolePrivilege name="prvAppendbook_SpendPlan" level="Global" />
-    <RolePrivilege name="prvAppendbook_Supplies" level="Deep" />
-    <RolePrivilege name="prvAppendbook_SupplyItems" level="Global" />
     <RolePrivilege name="prvAppendbook_Turnin" level="Deep" />
     <RolePrivilege name="prvAppendbook_turninapprovalprocess" level="Global" />
     <RolePrivilege name="prvAppendbook_TurnInItems" level="Deep" />
@@ -49,6 +48,7 @@
     <RolePrivilege name="prvAppendToActivity" level="Basic" />
     <RolePrivilege name="prvAppendToactivityfileattachment" level="Basic" />
     <RolePrivilege name="prvAppendToappnotification" level="Global" />
+    <RolePrivilege name="prvAppendToAppUserSetting" level="Global" />
     <RolePrivilege name="prvAppendToAsyncOperation" level="Local" />
     <RolePrivilege name="prvAppendTobook_APE" level="Global" />
     <RolePrivilege name="prvAppendTobook_arngcheckbookoprapprovalworkflow" level="Global" />
@@ -71,8 +71,6 @@
     <RolePrivilege name="prvAppendTobook_Requirements" level="Global" />
     <RolePrivilege name="prvAppendTobook_SAG" level="Global" />
     <RolePrivilege name="prvAppendTobook_SpendPlan" level="Global" />
-    <RolePrivilege name="prvAppendTobook_Supplies" level="Deep" />
-    <RolePrivilege name="prvAppendTobook_SupplyItems" level="Global" />
     <RolePrivilege name="prvAppendTobook_Turnin" level="Deep" />
     <RolePrivilege name="prvAppendTobook_turninapprovalprocess" level="Global" />
     <RolePrivilege name="prvAppendTobook_TurnInItems" level="Deep" />
@@ -86,6 +84,7 @@
     <RolePrivilege name="prvAppendToNewProcess" level="Global" />
     <RolePrivilege name="prvAppendToNote" level="Local" />
     <RolePrivilege name="prvAppendToOfficeDocument" level="Deep" />
+    <RolePrivilege name="prvAppendToSettingDefinition" level="Global" />
     <RolePrivilege name="prvAppendToSharePointDocument" level="Global" />
     <RolePrivilege name="prvAppendToSharePointDocumentLocation" level="Global" />
     <RolePrivilege name="prvAppendToSharePointSite" level="Global" />
@@ -106,7 +105,6 @@
     <RolePrivilege name="prvAssignbook_Prioritization" level="Deep" />
     <RolePrivilege name="prvAssignbook_Realignments" level="Deep" />
     <RolePrivilege name="prvAssignbook_SpendPlan" level="Deep" />
-    <RolePrivilege name="prvAssignbook_Supplies" level="Deep" />
     <RolePrivilege name="prvAssignbook_Turnin" level="Deep" />
     <RolePrivilege name="prvAssignbook_UnfundedRequests" level="Deep" />
     <RolePrivilege name="prvAssignEmailSignature" level="Local" />
@@ -122,6 +120,7 @@
     <RolePrivilege name="prvCreateActivity" level="Basic" />
     <RolePrivilege name="prvCreateactivityfileattachment" level="Basic" />
     <RolePrivilege name="prvCreateappnotification" level="Global" />
+    <RolePrivilege name="prvCreateAppUserSetting" level="Global" />
     <RolePrivilege name="prvCreateAsyncOperation" level="Local" />
     <RolePrivilege name="prvCreatebook_arngcheckbookoprapprovalworkflow" level="Global" />
     <RolePrivilege name="prvCreatebook_arngcheckbookufr" level="Global" />
@@ -130,7 +129,6 @@
     <RolePrivilege name="prvCreatebook_Realignments" level="Deep" />
     <RolePrivilege name="prvCreatebook_realignmentsreview" level="Global" />
     <RolePrivilege name="prvCreatebook_SpendPlan" level="Deep" />
-    <RolePrivilege name="prvCreatebook_Supplies" level="Deep" />
     <RolePrivilege name="prvCreatebook_Turnin" level="Deep" />
     <RolePrivilege name="prvCreatebook_turninapprovalprocess" level="Global" />
     <RolePrivilege name="prvCreatebook_TurnInItems" level="Deep" />
@@ -183,6 +181,7 @@
     <RolePrivilege name="prvReadAppConfigMaster" level="Global" />
     <RolePrivilege name="prvReadAppModule" level="Global" />
     <RolePrivilege name="prvReadappnotification" level="Global" />
+    <RolePrivilege name="prvReadAppUserSetting" level="Global" />
     <RolePrivilege name="prvReadAsyncOperation" level="Local" />
     <RolePrivilege name="prvReadAttribute" level="Global" />
     <RolePrivilege name="prvReadAttributeMap" level="Global" />
@@ -224,13 +223,11 @@
     <RolePrivilege name="prvReadbook_SAG" level="Global" />
     <RolePrivilege name="prvReadbook_SpendPlan" level="Deep" />
     <RolePrivilege name="prvReadbook_State" level="Local" />
-    <RolePrivilege name="prvReadbook_Supplies" level="Deep" />
-    <RolePrivilege name="prvReadbook_SupplyItems" level="Global" />
     <RolePrivilege name="prvReadbook_TDC" level="Global" />
     <RolePrivilege name="prvReadbook_Turnin" level="Deep" />
     <RolePrivilege name="prvReadbook_turninapprovalprocess" level="Global" />
     <RolePrivilege name="prvReadbook_TurnInItems" level="Deep" />
-    <RolePrivilege name="prvReadbook_UnfundedRequests" level="Deep" />
+    <RolePrivilege name="prvReadbook_UnfundedRequests" level="Global" />
     <RolePrivilege name="prvReadBusinessUnit" level="Global" />
     <RolePrivilege name="prvReadCanvasApp" level="Global" />
     <RolePrivilege name="prvReadCanvasAppExtendedMetadata" level="Global" />
@@ -269,6 +266,7 @@
     <RolePrivilege name="prvReadSdkMessage" level="Global" />
     <RolePrivilege name="prvReadSdkMessageProcessingStep" level="Global" />
     <RolePrivilege name="prvReadSdkMessageProcessingStepImage" level="Global" />
+    <RolePrivilege name="prvReadSettingDefinition" level="Global" />
     <RolePrivilege name="prvReadSharePointData" level="Global" />
     <RolePrivilege name="prvReadSharePointDocument" level="Global" />
     <RolePrivilege name="prvReadSharePointDocumentLocation" level="Global" />
@@ -294,8 +292,8 @@
     <RolePrivilege name="prvSharebook_ObligationAuthority" level="Deep" />
     <RolePrivilege name="prvSharebook_Realignments" level="Deep" />
     <RolePrivilege name="prvSharebook_SpendPlan" level="Deep" />
-    <RolePrivilege name="prvSharebook_Supplies" level="Deep" />
     <RolePrivilege name="prvSharebook_Turnin" level="Deep" />
+    <RolePrivilege name="prvSharebook_UnfundedRequests" level="Deep" />
     <RolePrivilege name="prvShareEmailTemplate" level="Local" />
     <RolePrivilege name="prvShareMailMergeTemplate" level="Global" />
     <RolePrivilege name="prvShareNote" level="Local" />
@@ -309,6 +307,7 @@
     <RolePrivilege name="prvWriteActivity" level="Basic" />
     <RolePrivilege name="prvWriteactivityfileattachment" level="Basic" />
     <RolePrivilege name="prvWriteappnotification" level="Global" />
+    <RolePrivilege name="prvWriteAppUserSetting" level="Global" />
     <RolePrivilege name="prvWriteAsyncOperation" level="Local" />
     <RolePrivilege name="prvWritebook_arngcheckbookufr" level="Global" />
     <RolePrivilege name="prvWritebook_ObligationAuthority" level="Deep" />
@@ -316,7 +315,6 @@
     <RolePrivilege name="prvWritebook_Realignments" level="Deep" />
     <RolePrivilege name="prvWritebook_realignmentsreview" level="Global" />
     <RolePrivilege name="prvWritebook_SpendPlan" level="Deep" />
-    <RolePrivilege name="prvWritebook_Supplies" level="Deep" />
     <RolePrivilege name="prvWritebook_Turnin" level="Deep" />
     <RolePrivilege name="prvWritebook_turninapprovalprocess" level="Global" />
     <RolePrivilege name="prvWritebook_TurnInItems" level="Deep" />

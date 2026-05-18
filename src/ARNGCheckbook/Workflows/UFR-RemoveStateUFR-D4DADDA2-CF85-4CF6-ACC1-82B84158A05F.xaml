@@ -65,10 +65,10 @@
                       </Sequence.Variables>
                       <Assign x:TypeArguments="mxs:Entity" To="[CreatedEntities(&quot;related_book_staterequirement#book_prioritization#Temp&quot;)]" Value="[New Entity(&quot;book_prioritization&quot;)]" />
                       <Assign x:TypeArguments="s:Guid" To="[CreatedEntities(&quot;related_book_staterequirement#book_prioritization#Temp&quot;).Id]" Value="[InputEntities(&quot;related_book_staterequirement#book_prioritization&quot;).Id]" />
-                      <mxswa:GetEntityProperty Attribute="book_fundedamounttdp" Entity="[InputEntities(&quot;related_book_staterequirement#book_prioritization&quot;)]" EntityName="book_prioritization" Value="[UpdateStep3_2]">
+                      <mxswa:GetEntityProperty Attribute="book_newfundedamounttdp" Entity="[InputEntities(&quot;related_book_staterequirement#book_prioritization&quot;)]" EntityName="book_prioritization" Value="[UpdateStep3_2]">
                         <mxswa:GetEntityProperty.TargetType>
                           <InArgument x:TypeArguments="s:Type">
-                            <mxswa:ReferenceLiteral x:TypeArguments="s:Type" Value="x:Double" />
+                            <mxswa:ReferenceLiteral x:TypeArguments="s:Type" Value="x:Decimal" />
                           </InArgument>
                         </mxswa:GetEntityProperty.TargetType>
                       </mxswa:GetEntityProperty>
@@ -77,15 +77,15 @@
                           <InArgument x:TypeArguments="x:String" x:Key="ExpressionOperator">SelectFirstNonNull</InArgument>
                           <InArgument x:TypeArguments="s:Object[]" x:Key="Parameters">[New Object() { UpdateStep3_2 }]</InArgument>
                           <InArgument x:TypeArguments="s:Type" x:Key="TargetType">
-                            <mxswa:ReferenceLiteral x:TypeArguments="s:Type" Value="x:Double" />
+                            <mxswa:ReferenceLiteral x:TypeArguments="s:Type" Value="x:Decimal" />
                           </InArgument>
                           <OutArgument x:TypeArguments="x:Object" x:Key="Result">[UpdateStep3_1]</OutArgument>
                         </mxswa:ActivityReference.Arguments>
                       </mxswa:ActivityReference>
-                      <mxswa:SetEntityProperty Attribute="book_requestedamount" Entity="[CreatedEntities(&quot;related_book_staterequirement#book_prioritization#Temp&quot;)]" EntityName="book_prioritization" Value="[UpdateStep3_1]">
+                      <mxswa:SetEntityProperty Attribute="book_newrequestedamount" Entity="[CreatedEntities(&quot;related_book_staterequirement#book_prioritization#Temp&quot;)]" EntityName="book_prioritization" Value="[UpdateStep3_1]">
                         <mxswa:SetEntityProperty.TargetType>
                           <InArgument x:TypeArguments="s:Type">
-                            <mxswa:ReferenceLiteral x:TypeArguments="s:Type" Value="x:Double" />
+                            <mxswa:ReferenceLiteral x:TypeArguments="s:Type" Value="x:Decimal" />
                           </InArgument>
                         </mxswa:SetEntityProperty.TargetType>
                       </mxswa:SetEntityProperty>
@@ -159,7 +159,7 @@
                     <Sequence DisplayName="StopWorkflowStep9: Prevent Workflow from Checking next condition">
                       <Sequence.Variables>
                         <Variable x:TypeArguments="x:Object" Name="StopWorkflowStep9_1" />
-                        <Variable x:TypeArguments="x:String" Default="807bd03e-7baa-45a0-9b2d-61d84ec6099f" Name="stepLabelLabelId" />
+                        <Variable x:TypeArguments="x:String" Default="ac68bb65-a371-4897-a709-426716191bdb" Name="stepLabelLabelId" />
                         <Variable x:TypeArguments="x:String" Name="stepLabelDescription">
                           <Variable.Default>
                             <Literal x:TypeArguments="x:String" Value="" />
@@ -246,10 +246,10 @@
                       </Sequence.Variables>
                       <Assign x:TypeArguments="mxs:Entity" To="[CreatedEntities(&quot;related_book_staterequirement#book_prioritization#Temp&quot;)]" Value="[New Entity(&quot;book_prioritization&quot;)]" />
                       <Assign x:TypeArguments="s:Guid" To="[CreatedEntities(&quot;related_book_staterequirement#book_prioritization#Temp&quot;).Id]" Value="[InputEntities(&quot;related_book_staterequirement#book_prioritization&quot;).Id]" />
-                      <mxswa:GetEntityProperty Attribute="book_fundedamounttdp" Entity="[InputEntities(&quot;related_book_staterequirement#book_prioritization&quot;)]" EntityName="book_prioritization" Value="[UpdateStep7_2]">
+                      <mxswa:GetEntityProperty Attribute="book_newfundedamounttdp" Entity="[InputEntities(&quot;related_book_staterequirement#book_prioritization&quot;)]" EntityName="book_prioritization" Value="[UpdateStep7_2]">
                         <mxswa:GetEntityProperty.TargetType>
                           <InArgument x:TypeArguments="s:Type">
-                            <mxswa:ReferenceLiteral x:TypeArguments="s:Type" Value="x:Double" />
+                            <mxswa:ReferenceLiteral x:TypeArguments="s:Type" Value="x:Decimal" />
                           </InArgument>
                         </mxswa:GetEntityProperty.TargetType>
                       </mxswa:GetEntityProperty>
@@ -258,22 +258,22 @@
                           <InArgument x:TypeArguments="x:String" x:Key="ExpressionOperator">SelectFirstNonNull</InArgument>
                           <InArgument x:TypeArguments="s:Object[]" x:Key="Parameters">[New Object() { UpdateStep7_2 }]</InArgument>
                           <InArgument x:TypeArguments="s:Type" x:Key="TargetType">
-                            <mxswa:ReferenceLiteral x:TypeArguments="s:Type" Value="x:Double" />
+                            <mxswa:ReferenceLiteral x:TypeArguments="s:Type" Value="x:Decimal" />
                           </InArgument>
                           <OutArgument x:TypeArguments="x:Object" x:Key="Result">[UpdateStep7_1]</OutArgument>
                         </mxswa:ActivityReference.Arguments>
                       </mxswa:ActivityReference>
-                      <mxswa:SetEntityProperty Attribute="book_requestedamount" Entity="[CreatedEntities(&quot;related_book_staterequirement#book_prioritization#Temp&quot;)]" EntityName="book_prioritization" Value="[UpdateStep7_1]">
+                      <mxswa:SetEntityProperty Attribute="book_newrequestedamount" Entity="[CreatedEntities(&quot;related_book_staterequirement#book_prioritization#Temp&quot;)]" EntityName="book_prioritization" Value="[UpdateStep7_1]">
                         <mxswa:SetEntityProperty.TargetType>
                           <InArgument x:TypeArguments="s:Type">
-                            <mxswa:ReferenceLiteral x:TypeArguments="s:Type" Value="x:Double" />
+                            <mxswa:ReferenceLiteral x:TypeArguments="s:Type" Value="x:Decimal" />
                           </InArgument>
                         </mxswa:SetEntityProperty.TargetType>
                       </mxswa:SetEntityProperty>
-                      <mxswa:GetEntityProperty Attribute="book_fundedamounttdp" Entity="[InputEntities(&quot;related_book_staterequirement#book_prioritization&quot;)]" EntityName="book_prioritization" Value="[UpdateStep7_4]">
+                      <mxswa:GetEntityProperty Attribute="book_newfundedamounttdp" Entity="[InputEntities(&quot;related_book_staterequirement#book_prioritization&quot;)]" EntityName="book_prioritization" Value="[UpdateStep7_4]">
                         <mxswa:GetEntityProperty.TargetType>
                           <InArgument x:TypeArguments="s:Type">
-                            <mxswa:ReferenceLiteral x:TypeArguments="s:Type" Value="x:Double" />
+                            <mxswa:ReferenceLiteral x:TypeArguments="s:Type" Value="x:Decimal" />
                           </InArgument>
                         </mxswa:GetEntityProperty.TargetType>
                       </mxswa:GetEntityProperty>
@@ -282,15 +282,15 @@
                           <InArgument x:TypeArguments="x:String" x:Key="ExpressionOperator">SelectFirstNonNull</InArgument>
                           <InArgument x:TypeArguments="s:Object[]" x:Key="Parameters">[New Object() { UpdateStep7_4 }]</InArgument>
                           <InArgument x:TypeArguments="s:Type" x:Key="TargetType">
-                            <mxswa:ReferenceLiteral x:TypeArguments="s:Type" Value="x:Double" />
+                            <mxswa:ReferenceLiteral x:TypeArguments="s:Type" Value="x:Decimal" />
                           </InArgument>
                           <OutArgument x:TypeArguments="x:Object" x:Key="Result">[UpdateStep7_3]</OutArgument>
                         </mxswa:ActivityReference.Arguments>
                       </mxswa:ActivityReference>
-                      <mxswa:SetEntityProperty Attribute="book_newvalidatedamount" Entity="[CreatedEntities(&quot;related_book_staterequirement#book_prioritization#Temp&quot;)]" EntityName="book_prioritization" Value="[UpdateStep7_3]">
+                      <mxswa:SetEntityProperty Attribute="book_validatedamount" Entity="[CreatedEntities(&quot;related_book_staterequirement#book_prioritization#Temp&quot;)]" EntityName="book_prioritization" Value="[UpdateStep7_3]">
                         <mxswa:SetEntityProperty.TargetType>
                           <InArgument x:TypeArguments="s:Type">
-                            <mxswa:ReferenceLiteral x:TypeArguments="s:Type" Value="x:Double" />
+                            <mxswa:ReferenceLiteral x:TypeArguments="s:Type" Value="x:Decimal" />
                           </InArgument>
                         </mxswa:SetEntityProperty.TargetType>
                       </mxswa:SetEntityProperty>

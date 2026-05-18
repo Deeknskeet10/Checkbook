@@ -1,0 +1,215 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Dashboard xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <LocalizedNames>
+    <LocalizedName description="ARNG Checkbook - Pending Money Movements" languagecode="1033" />
+  </LocalizedNames>
+  <Descriptions>
+    <Description description="Money queued to be moved: pending Realignments (debit -- credit) and pending Turn-ins." languagecode="1033" />
+  </Descriptions>
+  <FormId>{1c82b4c1-154e-f111-bec7-7c1e52184e9d}</FormId>
+  <IsCustomizable>1</IsCustomizable>
+  <IsDefault>0</IsDefault>
+  <FormXml>
+    <forms type="dashboard">
+      <form>
+        <tabs>
+          <tab name="tab_overview" verticallayout="true" id="{8535023e-d22e-4918-af24-267908de0439}">
+            <labels>
+              <label description="Overview" languagecode="1033" />
+            </labels>
+            <columns>
+              <column width="100%">
+                <sections>
+                  <section name="section_7b5ce188-cf81-4257-86e7-0dbf3a39a6c7" showlabel="true" showbar="false" id="{7b5ce188-cf81-4257-86e7-0dbf3a39a6c7}" layout="varwidth" columns="1">
+                    <labels>
+                      <label description="Pending Realignments" languagecode="1033" />
+                    </labels>
+                    <rows>
+                      <row>
+                        <cell id="{40b91bfd-7121-4d93-b833-ecbb4324fa6b}" showlabel="false" rowspan="14" colspan="1">
+                          <labels>
+                            <label description="Pending Realignments" languagecode="1033" />
+                          </labels>
+                          <control indicationOfSubgrid="true" id="grid_7b5ce188-cf81-4257-86e7-0dbf3a39a6c7" classid="{F9A8A302-114E-466A-B582-6771B2AE0D92}" uniqueid="{1116afb2-94ff-4492-929d-542570ac8bc5}">
+                            <parameters>
+                              <RecordsPerPage>50</RecordsPerPage>
+                              <AutoExpand>Fixed</AutoExpand>
+                              <EnableQuickFind>false</EnableQuickFind>
+                              <EnableViewPicker>false</EnableViewPicker>
+                              <EnableChartPicker>false</EnableChartPicker>
+                              <ChartGridMode>All</ChartGridMode>
+                              <TargetEntityType>book_realignments</TargetEntityType>
+                              <ViewId>{48A443AF-DEC3-4636-ABBD-820FE9FD88A7}</ViewId>
+                              <ViewIds>{48A443AF-DEC3-4636-ABBD-820FE9FD88A7}</ViewIds>
+                            </parameters>
+                          </control>
+                        </cell>
+                      </row>
+                    </rows>
+                  </section>
+                  <section name="section_fa9ec1df-4d43-4907-8b48-bd104f7fd1b6" showlabel="true" showbar="false" id="{fa9ec1df-4d43-4907-8b48-bd104f7fd1b6}" layout="varwidth" columns="1">
+                    <labels>
+                      <label description="Pending Turn-ins" languagecode="1033" />
+                    </labels>
+                    <rows>
+                      <row>
+                        <cell id="{2c06f938-5d30-46ad-834e-51b52e03665a}" showlabel="false" rowspan="12" colspan="1">
+                          <labels>
+                            <label description="Pending Turn-ins" languagecode="1033" />
+                          </labels>
+                          <control indicationOfSubgrid="true" id="grid_fa9ec1df-4d43-4907-8b48-bd104f7fd1b6" classid="{F9A8A302-114E-466A-B582-6771B2AE0D92}" uniqueid="{fe21b060-24a0-4e7c-96d0-683c58e05c30}">
+                            <parameters>
+                              <RecordsPerPage>25</RecordsPerPage>
+                              <AutoExpand>Fixed</AutoExpand>
+                              <EnableQuickFind>false</EnableQuickFind>
+                              <EnableViewPicker>false</EnableViewPicker>
+                              <EnableChartPicker>false</EnableChartPicker>
+                              <ChartGridMode>All</ChartGridMode>
+                              <TargetEntityType>book_turnin</TargetEntityType>
+                              <ViewId>{7A6AF56A-1232-455C-8061-0521B52080BA}</ViewId>
+                              <ViewIds>{7A6AF56A-1232-455C-8061-0521B52080BA}</ViewIds>
+                            </parameters>
+                          </control>
+                        </cell>
+                      </row>
+                    </rows>
+                  </section>
+                </sections>
+              </column>
+            </columns>
+          </tab>
+        </tabs>
+        <controlDescriptions>
+          <controlDescription forControl="{1116afb2-94ff-4492-929d-542570ac8bc5}">
+            <customControl id="{E7A81278-8635-4D9E-8D4D-59480B391C5B}">
+              <parameters>
+                <RecordsPerPage>50</RecordsPerPage>
+                <AutoExpand>Fixed</AutoExpand>
+                <EnableQuickFind>false</EnableQuickFind>
+                <EnableViewPicker>false</EnableViewPicker>
+                <EnableChartPicker>false</EnableChartPicker>
+                <ChartGridMode>All</ChartGridMode>
+                <TargetEntityType>book_realignments</TargetEntityType>
+                <ViewId>{48A443AF-DEC3-4636-ABBD-820FE9FD88A7}</ViewId>
+                <ViewIds>{48A443AF-DEC3-4636-ABBD-820FE9FD88A7}</ViewIds>
+              </parameters>
+            </customControl>
+            <customControl formFactor="0" name="arsc_ARNGCheckbook.PendingRealignmentsQueue">
+              <parameters>
+                <data-set name="realignments">
+                  <ViewId>{48a443af-dec3-4636-abbd-820fe9fd88a7}</ViewId>
+                  <TargetEntityType>book_realignments</TargetEntityType>
+                  <IsUserView>false</IsUserView>
+                  <EnableViewPicker>false</EnableViewPicker>
+                  <FilteredViewIds>{48A443AF-DEC3-4636-ABBD-820FE9FD88A7}</FilteredViewIds>
+                  <name>book_name</name>
+                  <amount>book_newamount</amount>
+                  <status>book_realignmentstatus</status>
+                  <debitedPrioritization>book_debitedprioritization</debitedPrioritization>
+                  <creditedPrioritization>book_creditedprioritization</creditedPrioritization>
+                  <payerConcurrence>book_payerconcurrence</payerConcurrence>
+                  <payeeConcurrence>book_payeeconcurrence</payeeConcurrence>
+                  <stateApproved>book_stateapproved</stateApproved>
+                </data-set>
+              </parameters>
+            </customControl>
+            <customControl formFactor="1" name="arsc_ARNGCheckbook.PendingRealignmentsQueue">
+              <parameters>
+                <data-set name="realignments">
+                  <ViewId>{48a443af-dec3-4636-abbd-820fe9fd88a7}</ViewId>
+                  <TargetEntityType>book_realignments</TargetEntityType>
+                  <IsUserView>false</IsUserView>
+                  <EnableViewPicker>false</EnableViewPicker>
+                  <FilteredViewIds>{48A443AF-DEC3-4636-ABBD-820FE9FD88A7}</FilteredViewIds>
+                  <name>book_name</name>
+                  <amount>book_newamount</amount>
+                  <status>book_realignmentstatus</status>
+                  <debitedPrioritization>book_debitedprioritization</debitedPrioritization>
+                  <creditedPrioritization>book_creditedprioritization</creditedPrioritization>
+                  <payerConcurrence>book_payerconcurrence</payerConcurrence>
+                  <payeeConcurrence>book_payeeconcurrence</payeeConcurrence>
+                  <stateApproved>book_stateapproved</stateApproved>
+                </data-set>
+              </parameters>
+            </customControl>
+            <customControl formFactor="2" name="arsc_ARNGCheckbook.PendingRealignmentsQueue">
+              <parameters>
+                <data-set name="realignments">
+                  <ViewId>{48a443af-dec3-4636-abbd-820fe9fd88a7}</ViewId>
+                  <TargetEntityType>book_realignments</TargetEntityType>
+                  <IsUserView>false</IsUserView>
+                  <EnableViewPicker>false</EnableViewPicker>
+                  <FilteredViewIds>{48A443AF-DEC3-4636-ABBD-820FE9FD88A7}</FilteredViewIds>
+                  <name>book_name</name>
+                  <amount>book_newamount</amount>
+                  <status>book_realignmentstatus</status>
+                  <debitedPrioritization>book_debitedprioritization</debitedPrioritization>
+                  <creditedPrioritization>book_creditedprioritization</creditedPrioritization>
+                  <payerConcurrence>book_payerconcurrence</payerConcurrence>
+                  <payeeConcurrence>book_payeeconcurrence</payeeConcurrence>
+                  <stateApproved>book_stateapproved</stateApproved>
+                </data-set>
+              </parameters>
+            </customControl>
+          </controlDescription>
+          <controlDescription forControl="{fe21b060-24a0-4e7c-96d0-683c58e05c30}">
+            <customControl id="{E7A81278-8635-4D9E-8D4D-59480B391C5B}">
+              <parameters>
+                <RecordsPerPage>25</RecordsPerPage>
+                <AutoExpand>Fixed</AutoExpand>
+                <EnableQuickFind>false</EnableQuickFind>
+                <EnableViewPicker>false</EnableViewPicker>
+                <EnableChartPicker>false</EnableChartPicker>
+                <ChartGridMode>All</ChartGridMode>
+                <TargetEntityType>book_turnin</TargetEntityType>
+                <ViewId>{7A6AF56A-1232-455C-8061-0521B52080BA}</ViewId>
+                <ViewIds>{7A6AF56A-1232-455C-8061-0521B52080BA}</ViewIds>
+              </parameters>
+            </customControl>
+            <customControl id="{E7A81278-8635-4D9E-8D4D-59480B391C5B}" formFactor="0">
+              <parameters>
+                <RecordsPerPage>25</RecordsPerPage>
+                <AutoExpand>Fixed</AutoExpand>
+                <EnableQuickFind>false</EnableQuickFind>
+                <EnableViewPicker>false</EnableViewPicker>
+                <EnableChartPicker>false</EnableChartPicker>
+                <ChartGridMode>All</ChartGridMode>
+                <TargetEntityType>book_turnin</TargetEntityType>
+                <ViewId>{7A6AF56A-1232-455C-8061-0521B52080BA}</ViewId>
+                <ViewIds>{7A6AF56A-1232-455C-8061-0521B52080BA}</ViewIds>
+              </parameters>
+            </customControl>
+            <customControl id="{E7A81278-8635-4D9E-8D4D-59480B391C5B}" formFactor="1">
+              <parameters>
+                <RecordsPerPage>25</RecordsPerPage>
+                <AutoExpand>Fixed</AutoExpand>
+                <EnableQuickFind>false</EnableQuickFind>
+                <EnableViewPicker>false</EnableViewPicker>
+                <EnableChartPicker>false</EnableChartPicker>
+                <ChartGridMode>All</ChartGridMode>
+                <TargetEntityType>book_turnin</TargetEntityType>
+                <ViewId>{7A6AF56A-1232-455C-8061-0521B52080BA}</ViewId>
+                <ViewIds>{7A6AF56A-1232-455C-8061-0521B52080BA}</ViewIds>
+              </parameters>
+            </customControl>
+            <customControl id="{E7A81278-8635-4D9E-8D4D-59480B391C5B}" formFactor="2">
+              <parameters>
+                <RecordsPerPage>25</RecordsPerPage>
+                <AutoExpand>Fixed</AutoExpand>
+                <EnableQuickFind>false</EnableQuickFind>
+                <EnableViewPicker>false</EnableViewPicker>
+                <EnableChartPicker>false</EnableChartPicker>
+                <ChartGridMode>All</ChartGridMode>
+                <TargetEntityType>book_turnin</TargetEntityType>
+                <ViewId>{7A6AF56A-1232-455C-8061-0521B52080BA}</ViewId>
+                <ViewIds>{7A6AF56A-1232-455C-8061-0521B52080BA}</ViewIds>
+              </parameters>
+            </customControl>
+          </controlDescription>
+        </controlDescriptions>
+      </form>
+    </forms>
+  </FormXml>
+  <IntroducedVersion>1.0</IntroducedVersion>
+  <IsTabletEnabled>0</IsTabletEnabled>
+</Dashboard>

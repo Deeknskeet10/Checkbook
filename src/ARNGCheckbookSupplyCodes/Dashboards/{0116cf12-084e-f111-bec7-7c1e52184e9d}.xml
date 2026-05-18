@@ -1,0 +1,122 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Dashboard xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <LocalizedNames>
+    <LocalizedName description="ARNG Checkbook - Distributions" languagecode="1033" />
+  </LocalizedNames>
+  <Descriptions>
+    <Description description="Cross-org Distributions overview with PCF donut grouped by Fund / PG / Fund Center / Funding Type." languagecode="1033" />
+  </Descriptions>
+  <FormId>{0116cf12-084e-f111-bec7-7c1e52184e9d}</FormId>
+  <IsCustomizable>1</IsCustomizable>
+  <IsDefault>0</IsDefault>
+  <FormXml>
+    <forms type="dashboard">
+      <form>
+        <tabs>
+          <tab name="tab_overview" verticallayout="true" id="{a3d4fad8-6efe-464a-91bd-aec4693cb724}">
+            <labels>
+              <label description="Overview" languagecode="1033" />
+            </labels>
+            <columns>
+              <column width="100%">
+                <sections>
+                  <section name="section_donut" showlabel="false" showbar="false" id="{e374922c-ad4a-4cc6-acc6-86101528307e}" layout="varwidth" columns="1">
+                    <labels>
+                      <label description="Distributions" languagecode="1033" />
+                    </labels>
+                    <rows>
+                      <row>
+                        <cell id="{5511a132-80fc-46c8-a2c2-d1a0ba79703d}" showlabel="false" rowspan="14" colspan="1">
+                          <labels>
+                            <label description="Distributions" languagecode="1033" />
+                          </labels>
+                          <control indicationOfSubgrid="true" id="DistributionsDashboardGrid" classid="{F9A8A302-114E-466A-B582-6771B2AE0D92}" uniqueid="{05999e22-9ff1-4f3b-9172-c075fcef2ba7}">
+                            <parameters>
+                              <RecordsPerPage>100</RecordsPerPage>
+                              <AutoExpand>Fixed</AutoExpand>
+                              <EnableQuickFind>false</EnableQuickFind>
+                              <EnableViewPicker>false</EnableViewPicker>
+                              <EnableChartPicker>false</EnableChartPicker>
+                              <ChartGridMode>All</ChartGridMode>
+                              <TargetEntityType>book_distributions</TargetEntityType>
+                              <ViewId>{DEF106FF-90BE-4364-9B20-CFA20594F343}</ViewId>
+                              <ViewIds>{DEF106FF-90BE-4364-9B20-CFA20594F343}</ViewIds>
+                            </parameters>
+                          </control>
+                        </cell>
+                      </row>
+                    </rows>
+                  </section>
+                </sections>
+              </column>
+            </columns>
+          </tab>
+        </tabs>
+        <controlDescriptions>
+          <controlDescription forControl="{05999e22-9ff1-4f3b-9172-c075fcef2ba7}">
+            <customControl id="{E7A81278-8635-4D9E-8D4D-59480B391C5B}">
+              <parameters>
+                <TargetEntityType>book_distributions</TargetEntityType>
+                <ViewId>{DEF106FF-90BE-4364-9B20-CFA20594F343}</ViewId>
+                <ViewIds>{DEF106FF-90BE-4364-9B20-CFA20594F343}</ViewIds>
+              </parameters>
+            </customControl>
+            <customControl formFactor="0" name="arsc_ARNGCheckbook.DistributionsDonut">
+              <parameters>
+                <data-set name="distributions">
+                  <ViewId>{def106ff-90be-4364-9b20-cfa20594f343}</ViewId>
+                  <TargetEntityType>book_distributions</TargetEntityType>
+                  <IsUserView>false</IsUserView>
+                  <EnableViewPicker>false</EnableViewPicker>
+                  <FilteredViewIds>{DEF106FF-90BE-4364-9B20-CFA20594F343}</FilteredViewIds>
+                  <amount>book_amount</amount>
+                  <fundCenter>book_fundcenter</fundCenter>
+                  <fund>book_fund</fund>
+                  <fundingType>book_fundingtype</fundingType>
+                  <disbursementDirection>book_disbursementdirection</disbursementDirection>
+                  <month>book_month</month>
+                </data-set>
+              </parameters>
+            </customControl>
+            <customControl formFactor="1" name="arsc_ARNGCheckbook.DistributionsDonut">
+              <parameters>
+                <data-set name="distributions">
+                  <ViewId>{def106ff-90be-4364-9b20-cfa20594f343}</ViewId>
+                  <TargetEntityType>book_distributions</TargetEntityType>
+                  <IsUserView>false</IsUserView>
+                  <EnableViewPicker>false</EnableViewPicker>
+                  <FilteredViewIds>{DEF106FF-90BE-4364-9B20-CFA20594F343}</FilteredViewIds>
+                  <amount>book_amount</amount>
+                  <fundCenter>book_fundcenter</fundCenter>
+                  <fund>book_fund</fund>
+                  <fundingType>book_fundingtype</fundingType>
+                  <disbursementDirection>book_disbursementdirection</disbursementDirection>
+                  <month>book_month</month>
+                </data-set>
+              </parameters>
+            </customControl>
+            <customControl formFactor="2" name="arsc_ARNGCheckbook.DistributionsDonut">
+              <parameters>
+                <data-set name="distributions">
+                  <ViewId>{def106ff-90be-4364-9b20-cfa20594f343}</ViewId>
+                  <TargetEntityType>book_distributions</TargetEntityType>
+                  <IsUserView>false</IsUserView>
+                  <EnableViewPicker>false</EnableViewPicker>
+                  <FilteredViewIds>{DEF106FF-90BE-4364-9B20-CFA20594F343}</FilteredViewIds>
+                  <amount>book_amount</amount>
+                  <fundCenter>book_fundcenter</fundCenter>
+                  <fund>book_fund</fund>
+                  <fundingType>book_fundingtype</fundingType>
+                  <disbursementDirection>book_disbursementdirection</disbursementDirection>
+                  <month>book_month</month>
+                </data-set>
+              </parameters>
+            </customControl>
+          </controlDescription>
+        </controlDescriptions>
+      </form>
+    </forms>
+  </FormXml>
+  <IntroducedVersion>1.0</IntroducedVersion>
+  <IsTabletEnabled>0</IsTabletEnabled>
+</Dashboard>

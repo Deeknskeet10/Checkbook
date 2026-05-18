@@ -44,6 +44,30 @@
                       </cell>
                     </row>
                     <row>
+                      <cell id="{ba68d2ca-9aea-42f2-b2ff-394e3fa39f31}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="Requested Amount" languagecode="1033" />
+                        </labels>
+                        <control id="book_newrequestedamount" classid="{C3EFE0C3-0EC6-42BE-8349-CBD9079DFD8E}" datafieldname="book_newrequestedamount" disabled="false" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{f73b3a90-6eb2-4f9e-be4e-b57c34e9a96f}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="Validated Amount" languagecode="1033" />
+                        </labels>
+                        <control id="book_validatedamount" classid="{C3EFE0C3-0EC6-42BE-8349-CBD9079DFD8E}" datafieldname="book_validatedamount" disabled="false" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{9b759701-66a2-48d1-bcdd-54d782a55ebe}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="Funded Amount (TDP)" languagecode="1033" />
+                        </labels>
+                        <control id="book_newfundedamounttdp" classid="{C3EFE0C3-0EC6-42BE-8349-CBD9079DFD8E}" datafieldname="book_newfundedamounttdp" disabled="false" />
+                      </cell>
+                    </row>
+                    <row>
                       <cell id="{59b18b37-e55f-4462-be3e-a90002f96bc8}" locklevel="0" colspan="1" rowspan="1">
                         <labels>
                           <label description="Quantity" languagecode="1033" />
@@ -57,30 +81,6 @@
                           <label description="Justification" languagecode="1033" />
                         </labels>
                         <control id="book_statutoryjustification" classid="{E0DECE4B-6FC8-4A8F-A065-082708572369}" datafieldname="book_statutoryjustification" disabled="false" />
-                      </cell>
-                    </row>
-                    <row>
-                      <cell id="{1e171ee8-09c6-46cc-8f82-af96c9094544}" locklevel="0" colspan="1" rowspan="1">
-                        <labels>
-                          <label description="Requested Amount" languagecode="1033" />
-                        </labels>
-                        <control id="book_requestedamount" classid="{0D2C745A-E5A8-4C8F-BA63-C6D3BB604660}" datafieldname="book_requestedamount" disabled="false" />
-                      </cell>
-                    </row>
-                    <row>
-                      <cell id="{4f207156-9024-42ae-80f3-46099326449f}" locklevel="0" colspan="1" rowspan="1">
-                        <labels>
-                          <label description="Validated Amount" languagecode="1033" />
-                        </labels>
-                        <control id="book_newvalidatedamount" classid="{0D2C745A-E5A8-4C8F-BA63-C6D3BB604660}" datafieldname="book_newvalidatedamount" disabled="false" />
-                      </cell>
-                    </row>
-                    <row>
-                      <cell id="{265eb4c0-e654-4192-95ca-eae715f040a2}" locklevel="0" colspan="1" rowspan="1">
-                        <labels>
-                          <label description="Funded Amount (TDP)" languagecode="1033" />
-                        </labels>
-                        <control id="book_fundedamounttdp" classid="{0D2C745A-E5A8-4C8F-BA63-C6D3BB604660}" datafieldname="book_fundedamounttdp" disabled="false" />
                       </cell>
                     </row>
                   </rows>

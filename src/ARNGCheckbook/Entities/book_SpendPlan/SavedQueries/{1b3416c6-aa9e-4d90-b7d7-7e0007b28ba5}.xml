@@ -14,7 +14,7 @@
           <cell name="book_requirementfunding" width="163" />
           <cell name="book_spendplantype" width="135" />
           <cell name="book_spendplantotal" width="136" />
-          <cell name="book_total" width="108" />
+          <cell name="book_newtotaltdp" width="108" />
         </row>
       </grid>
     </layoutxml>
@@ -31,7 +31,7 @@
           <attribute name="book_spendplantype" />
           <attribute name="book_requirementfunding" />
           <attribute name="book_spendplantotal" />
-          <attribute name="book_total" />
+          <attribute name="book_newtotaltdp" />
         </entity>
       </fetch>
     </fetchxml>

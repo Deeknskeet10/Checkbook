@@ -21,3 +21,4 @@
 /home/eric/Sync/Power Platform/plugins/ARNGCheckbook.Plugins/obj/Debug/net462/ARNGChec.B0A25539.Up2Date
 /home/eric/Sync/Power Platform/plugins/ARNGCheckbook.Plugins/obj/Debug/net462/ARNGCheckbook.Plugins.dll
 /home/eric/Sync/Power Platform/plugins/ARNGCheckbook.Plugins/obj/Debug/net462/ARNGCheckbook.Plugins.pdb
+/home/eric/Sync/Power Platform/plugins/ARNGCheckbook.Plugins/obj/Debug/net462/ARNGCheckbook.Plugins.sourcelink.json

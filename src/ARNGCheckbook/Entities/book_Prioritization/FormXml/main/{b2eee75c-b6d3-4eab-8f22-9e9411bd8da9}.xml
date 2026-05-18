@@ -214,12 +214,6 @@
                           </parameters>
                         </control>
                       </cell>
-                      <cell id="{cade5ea0-9e16-4032-81ce-6d4aca313a9f}" locklevel="0" colspan="1" rowspan="1">
-                        <labels>
-                          <label description="Requested Amount" languagecode="1033" />
-                        </labels>
-                        <control id="book_requestedamount" classid="{0D2C745A-E5A8-4C8F-BA63-C6D3BB604660}" datafieldname="book_requestedamount" disabled="false" />
-                      </cell>
                     </row>
                     <row>
                       <cell id="{b37e6f0c-ccd8-4923-b2c9-95f8a0d40610}" locklevel="0" colspan="1" rowspan="1">
@@ -228,16 +222,11 @@
                         </labels>
                         <control id="book_acceptedactivity" classid="{67FAC785-CD58-4F9F-ABB3-4B7DDC6ED5ED}" datafieldname="book_acceptedactivity" disabled="false" />
                       </cell>
-                      <cell locklevel="0" id="{e7c00ed4-d439-423c-bc4f-90f3bc83f51b}">
+                      <cell id="{d7297840-5790-4948-9462-259f86917fd3}" locklevel="0" colspan="1" rowspan="1">
                         <labels>
-                          <label description="" languagecode="1033" />
+                          <label description="Requested Amount" languagecode="1033" />
                         </labels>
-                      </cell>
-                      <cell id="{909506f7-b437-4d74-9282-1aa278648fb0}" locklevel="0" colspan="1" rowspan="1">
-                        <labels>
-                          <label description="Funded Amount (TDP)" languagecode="1033" />
-                        </labels>
-                        <control id="book_fundedamounttdp" classid="{0D2C745A-E5A8-4C8F-BA63-C6D3BB604660}" datafieldname="book_fundedamounttdp" disabled="true" />
+                        <control id="book_newrequestedamount" classid="{C3EFE0C3-0EC6-42BE-8349-CBD9079DFD8E}" datafieldname="book_newrequestedamount" disabled="false" />
                       </cell>
                     </row>
                     <row>
@@ -246,29 +235,36 @@
                           <label description="" languagecode="1033" />
                         </labels>
                       </cell>
-                      <cell id="{20a55610-9ff8-4962-903e-99e572f41233}" locklevel="0" colspan="1" rowspan="1">
+                      <cell id="{62d3a005-f493-4a26-95bc-2ad9a5649cdc}" locklevel="0" colspan="1" rowspan="1">
                         <labels>
                           <label description="Validated Amount" languagecode="1033" />
                         </labels>
-                        <control id="book_newvalidatedamount" classid="{0D2C745A-E5A8-4C8F-BA63-C6D3BB604660}" datafieldname="book_newvalidatedamount" disabled="true" />
+                        <control id="book_validatedamount" classid="{C3EFE0C3-0EC6-42BE-8349-CBD9079DFD8E}" datafieldname="book_validatedamount" disabled="true" />
+                      </cell>
+                      <cell id="{a1776628-3996-45ca-8868-5e749596ce4a}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="Funded Amount (TDP)" languagecode="1033" />
+                        </labels>
+                        <control id="book_newfundedamounttdp" classid="{C3EFE0C3-0EC6-42BE-8349-CBD9079DFD8E}" datafieldname="book_newfundedamounttdp" disabled="true" />
                       </cell>
                     </row>
                     <row>
-                      <cell locklevel="0" id="{eb3a7eb7-3d46-4317-8617-ad99548116b0}">
+                      <cell locklevel="0" id="{54d0f8ea-ea31-42a3-b600-fa9129d5b8fc}">
                         <labels>
                           <label description="" languagecode="1033" />
                         </labels>
                       </cell>
-                      <cell locklevel="0" id="{fc039864-5a9a-4606-a29f-2464a3c9dded}">
+                      <cell id="{31b8cd13-5cbb-406b-93de-775ac82bada9}" locklevel="0" colspan="1" rowspan="1" visible="false">
                         <labels>
-                          <label description="" languagecode="1033" />
+                          <label description="Lock Funding" languagecode="1033" />
                         </labels>
+                        <control id="book_lockfunding" classid="{67FAC785-CD58-4F9F-ABB3-4B7DDC6ED5ED}" datafieldname="book_lockfunding" disabled="false" />
                       </cell>
-                      <cell id="{d557b193-a23c-4a48-945f-c0b7ca9469ab}" locklevel="0" colspan="1" rowspan="1">
+                      <cell id="{9110785a-b250-48ca-806f-cbdbd9bdf25a}" locklevel="0" colspan="1" rowspan="1">
                         <labels>
                           <label description="Unfunded Amount" languagecode="1033" />
                         </labels>
-                        <control id="book_newunfundedamount" classid="{0D2C745A-E5A8-4C8F-BA63-C6D3BB604660}" datafieldname="book_newunfundedamount" disabled="false" />
+                        <control id="book_unfundedamount" classid="{C3EFE0C3-0EC6-42BE-8349-CBD9079DFD8E}" datafieldname="book_unfundedamount" disabled="false" />
                       </cell>
                     </row>
                   </rows>
@@ -278,13 +274,6 @@
                     <label description="New Section" languagecode="1033" />
                   </labels>
                   <rows>
-                    <row>
-                      <cell id="{e2b1736f-6489-44e6-9f35-96348fcf6be6}" showlabel="false">
-                        <labels>
-                          <label description="" languagecode="1033" />
-                        </labels>
-                      </cell>
-                    </row>
                     <row>
                       <cell locklevel="0" id="{8bcc64bb-285f-4473-9323-d1b543ede33a}" rowspan="15" colspan="1">
                         <labels>
@@ -311,6 +300,49 @@
                     <row />
                     <row />
                     <row />
+                    <row />
+                    <row />
+                    <row />
+                  </rows>
+                </section>
+              </sections>
+            </column>
+          </columns>
+        </tab>
+        <tab name="tab_3" id="2f4537e6-83e9-450d-8cb5-b23596add146" IsUserDefined="0" locklevel="0" showlabel="true">
+          <labels>
+            <label description="Commitments" languagecode="1033" />
+          </labels>
+          <columns>
+            <column width="100%">
+              <sections>
+                <section name="tab_3_section_1" id="16823f1e-f1f4-4bc7-b2cb-10a46d767fbf" IsUserDefined="0" locklevel="0" showlabel="true" showbar="false" layout="varwidth" celllabelalignment="Left" celllabelposition="Left" columns="1" labelwidth="115">
+                  <labels>
+                    <label description="Commitment Items" languagecode="1033" />
+                  </labels>
+                  <rows>
+                    <row />
+                    <row>
+                      <cell locklevel="0" id="{3093f3c5-13dc-4940-9b33-f16aedc442d6}" rowspan="4" colspan="1" auto="false" showlabel="false">
+                        <labels>
+                          <label description="New SG control 1775666744611" languagecode="1033" />
+                        </labels>
+                        <control indicationOfSubgrid="true" id="Subgrid_new_1" classid="{E7A81278-8635-4D9E-8D4D-59480B391C5B}">
+                          <parameters>
+                            <RecordsPerPage>4</RecordsPerPage>
+                            <AutoExpand>Fixed</AutoExpand>
+                            <EnableQuickFind>false</EnableQuickFind>
+                            <EnableViewPicker>false</EnableViewPicker>
+                            <EnableChartPicker>true</EnableChartPicker>
+                            <ChartGridMode>All</ChartGridMode>
+                            <RelationshipName>book_commitmentitem_Prioritization_book_prioritization</RelationshipName>
+                            <TargetEntityType>book_commitmentitem</TargetEntityType>
+                            <ViewId>{60b01a59-9339-4b9b-9a9e-72a44274fa61}</ViewId>
+                            <ViewIds>{60b01a59-9339-4b9b-9a9e-72a44274fa61}</ViewIds>
+                          </parameters>
+                        </control>
+                      </cell>
+                    </row>
                     <row />
                     <row />
                     <row />
@@ -379,6 +411,49 @@
             </column>
           </columns>
         </tab>
+        <tab name="tab_4" id="43f842d9-aa4e-430d-954c-95a99f04f3f3" IsUserDefined="0" locklevel="0" showlabel="true">
+          <labels>
+            <label description="Funding Details" languagecode="1033" />
+          </labels>
+          <columns>
+            <column width="100%">
+              <sections>
+                <section name="tab_4_section_1" id="5e9edd27-0707-465e-b235-716b0c2ff348" IsUserDefined="0" locklevel="0" showlabel="true" showbar="false" layout="varwidth" celllabelalignment="Left" celllabelposition="Left" columns="1" labelwidth="115">
+                  <labels>
+                    <label description="Details" languagecode="1033" />
+                  </labels>
+                  <rows>
+                    <row />
+                    <row>
+                      <cell locklevel="0" id="{aa9e00e8-a5f8-4ead-9703-c40d6089c549}" rowspan="4" colspan="1" auto="false" showlabel="false">
+                        <labels>
+                          <label description="New SG control 1779060240371" languagecode="1033" />
+                        </labels>
+                        <control indicationOfSubgrid="true" id="Subgrid_new_2" classid="{E7A81278-8635-4D9E-8D4D-59480B391C5B}">
+                          <parameters>
+                            <RecordsPerPage>4</RecordsPerPage>
+                            <AutoExpand>Fixed</AutoExpand>
+                            <EnableQuickFind>false</EnableQuickFind>
+                            <EnableViewPicker>false</EnableViewPicker>
+                            <EnableChartPicker>true</EnableChartPicker>
+                            <ChartGridMode>All</ChartGridMode>
+                            <RelationshipName>book_itemizeddetails_Prioritization_book_prioritization</RelationshipName>
+                            <TargetEntityType>book_itemizeddetails</TargetEntityType>
+                            <ViewId>{8E89488D-E125-42B2-BD6D-E4034A21549C}</ViewId>
+                            <ViewIds>{8E89488D-E125-42B2-BD6D-E4034A21549C}</ViewIds>
+                          </parameters>
+                        </control>
+                      </cell>
+                    </row>
+                    <row />
+                    <row />
+                    <row />
+                  </rows>
+                </section>
+              </sections>
+            </column>
+          </columns>
+        </tab>
       </tabs>
       <header id="{703c9fea-29c4-4615-81c9-8a3f1bc67df7}" celllabelposition="Top" columns="111" labelwidth="115" celllabelalignment="Left">
         <rows>
@@ -409,6 +484,18 @@
                 <label description="Fund Center Priority" languagecode="1033" />
               </labels>
               <control id="header_book_statepriority" classid="{C6D124CA-7EDA-4A60-AEA9-7FB8D318B68F}" datafieldname="book_statepriority" disabled="false" />
+            </cell>
+            <cell id="{80425186-2c15-4a7f-a092-8deb44b3e1a3}" locklevel="0" colspan="1" rowspan="1">
+              <labels>
+                <label description="Owning Business Unit" languagecode="1033" />
+              </labels>
+              <control id="header_owningbusinessunit" classid="{270BD3DB-D9AF-4782-9025-509E298DEC0A}" datafieldname="owningbusinessunit" disabled="false" />
+            </cell>
+            <cell id="{2d33a313-2e44-4700-b098-0ab86e051209}" locklevel="0" colspan="1" rowspan="1">
+              <labels>
+                <label description="Status" languagecode="1033" />
+              </labels>
+              <control id="header_statecode" classid="{3EF39988-22BB-4F0B-BBBE-64B5A3748AEE}" datafieldname="statecode" disabled="false" />
             </cell>
           </row>
         </rows>

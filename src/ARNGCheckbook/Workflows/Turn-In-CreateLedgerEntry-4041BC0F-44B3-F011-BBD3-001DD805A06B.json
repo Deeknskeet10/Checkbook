@@ -128,31 +128,8 @@
           "actions": {
             "Update_Pri_or_Req": {
               "actions": {
-                "Get_Prioritization": {
-                  "runAfter": {},
-                  "metadata": {
-                    "operationMetadataId": "ec013aa2-c7f8-4dd4-90b1-fea3adae97c3"
-                  },
-                  "type": "OpenApiConnection",
-                  "inputs": {
-                    "host": {
-                      "connectionName": "shared_commondataserviceforapps",
-                      "operationId": "GetItem",
-                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
-                    },
-                    "parameters": {
-                      "entityName": "book_prioritizations",
-                      "recordId": "@item()?['_book_prioritization_value']"
-                    },
-                    "authentication": "@parameters('$authentication')"
-                  }
-                },
                 "Reduce_Prioritization": {
-                  "runAfter": {
-                    "Get_Prioritization": [
-                      "Succeeded"
-                    ]
-                  },
+                  "runAfter": {},
                   "metadata": {
                     "operationMetadataId": "35fa987f-b16a-41fe-943b-571bd55f31ef"
                   },
@@ -166,40 +143,45 @@
                     "parameters": {
                       "entityName": "book_prioritizations",
                       "recordId": "@outputs('Get_Prioritization')?['body/book_prioritizationid']",
-                      "item/book_fundedamounttdp": "@if(less(sub(outputs('Get_Prioritization')?['body/book_fundedamounttdp'],item()?['book_turninamount']),0), 0, sub(outputs('Get_Prioritization')?['body/book_fundedamounttdp'],item()?['book_turninamount']))"
+                      "item/book_fundedamounttdp": "@if(less(sub(outputs('Get_Prioritization')?['body/book_fundedamounttdp'],item()?['book_newturninamount']),0), 0, sub(outputs('Get_Prioritization')?['body/book_fundedamounttdp'],item()?['book_newturninamount']))"
+                    },
+                    "authentication": "@parameters('$authentication')"
+                  }
+                },
+                "Update_Req_Funding_2": {
+                  "runAfter": {
+                    "Reduce_Prioritization": [
+                      "Succeeded"
+                    ]
+                  },
+                  "metadata": {
+                    "operationMetadataId": "5dfaa9d2-bb9f-4ed1-af40-3c77e9947b82"
+                  },
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "host": {
+                      "connectionName": "shared_commondataserviceforapps",
+                      "operationId": "UpdateOnlyRecord",
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
+                    },
+                    "parameters": {
+                      "entityName": "book_requirementfundings",
+                      "recordId": "@outputs('Get_Req_Funding')?['body/book_requirementfundingid']",
+                      "item/book_newtdp": "@if(less(sub(outputs('Get_Req_Funding')?['body/book_tdp'], item()?['book_newturninamount']), 0), 0, sub(outputs('Get_Req_Funding')?['body/book_tdp'], item()?['book_newturninamount']))"
                     },
                     "authentication": "@parameters('$authentication')"
                   }
                 }
               },
-              "runAfter": {},
+              "runAfter": {
+                "Get_Req_Funding": [
+                  "Succeeded"
+                ]
+              },
               "else": {
                 "actions": {
-                  "Get_Req_Funding": {
-                    "runAfter": {},
-                    "metadata": {
-                      "operationMetadataId": "d9374254-6b1c-495a-ae9c-08e477a2ef21"
-                    },
-                    "type": "OpenApiConnection",
-                    "inputs": {
-                      "host": {
-                        "connectionName": "shared_commondataserviceforapps",
-                        "operationId": "GetItem",
-                        "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
-                      },
-                      "parameters": {
-                        "entityName": "book_requirementfundings",
-                        "recordId": "@item()?['_book_requirementfunding_value']"
-                      },
-                      "authentication": "@parameters('$authentication')"
-                    }
-                  },
                   "Update_Req_Funding": {
-                    "runAfter": {
-                      "Get_Req_Funding": [
-                        "Succeeded"
-                      ]
-                    },
+                    "runAfter": {},
                     "metadata": {
                       "operationMetadataId": "c5ec3357-be09-479e-8ad4-a86a519a5579"
                     },
@@ -213,7 +195,8 @@
                       "parameters": {
                         "entityName": "book_requirementfundings",
                         "recordId": "@outputs('Get_Req_Funding')?['body/book_requirementfundingid']",
-                        "item/book_tdp": "@if(less(sub(outputs('Get_Req_Funding')?['body/book_tdp'], item()?['book_turninamount']), 0), 0, sub(outputs('Get_Req_Funding')?['body/book_tdp'], item()?['book_turninamount']))"
+                        "item/book_tdp": "@if(less(sub(outputs('Get_Req_Funding')?['body/book_tdp'], item()?['book_newturninamount']), 0), 0, sub(outputs('Get_Req_Funding')?['body/book_tdp'], item()?['book_newturninamount']))",
+                        "item/book_newtdp": "@if(less(sub(outputs('Get_Req_Funding')?['body/book_tdp'], item()?['book_newturninamount']), 0), 0, sub(outputs('Get_Req_Funding')?['body/book_tdp'], item()?['book_newturninamount']))"
                       },
                       "authentication": "@parameters('$authentication')"
                     },
@@ -237,6 +220,48 @@
                 "operationMetadataId": "cb5797f5-560f-4ff4-97b9-a0a1010cb549"
               },
               "type": "If"
+            },
+            "Get_Prioritization": {
+              "runAfter": {},
+              "metadata": {
+                "operationMetadataId": "ec013aa2-c7f8-4dd4-90b1-fea3adae97c3"
+              },
+              "type": "OpenApiConnection",
+              "inputs": {
+                "host": {
+                  "connectionName": "shared_commondataserviceforapps",
+                  "operationId": "GetItem",
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
+                },
+                "parameters": {
+                  "entityName": "book_prioritizations",
+                  "recordId": "@item()?['_book_prioritization_value']"
+                },
+                "authentication": "@parameters('$authentication')"
+              }
+            },
+            "Get_Req_Funding": {
+              "runAfter": {
+                "Get_Prioritization": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "d9374254-6b1c-495a-ae9c-08e477a2ef21"
+              },
+              "type": "OpenApiConnection",
+              "inputs": {
+                "host": {
+                  "connectionName": "shared_commondataserviceforapps",
+                  "operationId": "GetItem",
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
+                },
+                "parameters": {
+                  "entityName": "book_requirementfundings",
+                  "recordId": "@item()?['_book_requirementfunding_value']"
+                },
+                "authentication": "@parameters('$authentication')"
+              }
             }
           },
           "runAfter": {
@@ -249,66 +274,253 @@
           },
           "type": "Foreach"
         },
-        "Create_Debit_Distribution": {
+        "Distributions": {
+          "actions": {
+            "Create_Debit_Distribution": {
+              "runAfter": {},
+              "metadata": {
+                "operationMetadataId": "fb2a2760-1932-4260-ba84-a9e853729905"
+              },
+              "type": "OpenApiConnection",
+              "inputs": {
+                "host": {
+                  "connectionName": "shared_commondataserviceforapps",
+                  "operationId": "CreateRecord",
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
+                },
+                "parameters": {
+                  "entityName": "book_distributionses",
+                  "item/book_Fund@odata.bind": "book_funds(@{triggerOutputs()?['body/_book_fund_value']})",
+                  "item/book_FundCenter@odata.bind": "book_fundcenters(@{outputs('Grab_FC')?['body/_book_parentfundcenter_value']})",
+                  "item/book_newPGSAG@odata.bind": "book_pgs(@{triggerOutputs()?['body/_book_pg_value']})",
+                  "item/book_amount": "@triggerOutputs()?['body/book_identifiedturninamount']",
+                  "item/book_disbursementdirection": 1,
+                  "item/book_manualentry": false,
+                  "item/owningbusinessunit@odata.bind": "businessunits(@{outputs('Grab_FC')?['body/_owningbusinessunit_value']})",
+                  "item/book_remarks": "Turn-In"
+                },
+                "authentication": "@parameters('$authentication')"
+              }
+            },
+            "Create_Credit_Distribution": {
+              "runAfter": {
+                "Create_Debit_Distribution": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "8a3fa835-6c4c-46df-b74a-4b896f9ba66a"
+              },
+              "type": "OpenApiConnection",
+              "inputs": {
+                "host": {
+                  "connectionName": "shared_commondataserviceforapps",
+                  "operationId": "CreateRecord",
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
+                },
+                "parameters": {
+                  "entityName": "book_distributionses",
+                  "item/book_Fund@odata.bind": "book_funds(@{triggerOutputs()?['body/_book_fund_value']})",
+                  "item/book_FundCenter@odata.bind": "book_fundcenters(@{first(outputs('Grab_A18_FC')?['body/value'])?['book_fundcenterid']})",
+                  "item/book_newPGSAG@odata.bind": "book_pgs(@{triggerOutputs()?['body/_book_pg_value']})",
+                  "item/book_amount": "@triggerOutputs()?['body/book_identifiedturninamount']",
+                  "item/book_DebitedDistribution@odata.bind": "book_distributionses(@{outputs('Create_Debit_Distribution')?['body/book_distributionsid']})",
+                  "item/book_disbursementdirection": 0,
+                  "item/book_manualentry": false,
+                  "item/owningbusinessunit@odata.bind": "businessunits(@{first(outputs('Grab_A18_FC')?['body/value'])?['_owningbusinessunit_value']})",
+                  "item/book_remarks": "Turn-In"
+                },
+                "authentication": "@parameters('$authentication')"
+              }
+            }
+          },
+          "runAfter": {
+            "Create_Debit_Ledgers": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "63aac379-bcbd-4111-834f-b72c10b964e0"
+          },
+          "type": "Scope"
+        },
+        "Get_LOA_and_Create_Ledger": {
+          "actions": {
+            "Grab_RISK_MDEP": {
+              "runAfter": {},
+              "metadata": {
+                "operationMetadataId": "1faae917-bfbb-47a8-b8a9-94e5748199e2"
+              },
+              "type": "OpenApiConnection",
+              "inputs": {
+                "host": {
+                  "connectionName": "shared_commondataserviceforapps",
+                  "operationId": "ListRecords",
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
+                },
+                "parameters": {
+                  "entityName": "book_mdeps",
+                  "$filter": "book_name eq 'RISK'",
+                  "$top": 1
+                },
+                "authentication": "@parameters('$authentication')"
+              }
+            },
+            "Grab_LOA": {
+              "runAfter": {
+                "Grab_RISK_MDEP": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "da25924c-e2fe-4897-ae0b-35590ccf9c61"
+              },
+              "type": "OpenApiConnection",
+              "inputs": {
+                "host": {
+                  "connectionName": "shared_commondataserviceforapps",
+                  "operationId": "ListRecords",
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
+                },
+                "parameters": {
+                  "entityName": "book_fundinglines",
+                  "$filter": "_book_pg_value eq @{triggerOutputs()?['body/_book_pg_value']} and _book_fund_value eq @{triggerOutputs()?['body/_book_fund_value']} and _book_mdep_value eq @{first(outputs('Grab_RISK_MDEP')?['body/value'])?['book_mdepid']}",
+                  "$top": 1
+                },
+                "authentication": "@parameters('$authentication')"
+              }
+            },
+            "Get_Turn-in_Amount": {
+              "runAfter": {
+                "Grab_LOA": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "4435a6ad-0b13-4e63-9a48-3950b20bd7c2"
+              },
+              "type": "OpenApiConnection",
+              "inputs": {
+                "host": {
+                  "connectionName": "shared_commondataserviceforapps",
+                  "operationId": "ListRecords",
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
+                },
+                "parameters": {
+                  "entityName": "book_turninitemses",
+                  "fetchXml": "<fetch aggregate=\"true\">\n    <entity name=\"book_turninitems\">\n        <attribute name=\"book_newturninamount\" alias=\"amount\" aggregate=\"sum\"/>\n        <link-entity name=\"book_turnin\" from=\"book_turninid\" to=\"book_turnin\" link-type=\"inner\" alias=\"turnins\">\n            <filter type=\"and\">\n                <condition attribute=\"statecode\" operator=\"eq\" value=\"0\"/>\n                <condition attribute=\"book_turnin\" operator=\"eq\" value=\"@{triggerOutputs()?['body/book_turninid']}\"/>\n            </filter>\n        </link-entity>\n    </entity>\n</fetch>"
+                },
+                "authentication": "@parameters('$authentication')"
+              },
+              "description": "adding this step as the turn-in amount is a rollup field and may not have the latest value"
+            },
+            "Create_Ledger": {
+              "runAfter": {
+                "Get_Turn-in_Amount": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "e4fbf53a-85b1-486e-913c-f764433d075c"
+              },
+              "type": "OpenApiConnection",
+              "inputs": {
+                "host": {
+                  "connectionName": "shared_commondataserviceforapps",
+                  "operationId": "CreateRecord",
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
+                },
+                "parameters": {
+                  "entityName": "book_ledgers",
+                  "item/book_newamount": "@first(outputs('Get_Turn-in_Amount')?['body/value'])?['amount']",
+                  "item/book_ledgerdirection": 0,
+                  "item/book_ledgertype": 1,
+                  "item/book_LineofAccounting@odata.bind": "book_fundinglines(@{first(outputs('Grab_LOA')?['body/value'])?['book_fundinglineid']})",
+                  "item/owningbusinessunit@odata.bind": "businessunits(@{triggerOutputs()?['body/_owningbusinessunit_value']})",
+                  "item/book_TurnIn@odata.bind": "book_turnins(@{triggerOutputs()?['body/book_turninid']})"
+                },
+                "authentication": "@parameters('$authentication')"
+              }
+            }
+          },
+          "runAfter": {
+            "Distributions": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "06f10d7a-dec3-447b-aafe-6536a982a74d"
+          },
+          "type": "Scope"
+        },
+        "Create_Debit_Ledgers": {
+          "actions": {
+            "Groupby_Turnin_Items_by_LOA": {
+              "runAfter": {},
+              "metadata": {
+                "operationMetadataId": "4cccd06e-6ae0-484b-9c09-1647d7924fd1"
+              },
+              "type": "OpenApiConnection",
+              "inputs": {
+                "host": {
+                  "connectionName": "shared_commondataserviceforapps",
+                  "operationId": "ListRecords",
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
+                },
+                "parameters": {
+                  "entityName": "book_turninitemses",
+                  "fetchXml": "<fetch aggregate=\"true\">\n    <entity name=\"book_turninitems\">\n        <attribute name=\"book_newturninamount\" alias=\"amount\" aggregate=\"sum\"/>\n        <filter type=\"and\">\n            <condition attribute=\"statecode\" operator=\"eq\" value=\"0\"/>\n            <condition attribute=\"book_turnin\" operator=\"eq\" value=\"@{triggerOutputs()?['body/book_turninid']}\"/>\n        </filter>\n        <link-entity name=\"book_requirementfunding\" from=\"book_requirementfundingid\" to=\"book_requirementfunding\" link-type=\"inner\" alias=\"rf\">\n            <attribute name=\"book_lineofaccounting\" alias=\"loa\" groupby=\"true\"/>\n        </link-entity>\n    </entity>\n</fetch>"
+                },
+                "authentication": "@parameters('$authentication')"
+              }
+            },
+            "Loop_through_groupedby_Turnins": {
+              "foreach": "@outputs('Groupby_Turnin_Items_by_LOA')?['body/value']",
+              "actions": {
+                "Create_LOA_Debit_Ledgers": {
+                  "runAfter": {},
+                  "metadata": {
+                    "operationMetadataId": "8fd501fd-2751-45b1-ac9b-e3293f44bbdc"
+                  },
+                  "type": "OpenApiConnection",
+                  "inputs": {
+                    "host": {
+                      "connectionName": "shared_commondataserviceforapps",
+                      "operationId": "CreateRecord",
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
+                    },
+                    "parameters": {
+                      "entityName": "book_ledgers",
+                      "item/book_newamount": "@items('Loop_through_groupedby_Turnins')?['amount']",
+                      "item/book_ledgerdirection": 1,
+                      "item/book_ledgertype": 1,
+                      "item/book_LineofAccounting@odata.bind": "book_fundinglines(@{items('Loop_through_groupedby_Turnins')?['loa']})",
+                      "item/book_TurnIn@odata.bind": "book_turnins(@{items('Loop_through_groupedby_Turnins')?['_book_turnin_value']})"
+                    },
+                    "authentication": "@parameters('$authentication')"
+                  }
+                }
+              },
+              "runAfter": {
+                "Groupby_Turnin_Items_by_LOA": [
+                  "Succeeded"
+                ]
+              },
+              "metadata": {
+                "operationMetadataId": "788724e0-ce21-436f-8f00-4b8dc809c7a7"
+              },
+              "type": "Foreach"
+            }
+          },
           "runAfter": {
             "Loop_through_Turn-ins": [
               "Succeeded"
             ]
           },
           "metadata": {
-            "operationMetadataId": "fb2a2760-1932-4260-ba84-a9e853729905"
+            "operationMetadataId": "51bb8082-a918-4a0b-81e2-1cca66e75c2a"
           },
-          "type": "OpenApiConnection",
-          "inputs": {
-            "host": {
-              "connectionName": "shared_commondataserviceforapps",
-              "operationId": "CreateRecord",
-              "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
-            },
-            "parameters": {
-              "entityName": "book_distributionses",
-              "item/book_Fund@odata.bind": "book_funds(@{triggerOutputs()?['body/_book_fund_value']})",
-              "item/book_FundCenter@odata.bind": "book_fundcenters(@{outputs('Grab_FC')?['body/_book_parentfundcenter_value']})",
-              "item/book_newPGSAG@odata.bind": "book_pgs(@{triggerOutputs()?['body/_book_pg_value']})",
-              "item/book_amount": "@triggerOutputs()?['body/book_identifiedturninamount']",
-              "item/book_disbursementdirection": 1,
-              "item/book_manualentry": false,
-              "item/owningbusinessunit@odata.bind": "businessunits(@{outputs('Grab_FC')?['body/_owningbusinessunit_value']})",
-              "item/book_remarks": "Turn-In"
-            },
-            "authentication": "@parameters('$authentication')"
-          }
-        },
-        "Create_Credit_Distribution": {
-          "runAfter": {
-            "Create_Debit_Distribution": [
-              "Succeeded"
-            ]
-          },
-          "metadata": {
-            "operationMetadataId": "8a3fa835-6c4c-46df-b74a-4b896f9ba66a"
-          },
-          "type": "OpenApiConnection",
-          "inputs": {
-            "host": {
-              "connectionName": "shared_commondataserviceforapps",
-              "operationId": "CreateRecord",
-              "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
-            },
-            "parameters": {
-              "entityName": "book_distributionses",
-              "item/book_Fund@odata.bind": "book_funds(@{triggerOutputs()?['body/_book_fund_value']})",
-              "item/book_FundCenter@odata.bind": "book_fundcenters(@{first(outputs('Grab_A18_FC')?['body/value'])?['book_fundcenterid']})",
-              "item/book_newPGSAG@odata.bind": "book_pgs(@{triggerOutputs()?['body/_book_pg_value']})",
-              "item/book_amount": "@triggerOutputs()?['body/book_identifiedturninamount']",
-              "item/book_DebitedDistribution@odata.bind": "book_distributions(@{outputs('Create_Debit_Distribution')?['body/book_distributionsid']})",
-              "item/book_disbursementdirection": 0,
-              "item/book_manualentry": false,
-              "item/owningbusinessunit@odata.bind": "businessunits(@{first(outputs('Grab_A18_FC')?['body/value'])?['_owningbusinessunit_value']})",
-              "item/book_remarks": "Turn-In"
-            },
-            "authentication": "@parameters('$authentication')"
-          }
+          "type": "Scope"
         }
       }
     },

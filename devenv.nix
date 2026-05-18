@@ -18,6 +18,7 @@
     libxml2       # xmllint — validate/format XML files in solutions
     zip
     unzip
+    curl          # For API calls
 
     # Useful for reviewing/diffing solution XML
     delta         # Better git diffs for XML-heavy repos
@@ -25,6 +26,10 @@
 
     # Plugin development
     mono          # Provides 'sn' tool for generating strong name key files
+    powershell    # For plugin registration scripts
+
+    # Azure / Dataverse authentication
+    azure-cli     # az login for Dataverse API authentication
   ];
 
   # ── .NET ────────────────────────────────────────────────────
@@ -87,10 +92,13 @@
     echo "  dotnet → $(dotnet --version)"
     echo "  node   → $(node --version)"
     echo ""
-    echo "  pac auth create           authenticate to an environment"
-    echo "  pp-export <SolutionName>   export + unpack a solution"
-    echo "  pp-pack <SolutionName>     pack + ready for import"
-    echo "  pp-genkey <Name.snk>       generate strong name key for plugins"
+    echo "  pac auth create                authenticate to an environment"
+    echo "  pp-export <SolutionName>       export + unpack a solution"
+    echo "  pp-unpack <ZipFile>            unpack an existing solution zip"
+    echo "  pp-pack <SolutionName>         pack + ready for import"
+    echo "  pp-genkey <Name.snk>           generate strong name key for plugins"
+    echo "  pp-plugin-register <EnvUrl>    register plugins (first-time)"
+    echo "  pp-plugin-push <AssemblyId>    update existing plugin assembly"
     echo ""
   '';
 
@@ -120,6 +128,26 @@
         --clobber
 
       echo "✅ Done → src/$SOLUTION"
+    '';
+
+    # Unpack an existing solution zip file (without exporting)
+    pp-unpack.exec = ''
+      set -euo pipefail
+      ZIPFILE=''${1:?Usage: pp-unpack <SolutionZipFile> [OutputFolder]}
+
+      # Derive solution name from zip filename if output folder not provided
+      BASENAME=$(basename "$ZIPFILE" .zip)
+      OUTFOLDER=''${2:-src/$BASENAME}
+
+      echo "📂 Unpacking $ZIPFILE → $OUTFOLDER..."
+      mkdir -p "$OUTFOLDER"
+      dotnet tool run pac -- solution unpack \
+        --zipfile "$ZIPFILE" \
+        --folder "$OUTFOLDER" \
+        --allowDelete true \
+        --clobber
+
+      echo "✅ Done → $OUTFOLDER"
     '';
 
     # Pack unpacked source back into a zip for import
@@ -188,6 +216,43 @@
     pp-diff.exec = ''
       SOLUTION=''${1:?Usage: pp-diff <SolutionName>}
       git diff HEAD -- "src/$SOLUTION" | delta
+    '';
+
+    # Register plugins to a Dataverse environment
+    pp-plugin-register.exec = ''
+      set -euo pipefail
+      ENV_URL=''${1:?Usage: pp-plugin-register <EnvironmentUrl> [SolutionName]}
+      SOLUTION=''${2:-ARNGCheckbook}
+      PLUGIN_DIR="plugins/ARNGCheckbook.Plugins"
+
+      if [ ! -f "$PLUGIN_DIR/Register-Plugins.ps1" ]; then
+        echo "❌ Register-Plugins.ps1 not found in $PLUGIN_DIR"
+        exit 1
+      fi
+
+      if [ ! -f "$PLUGIN_DIR/bin/Debug/net462/ARNGCheckbook.Plugins.dll" ]; then
+        echo "📦 Building plugin assembly..."
+        dotnet build "$PLUGIN_DIR"
+      fi
+
+      echo "🔌 Registering plugins to $ENV_URL..."
+      cd "$PLUGIN_DIR"
+      pwsh -File Register-Plugins.ps1 -EnvironmentUrl "$ENV_URL" -SolutionName "$SOLUTION"
+    '';
+
+    # Update/push existing plugin assembly (requires pluginId)
+    pp-plugin-push.exec = ''
+      set -euo pipefail
+      PLUGIN_ID=''${1:?Usage: pp-plugin-push <PluginAssemblyId>}
+      PLUGIN_DIR="plugins/ARNGCheckbook.Plugins"
+
+      echo "📦 Building plugin assembly..."
+      dotnet build "$PLUGIN_DIR"
+
+      echo "🚀 Pushing plugin update..."
+      dotnet tool run pac -- plugin push \
+        --pluginId "$PLUGIN_ID" \
+        --pluginFile "$PLUGIN_DIR/bin/Debug/net462/ARNGCheckbook.Plugins.dll"
     '';
   };
 

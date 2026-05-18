@@ -48,7 +48,7 @@
                       </cell>
                       <cell id="{a14c3887-9fee-4d26-889d-85a98a6c75c3}" locklevel="0" colspan="1" rowspan="1">
                         <labels>
-                          <label description="Fund Center" languagecode="1033" />
+                          <label description="Deprecated - Fund Center" languagecode="1033" />
                         </labels>
                         <control id="book_fundcenter" classid="{270BD3DB-D9AF-4782-9025-509E298DEC0A}" datafieldname="book_fundcenter" disabled="false" />
                       </cell>
@@ -85,11 +85,17 @@
                           <label description="" languagecode="1033" />
                         </labels>
                       </cell>
-                      <cell id="{5b8df754-a246-4f5d-89c1-cbc2c4ff65ff}" locklevel="0" colspan="1" rowspan="3" labelid="{a1a088c0-9274-4a51-be19-d6b24f82439f}">
+                      <cell id="{26e0f5de-0fee-4f52-bd93-96a68181613a}" locklevel="0" colspan="1" rowspan="1">
                         <labels>
-                          <label description="Description" languagecode="1033" />
+                          <label description="MCP LOE" languagecode="1033" />
                         </labels>
-                        <control id="book_description" classid="{E0DECE4B-6FC8-4A8F-A065-082708572369}" datafieldname="book_description" disabled="false" />
+                        <control id="book_mcploe" classid="{270BD3DB-D9AF-4782-9025-509E298DEC0A}" datafieldname="book_mcploe" disabled="false">
+                          <parameters>
+                            <DefaultViewId>{B0DAC6B5-8E28-F111-8341-001DD8204385}</DefaultViewId>
+                            <AvailableViewIds>{B6E4D48C-2D39-4F60-896D-C28D089A0468},{3A3A4705-D994-4A87-92CA-8414990C4757},{9029B816-C5F4-4AC1-A744-5CA4DC41B772},{B0DAC6B5-8E28-F111-8341-001DD8204385}</AvailableViewIds>
+                            <DisableViewPicker>true</DisableViewPicker>
+                          </parameters>
+                        </control>
                       </cell>
                       <cell id="{8325ce5e-39d6-4046-ba6b-23f5fe44bd54}" locklevel="0" colspan="1" rowspan="3" labelid="{38e478dc-9f8d-4cc2-94c0-30df085db590}">
                         <labels>
@@ -104,6 +110,12 @@
                           <label description="POM Status" languagecode="1033" />
                         </labels>
                         <control id="book_pomstatus" classid="{67FAC785-CD58-4F9F-ABB3-4B7DDC6ED5ED}" datafieldname="book_pomstatus" disabled="false" />
+                      </cell>
+                      <cell id="{5b8df754-a246-4f5d-89c1-cbc2c4ff65ff}" locklevel="0" colspan="1" rowspan="3" labelid="{a1a088c0-9274-4a51-be19-d6b24f82439f}">
+                        <labels>
+                          <label description="Description" languagecode="1033" />
+                        </labels>
+                        <control id="book_description" classid="{E0DECE4B-6FC8-4A8F-A065-082708572369}" datafieldname="book_description" disabled="false" />
                       </cell>
                     </row>
                     <row>
@@ -121,12 +133,6 @@
                         </labels>
                         <control id="book_approvalstatus" classid="{3EF39988-22BB-4F0B-BBBE-64B5A3748AEE}" datafieldname="book_approvalstatus" disabled="false" />
                       </cell>
-                      <cell id="{3e2140ad-dc37-456a-9fa0-07b118fdf77f}" locklevel="0" colspan="1" rowspan="1" visible="false" labelid="{0ebdf06d-45a2-42f4-96db-22cb59784a82}">
-                        <labels>
-                          <label description="Requirement Approved" languagecode="1033" />
-                        </labels>
-                        <control id="book_requirementapproved" classid="{67FAC785-CD58-4F9F-ABB3-4B7DDC6ED5ED}" datafieldname="book_requirementapproved" disabled="false" />
-                      </cell>
                       <cell id="{ede1d541-b9e7-b02d-5952-6ab782c3c5a6}" showlabel="false">
                         <labels>
                           <label description="" languagecode="1033" />
@@ -139,13 +145,31 @@
                           <label description="" languagecode="1033" />
                         </labels>
                       </cell>
+                      <cell id="{3e2140ad-dc37-456a-9fa0-07b118fdf77f}" locklevel="0" colspan="1" rowspan="1" visible="false" labelid="{0ebdf06d-45a2-42f4-96db-22cb59784a82}">
+                        <labels>
+                          <label description="Requirement Approved" languagecode="1033" />
+                        </labels>
+                        <control id="book_requirementapproved" classid="{67FAC785-CD58-4F9F-ABB3-4B7DDC6ED5ED}" datafieldname="book_requirementapproved" disabled="false" />
+                      </cell>
+                      <cell locklevel="0" id="{8383c4a1-a9cf-4d48-bffb-1a466ed86bc5}">
+                        <labels>
+                          <label description="" languagecode="1033" />
+                        </labels>
+                      </cell>
+                    </row>
+                    <row>
+                      <cell locklevel="0" id="{21c40fb7-5364-4144-b93c-14621255da0f}">
+                        <labels>
+                          <label description="" languagecode="1033" />
+                        </labels>
+                      </cell>
                       <cell id="{1ea3eb23-134f-4cef-ad1f-6063b7bf92c0}" locklevel="0" colspan="1" rowspan="1" visible="false" labelid="{6e35cd57-f552-4a1e-a9cf-1e8f640c68e6}">
                         <labels>
                           <label description="RI Validated" languagecode="1033" />
                         </labels>
                         <control id="book_rivalidated" classid="{67FAC785-CD58-4F9F-ABB3-4B7DDC6ED5ED}" datafieldname="book_rivalidated" disabled="false" />
                       </cell>
-                      <cell locklevel="0" id="{8383c4a1-a9cf-4d48-bffb-1a466ed86bc5}">
+                      <cell locklevel="0" id="{97cbc070-defb-4ceb-b399-1d24f9c73a3c}">
                         <labels>
                           <label description="" languagecode="1033" />
                         </labels>
@@ -379,6 +403,38 @@
           <columns>
             <column width="100%">
               <sections>
+                <section name="reqFundingTab_section_3" id="18dea80b-6828-434b-834b-ed658c15c6db" IsUserDefined="0" locklevel="0" showlabel="true" showbar="false" layout="varwidth" celllabelalignment="Left" celllabelposition="Left" columns="1" labelwidth="115">
+                  <labels>
+                    <label description="Funding Details" languagecode="1033" />
+                  </labels>
+                  <rows>
+                    <row />
+                    <row>
+                      <cell locklevel="0" id="{ec5e857e-8e77-40f3-8330-f891fdb1030e}" rowspan="4" colspan="1" auto="false" showlabel="false">
+                        <labels>
+                          <label description="New SG control 1779060012064" languagecode="1033" />
+                        </labels>
+                        <control indicationOfSubgrid="true" id="Subgrid_new_5" classid="{E7A81278-8635-4D9E-8D4D-59480B391C5B}">
+                          <parameters>
+                            <RecordsPerPage>4</RecordsPerPage>
+                            <AutoExpand>Fixed</AutoExpand>
+                            <EnableQuickFind>false</EnableQuickFind>
+                            <EnableViewPicker>false</EnableViewPicker>
+                            <EnableChartPicker>true</EnableChartPicker>
+                            <ChartGridMode>All</ChartGridMode>
+                            <RelationshipName>book_requirementdetails_Requirement_book_requirements</RelationshipName>
+                            <TargetEntityType>book_requirementdetails</TargetEntityType>
+                            <ViewId>{DD8AD28A-DE14-4843-8364-00BB6DB81556}</ViewId>
+                            <ViewIds>{DD8AD28A-DE14-4843-8364-00BB6DB81556}</ViewIds>
+                          </parameters>
+                        </control>
+                      </cell>
+                    </row>
+                    <row />
+                    <row />
+                    <row />
+                  </rows>
+                </section>
                 <section name="tab_4_section_1" id="8d0f652e-9028-482c-8982-351d02fc01a1" IsUserDefined="0" locklevel="0" showlabel="true" showbar="false" layout="varwidth" celllabelalignment="Left" celllabelposition="Left" columns="1" labelwidth="115">
                   <labels>
                     <label description="Requirement Funding" languagecode="1033" />
