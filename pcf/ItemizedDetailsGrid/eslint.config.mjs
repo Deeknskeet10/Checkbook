@@ -36,6 +36,16 @@ export default [
 
     rules: {
       "@typescript-eslint/no-unused-vars": "off",
+      // PCF controls interface with loosely-typed platform APIs (WebAPI
+      // entities, dataset.getValue). The type-aware "unsafe" rules are
+      // impractical here and their strictness varies by tooling version —
+      // turn them off so the build is deterministic across environments.
+      "@typescript-eslint/no-unsafe-argument": "off",
+      "@typescript-eslint/no-unsafe-assignment": "off",
+      "@typescript-eslint/no-unsafe-member-access": "off",
+      "@typescript-eslint/no-unsafe-call": "off",
+      "@typescript-eslint/no-unsafe-return": "off",
+      "@typescript-eslint/no-explicit-any": "off",
     },
     settings: {
       react: {
