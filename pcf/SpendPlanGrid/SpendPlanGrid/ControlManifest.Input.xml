@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest>
+  <control namespace="ARNGCheckbook" constructor="SpendPlanGrid" version="0.1.0" display-name-key="SpendPlanGrid" description-key="Spend Plan as a monthly grid: rows are plans, columns are months Oct-Sep (fiscal year). Cells show planned dollars; row sparkline at the right." control-type="virtual">
+    <data-set name="spendplans" display-name-key="Spend Plans">
+      <property-set name="name" display-name-key="Name" of-type="SingleLine.Text" usage="bound" required="true" />
+      <property-set name="lineOfAccounting" display-name-key="Line of Accounting" of-type="Lookup.Simple" usage="bound" required="false" />
+      <property-set name="requirement" display-name-key="Requirement" of-type="Lookup.Simple" usage="bound" required="false" />
+      <property-set name="total" display-name-key="Total" of-type="FP" usage="bound" required="false" />
+      <property-set name="october" display-name-key="October" of-type="FP" usage="bound" required="false" />
+      <property-set name="november" display-name-key="November" of-type="FP" usage="bound" required="false" />
+      <property-set name="december" display-name-key="December" of-type="FP" usage="bound" required="false" />
+      <property-set name="january" display-name-key="January" of-type="FP" usage="bound" required="false" />
+      <property-set name="february" display-name-key="February" of-type="FP" usage="bound" required="false" />
+      <property-set name="march" display-name-key="March" of-type="FP" usage="bound" required="false" />
+      <property-set name="april" display-name-key="April" of-type="FP" usage="bound" required="false" />
+      <property-set name="may" display-name-key="May" of-type="FP" usage="bound" required="false" />
+      <property-set name="june" display-name-key="June" of-type="FP" usage="bound" required="false" />
+      <property-set name="july" display-name-key="July" of-type="FP" usage="bound" required="false" />
+      <property-set name="august" display-name-key="August" of-type="FP" usage="bound" required="false" />
+      <property-set name="september" display-name-key="September" of-type="FP" usage="bound" required="false" />
+    </data-set>
+    <resources>
+      <code path="index.ts" order="1" />
+      <css path="css/SpendPlanGrid.css" order="1" />
+      <platform-library name="React" version="16.14.0" />
+      <platform-library name="Fluent" version="9.46.2" />
+    </resources>
+  </control>
+</manifest>
