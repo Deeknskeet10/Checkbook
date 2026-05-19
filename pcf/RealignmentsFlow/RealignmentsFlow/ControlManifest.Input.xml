@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest>
+  <control namespace="ARNGCheckbook" constructor="RealignmentsFlow" version="0.2.0" display-name-key="RealignmentsFlow" description-key="Visualizes a Realignment as a Debit -> Credit flow with the dollar amount in the middle. Bind to book_amount on the Realignment form." control-type="virtual">
+    <property name="amount" display-name-key="Amount" description-key="Realignment amount; the bound field. The PCF reads the rest of the record via Web API." of-type="FP" usage="bound" required="true" />
+    <resources>
+      <code path="index.ts" order="1" />
+      <css path="css/RealignmentsFlow.css" order="1" />
+      <platform-library name="React" version="16.14.0" />
+      <platform-library name="Fluent" version="9.46.2" />
+    </resources>
+    <feature-usage>
+      <uses-feature name="WebAPI" required="true" />
+    </feature-usage>
+  </control>
+</manifest>

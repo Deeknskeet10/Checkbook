@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest>
+  <control namespace="ARNGCheckbook" constructor="LedgerBalance" version="0.2.0" display-name-key="LedgerBalance" description-key="Bank-statement style view of book_ledger transactions with running balance, type badges, and a balance sparkline. When hosted on the Line of Accounting (book_fundingline) form, seeds the running balance with the LOA starting TDP."  control-type="virtual">
+    <data-set name="ledger" display-name-key="Ledger Entries">
+      <property-set name="name" display-name-key="Description" of-type="SingleLine.Text" usage="bound" required="false" />
+      <property-set name="amount" display-name-key="Amount" of-type="FP" usage="bound" required="true" />
+      <property-set name="direction" display-name-key="Direction" of-type="OptionSet" usage="bound" required="false" />
+      <property-set name="ledgerType" display-name-key="Type" of-type="OptionSet" usage="bound" required="false" />
+      <property-set name="lineOfAccounting" display-name-key="LOA" of-type="Lookup.Simple" usage="bound" required="false" />
+      <property-set name="fiscalYear" display-name-key="FY" of-type="OptionSet" usage="bound" required="false" />
+      <property-set name="createdOn" display-name-key="Created On" of-type="DateAndTime.DateAndTime" usage="bound" required="false" />
+    </data-set>
+    <resources>
+      <code path="index.ts" order="1" />
+      <css path="css/LedgerBalance.css" order="1" />
+      <platform-library name="React" version="16.14.0" />
+      <platform-library name="Fluent" version="9.46.2" />
+    </resources>
+    <feature-usage>
+      <uses-feature name="WebAPI" required="true" />
+    </feature-usage>
+  </control>
+</manifest>
