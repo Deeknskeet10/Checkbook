@@ -13,7 +13,8 @@ containing the PCF controls:
 
 Import it into the Dataverse environment, then bind each control to its subgrid
 in the form designer. The plugins are delivered separately via the Plugin
-Registration Tool — see `plugins/ARNGCheckbook.Plugins/PLUGIN-REGISTRATION.md`.
+Registration Tool — build `Checkbook_Plugins.dll` from `Plugins/` and register
+it with the Plugin Registration Tool.
 
 Rebuilt from `solution/ARNGCheckbookExtensions/` with `dotnet build -c Release`;
 refresh this file whenever the controls change.

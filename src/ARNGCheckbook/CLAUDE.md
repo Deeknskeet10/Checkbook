@@ -167,48 +167,39 @@ State Input (0) → FC Review (1) → State Review (2) → State Approved (3) �
 
 ## Plugins (Implemented)
 
-The C# plugin project lives **outside this solution folder** at
-`plugins/ARNGCheckbook.Plugins/` (targets .NET Framework 4.6.2). Earlier
-versions of this doc framed plugins as future "opportunities" — they now exist.
-The solution's registration metadata is under `PluginAssemblies/` and
-`SdkMessageProcessingSteps/`; `plugins/ARNGCheckbook.Plugins/PluginRegistration.json`
-is the source-of-truth step manifest.
+The C# plugin project lives **outside this solution folder** at `Plugins/` —
+the `Checkbook_Plugins` project (namespace `Checkbook.Plugins`, .NET Framework
+4.6.2). The solution's registration metadata is under `PluginAssemblies/` and
+`SdkMessageProcessingSteps/`. See the repo-root `CLAUDE.md` for the full
+project layout and build instructions.
 
 ```
-plugins/ARNGCheckbook.Plugins/
-├── PluginBase.cs                       # Shared IPlugin base class
-├── Validation/
-│   ├── RequirementFundingTDPValidator.cs   # PreOp sync, book_requirementfunding
-│   ├── PrioritizationValidator.cs          # PreOp sync, book_prioritization
-│   ├── SpendPlanValidator.cs
-│   ├── DistributionValidator.cs
-│   └── ValidationMessages.cs
-├── BusinessLogic/
-│   ├── LedgerEntryCreator.cs
-│   ├── NameBuilder.cs
-│   └── RecordInitializer.cs
-├── Realignments/
-│   └── SetSameFundSagFlagPlugin.cs
-├── LOATDPRecalculator.cs
-├── Helpers/TDPCalculationHelper.cs
-└── Constants/EntityConstants.cs
+Plugins/
+├── Base/PluginBase.cs                  # Shared IPlugin base class
+├── Validation/                         # PreOp sync validators
+│   ├── PrioritizationFundingValidator.cs   # book_prioritization
+│   ├── RequirementFundingTDPValidator.cs   # book_requirementfunding
+│   └── RealignmentValidator.cs             # book_realignments
+├── TurnIns/                            # Turn-In approve/deny workflow (+ Helpers/)
+├── Realignments/                       # RealignmentProcessor, SetSameFundSagFlagPlugin, LedgerCreator
+├── Recalculations/                     # TDP roll-up recalculators (Decision, FundingLine,
+│                                       #   FundingTrack, Ledger-create, Prioritization, RF)
+├── Items/                              # ItemizedDetailsSynchronizer, PrioritizationItemizedRollup
+├── Helpers/                            # NumericHelper, TDPCalculationHelper
+└── Constants/                          # 20 per-entity attribute/name constant files
 ```
 
-### Registered steps (from `PluginRegistration.json`)
+17 registered plugins in total. Validators run PreOperation/Sync; recalculators
+and workflow orchestrators run PostOperation. Update steps that diff field
+values register a `PreImage`.
 
-| Plugin | Message | Entity | Stage / Mode |
-|--------|---------|--------|--------------|
-| `RequirementFundingTDPValidator` | Create, Update | `book_requirementfunding` | PreOperation / Sync |
-| `PrioritizationValidator` | Create, Update | `book_prioritization` | PreOperation / Sync |
+> The project has **no step-registration manifest** — registrations are done by
+> hand in the Plugin Registration Tool.
 
-Update steps register a `PreImage`. Filtering attributes scope execution to the
-relevant fields (e.g. `book_tdp`, `book_lineofaccounting`, `book_statepriority`).
-
-### Build & register
+### Build
 
 ```bash
-cd plugins/ARNGCheckbook.Plugins && dotnet build      # → bin/Debug/net462/*.dll
-pwsh plugins/ARNGCheckbook.Plugins/Register-Plugins.ps1
+cd Plugins && dotnet build      # → bin/Debug/net462/Checkbook_Plugins.dll
 ```
 
 ---

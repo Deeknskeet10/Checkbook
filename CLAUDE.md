@@ -73,8 +73,7 @@ Power Platform/
 │       │       ├── bundle.js
 │       │       └── css/
 │       └── Dashboards/
-├── plugins/
-│   └── ARNGCheckbook.Plugins/        # C# plugin project (.NET Framework 4.6.2)
+├── Plugins/                          # C# plugin project (.NET Framework 4.6.2)
 ├── pcf/                              # Buildable PCF projects (npm + pac pcf)
 │   └── ItemizedDetailsGrid/          # Editable grid for a Prioritization's Itemized Details
 ├── pcf-reference/                    # PCF control source (.tsx) — REFERENCE ONLY
@@ -134,43 +133,48 @@ unzip -p solutions/ARNGCheckbook_1_11_0_40.zip solution.xml | grep -oP '<Version
 
 ## C# Plugin Development
 
-Plugins live in `plugins/ARNGCheckbook.Plugins/`, target **.NET Framework 4.6.2**,
-and reference `Microsoft.CrmSdk.CoreAssemblies`. They are **already implemented**
-(not aspirational — the older docs framed them as "opportunities"):
+Plugins live in `Plugins/` — the `Checkbook_Plugins` project (assembly
+`Checkbook_Plugins.dll`, namespace root `Checkbook.Plugins`), targeting
+**.NET Framework 4.6.2**, strong-named with `Checkbook_Plugins.snk`, and
+referencing `Microsoft.CrmSdk.CoreAssemblies`. It is **already implemented** —
+17 registered plugins, all inheriting `Base/PluginBase.cs`:
 
 ```
-plugins/ARNGCheckbook.Plugins/
-├── PluginBase.cs                    # Shared IPlugin base
+Plugins/
+├── Checkbook Plugins.sln · Checkbook_Plugins.csproj
+├── Base/PluginBase.cs               # Shared IPlugin base (Execute boilerplate + helpers)
 ├── Validation/                      # Pre-operation validators
+│   ├── PrioritizationFundingValidator.cs
+│   ├── RealignmentValidator.cs
 │   ├── RequirementFundingTDPValidator.cs
-│   ├── PrioritizationValidator.cs
-│   ├── SpendPlanValidator.cs
-│   └── DistributionValidator.cs
-├── BusinessLogic/                   # LedgerEntryCreator, NameBuilder, RecordInitializer,
-│                                    #   ItemizedDetailsSynchronizer, PrioritizationItemizedRollup
-├── Realignments/                    # SetSameFundSagFlagPlugin
-├── Helpers/ · Constants/
-├── LOATDPRecalculator.cs
-├── PluginRegistration.json          # Step/image registration manifest (machine-readable)
-├── PLUGIN-REGISTRATION.md           # Plugin Registration Tool guide (human-readable)
-└── Register-Plugins.ps1             # Registration script (run via powershell)
+│   └── ValidationMessages.cs
+├── TurnIns/                         # Turn-In approve/deny workflow
+│   ├── TurnInValidator.cs · TurnInApprovalPlugin.cs · TurnInDeactivator.cs
+│   └── Helpers/                     # ledger/distribution creators, LOA resolver, RF/Prio updaters
+├── Realignments/                    # RealignmentValidator, RealignmentProcessor,
+│                                    #   SetSameFundSagFlagPlugin, LedgerCreator
+├── Recalculations/                  # TDP roll-up recalculators (Decision, FundingLine,
+│                                    #   FundingTrack, Ledger-create, Prioritization, RF)
+├── Items/                           # ItemizedDetailsSynchronizer, PrioritizationItemizedRollup
+├── Helpers/                         # NumericHelper, TDPCalculationHelper
+└── Constants/                       # 20 per-entity attribute/name constant files
 ```
 
 ```bash
-cd plugins/ARNGCheckbook.Plugins && dotnet build
-# Output → bin/Debug/net462/ARNGCheckbook.Plugins.dll  (committed to the repo)
+cd Plugins && dotnet build
+# Output → bin/Debug/net462/Checkbook_Plugins.dll
 ```
 
-Plugin step registrations are described in `PluginRegistration.json` and pushed
-with `Register-Plugins.ps1`; `PLUGIN-REGISTRATION.md` is the same data laid out
-for manual registration with the Plugin Registration Tool. The solution's own
-copy of the registration lives under `src/ARNGCheckbook/PluginAssemblies/` and
-`SdkMessageProcessingSteps/`.
+A solution build **cannot** package plugin steps (their registration metadata
+only exists in a Dataverse environment) — plugins are always delivered by
+registering `Checkbook_Plugins.dll` with the Plugin Registration Tool, not via
+a solution `.zip`. The solution's own copy of the registration lives under
+`src/ARNGCheckbook/PluginAssemblies/` and `SdkMessageProcessingSteps/`.
 
-The built `ARNGCheckbook.Plugins.dll` is committed so it can be PRT-registered
-without a local build. A solution build **cannot** package plugin steps (their
-registration metadata only exists in a Dataverse environment) — plugins are
-always delivered via the Plugin Registration Tool, not via a solution `.zip`.
+> **Note:** this project has **no step-registration manifest** yet — the old
+> `ARNGCheckbook.Plugins` project's `PluginRegistration.json` /
+> `Register-Plugins.ps1` / `PLUGIN-REGISTRATION.md` were removed with it. Step
+> registrations must currently be done by hand in the Plugin Registration Tool.
 
 ---
 
