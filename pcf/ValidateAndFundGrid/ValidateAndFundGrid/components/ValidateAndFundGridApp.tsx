@@ -387,10 +387,12 @@ export const ValidateAndFundGridApp: React.FC<ValidateAndFundGridProps> = (
   );
 
   return (
-    <FluentProvider theme={webLightTheme}>
+    <FluentProvider theme={webLightTheme} style={{ width: "100%" }}>
       <div
         className="ValidateAndFundGrid-root"
         style={{
+          width: "100%",
+          boxSizing: "border-box",
           padding: 12,
           fontFamily: "Segoe UI, sans-serif",
           fontSize: 13,
@@ -440,9 +442,9 @@ export const ValidateAndFundGridApp: React.FC<ValidateAndFundGridProps> = (
           )}
         </div>
 
-        {/* TDP guardrail strip — Withhold == Available == TDP − Funded */}
+        {/* TDP guardrail strip — wraps to 2x2 on narrow viewports */}
         {tdp != null && (
-          <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
+          <div style={{ display: "flex", gap: 8, marginBottom: 10, flexWrap: "wrap" }}>
             {stat("TDP", fmtMoney(tdp))}
             {stat(
               "Currently Funded",
@@ -485,21 +487,29 @@ export const ValidateAndFundGridApp: React.FC<ValidateAndFundGridProps> = (
         ) : (
           <div
             style={{
-              overflowX: "auto",
               border: "1px solid #EDEBE9",
               borderRadius: 4,
+              maxHeight: "min(60vh, 520px)",
+              overflowY: "auto",
+              overflowX: "auto",
             }}
           >
             <table
-              style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}
+              style={{
+                width: "100%",
+                minWidth: 720,
+                borderCollapse: "separate",
+                borderSpacing: 0,
+                fontSize: 13,
+              }}
             >
               <thead>
-                <tr style={{ background: "#F3F2F1" }}>
-                  <th style={thLeft}>State</th>
-                  <th style={thNum}>Requested</th>
-                  <th style={thNum}>Validated</th>
-                  <th style={thNum}>Funded (TDP)</th>
-                  <th style={thNum}>Unfunded</th>
+                <tr>
+                  <th style={stickyTh}>State</th>
+                  <th style={stickyThNum}>Requested</th>
+                  <th style={stickyThNum}>Validated</th>
+                  <th style={stickyThNum}>Funded (TDP)</th>
+                  <th style={stickyThNum}>Unfunded</th>
                 </tr>
               </thead>
               <tbody>
@@ -647,19 +657,13 @@ export const ValidateAndFundGridApp: React.FC<ValidateAndFundGridProps> = (
                 })}
               </tbody>
               <tfoot>
-                <tr
-                  style={{
-                    background: "#FAF9F8",
-                    fontWeight: 700,
-                    borderTop: "2px solid #EDEBE9",
-                  }}
-                >
-                  <td style={tdLeft}>Total</td>
-                  <td style={tdNum}>{fmtMoney(totals.requested)}</td>
-                  <td style={tdNum}>{fmtMoney(totals.validated)}</td>
+                <tr>
+                  <td style={stickyFootTd}>Total</td>
+                  <td style={stickyFootTdNum}>{fmtMoney(totals.requested)}</td>
+                  <td style={stickyFootTdNum}>{fmtMoney(totals.validated)}</td>
                   <td
                     style={{
-                      ...tdNum,
+                      ...stickyFootTdNum,
                       color: overAllocated ? "#A4262C" : "#323130",
                     }}
                   >
@@ -667,7 +671,7 @@ export const ValidateAndFundGridApp: React.FC<ValidateAndFundGridProps> = (
                   </td>
                   <td
                     style={{
-                      ...tdNum,
+                      ...stickyFootTdNum,
                       color: totals.unfunded > 0 ? "#A4262C" : "#107C10",
                     }}
                   >
@@ -705,4 +709,30 @@ const tdNum: React.CSSProperties = {
   fontVariantNumeric: "tabular-nums",
 };
 const subTh: React.CSSProperties = { ...thLeft, fontSize: 11 };
+
+// Sticky variants — used when the table sits in a vertically-scrolling container.
+// Background colors are required because sticky cells render over scrolled rows.
+const stickyTh: React.CSSProperties = {
+  ...thLeft,
+  position: "sticky",
+  top: 0,
+  zIndex: 2,
+  background: "#F3F2F1",
+};
+const stickyThNum: React.CSSProperties = { ...stickyTh, textAlign: "right" };
+
+const stickyFootTd: React.CSSProperties = {
+  ...tdLeft,
+  position: "sticky",
+  bottom: 0,
+  zIndex: 2,
+  background: "#FAF9F8",
+  fontWeight: 700,
+  borderTop: "2px solid #EDEBE9",
+};
+const stickyFootTdNum: React.CSSProperties = {
+  ...stickyFootTd,
+  textAlign: "right",
+  fontVariantNumeric: "tabular-nums",
+};
 const subThNum: React.CSSProperties = { ...subTh, textAlign: "right" };
