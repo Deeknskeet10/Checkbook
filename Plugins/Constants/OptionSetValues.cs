@@ -45,8 +45,47 @@ namespace Checkbook.Plugins.Constants
     /// </summary>
     public static class DisbursementDirectionValues
     {
-        public const int Credit = 100000000;
-        public const int Debit = 100000001;
+        public const int Credit = 0;
+        public const int Debit = 1;
+    }
+
+    /// <summary>
+    /// Approval status values for book_requirements.book_approvalstatus.
+    /// Distinct from <see cref="ApprovalStatusValues"/> (which is Prioritization).
+    /// </summary>
+    public static class RequirementApprovalStatusValues
+    {
+        public const int StateInput = 0;
+        public const int StateReview = 1;
+        public const int StateReviewed = 2;
+        public const int StateApproved = 3;
+        public const int NPMReview = 4;
+        public const int NPMValidated = 5;
+        public const int RIValidated = 6;
+        public const int BEApproved = 7;
+    }
+
+    /// <summary>
+    /// Type values for book_requirements.book_type.
+    /// </summary>
+    public static class RequirementTypeValues
+    {
+        public const int State = 0;
+        public const int TARC = 1;
+        public const int PEC = 2;
+        public const int WTC = 3;
+        public const int ARNGExternal = 4;
+        public const int DOMOPS = 5;
+    }
+
+    /// <summary>
+    /// Type values for book_fundingevent.book_fundingtype (global option set book_fundingtype).
+    /// Also flows through to book_requirementfunding.book_fundingtype as a formula column.
+    /// </summary>
+    public static class FundingTypeValues
+    {
+        public const int AFP = 0;
+        public const int Allotment = 1;
     }
 
     /// <summary>

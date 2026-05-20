@@ -346,6 +346,7 @@ export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
       value={displayValue(row, field)}
       onChange={(_e, data) => onCellChange(row.recordId, field, data.value)}
       onBlur={() => commitCell(row, field)}
+      input={{ style: { textAlign: "right", fontVariantNumeric: "tabular-nums" } }}
     />
   );
 
@@ -403,10 +404,10 @@ export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
                 <TableHeaderCell>Category</TableHeaderCell>
                 <TableHeaderCell>Quantity Type</TableHeaderCell>
                 <TableHeaderCell>TDC</TableHeaderCell>
-                <TableHeaderCell>Quantity</TableHeaderCell>
-                <TableHeaderCell>Requested</TableHeaderCell>
-                <TableHeaderCell>Validated</TableHeaderCell>
-                <TableHeaderCell>Funded</TableHeaderCell>
+                <TableHeaderCell className={styles.amount}>Quantity</TableHeaderCell>
+                <TableHeaderCell className={styles.amount}>Requested</TableHeaderCell>
+                <TableHeaderCell className={styles.amount}>Validated</TableHeaderCell>
+                <TableHeaderCell className={styles.amount}>Funded</TableHeaderCell>
                 <TableHeaderCell>NPM Comment</TableHeaderCell>
                 <TableHeaderCell>State Comment</TableHeaderCell>
               </TableRow>
@@ -431,10 +432,10 @@ export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
                     <TableCell className={styles.contextCell}>
                       {ctx?.tdc ?? ""}
                     </TableCell>
-                    <TableCell>
+                    <TableCell className={styles.amount}>
                       {numericCell(row, "quantity", styles.qtyInput)}
                     </TableCell>
-                    <TableCell>
+                    <TableCell className={styles.amount}>
                       {numericCell(row, "requestedAmount", styles.numberInput)}
                     </TableCell>
                     <TableCell className={styles.amount}>

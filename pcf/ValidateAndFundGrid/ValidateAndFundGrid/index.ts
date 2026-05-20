@@ -53,6 +53,7 @@ export class ValidateAndFundGrid
     const props: ValidateAndFundGridProps = {
       dataset: context.parameters.prioritizations,
       webAPI: context.webAPI,
+      navigation: (context as unknown as { navigation: ComponentFramework.Navigation }).navigation,
       isDisabled: context.mode.isControlDisabled,
       requirementFundingId: ctxInfo?.entityId,
       requirementFundingName: ctxInfo?.entityRecordName,

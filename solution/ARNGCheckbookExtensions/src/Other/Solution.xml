@@ -8,7 +8,7 @@
       <LocalizedName description="ARNGCheckbookExtensions" languagecode="1033" />
     </LocalizedNames>
     <Descriptions />
-    <Version>1.1.1</Version>
+    <Version>1.2.0</Version>
     <!-- Solution Package Type: Unmanaged(0)/Managed(1)/Both(2)-->
     <Managed>2</Managed>
     <Publisher>
@@ -88,7 +88,9 @@
         </Address>
       </Addresses>
     </Publisher>
-    <RootComponents />
+    <RootComponents>
+      <RootComponent type="2" schemaName="book_requirementdetails.book_priorityorder" behavior="0" />
+    </RootComponents>
     <MissingDependencies />
   </SolutionManifest>
 </ImportExportXml>

@@ -50,6 +50,7 @@
   <ItemGroup>
     <ProjectReference Include="../../pcf/ItemizedDetailsGrid/ItemizedDetailsGrid.pcfproj" />
     <ProjectReference Include="../../pcf/ValidateAndFundGrid/ValidateAndFundGrid.pcfproj" />
+    <ProjectReference Include="../../pcf/RequirementDetailsRank/RequirementDetailsRank.pcfproj" />
   </ItemGroup>
 
   <Import Project="$(MSBuildToolsPath)\Microsoft.Common.targets" />

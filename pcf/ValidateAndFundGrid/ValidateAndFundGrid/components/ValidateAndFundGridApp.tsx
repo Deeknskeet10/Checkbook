@@ -17,6 +17,7 @@ type WebApi = ComponentFramework.WebApi;
 export interface ValidateAndFundGridProps {
   dataset: DataSet;
   webAPI: WebApi;
+  navigation: ComponentFramework.Navigation;
   isDisabled: boolean;
   requirementFundingId?: string;
   requirementFundingName?: string;
@@ -87,7 +88,7 @@ const num = (v: unknown): number => {
 export const ValidateAndFundGridApp: React.FC<ValidateAndFundGridProps> = (
   props
 ) => {
-  const { dataset, webAPI, isDisabled, requirementFundingId, requirementFundingName } =
+  const { dataset, webAPI, navigation, isDisabled, requirementFundingId, requirementFundingName } =
     props;
 
   // --- Prioritization rows straight from the dataset --------------------
@@ -380,6 +381,7 @@ export const ValidateAndFundGridApp: React.FC<ValidateAndFundGridProps> = (
       appearance="outline"
       value={String(value)}
       onChange={(_e, d) => onChange(d.value)}
+      style={{ maxWidth: 140, marginLeft: "auto" }}
       input={{
         style: { textAlign: "right", fontVariantNumeric: "tabular-nums" },
       }}
@@ -404,6 +406,7 @@ export const ValidateAndFundGridApp: React.FC<ValidateAndFundGridProps> = (
           style={{
             display: "flex",
             alignItems: "center",
+            flexWrap: "wrap",
             gap: 12,
             marginBottom: 10,
           }}
@@ -489,7 +492,7 @@ export const ValidateAndFundGridApp: React.FC<ValidateAndFundGridProps> = (
             style={{
               border: "1px solid #EDEBE9",
               borderRadius: 4,
-              maxHeight: "min(60vh, 520px)",
+              maxHeight: "min(75vh, 900px)",
               overflowY: "auto",
               overflowX: "auto",
             }}
@@ -535,7 +538,38 @@ export const ValidateAndFundGridApp: React.FC<ValidateAndFundGridProps> = (
                               </Button>
                             )}
                             <div>
-                              <div style={{ fontWeight: 600 }}>
+                              <div
+                                role="link"
+                                tabIndex={0}
+                                onClick={() => {
+                                  void navigation?.openForm({
+                                    entityName: PRIORITIZATION_ENTITY,
+                                    entityId: p.id,
+                                  });
+                                }}
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter" || e.key === " ") {
+                                    e.preventDefault();
+                                    void navigation?.openForm({
+                                      entityName: PRIORITIZATION_ENTITY,
+                                      entityId: p.id,
+                                    });
+                                  }
+                                }}
+                                title="Open prioritization"
+                                style={{
+                                  fontWeight: 600,
+                                  color: "#0078D4",
+                                  cursor: "pointer",
+                                  textDecoration: "none",
+                                }}
+                                onMouseEnter={(e) =>
+                                  ((e.currentTarget as HTMLDivElement).style.textDecoration = "underline")
+                                }
+                                onMouseLeave={(e) =>
+                                  ((e.currentTarget as HTMLDivElement).style.textDecoration = "none")
+                                }
+                              >
                                 {p.stateName || "—"}
                               </div>
                               {p.statePriority != null && (

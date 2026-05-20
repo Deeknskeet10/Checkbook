@@ -1,11 +1,23 @@
-using System;
 using Microsoft.Xrm.Sdk;
-using Microsoft.Xrm.Sdk.Query;
 using Checkbook.Plugins.Base;
 using Checkbook.Plugins.Constants;
+using Checkbook.Plugins.Helpers;
 
 namespace Checkbook.Plugins.Recalculations
 {
+    /// <summary>
+    /// Recalculates the parent Requirement Funding's FundedAmount /
+    /// ValidatedAmount from its child Prioritizations whenever a Prioritization
+    /// is created, updated (on funded/validated/parent-RF), or deleted.
+    ///
+    /// The actual aggregate fetch + update lives in
+    /// PrioritizationRollupHelper.RecalculateRFFunded. This plugin is
+    /// intentionally a thin shell that determines which parent RF needs the
+    /// recalc and delegates. Depth-1 actors (e.g. RealignmentProcessor) that
+    /// need the rollup result after their own nested Prioritization updates
+    /// must call the helper directly — this plugin still early-returns on
+    /// Depth &gt; 1 to avoid re-entry.
+    /// </summary>
     public class PrioritizationRollupToRequirementFunding : PluginBase
     {
         protected override void ExecutePlugin(
@@ -24,7 +36,6 @@ namespace Checkbook.Plugins.Recalculations
             if (context.Depth > 1)
                 return;
 
-            // For Delete, use pre-image
             Entity preImage = null;
             Entity target = null;
 
@@ -53,47 +64,7 @@ namespace Checkbook.Plugins.Recalculations
 
             tracing.Trace($"Rolling up Prioritizations for RF {parentRF.Id}");
 
-            // ---- EXECUTE THE SAME FETCH THE WORKFLOW USED ----
-            var fetch = $@"
-                <fetch aggregate='true'>
-                    <entity name='{EntityNames.Prioritization}'>
-                        <attribute name='{PrioritizationAttributes.FundedAmountTDP}' alias='total_funded' aggregate='sum'/>
-                        <attribute name='{PrioritizationAttributes.ValidatedAmount}' alias='total_validated' aggregate='sum'/>
-                        <filter type='and'>
-                            <condition attribute='{PrioritizationAttributes.ApprovalStatus}' operator='eq' value='4'/>
-                            <condition attribute='{PrioritizationAttributes.StateCode}' operator='eq' value='0'/>
-                        </filter>
-                        <link-entity name='{EntityNames.RequirementFunding}' from='{RequirementFundingAttributes.Id}'
-                                     to='{PrioritizationAttributes.RequirementFunding}' link-type='inner'>
-                            <filter>
-                                <condition attribute='{RequirementFundingAttributes.Id}' operator='eq' value='{parentRF.Id}'/>
-                            </filter>
-                        </link-entity>
-                    </entity>
-                </fetch>";
-
-            var result = service.RetrieveMultiple(new FetchExpression(fetch));
-
-            decimal fundedTotal = 0m;
-            decimal validatedTotal = 0m;
-
-            if (result.Entities.Count > 0)
-            {
-                var f = result.Entities[0].GetAttributeValue<AliasedValue>("total_funded");
-                var v = result.Entities[0].GetAttributeValue<AliasedValue>("total_validated");
-
-                fundedTotal = f != null ? Convert.ToDecimal(f.Value) : 0m;
-                validatedTotal = v != null ? Convert.ToDecimal(v.Value) : 0m;
-            }
-
-            tracing.Trace($"Calculated RF totals: Funded={fundedTotal}, Validated={validatedTotal}");
-
-            // ---- UPDATE REQUIREMENT FUNDING ----
-            var update = new Entity(EntityNames.RequirementFunding, parentRF.Id);
-            update[RequirementFundingAttributes.FundedAmount] = fundedTotal;
-            update[RequirementFundingAttributes.ValidatedAmount] = validatedTotal;
-
-            service.Update(update);
+            PrioritizationRollupHelper.RecalculateRFFunded(service, parentRF.Id, tracing);
 
             tracing.Trace("Requirement Funding roll-up updated successfully.");
         }

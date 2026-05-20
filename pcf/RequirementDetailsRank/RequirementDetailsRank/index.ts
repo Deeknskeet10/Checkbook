@@ -1,10 +1,12 @@
 import * as React from "react";
 import { IInputs, IOutputs } from "./generated/ManifestTypes";
-import { PrioritizationsForRequirementApp, PrioritizationsForRequirementProps } from "./PrioritizationsForRequirementApp";
+import { RequirementDetailsRankApp } from "./RequirementDetailsRankApp";
 
 const PAGE_SIZE = 500;
 
-export class PrioritizationsForRequirement implements ComponentFramework.ReactControl<IInputs, IOutputs> {
+export class RequirementDetailsRank
+  implements ComponentFramework.ReactControl<IInputs, IOutputs>
+{
   private context!: ComponentFramework.Context<IInputs>;
   private pageSizeSet = false;
 
@@ -15,7 +17,7 @@ export class PrioritizationsForRequirement implements ComponentFramework.ReactCo
 
   public updateView(context: ComponentFramework.Context<IInputs>): React.ReactElement {
     this.context = context;
-    const dataset = context.parameters.prioritizations;
+    const dataset = context.parameters.details;
 
     if (!dataset.loading) {
       if (!this.pageSizeSet) {
@@ -28,18 +30,19 @@ export class PrioritizationsForRequirement implements ComponentFramework.ReactCo
     }
 
     const ctxAny: any = context.mode as any;
-    const props: PrioritizationsForRequirementProps = {
+    return React.createElement(RequirementDetailsRankApp, {
       dataset,
       webAPI: context.webAPI,
       navigation: (context as any).navigation,
       parentRequirementId: ctxAny.contextInfo?.entityId,
-    };
-    return React.createElement(PrioritizationsForRequirementApp, props);
+    });
   }
 
   public getOutputs(): IOutputs {
     return {};
   }
 
-  public destroy(): void {}
+  public destroy(): void {
+    // No teardown required — React unmount is handled by the framework.
+  }
 }

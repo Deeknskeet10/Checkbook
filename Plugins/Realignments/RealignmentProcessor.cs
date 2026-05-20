@@ -206,6 +206,18 @@ namespace Checkbook.Plugins.Realignments
             updCredit[PrioritizationAttributes.RequestedAmount] = requestCredit;
             service.Update(updCredit);
 
+            // The PrioritizationRollupToRequirementFunding plugin would normally
+            // recompute RF.FundedAmount from child Prioritizations whenever a
+            // Prioritization is updated, but it early-returns on Depth > 1 and
+            // we are at depth 1 here (so its nested invocation is at depth 2).
+            // Without these explicit calls, RF.FundedAmount on the credit RF
+            // would stay stale and the difference would surface as phantom
+            // withhold on the form. ApplyDebitToRF currently also adjusts the
+            // debit RF.FundedAmount manually; calling the helper here makes
+            // the children-sum the source of truth for both RFs.
+            PrioritizationRollupHelper.RecalculateRFFunded(service, debitRF.Id, tracing);
+            PrioritizationRollupHelper.RecalculateRFFunded(service, creditRF.Id, tracing);
+
             tracing.Trace("Prior→Prior funding movement completed.");
         }
 
