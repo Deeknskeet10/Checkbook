@@ -70,8 +70,15 @@ namespace Checkbook.Plugins.TurnIns.Helpers
             foreach (var item in items)
             {
                 if (item.LOA == null)
+                {
+                    var sourceLabel = item.Prioritization != null
+                        ? $"Prioritization {item.Prioritization.Id}"
+                        : item.RequirementFunding != null
+                            ? $"Requirement Funding {item.RequirementFunding.Id}"
+                            : "(unknown source)";
                     throw new InvalidPluginExecutionException(
-                        $"Turn-In Item for Prioritization {item.Prioritization.Id} has no LOA.");
+                        $"Turn-In Item for {sourceLabel} has no LOA.");
+                }
 
                 var loaRef = item.LOA;
                 var amount = item.Amount;

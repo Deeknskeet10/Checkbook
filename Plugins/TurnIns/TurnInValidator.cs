@@ -121,7 +121,7 @@ namespace Checkbook.Plugins.TurnIns
                     $"({itemSum:C}). The two must agree before approval. Please reconcile.");
             }
 
-            // ---- Per-item: amount > 0 and ≤ available on the source record ----
+            // ---- Per-item: amount > 0 ----
             foreach (var item in items)
             {
                 if (item.Amount <= 0m)
@@ -131,9 +131,13 @@ namespace Checkbook.Plugins.TurnIns
                         $"Prio={item.Prioritization?.Id.ToString() ?? "(none)"}, " +
                         $"RF={item.RequirementFunding?.Id.ToString() ?? "(none)"}");
                 }
-
-                ValidateItemAgainstSource(service, tracing, item);
             }
+
+            // ---- Per-source availability check (aggregated across items) ----
+            // Multiple items can reference the same Prio (or the same RF for RF-only items).
+            // Each item in isolation may fit under the source's available amount while the
+            // *sum* overdraws it. Aggregate first, then compare to the source once per source.
+            ValidateAggregatedAvailability(service, tracing, items);
 
             // ---- Approval routing ----
             // If any item is RF-only (no Prio attached), BE approval is required in
@@ -162,51 +166,86 @@ namespace Checkbook.Plugins.TurnIns
         }
 
         /// <summary>
-        /// Validates that an item's amount does not exceed available funds on its source.
-        /// - If Prioritization is set: must not exceed Prio.book_newfundedamounttdp.
-        /// - Else (RF-only): must not exceed RF.book_newfundedamount.
+        /// Validates that the sum of item amounts per source does not exceed available funds.
+        /// - For items with a Prioritization: aggregate by Prio, compare to Prio.book_newfundedamounttdp.
+        /// - For RF-only items: aggregate by RF, compare to RF.book_newfundedamount.
+        ///
+        /// Aggregating before the check prevents two items on the same source from each fitting
+        /// individually while together overdrawing — which the downstream updaters would silently
+        /// floor at zero.
         /// </summary>
-        private static void ValidateItemAgainstSource(
+        private static void ValidateAggregatedAvailability(
             IOrganizationService service,
             ITracingService tracing,
-            TurnInItemRecord item)
+            List<TurnInItemRecord> items)
         {
-            if (item.Prioritization != null)
+            // Group Prio-backed items by Prio.Id. RF-only items group separately by RF.Id.
+            var prioTotals = items
+                .Where(i => i.Prioritization != null)
+                .GroupBy(i => i.Prioritization.Id)
+                .ToDictionary(g => g.Key, g => g.Sum(i => i.Amount));
+
+            var rfOnlyTotals = items
+                .Where(i => i.IsRFOnly)
+                .GroupBy(i => i.RequirementFunding.Id)
+                .ToDictionary(g => g.Key, g => g.Sum(i => i.Amount));
+
+            // Keep a label per source for nicer error messages (Prio/RF Name when present).
+            var prioLabels = items
+                .Where(i => i.Prioritization != null)
+                .GroupBy(i => i.Prioritization.Id)
+                .ToDictionary(
+                    g => g.Key,
+                    g => g.First().Prioritization.Name ?? g.Key.ToString());
+
+            var rfLabels = items
+                .Where(i => i.IsRFOnly)
+                .GroupBy(i => i.RequirementFunding.Id)
+                .ToDictionary(
+                    g => g.Key,
+                    g => g.First().RequirementFunding.Name ?? g.Key.ToString());
+
+            foreach (var pair in prioTotals)
             {
+                var prioId = pair.Key;
+                var requested = pair.Value;
+
                 var prio = service.Retrieve(
                     EntityNames.Prioritization,
-                    item.Prioritization.Id,
+                    prioId,
                     new ColumnSet(PrioritizationAttributes.FundedAmountTDP));
 
                 decimal available = NumericHelper.ToDecimal(prio, PrioritizationAttributes.FundedAmountTDP) ?? 0m;
 
-                if (item.Amount > available)
+                if (requested > available)
                 {
                     throw new InvalidPluginExecutionException(
-                        $"Turn-In Item amount ({item.Amount:C}) exceeds available funded amount " +
-                        $"({available:C}) on Prioritization {item.Prioritization.Name ?? item.Prioritization.Id.ToString()}.");
+                        $"Combined Turn-In Item amount ({requested:C}) exceeds available funded amount " +
+                        $"({available:C}) on Prioritization {prioLabels[prioId]}.");
                 }
-                tracing.Trace($"Item OK: Prio {item.Prioritization.Id} has {available:C} available, taking {item.Amount:C}.");
+                tracing.Trace($"Prio {prioId}: {available:C} available, taking {requested:C} (aggregated).");
             }
-            else if (item.RequirementFunding != null)
+
+            foreach (var pair in rfOnlyTotals)
             {
+                var rfId = pair.Key;
+                var requested = pair.Value;
+
                 var rf = service.Retrieve(
                     EntityNames.RequirementFunding,
-                    item.RequirementFunding.Id,
+                    rfId,
                     new ColumnSet(RequirementFundingAttributes.FundedAmount));
 
                 decimal available = NumericHelper.ToDecimal(rf, RequirementFundingAttributes.FundedAmount) ?? 0m;
 
-                if (item.Amount > available)
+                if (requested > available)
                 {
                     throw new InvalidPluginExecutionException(
-                        $"Turn-In Item amount ({item.Amount:C}) exceeds available funded amount " +
-                        $"({available:C}) on Requirement Funding " +
-                        $"{item.RequirementFunding.Name ?? item.RequirementFunding.Id.ToString()}.");
+                        $"Combined Turn-In Item amount ({requested:C}) exceeds available funded amount " +
+                        $"({available:C}) on Requirement Funding {rfLabels[rfId]}.");
                 }
-                tracing.Trace($"Item OK: RF {item.RequirementFunding.Id} has {available:C} available, taking {item.Amount:C}.");
+                tracing.Trace($"RF {rfId}: {available:C} available, taking {requested:C} (aggregated).");
             }
-            // If both are null we already threw in the repository — defensive only.
         }
     }
 }
