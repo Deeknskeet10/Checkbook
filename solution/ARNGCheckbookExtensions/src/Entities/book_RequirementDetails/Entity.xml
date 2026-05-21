@@ -44,7 +44,7 @@
             <displayname description="Priority Order" languagecode="1033" />
           </displaynames>
           <Descriptions>
-            <Description description="1-based order of this Requirement Detail within its parent Requirement. Combined with the parent Requirement's Priority to derive the displayed priority (e.g. 5.1, 5.2). Managed by the RequirementDetailsRank PCF; not typically edited by hand." languagecode="1033" />
+            <Description description="1-based order of this Requirement Detail within its parent Requirement. Combined with the priority of the parent Requirement to derive the displayed rank (e.g. 5.1, 5.2). Managed by the RequirementDetailsRank PCF; not typically edited by hand." languagecode="1033" />
           </Descriptions>
         </attribute>
       </attributes>
