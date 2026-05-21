@@ -20,19 +20,22 @@ interface Row {
   id: string;
   name: string;
   priorityOrder: number | null;
+  itemId: string | null;
   itemLabel: string | null;
+  tdcLabel: string | null;
+}
+
+interface ItemInherited {
   category: string | null;
   quantityType: string | null;
-  tdc: number | null;
 }
 
 const ENTITY = "book_requirementdetails";
 const FIELD_ORDER = "book_priorityorder";
+const ITEM_ENTITY = "book_items";
+const FV = "@OData.Community.Display.V1.FormattedValue";
 
-const fmtMoney = (n: number | null): string =>
-  n == null
-    ? "—"
-    : n.toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
+const stripBraces = (id: string): string => id.replace(/[{}]/g, "").toLowerCase();
 
 export const RequirementDetailsRankApp: React.FC<RequirementDetailsRankProps> = (props) => {
   const { dataset, webAPI, navigation, parentRequirementId } = props;
@@ -42,14 +45,14 @@ export const RequirementDetailsRankApp: React.FC<RequirementDetailsRankProps> = 
       .map((id) => dataset.records[id])
       .map((r) => {
         const itemRef = r.getValue("item") as ComponentFramework.EntityReference | null;
+        const tdcRef = r.getValue("tdc") as ComponentFramework.EntityReference | null;
         return {
           id: r.getRecordId(),
           name: (r.getValue("name") as string | null) ?? "(unnamed)",
           priorityOrder: (r.getValue("priorityOrder") as number | null) ?? null,
+          itemId: itemRef ? stripBraces(itemRef.id.guid ?? (itemRef.id as unknown as string)) : null,
           itemLabel: itemRef?.name ?? r.getFormattedValue("item") ?? null,
-          category: r.getFormattedValue("category") ?? null,
-          quantityType: r.getFormattedValue("quantityType") ?? null,
-          tdc: (r.getValue("tdc") as number | null) ?? null,
+          tdcLabel: tdcRef?.name ?? r.getFormattedValue("tdc") ?? null,
         };
       })
       .sort((a, b) => {
@@ -65,6 +68,7 @@ export const RequirementDetailsRankApp: React.FC<RequirementDetailsRankProps> = 
   const [savingIds, setSavingIds] = React.useState<Set<string>>(new Set());
   const [err, setErr] = React.useState<string | null>(null);
   const [parentPriority, setParentPriority] = React.useState<number | null>(null);
+  const [itemMeta, setItemMeta] = React.useState<Map<string, ItemInherited>>(new Map());
 
   React.useEffect(() => {
     setRows(initial);
@@ -87,7 +91,41 @@ export const RequirementDetailsRankApp: React.FC<RequirementDetailsRankProps> = 
     };
   }, [parentRequirementId, webAPI]);
 
-  const totalTdc = rows.reduce((s, r) => s + (r.tdc ?? 0), 0);
+  // Fetch Category + Quantity Type from each row's linked Item.
+  // These columns moved off book_requirementdetails — the canonical source is book_item.
+  React.useEffect(() => {
+    const ids = Array.from(new Set(initial.map((r) => r.itemId).filter((x): x is string => !!x)));
+    if (ids.length === 0) {
+      setItemMeta(new Map());
+      return;
+    }
+    let cancelled = false;
+    const filter = ids.map((id) => `book_itemid eq ${id}`).join(" or ");
+    const options =
+      "?$select=book_itemid,book_category,_book_quantitytype_value" +
+      `&$filter=(${filter})`;
+    webAPI
+      .retrieveMultipleRecords(ITEM_ENTITY, options)
+      .then((res) => {
+        if (cancelled) return null;
+        const next = new Map<string, ItemInherited>();
+        for (const e of res.entities) {
+          const id = stripBraces(e.book_itemid as string);
+          next.set(id, {
+            category: (e[`book_category${FV}`] as string) ?? null,
+            quantityType: (e[`_book_quantitytype_value${FV}`] as string) ?? null,
+          });
+        }
+        setItemMeta(next);
+        return null;
+      })
+      .catch(() => {
+        // Inherited badges are decorative — leave them blank on failure.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [initial, webAPI]);
 
   const displayPriority = (idx: number): string => {
     const order = idx + 1;
@@ -164,11 +202,6 @@ export const RequirementDetailsRankApp: React.FC<RequirementDetailsRankProps> = 
           <Badge appearance="outline" color="informative" size="medium">
             {rows.length} {rows.length === 1 ? "detail" : "details"}
           </Badge>
-          {totalTdc > 0 && (
-            <Badge appearance="tint" color="informative">
-              TDC total: {fmtMoney(totalTdc)}
-            </Badge>
-          )}
           {parentPriority != null && (
             <Badge appearance="tint" color="brand">
               Parent priority: {parentPriority}
@@ -198,6 +231,7 @@ export const RequirementDetailsRankApp: React.FC<RequirementDetailsRankProps> = 
             {rows.map((row, idx) => {
               const dragging = dragId === row.id;
               const hovering = hoverId === row.id && dragId !== row.id;
+              const inherited = row.itemId ? itemMeta.get(row.itemId) : undefined;
               return (
                 <div
                   key={row.id}
@@ -264,33 +298,25 @@ export const RequirementDetailsRankApp: React.FC<RequirementDetailsRankProps> = 
                       </strong>
                       {row.itemLabel && (
                         <Badge appearance="outline" color="informative">
-                          {row.itemLabel}
+                          Item: {row.itemLabel}
                         </Badge>
                       )}
-                      {row.category && (
-                        <Badge appearance="tint" color="informative">
-                          {row.category}
-                        </Badge>
-                      )}
-                      {row.quantityType && (
+                      {row.tdcLabel && (
                         <Badge appearance="outline" color="informative">
-                          {row.quantityType}
+                          TDC: {row.tdcLabel}
+                        </Badge>
+                      )}
+                      {inherited?.category && (
+                        <Badge appearance="tint" color="informative">
+                          {inherited.category}
+                        </Badge>
+                      )}
+                      {inherited?.quantityType && (
+                        <Badge appearance="tint" color="informative">
+                          {inherited.quantityType}
                         </Badge>
                       )}
                     </div>
-                  </div>
-                  <div
-                    style={{
-                      fontWeight: 700,
-                      fontSize: 14,
-                      fontVariantNumeric: "tabular-nums",
-                      color: "#323130",
-                      minWidth: 96,
-                      textAlign: "right",
-                    }}
-                    title="TDC"
-                  >
-                    {fmtMoney(row.tdc)}
                   </div>
                   {savingIds.has(row.id) && <Spinner size="extra-tiny" />}
                   <span
