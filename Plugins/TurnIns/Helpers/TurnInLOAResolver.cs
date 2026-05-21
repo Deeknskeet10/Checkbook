@@ -211,14 +211,16 @@ namespace Checkbook.Plugins.TurnIns.Helpers
             // Historical note: this query used to reference "book_amounttaken" which does
             // not exist in this env — the real child amount column is book_newturninamount
             // (Decimal). See TurnInItemsAttributes.Amount.
+            //
+            // LOA is NOT stored on book_turninitems. It is derived from the linked
+            // Prioritization (or Requirement Funding when RF-only) below.
             var q = new QueryExpression(EntityNames.TurnInItems)
             {
                 ColumnSet = new ColumnSet(
                     TurnInItemsAttributes.Amount,
                     TurnInItemsAttributes.Turnin,
                     TurnInItemsAttributes.Prioritization,
-                    TurnInItemsAttributes.RequirementFunding,
-                    TurnInItemsAttributes.LineOfAccounting)
+                    TurnInItemsAttributes.RequirementFunding)
             };
 
             q.Criteria.AddCondition(TurnInItemsAttributes.Turnin, ConditionOperator.Equal, turnInId);
@@ -227,12 +229,13 @@ namespace Checkbook.Plugins.TurnIns.Helpers
 
             var list = new List<TurnInItemRecord>();
             var loaCache = new Dictionary<Guid, Entity>();
+            var prioLoaCache = new Dictionary<Guid, EntityReference>();
+            var rfLoaCache = new Dictionary<Guid, EntityReference>();
 
             foreach (var e in results)
             {
                 var pri = e.GetAttributeValue<EntityReference>(TurnInItemsAttributes.Prioritization);
                 var rf = e.GetAttributeValue<EntityReference>(TurnInItemsAttributes.RequirementFunding);
-                var loa = e.GetAttributeValue<EntityReference>(TurnInItemsAttributes.LineOfAccounting);
 
                 // Decimal column. NumericHelper covers Money/Double/Decimal sources.
                 decimal amount = NumericHelper.ToDecimal(e, TurnInItemsAttributes.Amount) ?? 0m;
@@ -243,9 +246,44 @@ namespace Checkbook.Plugins.TurnIns.Helpers
                         "Turn-In Item is missing both Prioritization and Requirement Funding — " +
                         "at least one source must be specified.");
 
-                if (loa == null)
-                    throw new InvalidPluginExecutionException(
-                        "Turn-In Item missing LOA reference (book_lineofaccounting).");
+                // Derive LOA from the source: Prio when present, otherwise RF.
+                EntityReference loa;
+                if (pri != null)
+                {
+                    if (!prioLoaCache.TryGetValue(pri.Id, out loa))
+                    {
+                        var prioEnt = service.Retrieve(
+                            EntityNames.Prioritization,
+                            pri.Id,
+                            new ColumnSet(PrioritizationAttributes.LineOfAccounting));
+                        loa = prioEnt.GetAttributeValue<EntityReference>(
+                            PrioritizationAttributes.LineOfAccounting);
+                        prioLoaCache[pri.Id] = loa;
+                    }
+
+                    if (loa == null)
+                        throw new InvalidPluginExecutionException(
+                            $"Prioritization {pri.Id} has no LOA (book_lineofaccounting). " +
+                            "Cannot resolve the debit LOA for this Turn-In Item.");
+                }
+                else
+                {
+                    if (!rfLoaCache.TryGetValue(rf.Id, out loa))
+                    {
+                        var rfEnt = service.Retrieve(
+                            EntityNames.RequirementFunding,
+                            rf.Id,
+                            new ColumnSet(RequirementFundingAttributes.LineOfAccounting));
+                        loa = rfEnt.GetAttributeValue<EntityReference>(
+                            RequirementFundingAttributes.LineOfAccounting);
+                        rfLoaCache[rf.Id] = loa;
+                    }
+
+                    if (loa == null)
+                        throw new InvalidPluginExecutionException(
+                            $"Requirement Funding {rf.Id} has no LOA (book_lineofaccounting). " +
+                            "Cannot resolve the debit LOA for this Turn-In Item.");
+                }
 
                 // Resolve LOA Fund + PG once per unique LOA (these drive distribution grouping).
                 if (!loaCache.TryGetValue(loa.Id, out var loaEntity))

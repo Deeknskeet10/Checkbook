@@ -3,7 +3,8 @@ namespace Checkbook.Plugins.Constants
     /// <summary>
     /// Attribute schema names for book_turninitems entity.
     /// Child line items on a Turn-In: which Prioritization (or RF) is being turned in,
-    /// against which LOA, for how much.
+    /// for how much. LOA is not stored on the item — it is derived from the linked
+    /// Prioritization or Requirement Funding at load time.
     /// </summary>
     public static class TurnInItemsAttributes
     {
@@ -15,7 +16,6 @@ namespace Checkbook.Plugins.Constants
         public const string Turnin = "book_turnin";
         public const string Prioritization = "book_prioritization";
         public const string RequirementFunding = "book_requirementfunding";
-        public const string LineOfAccounting = "book_lineofaccounting";
         public const string StateCode = "statecode";
     }
 }
