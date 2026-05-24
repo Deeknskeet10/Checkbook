@@ -117,8 +117,7 @@ namespace Checkbook.Plugins.TurnIns.Helpers
                     FundingLineAttributes.Id,
                     FundingLineAttributes.Fund,
                     FundingLineAttributes.SAG,
-                    FundingLineAttributes.PG,
-                    FundingLineAttributes.FundCenter) // keep extensibility
+                    FundingLineAttributes.PG)
             };
 
             flQuery.Criteria.AddCondition(FundingLineAttributes.Fund, ConditionOperator.Equal, fund.Id);

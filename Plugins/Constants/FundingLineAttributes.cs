@@ -10,12 +10,16 @@ namespace Checkbook.Plugins.Constants
         public const string TDP = "book_newtdp";
         public const string TDPRemaining = "book_newtdpremaining";
         public const string Fund = "book_fund";
+        public const string DisbursingOfficial = "book_disbursingofficial";
         public const string SAG = "book_sag";
         public const string PG = "book_pg";
         public const string MDEP = "book_mdep";
-        public const string BOC = "book_boc";
-        public const string DollarType = "book_dollartype";
-        public const string FundCenter = "book_fundcenter";
+        public const string BOC = "book_newboc";
+        public const string DollarType = "book_newdollartype";
+        public const string FiscalYear = "book_fiscalyear";
         public const string StateCode = "statecode";
+
+        /// <summary>N:N relationship name between book_fundingline and book_ape.</summary>
+        public const string APERelationship = "book_FundingLine_book_APE_book_APE";
     }
 }

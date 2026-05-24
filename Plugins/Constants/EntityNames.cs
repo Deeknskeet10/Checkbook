@@ -41,6 +41,7 @@ namespace Checkbook.Plugins.Constants
         public const string SAG = "book_sag";
         public const string TDC = "book_tdc";
         public const string DollarType = "book_dollartype";
+        public const string OPR = "book_opr";
         public const string LOEFocusArea = "book_loefocusarea";
         public const string PayTable = "book_paytable";
         public const string Decision = "book_decision";
