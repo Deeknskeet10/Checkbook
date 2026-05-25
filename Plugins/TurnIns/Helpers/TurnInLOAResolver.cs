@@ -5,6 +5,7 @@ using Microsoft.Xrm.Sdk;
 using Microsoft.Xrm.Sdk.Query;
 using Checkbook.Plugins.Constants;
 using Checkbook.Plugins.Helpers;
+using Checkbook.Plugins.LOAs.Helpers;
 
 namespace Checkbook.Plugins.TurnIns.Helpers
 {
@@ -48,12 +49,22 @@ namespace Checkbook.Plugins.TurnIns.Helpers
 
     /// <summary>
     /// Resolves all LOAs needed to process a Turn-In.
-    /// - Debit LOAs come from prioritizations via Turn-In items.
-    /// - Credit LOA is resolved by finding the matching funding line based on:
-    ///       Fund + PG/SAG + BOC (BASE) + DollarType (BASE) + MDEP (RISK)
+    ///
+    /// Debit LOAs come from prioritizations / requirement fundings via Turn-In items.
+    ///
+    /// Credit LOA depends on the Turn-In's fiscal year (parsed from the Fund name's
+    /// trailing 2 digits — same convention LOANameBuilder uses):
+    ///   • FY &lt;= <see cref="LOANameBuilder.MdepInNameLastFy"/> (FY26):
+    ///       Fund + PG + BOC(BASE) + DollarType(BASE) + MDEP(RISK)
+    ///   • FY27+:
+    ///       Fund + DisbursingOfficial(BE OPR, from env var <see cref="CreditOprEnvVar"/>)
+    ///             + (PG | SAG-derived-from-PG) depending on Fund's APPN.
     /// </summary>
     public static class TurnInLOAResolver
     {
+        /// <summary>Env-var schema name holding the credit-side OPR GUID for FY27+ turn-ins.</summary>
+        public const string CreditOprEnvVar = "book_TurnInCreditOPR";
+
         public static TurnInLOAResolution ResolveLOAs(
             IOrganizationService service,
             ITracingService tracing,
@@ -105,38 +116,163 @@ namespace Checkbook.Plugins.TurnIns.Helpers
             if (pg == null)
                 throw new InvalidPluginExecutionException("Turn-In is missing PG/SAG (book_pg).");
 
-            // Resolve BASE + BASE + RISK via name lookup values
-            var bocBase = ResolveLookupValue(service, tracing, EntityNames.BOC, "BASE");
-            var dtBase = ResolveLookupValue(service, tracing, EntityNames.DollarType, "BASE");
+            // Read Fund once — name (for FY parse) and appropriation (for PG vs SAG).
+            var fundRecord = service.Retrieve(
+                EntityNames.Fund, fund.Id,
+                new ColumnSet(FundAttributes.Name, FundAttributes.Appropriation));
+            var fundName = fundRecord.GetAttributeValue<string>(FundAttributes.Name);
+            var appnOs = fundRecord.GetAttributeValue<OptionSetValue>(FundAttributes.Appropriation);
+            if (string.IsNullOrWhiteSpace(fundName) || appnOs == null)
+                throw new InvalidPluginExecutionException(
+                    $"Fund {fund.Id} is missing book_name or book_appropriation; cannot resolve credit LOA.");
+
+            int fy;
+            try { fy = LOANameBuilder.ParseFiscalYear(fundName); }
+            catch (ArgumentException ex)
+            {
+                throw new InvalidPluginExecutionException(
+                    $"Cannot determine fiscal year from Fund '{fundName}': {ex.Message}");
+            }
+
+            result.CreditLOA = fy <= LOANameBuilder.MdepInNameLastFy
+                ? ResolveCreditLOA_FY26(service, tracing, fund, pg)
+                : ResolveCreditLOA_FY27Plus(service, tracing, fund, pg, appnOs.Value);
+
+            tracing.Trace($"Resolved credit LOA: {result.CreditLOA.Id} (FY{fy} branch).");
+
+            return result;
+        }
+
+        /// <summary>
+        /// FY26 credit LOA: Fund + PG + BOC(BASE) + DollarType(BASE) + MDEP(RISK).
+        /// Preserved verbatim so in-flight FY26 turn-ins keep working.
+        /// </summary>
+        private static EntityReference ResolveCreditLOA_FY26(
+            IOrganizationService service,
+            ITracingService tracing,
+            EntityReference fund,
+            EntityReference pg)
+        {
+            var bocBase  = ResolveLookupValue(service, tracing, EntityNames.BOC, "BASE");
+            var dtBase   = ResolveLookupValue(service, tracing, EntityNames.DollarType, "BASE");
             var mdepRisk = ResolveLookupValue(service, tracing, EntityNames.MDEP, "RISK");
 
-            // Query the funding line (LOA)
             var flQuery = new QueryExpression(EntityNames.FundingLine)
             {
                 ColumnSet = new ColumnSet(
                     FundingLineAttributes.Id,
                     FundingLineAttributes.Fund,
                     FundingLineAttributes.SAG,
-                    FundingLineAttributes.PG)
+                    FundingLineAttributes.PG),
             };
-
-            flQuery.Criteria.AddCondition(FundingLineAttributes.Fund, ConditionOperator.Equal, fund.Id);
-            flQuery.Criteria.AddCondition(FundingLineAttributes.PG, ConditionOperator.Equal, pg.Id);
-
-            flQuery.Criteria.AddCondition(FundingLineAttributes.BOC, ConditionOperator.Equal, bocBase.Id);
+            flQuery.Criteria.AddCondition(FundingLineAttributes.Fund,       ConditionOperator.Equal, fund.Id);
+            flQuery.Criteria.AddCondition(FundingLineAttributes.PG,         ConditionOperator.Equal, pg.Id);
+            flQuery.Criteria.AddCondition(FundingLineAttributes.BOC,        ConditionOperator.Equal, bocBase.Id);
             flQuery.Criteria.AddCondition(FundingLineAttributes.DollarType, ConditionOperator.Equal, dtBase.Id);
-            flQuery.Criteria.AddCondition(FundingLineAttributes.MDEP, ConditionOperator.Equal, mdepRisk.Id);
+            flQuery.Criteria.AddCondition(FundingLineAttributes.MDEP,       ConditionOperator.Equal, mdepRisk.Id);
 
             var fl = service.RetrieveMultiple(flQuery).Entities.FirstOrDefault();
             if (fl == null)
                 throw new InvalidPluginExecutionException(
                     "Unable to find a Credit LOA with Fund + PG + BASE + BASE + RISK.");
+            return fl.ToEntityReference();
+        }
 
-            result.CreditLOA = fl.ToEntityReference();
+        /// <summary>
+        /// FY27+ credit LOA: Fund + DisbursingOfficial(env var BE OPR) + PG or SAG.
+        /// PG vs SAG is chosen by the Fund's appropriation; for SAG-based APPNs the
+        /// SAG is derived from the Turn-In's PG via SAG.book_pg.
+        /// </summary>
+        private static EntityReference ResolveCreditLOA_FY27Plus(
+            IOrganizationService service,
+            ITracingService tracing,
+            EntityReference fund,
+            EntityReference pg,
+            int appropriation)
+        {
+            var creditOprId = EnvironmentVariableHelper.GetGuid(service, CreditOprEnvVar);
+            tracing.Trace($"FY27+ credit LOA: OPR={creditOprId} (from env var {CreditOprEnvVar}).");
 
-            tracing.Trace($"Resolved credit LOA: {result.CreditLOA.Id}");
+            var flQuery = new QueryExpression(EntityNames.FundingLine)
+            {
+                ColumnSet = new ColumnSet(
+                    FundingLineAttributes.Id,
+                    FundingLineAttributes.Fund,
+                    FundingLineAttributes.PG,
+                    FundingLineAttributes.SAG),
+                Criteria = new FilterExpression(LogicalOperator.And)
+                {
+                    Conditions =
+                    {
+                        new ConditionExpression(FundingLineAttributes.Fund,               ConditionOperator.Equal, fund.Id),
+                        new ConditionExpression(FundingLineAttributes.DisbursingOfficial, ConditionOperator.Equal, creditOprId),
+                        new ConditionExpression(FundingLineAttributes.StateCode,          ConditionOperator.Equal, StateCodeValues.Active),
+                    },
+                },
+                NoLock = true,
+            };
 
-            return result;
+            if (AppropriationValues.RequiresPg(appropriation))
+            {
+                flQuery.Criteria.AddCondition(FundingLineAttributes.PG, ConditionOperator.Equal, pg.Id);
+                tracing.Trace($"APPN {appropriation} uses PG; filtering on PG {pg.Id}.");
+            }
+            else
+            {
+                var sagRef = DeriveSagFromPg(service, tracing, pg);
+                flQuery.Criteria.AddCondition(FundingLineAttributes.SAG, ConditionOperator.Equal, sagRef.Id);
+                tracing.Trace($"APPN {appropriation} uses SAG; derived SAG {sagRef.Id} from PG {pg.Id}.");
+            }
+
+            var matches = service.RetrieveMultiple(flQuery).Entities;
+            if (matches.Count == 0)
+                throw new InvalidPluginExecutionException(
+                    $"Unable to find a Credit LOA for FY27+ Turn-In: " +
+                    $"Fund={fund.Id}, OPR={creditOprId}, " +
+                    (AppropriationValues.RequiresPg(appropriation)
+                        ? $"PG={pg.Id}"
+                        : $"SAG derived from PG={pg.Id}") +
+                    $". Verify the BE OPR's holding LOA exists, and that env var " +
+                    $"'{CreditOprEnvVar}' points to the correct OPR record.");
+            if (matches.Count > 1)
+                throw new InvalidPluginExecutionException(
+                    $"Multiple ({matches.Count}) Credit LOAs match the FY27+ filter — " +
+                    "the BE OPR's holding LOA should be unique per (Fund, PG/SAG).");
+
+            return matches[0].ToEntityReference();
+        }
+
+        /// <summary>
+        /// Looks up the SAG whose <c>book_pg</c> = the Turn-In's PG. Used only for
+        /// FY27+ on appropriations that key the LOA off SAG rather than PG. Throws
+        /// if zero or more than one match — the resolver can't disambiguate.
+        /// </summary>
+        private static EntityReference DeriveSagFromPg(
+            IOrganizationService service,
+            ITracingService tracing,
+            EntityReference pg)
+        {
+            var query = new QueryExpression(EntityNames.SAG)
+            {
+                ColumnSet = new ColumnSet(SagAttributes.Id, SagAttributes.Name),
+                Criteria = new FilterExpression(LogicalOperator.And)
+                {
+                    Conditions =
+                    {
+                        new ConditionExpression(SagAttributes.PG, ConditionOperator.Equal, pg.Id),
+                    },
+                },
+                NoLock = true,
+            };
+            var sags = service.RetrieveMultiple(query).Entities;
+            if (sags.Count == 0)
+                throw new InvalidPluginExecutionException(
+                    $"No SAG points to PG {pg.Id} via book_sag.book_pg; cannot derive SAG for credit LOA.");
+            if (sags.Count > 1)
+                throw new InvalidPluginExecutionException(
+                    $"PG {pg.Id} has {sags.Count} SAGs pointing to it; SAG cannot be derived automatically. " +
+                    "Add the SAG to the Turn-In explicitly or normalize the PG→SAG hierarchy.");
+            return sags[0].ToEntityReference();
         }
 
         /// <summary>
