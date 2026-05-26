@@ -20,6 +20,7 @@ namespace Checkbook.Plugins.Constants
         public const string ManualEntry = "book_manualentry";
         public const string Remarks = "book_remarks";
         public const string TurnIn = "book_turnin";
+        public const string EnteredIntoGFEBS = "book_newenteredintogfebs";
         public const string StateCode = "statecode";
     }
 }
