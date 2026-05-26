@@ -52,20 +52,32 @@ namespace Checkbook.Plugins.TurnIns.Helpers
                 var pri = service.Retrieve(
                     EntityNames.Prioritization,
                     prioId,
-                    new ColumnSet(PrioritizationAttributes.FundedAmountTDP));
+                    new ColumnSet(
+                        PrioritizationAttributes.FundedAmountTDP,
+                        PrioritizationAttributes.RequestedAmount));
 
-                // book_newfundedamounttdp is Decimal in the env; tolerate other source types
-                // via NumericHelper while the Decimal-vs-Double migration is in flight.
+                // book_newfundedamounttdp / book_newrequestedamount are Decimal in the env;
+                // tolerate other source types via NumericHelper while the Decimal-vs-Double
+                // migration is in flight.
                 decimal oldFunded = NumericHelper.ToDecimal(pri, PrioritizationAttributes.FundedAmountTDP) ?? 0m;
+                decimal oldRequested = NumericHelper.ToDecimal(pri, PrioritizationAttributes.RequestedAmount) ?? 0m;
+
+                // The actual reduction applied to Funded (floored at 0); Requested drops
+                // by the same delta so the Prio's request shrinks alongside the Turn-In.
                 decimal newFunded = oldFunded - amount;
+                if (newFunded < 0m) newFunded = 0m;
+                decimal appliedReduction = oldFunded - newFunded;
 
-                if (newFunded < 0m)
-                    newFunded = 0m;  // Prevent negative funded amounts
+                decimal newRequested = oldRequested - appliedReduction;
+                if (newRequested < 0m) newRequested = 0m;
 
-                tracing.Trace($"FundedAmountTDP: {oldFunded} -> {newFunded}");
+                tracing.Trace(
+                    $"FundedAmountTDP: {oldFunded} -> {newFunded}; " +
+                    $"RequestedAmount: {oldRequested} -> {newRequested} (delta {appliedReduction})");
 
                 var update = new Entity(EntityNames.Prioritization, prioId);
                 update[PrioritizationAttributes.FundedAmountTDP] = newFunded;
+                update[PrioritizationAttributes.RequestedAmount] = newRequested;
 
                 service.Update(update);
             }

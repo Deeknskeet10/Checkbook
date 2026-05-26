@@ -81,7 +81,12 @@ namespace Checkbook.Plugins.TurnIns.Helpers
 
             // -----------------------------------------------------------------
             // Create DEBIT distributions (one per (Fund, PG) bucket).
+            // Track the first debit id so the credit distribution can link back
+            // to a debit via book_debiteddistribution — same convention used by
+            // DistributionBucketProcessor (credit.DebitedDistribution = debitId)
+            // and TurnInLedgerCreator (credit.RelatedEntry = first debit).
             // -----------------------------------------------------------------
+            Guid? firstDebitId = null;
             foreach (var kvp in debitGroups)
             {
                 var fundId = kvp.Key.FundId;
@@ -99,6 +104,7 @@ namespace Checkbook.Plugins.TurnIns.Helpers
                 debit[DistributionsAttributes.TurnIn] = turnInRef;
 
                 var id = service.Create(debit);
+                if (firstDebitId == null) firstDebitId = id;
                 tracing.Trace(
                     $"Created DEBIT distribution {id}: Amount={amount:C}, " +
                     $"Fund={fundId}, PG={pgId}, FC={turnInFundCenter.Id}");
@@ -106,6 +112,8 @@ namespace Checkbook.Plugins.TurnIns.Helpers
 
             // -----------------------------------------------------------------
             // Create the single CREDIT distribution.
+            // Link to the first debit via book_debiteddistribution so the
+            // credit↔debit relationship is queryable downstream.
             // -----------------------------------------------------------------
             var credit = new Entity(EntityNames.Distributions);
             credit[DistributionsAttributes.Amount] = headerAmount; // Decimal write
@@ -116,11 +124,15 @@ namespace Checkbook.Plugins.TurnIns.Helpers
                 new OptionSetValue(DisbursementDirectionValues.Credit);
             credit[DistributionsAttributes.Remarks] = "Turn-In Credit Distribution";
             credit[DistributionsAttributes.TurnIn] = turnInRef;
+            if (firstDebitId.HasValue)
+                credit[DistributionsAttributes.DebitedDistribution] =
+                    new EntityReference(EntityNames.Distributions, firstDebitId.Value);
 
             var creditId = service.Create(credit);
             tracing.Trace(
                 $"Created CREDIT distribution {creditId}: Amount={headerAmount:C}, " +
-                $"Fund={turnInFund.Id}, PG={turnInPg.Id}, FC={creditFundCenter.Id} (A18 root)");
+                $"Fund={turnInFund.Id}, PG={turnInPg.Id}, FC={creditFundCenter.Id} (A18 root), " +
+                $"DebitedDistribution={firstDebitId?.ToString() ?? "(none)"}");
 
             tracing.Trace("TurnInDistributionCreator: all distributions created successfully.");
         }

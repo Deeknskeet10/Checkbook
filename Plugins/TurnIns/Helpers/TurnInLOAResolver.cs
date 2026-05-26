@@ -10,19 +10,22 @@ using Checkbook.Plugins.LOAs.Helpers;
 namespace Checkbook.Plugins.TurnIns.Helpers
 {
     /// <summary>
-    /// Holds the LOA resolution results: 
+    /// Holds the LOA resolution results:
     /// - Debit LOAs grouped by LOA with total amount
-    /// - Single credit LOA
+    /// - Credit LOAs grouped by LOA with total amount (usually one — the RISK / BE OPR
+    ///   centralization LOA — but the FY26 RISK-missing fallback produces a per-source
+    ///   credit map mirroring DebitLOAs, so funds remain on the originating LOA)
     /// - Total turn-in amount
     /// </summary>
     public class TurnInLOAResolution
     {
-        public Dictionary<EntityReference, decimal> DebitLOAs { get; } 
+        public Dictionary<EntityReference, decimal> DebitLOAs { get; }
             = new Dictionary<EntityReference, decimal>(new EntityReferenceComparer());
 
-        public EntityReference CreditLOA { get; set; }
+        public Dictionary<EntityReference, decimal> CreditLOAs { get; }
+            = new Dictionary<EntityReference, decimal>(new EntityReferenceComparer());
 
-        public decimal TotalAmount 
+        public decimal TotalAmount
             => DebitLOAs.Values.Sum();
     }
 
@@ -134,20 +137,43 @@ namespace Checkbook.Plugins.TurnIns.Helpers
                     $"Cannot determine fiscal year from Fund '{fundName}': {ex.Message}");
             }
 
-            result.CreditLOA = fy <= LOANameBuilder.MdepInNameLastFy
-                ? ResolveCreditLOA_FY26(service, tracing, fund, pg)
-                : ResolveCreditLOA_FY27Plus(service, tracing, fund, pg, appnOs.Value);
-
-            tracing.Trace($"Resolved credit LOA: {result.CreditLOA.Id} (FY{fy} branch).");
+            if (fy <= LOANameBuilder.MdepInNameLastFy)
+            {
+                var risk = TryResolveCreditLOA_FY26(service, tracing, fund, pg);
+                if (risk != null)
+                {
+                    result.CreditLOAs[risk] = result.TotalAmount;
+                    tracing.Trace($"Resolved credit LOA: {risk.Id} (FY{fy} RISK branch).");
+                }
+                else
+                {
+                    // RISK LOA missing — funds stay on each source LOA. The would-be
+                    // debit + credit pair for each LOA would net to zero, so we skip
+                    // ledger creation entirely (signaled by an empty CreditLOAs map).
+                    // RF TDP/Funded still drops via the item updaters, so the source
+                    // LOA's TDP Remaining grows by the turned-in amount — which is
+                    // the desired effect of leaving the funds in place.
+                    tracing.Trace(
+                        $"FY{fy}: RISK credit LOA not found — funds remain on source LOAs; " +
+                        "no ledger entries will be created for this Turn-In.");
+                }
+            }
+            else
+            {
+                var creditLoa = ResolveCreditLOA_FY27Plus(service, tracing, fund, pg, appnOs.Value);
+                result.CreditLOAs[creditLoa] = result.TotalAmount;
+                tracing.Trace($"Resolved credit LOA: {creditLoa.Id} (FY{fy} BE OPR branch).");
+            }
 
             return result;
         }
 
         /// <summary>
         /// FY26 credit LOA: Fund + PG + BOC(BASE) + DollarType(BASE) + MDEP(RISK).
-        /// Preserved verbatim so in-flight FY26 turn-ins keep working.
+        /// Returns null when no such LOA exists so the caller can fall back to
+        /// crediting each item's source LOA in place.
         /// </summary>
-        private static EntityReference ResolveCreditLOA_FY26(
+        private static EntityReference TryResolveCreditLOA_FY26(
             IOrganizationService service,
             ITracingService tracing,
             EntityReference fund,
@@ -172,10 +198,7 @@ namespace Checkbook.Plugins.TurnIns.Helpers
             flQuery.Criteria.AddCondition(FundingLineAttributes.MDEP,       ConditionOperator.Equal, mdepRisk.Id);
 
             var fl = service.RetrieveMultiple(flQuery).Entities.FirstOrDefault();
-            if (fl == null)
-                throw new InvalidPluginExecutionException(
-                    "Unable to find a Credit LOA with Fund + PG + BASE + BASE + RISK.");
-            return fl.ToEntityReference();
+            return fl?.ToEntityReference();
         }
 
         /// <summary>

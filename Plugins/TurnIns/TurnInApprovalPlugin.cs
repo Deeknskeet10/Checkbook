@@ -128,6 +128,38 @@ namespace Checkbook.Plugins.TurnIns
             tracing.Trace("Updating Requirement Fundings (RF-only items)...");
             TurnInRequirementFundingUpdater.ApplyRequirementFundingUpdates(service, tracing, items);
 
+            // ---- 5. Roll up affected parent RFs from the Prio changes ----
+            // PrioritizationRollupToRequirementFunding is guarded on context.Depth > 1,
+            // so the nested Prio updates above do not trigger it. Invoke the shared
+            // helper directly for each unique parent RF — same pattern RealignmentProcessor
+            // uses (see Plugins/Realignments/RealignmentProcessor.cs).
+            var parentRfIds = items
+                .Where(i => i.Prioritization != null && i.RequirementFunding != null)
+                .Select(i => i.RequirementFunding.Id)
+                .Distinct()
+                .ToList();
+            foreach (var rfId in parentRfIds)
+            {
+                tracing.Trace($"Rolling up parent RF {rfId} after Prio reduction.");
+                PrioritizationRollupHelper.RecalculateRFFunded(service, rfId, tracing);
+            }
+
+            // ---- 6. Recalculate LOA TDP / TDP Remaining for every LOA touched ----
+            // LedgerCreateFundingLineUpdater and RequirementFundingTDPRemainingUpdater
+            // both guard on Depth > 1, so the nested Ledger.Create and RF.Update calls
+            // above do not trigger them. Drive the recalc directly here so the LOA's
+            // TDP (ledger net) and TDP Remaining (RF allocations) reflect the Turn-In.
+            var affectedLoaIds = loaResolution.DebitLOAs.Keys
+                .Select(r => r.Id)
+                .Concat(loaResolution.CreditLOAs.Keys.Select(r => r.Id))
+                .Distinct()
+                .ToList();
+            foreach (var loaId in affectedLoaIds)
+            {
+                tracing.Trace($"Recalculating LOA {loaId} TDP after Turn-In ledger.");
+                TDPCalculationHelper.RecalculateLOATDP(service, loaId, tracing);
+            }
+
             tracing.Trace("TurnInApprovalPlugin completed successfully.");
         }
     }

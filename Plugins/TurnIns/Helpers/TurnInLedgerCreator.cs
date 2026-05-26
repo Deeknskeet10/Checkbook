@@ -22,13 +22,21 @@ namespace Checkbook.Plugins.TurnIns.Helpers
         {
             tracing.Trace("TurnInLedgerCreator: creating ledger entries...");
 
-            var creditLOA = loaResolution.CreditLOA;
-            if (creditLOA == null)
-                throw new InvalidPluginExecutionException("Credit LOA not resolved.");
+            // Empty CreditLOAs signals the "funds stay on source LOA" fallback
+            // (see TurnInLOAResolver — FY26 RISK missing). Skip both debit and
+            // credit ledger creation since they would net to zero on each LOA.
+            if (loaResolution.CreditLOAs.Count == 0)
+            {
+                tracing.Trace("No credit LOAs resolved — skipping ledger creation (funds remain in place).");
+                return;
+            }
 
             // --------------------------------------------------------------------
-            // First, create all debit ledger entries.
+            // Create all debit ledger entries, keyed by debit LOA so we can pair
+            // them with the matching credit LOA in the RISK-missing fallback case
+            // (where credit LOAs mirror debit LOAs 1:1).
             // --------------------------------------------------------------------
+            var debitLedgerIdsByLoa = new Dictionary<Guid, Guid>();
             var debitLedgerIds = new List<Guid>();
 
             foreach (var kvp in loaResolution.DebitLOAs)
@@ -50,46 +58,80 @@ namespace Checkbook.Plugins.TurnIns.Helpers
 
                 var debitId = service.Create(debitLedger);
                 debitLedgerIds.Add(debitId);
+                debitLedgerIdsByLoa[debitLOA.Id] = debitId;
 
                 tracing.Trace($"Debit ledger created with ID {debitId}");
             }
 
             // --------------------------------------------------------------------
-            // Create the credit ledger entry (single for entire Turn-In).
+            // Create credit ledger entries — usually one (RISK / BE OPR), or one
+            // per source LOA in the FY26 RISK-missing fallback. Each credit links
+            // back to its matching debit when one exists (same-LOA pairing),
+            // otherwise to the first debit so the chain is still queryable.
             // --------------------------------------------------------------------
-            decimal creditAmount = loaResolution.TotalAmount;
-
-            tracing.Trace($"Creating credit ledger for LOA {creditLOA.Id}, Amount {creditAmount}");
-
-            var creditLedger = new Entity(EntityNames.Ledger);
-            creditLedger[LedgerAttributes.Amount] = creditAmount;
-            creditLedger[LedgerAttributes.LineOfAccounting] = creditLOA;
-            creditLedger[LedgerAttributes.LedgerDirection] =
-                new OptionSetValue(LedgerDirectionValues.Credited);
-            creditLedger[LedgerAttributes.LedgerType] =
-                new OptionSetValue(LedgerTypeValues.TurnIn);
-            creditLedger[LedgerAttributes.TurnIn] =
-                new EntityReference(EntityNames.Turnin, turnInId);
-
-            // Link to first debit ledger for bi-directional reference
-            if (debitLedgerIds.Count > 0)
-                creditLedger[LedgerAttributes.RelatedEntry] =
-                    new EntityReference(EntityNames.Ledger, debitLedgerIds[0]);
-
-            var creditId = service.Create(creditLedger);
-
-            tracing.Trace($"Credit ledger created with ID {creditId}");
-
-            // --------------------------------------------------------------------
-            // Link each debit ledger back to the credit ledger.
-            // --------------------------------------------------------------------
-            foreach (var debitId in debitLedgerIds)
+            var creditLedgerIds = new List<Guid>();
+            foreach (var kvp in loaResolution.CreditLOAs)
             {
-                tracing.Trace($"Linking Debit Ledger {debitId} → Credit Ledger {creditId}");
+                var creditLOA = kvp.Key;
+                var creditAmount = kvp.Value;
+
+                tracing.Trace($"Creating credit ledger for LOA {creditLOA.Id}, Amount {creditAmount}");
+
+                var creditLedger = new Entity(EntityNames.Ledger);
+                creditLedger[LedgerAttributes.Amount] = creditAmount;
+                creditLedger[LedgerAttributes.LineOfAccounting] = creditLOA;
+                creditLedger[LedgerAttributes.LedgerDirection] =
+                    new OptionSetValue(LedgerDirectionValues.Credited);
+                creditLedger[LedgerAttributes.LedgerType] =
+                    new OptionSetValue(LedgerTypeValues.TurnIn);
+                creditLedger[LedgerAttributes.TurnIn] =
+                    new EntityReference(EntityNames.Turnin, turnInId);
+
+                Guid? pairedDebitId =
+                    debitLedgerIdsByLoa.TryGetValue(creditLOA.Id, out var sameLoaDebit)
+                        ? sameLoaDebit
+                        : (debitLedgerIds.Count > 0 ? debitLedgerIds[0] : (Guid?)null);
+
+                if (pairedDebitId.HasValue)
+                    creditLedger[LedgerAttributes.RelatedEntry] =
+                        new EntityReference(EntityNames.Ledger, pairedDebitId.Value);
+
+                var creditId = service.Create(creditLedger);
+                creditLedgerIds.Add(creditId);
+
+                tracing.Trace($"Credit ledger created with ID {creditId}");
+            }
+
+            // --------------------------------------------------------------------
+            // Link each debit ledger back to its paired credit ledger. In the
+            // single-credit case all debits point at the same credit; in the
+            // fallback case each debit pairs with the same-LOA credit (which
+            // shares the source LOA), falling back to the first credit.
+            // --------------------------------------------------------------------
+            var creditLedgerIdsByLoa = new Dictionary<Guid, Guid>();
+            {
+                int i = 0;
+                foreach (var creditKey in loaResolution.CreditLOAs.Keys)
+                {
+                    creditLedgerIdsByLoa[creditKey.Id] = creditLedgerIds[i++];
+                }
+            }
+
+            foreach (var debitKvp in loaResolution.DebitLOAs)
+            {
+                var debitLoaId = debitKvp.Key.Id;
+                var debitId = debitLedgerIdsByLoa[debitLoaId];
+
+                Guid pairedCreditId =
+                    creditLedgerIdsByLoa.TryGetValue(debitLoaId, out var sameLoaCredit)
+                        ? sameLoaCredit
+                        : creditLedgerIds[0];
+
+                tracing.Trace($"Linking Debit Ledger {debitId} → Credit Ledger {pairedCreditId}");
 
                 var updateDebit = new Entity(EntityNames.Ledger, debitId);
                 updateDebit[LedgerAttributes.RelatedEntry] =
-                    new EntityReference(EntityNames.Ledger, creditId);
+                    new EntityReference(EntityNames.Ledger, pairedCreditId);
 
                 service.Update(updateDebit);
             }
