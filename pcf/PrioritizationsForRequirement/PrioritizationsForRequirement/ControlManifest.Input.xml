@@ -1,12 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest>
-  <control namespace="ARNGCheckbook" constructor="PrioritizationsForRequirement" version="0.1.2" display-name-key="PrioritizationsForRequirement" description-key="Card list of prioritizations under a Requirement showing state priority, approval status, funded amount and supplies completeness." control-type="virtual">
+  <control namespace="ARNGCheckbook" constructor="PrioritizationsForRequirement" version="0.2.0" display-name-key="PrioritizationsForRequirement" description-key="Card list of prioritizations under a Requirement showing state priority, approval status, funded amount and fiscal year. Filterable by FY (defaults to current federal FY)." control-type="virtual">
     <data-set name="prioritizations" display-name-key="Prioritizations">
       <property-set name="name" display-name-key="Name" of-type="SingleLine.Text" usage="bound" required="true" />
       <property-set name="statePriority" display-name-key="State Priority" of-type="Whole.None" usage="bound" required="false" />
       <property-set name="approvalStatus" display-name-key="Approval Status" of-type="OptionSet" usage="bound" required="false" />
-      <property-set name="fundedAmount" display-name-key="Funded Amount" of-type="FP" usage="bound" required="false" />
-      <property-set name="unfundedAmount" display-name-key="Unfunded Amount" of-type="FP" usage="bound" required="false" />
+      <property-set name="fundedAmount" display-name-key="Funded Amount" of-type="Decimal" usage="bound" required="false" />
+      <property-set name="unfundedAmount" display-name-key="Unfunded Amount" of-type="Decimal" usage="bound" required="false" />
+      <property-set name="fiscalYear" display-name-key="Fiscal Year" of-type="OptionSet" usage="bound" required="false" />
       <property-set name="requirementType" display-name-key="Requirement Type" of-type="OptionSet" usage="bound" required="false" />
       <property-set name="createdOn" display-name-key="Created On" of-type="DateAndTime.DateAndTime" usage="bound" required="false" />
     </data-set>

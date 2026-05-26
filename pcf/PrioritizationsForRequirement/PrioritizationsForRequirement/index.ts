@@ -2,29 +2,35 @@ import * as React from "react";
 import { IInputs, IOutputs } from "./generated/ManifestTypes";
 import { PrioritizationsForRequirementApp, PrioritizationsForRequirementProps } from "./PrioritizationsForRequirementApp";
 
-const PAGE_SIZE = 500;
+// Dataverse subgrids default to whatever "Rows" the form designer set (often
+// 10–12). Override before the first fetch so the PCF sees the full set;
+// 5000 is the documented platform max. If a Requirement somehow has more than
+// 5000 Prioritizations, the updateView loop drains remaining pages.
+const PAGE_SIZE = 5000;
 
 export class PrioritizationsForRequirement implements ComponentFramework.ReactControl<IInputs, IOutputs> {
-  private context!: ComponentFramework.Context<IInputs>;
-  private pageSizeSet = false;
-
   public init(context: ComponentFramework.Context<IInputs>): void {
-    this.context = context;
     context.mode.trackContainerResize(true);
+
+    const paging = context.parameters.prioritizations?.paging as
+      | (ComponentFramework.PropertyTypes.DataSet["paging"] & {
+          setPageSize?: (size: number) => void;
+        })
+      | undefined;
+    if (paging && typeof paging.setPageSize === "function") {
+      paging.setPageSize(PAGE_SIZE);
+    }
   }
 
   public updateView(context: ComponentFramework.Context<IInputs>): React.ReactElement {
-    this.context = context;
     const dataset = context.parameters.prioritizations;
 
-    if (!dataset.loading) {
-      if (!this.pageSizeSet) {
-        this.pageSizeSet = true;
-        dataset.paging.setPageSize(PAGE_SIZE);
-        dataset.refresh();
-      } else if (dataset.paging.hasNextPage) {
-        dataset.paging.loadNextPage();
-      }
+    // If anything pushed us past the first page (extra-large parent, or the
+    // initial setPageSize was capped lower than expected), drain remaining
+    // pages. Each loadNextPage triggers another updateView; the loop converges
+    // when hasNextPage = false.
+    if (!dataset.loading && dataset.paging.hasNextPage && typeof dataset.paging.loadNextPage === "function") {
+      dataset.paging.loadNextPage();
     }
 
     const ctxAny: any = context.mode as any;
@@ -41,5 +47,7 @@ export class PrioritizationsForRequirement implements ComponentFramework.ReactCo
     return {};
   }
 
-  public destroy(): void {}
+  public destroy(): void {
+    // no-op
+  }
 }
