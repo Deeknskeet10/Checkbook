@@ -1,0 +1,42 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<savedqueries xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <savedquery>
+    <IsCustomizable>1</IsCustomizable>
+    <CanBeDeleted>0</CanBeDeleted>
+    <isquickfindquery>0</isquickfindquery>
+    <isprivate>0</isprivate>
+    <isdefault>1</isdefault>
+    <savedqueryid>{dd8ad28a-de14-4843-8364-00bb6db81556}</savedqueryid>
+    <layoutxml>
+      <grid name="resultset" jump="book_name" select="1" icon="1" preview="1">
+        <row name="result" id="book_requirementdetailsid">
+          <cell name="book_item" width="100" />
+          <cell name="book_tdc" width="100" />
+          <cell name="a_78c548dacdc640388fc0fa498bc8f8f6.book_quantitytype" width="159" />
+          <cell name="a_78c548dacdc640388fc0fa498bc8f8f6.book_category" width="130" />
+        </row>
+      </grid>
+    </layoutxml>
+    <querytype>0</querytype>
+    <fetchxml>
+      <fetch version="1.0" mapping="logical">
+        <entity name="book_requirementdetails">
+          <attribute name="book_requirementdetailsid" />
+          <filter type="and">
+            <condition attribute="statecode" operator="eq" value="0" />
+          </filter>
+          <attribute name="book_item" />
+          <attribute name="book_tdc" />
+          <link-entity alias="a_78c548dacdc640388fc0fa498bc8f8f6" name="book_item" to="book_item" from="book_itemid" link-type="outer" visible="false">
+            <attribute name="book_quantitytype" />
+            <attribute name="book_category" />
+          </link-entity>
+        </entity>
+      </fetch>
+    </fetchxml>
+    <IntroducedVersion>1.11.0.35</IntroducedVersion>
+    <LocalizedNames>
+      <LocalizedName description="Active Requirement Details" languagecode="1033" />
+    </LocalizedNames>
+  </savedquery>
+</savedqueries>

@@ -1,0 +1,56 @@
+import * as React from "react";
+import { CalEvent, DueOut, colorFor } from "./types";
+import { formatRangeNoYear } from "./dateUtils";
+
+export interface DetailPanelProps {
+    event: CalEvent;
+    dueOuts: DueOut[];
+    onClose: () => void;
+}
+
+const Field: React.FC<{ label: string; value: string }> = ({ label, value }) =>
+    value ? (
+        <div className="cal-dp__field">
+            <div className="cal-dp__label">{label}</div>
+            <div className="cal-dp__value">{value}</div>
+        </div>
+    ) : null;
+
+export const DetailPanel: React.FC<DetailPanelProps> = ({ event, dueOuts, onClose }) => {
+    const sorted = [...dueOuts].sort((a, b) => (a.due?.getTime() ?? 0) - (b.due?.getTime() ?? 0));
+    return (
+        <div className="cal-dp">
+            <div className="cal-dp__head" style={{ borderTopColor: colorFor(event.type) }}>
+                <div className="cal-dp__title">{event.name}</div>
+                <button className="cal-dp__close" onClick={onClose} aria-label="Close">
+                    ×
+                </button>
+            </div>
+            <div className="cal-dp__body">
+                <Field label="Type" value={event.type} />
+                <Field label="Dates" value={formatRangeNoYear(event.start, event.end)} />
+                <Field label="Swim Lane" value={event.laneName} />
+                <Field label="Division" value={event.divisionName} />
+                <Field label="Location" value={event.location} />
+                <Field label="Description" value={event.description} />
+                <Field label="POC" value={event.pocName} />
+                <Field label="Email" value={event.pocEmail} />
+                <Field label="Phone" value={event.pocPhone} />
+
+                <div className="cal-dp__field">
+                    <div className="cal-dp__label">Due-Outs ({sorted.length})</div>
+                    {sorted.length === 0 && <div className="cal-dp__value cal-dp__muted">None</div>}
+                    {sorted.map((d) => (
+                        <div className={`cal-dp__dueout${d.completed ? " cal-dp__dueout--done" : ""}`} key={d.id}>
+                            <span className="cal-dp__duedate">
+                                {d.due ? formatRangeNoYear(d.due, null) : "—"}
+                            </span>
+                            <span className="cal-dp__duetask">{d.task}</span>
+                            {d.completed && <span className="cal-dp__donetag">done</span>}
+                        </div>
+                    ))}
+                </div>
+            </div>
+        </div>
+    );
+};

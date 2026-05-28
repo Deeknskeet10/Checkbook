@@ -1,0 +1,21 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<SdkMessageProcessingStep Name="Checkbook.Plugins.Recalculations.RequirementFundingTDPRemainingUpdater: Create of book_requirementfunding" SdkMessageProcessingStepId="{d13614f4-b552-f111-bec5-001dd8204df7}" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <SdkMessageId>9ebdbb1b-ea3e-db11-86a7-000a3a5473e8</SdkMessageId>
+  <PluginTypeName>Checkbook.Plugins.Recalculations.RequirementFundingTDPRemainingUpdater, Checkbook_Plugins, Version=1.1.0.0, Culture=neutral, PublicKeyToken=041fde141b612e28</PluginTypeName>
+  <PluginTypeId>f8d95f77-daa2-4dfa-84ed-fe66d401063a</PluginTypeId>
+  <PrimaryEntity>book_requirementfunding</PrimaryEntity>
+  <AsyncAutoDelete>0</AsyncAutoDelete>
+  <Description>Creation of Requirement Funding</Description>
+  <FilteringAttributes>traversedpath,book_ape,createdby,createdonbehalfby,createdon,transactioncurrencyid,exchangerate,book_newfiscalyear,book_newfundedamount,book_fundingvalidated,importsequencenumber,book_lineofaccounting,book_lockfunding,book_mdep,modifiedby,modifiedonbehalfby,modifiedon,book_name,book_orderloa,ownerid,owningbusinessunit,owningteam,owninguser,book_prioritizationinstructions,book_priority,overriddencreatedon,book_requestedamount,book_requestedamount_date,book_requestedamount_state,book_requirement,book_requirementfundingid,book_reviewstatus,book_rvbnumber,book_spendplangenerated,statecode,statuscode,book_newtdp,timezoneruleversionnumber,book_ufrgenerated,book_newunfundedamount,utcconversiontimezonecode,book_newvalidatedamount,book_wbsnumber,book_newwithholding,book_withholdingreason</FilteringAttributes>
+  <ImpersonatingUserIdName>Microsoft Flow CDS Integration Service DoD</ImpersonatingUserIdName>
+  <InvocationSource>1</InvocationSource>
+  <Mode>0</Mode>
+  <Rank>1</Rank>
+  <EventHandlerTypeCode>4602</EventHandlerTypeCode>
+  <Stage>40</Stage>
+  <IsCustomizable>1</IsCustomizable>
+  <IsHidden>0</IsHidden>
+  <SupportedDeployment>0</SupportedDeployment>
+  <IntroducedVersion>1.0</IntroducedVersion>
+  <SdkMessageProcessingStepImages />
+</SdkMessageProcessingStep>

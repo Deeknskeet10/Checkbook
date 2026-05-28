@@ -1,0 +1,32 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<EntityRelationships xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <EntityRelationship Name="business_unit_geip_organization" />
+  <EntityRelationship Name="business_unit_lrc_event" />
+  <EntityRelationship Name="business_unit_lrc_eventdueout" />
+  <EntityRelationship Name="geip_geip_organization_Chief_contact" />
+  <EntityRelationship Name="geip_geip_organization_Deputy_contact" />
+  <EntityRelationship Name="geip_geip_organization_PerstatAdmin_contact" />
+  <EntityRelationship Name="geip_geip_organization_RelatedOrgs_geip_organi" />
+  <EntityRelationship Name="geip_organization_AlternatePerstatAdmin_contact" />
+  <EntityRelationship Name="geip_Organization_geip_Organization" />
+  <EntityRelationship Name="lk_geip_organization_createdby" />
+  <EntityRelationship Name="lk_geip_organization_modifiedby" />
+  <EntityRelationship Name="lk_lrc_event_createdby" />
+  <EntityRelationship Name="lk_lrc_event_modifiedby" />
+  <EntityRelationship Name="lk_lrc_eventdueout_createdby" />
+  <EntityRelationship Name="lk_lrc_eventdueout_modifiedby" />
+  <EntityRelationship Name="lrc_event_Branch_geip_organization" />
+  <EntityRelationship Name="lrc_event_Directorate_geip_organization" />
+  <EntityRelationship Name="lrc_event_Division_geip_organization" />
+  <EntityRelationship Name="lrc_event_Staff_geip_organization" />
+  <EntityRelationship Name="lrc_eventdueout_Event_lrc_event" />
+  <EntityRelationship Name="owner_geip_organization" />
+  <EntityRelationship Name="owner_lrc_event" />
+  <EntityRelationship Name="owner_lrc_eventdueout" />
+  <EntityRelationship Name="team_geip_organization" />
+  <EntityRelationship Name="team_lrc_event" />
+  <EntityRelationship Name="team_lrc_eventdueout" />
+  <EntityRelationship Name="user_geip_organization" />
+  <EntityRelationship Name="user_lrc_event" />
+  <EntityRelationship Name="user_lrc_eventdueout" />
+</EntityRelationships>

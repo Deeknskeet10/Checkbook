@@ -1,0 +1,354 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<forms xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <systemform>
+    <formid>{cd8beb55-b5c1-ed11-83fd-001dd803c225}</formid>
+    <IntroducedVersion>1.1.6.2</IntroducedVersion>
+    <FormPresentation>1</FormPresentation>
+    <FormActivationState>1</FormActivationState>
+    <form headerdensity="HighWithControls" shownavigationbar="false">
+      <tabs>
+        <tab verticallayout="true" id="{01d4e93c-d84d-4dbb-bba0-cdbdbb964e8d}" IsUserDefined="1" name="General" labelid="{f2c2cef2-9577-4963-90cd-0407991d28cb}">
+          <labels>
+            <label description="General" languagecode="1033" />
+          </labels>
+          <columns>
+            <column width="100%">
+              <sections>
+                <section showlabel="false" showbar="false" IsUserDefined="0" id="{a0146c9b-4afe-4463-a405-7503a053f49d}" columns="11" name="General" labelid="{5aa33f20-d2ec-4e54-bdb0-db78c6c7136a}">
+                  <labels>
+                    <label description="General" languagecode="1033" />
+                  </labels>
+                  <rows>
+                    <row>
+                      <cell id="{675bc0d2-a28c-4118-bc0a-31acd6b0417c}" labelid="{4e20794b-f9ff-4de3-9bf1-2e279f16d21a}">
+                        <labels>
+                          <label description="Name" languagecode="1033" />
+                        </labels>
+                        <control id="geip_name" classid="{4273EDBD-AC1D-40d3-9FB2-095C621B552D}" datafieldname="geip_name" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{f9d43b35-6d9f-4366-bf25-df5a5f1ded96}" locklevel="0" colspan="1" rowspan="1" labelid="{c51445b6-8b32-4049-bd20-a15ecfc9eced}">
+                        <labels>
+                          <label description="Designation" languagecode="1033" />
+                        </labels>
+                        <control id="geip_designation" classid="{3EF39988-22BB-4F0B-BBBE-64B5A3748AEE}" datafieldname="geip_designation" disabled="false" />
+                      </cell>
+                      <cell locklevel="0" id="{5dea1b2d-515d-4131-abe7-1fe8ed9f59fb}">
+                        <labels>
+                          <label description="" languagecode="1033" />
+                        </labels>
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{f81726bb-5b61-474d-a343-fb16d94e58fa}" locklevel="0" colspan="1" rowspan="1" labelid="{3b6cb333-d2d2-4ed0-8153-0032d795b3a6}">
+                        <labels>
+                          <label description="Parent Organization" languagecode="1033" />
+                        </labels>
+                        <control id="geip_organization" classid="{270BD3DB-D9AF-4782-9025-509E298DEC0A}" datafieldname="geip_organization" disabled="false" />
+                      </cell>
+                      <cell id="{a1118957-9b7e-45f8-aa4e-06fa7a38de3b}" locklevel="0" colspan="1" rowspan="1" visible="false">
+                        <labels>
+                          <label description="Related Orgs" languagecode="1033" />
+                        </labels>
+                        <control id="geip_relatedorgs" classid="{270BD3DB-D9AF-4782-9025-509E298DEC0A}" datafieldname="geip_relatedorgs" disabled="false" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell locklevel="0" id="{39a6e8dc-d8a5-4006-8673-9798399caeaf}">
+                        <labels>
+                          <label description="" languagecode="1033" />
+                        </labels>
+                      </cell>
+                      <cell id="{c32527bd-67a7-4f7c-b292-aac09a53cdaf}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="Chief" languagecode="1033" />
+                        </labels>
+                        <control id="geip_chief" classid="{270BD3DB-D9AF-4782-9025-509E298DEC0A}" datafieldname="geip_chief" disabled="false" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell locklevel="0" id="{2ea9f428-ea98-427d-a55d-66f0c11a10f9}">
+                        <labels>
+                          <label description="" languagecode="1033" />
+                        </labels>
+                      </cell>
+                      <cell id="{9851b261-e10d-4fa2-99ad-de385a573863}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="Deputy" languagecode="1033" />
+                        </labels>
+                        <control id="geip_deputy" classid="{270BD3DB-D9AF-4782-9025-509E298DEC0A}" datafieldname="geip_deputy" disabled="false" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell locklevel="0" id="{27ba0fc3-6d5f-4b59-8115-f00adb3860de}">
+                        <labels>
+                          <label description="" languagecode="1033" />
+                        </labels>
+                      </cell>
+                      <cell id="{7a08c1e8-c22d-4b7c-9b2d-6b6d09c2cbdd}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="Perstat Admin" languagecode="1033" />
+                        </labels>
+                        <control id="geip_perstatadmin" classid="{270BD3DB-D9AF-4782-9025-509E298DEC0A}" datafieldname="geip_perstatadmin" disabled="false" />
+                      </cell>
+                    </row>
+                  </rows>
+                </section>
+                <section name="General_section_3" id="538577d7-8508-4a19-a041-d80639eb283b" IsUserDefined="0" locklevel="0" showlabel="false" showbar="false" layout="varwidth" celllabelalignment="Left" celllabelposition="Left" columns="11" labelwidth="115">
+                  <labels>
+                    <label description="New Section" languagecode="1033" />
+                  </labels>
+                  <rows>
+                    <row />
+                    <row>
+                      <cell locklevel="0" id="{4fafd430-fd9e-47c7-8289-e4241b3a8567}" rowspan="4" colspan="1" auto="true">
+                        <labels>
+                          <label description="Related Branches" languagecode="1033" />
+                        </labels>
+                        <control indicationOfSubgrid="true" id="Subgrid_Related_Organizations" classid="{E7A81278-8635-4D9E-8D4D-59480B391C5B}">
+                          <parameters>
+                            <RecordsPerPage>12</RecordsPerPage>
+                            <AutoExpand>Auto</AutoExpand>
+                            <EnableQuickFind>false</EnableQuickFind>
+                            <EnableViewPicker>false</EnableViewPicker>
+                            <EnableChartPicker>true</EnableChartPicker>
+                            <ChartGridMode>All</ChartGridMode>
+                            <TargetEntityType>geip_organization</TargetEntityType>
+                            <ViewId>{A296E8DC-41BC-ED11-83FF-001DD8056F83}</ViewId>
+                            <ViewIds>{A296E8DC-41BC-ED11-83FF-001DD8056F83},{46A9ED7A-7BC2-ED11-83FD-001DD803C225}</ViewIds>
+                          </parameters>
+                        </control>
+                      </cell>
+                      <cell locklevel="0" id="{4498ef84-d99c-43ee-99aa-b262082fc5e8}" rowspan="4" colspan="1" auto="true">
+                        <labels>
+                          <label description="Personnel" languagecode="1033" />
+                        </labels>
+                        <control indicationOfSubgrid="true" id="Subgrid_Division_Personnel" classid="{E7A81278-8635-4D9E-8D4D-59480B391C5B}">
+                          <parameters>
+                            <RecordsPerPage>12</RecordsPerPage>
+                            <AutoExpand>Auto</AutoExpand>
+                            <EnableQuickFind>false</EnableQuickFind>
+                            <EnableViewPicker>false</EnableViewPicker>
+                            <EnableChartPicker>true</EnableChartPicker>
+                            <ChartGridMode>All</ChartGridMode>
+                            <TargetEntityType>contact</TargetEntityType>
+                            <ViewId>{1C10AB99-8551-ED11-BBA0-001DD80721AC}</ViewId>
+                            <ViewIds>{00000000-0000-0000-00AA-000010001003},{1C10AB99-8551-ED11-BBA0-001DD80721AC}</ViewIds>
+                            <RelationshipName>geip_contact_DivisionOrganization_geip_organiz</RelationshipName>
+                            <VisualizationId>{E365462F-1DB9-46A8-928D-BEAB1A7A2375}</VisualizationId>
+                          </parameters>
+                        </control>
+                      </cell>
+                    </row>
+                    <row />
+                    <row />
+                    <row />
+                  </rows>
+                </section>
+              </sections>
+            </column>
+          </columns>
+        </tab>
+        <tab name="tab_2" id="4cf6566d-4435-481d-9919-cf931a494a32" IsUserDefined="0" locklevel="0" showlabel="true">
+          <labels>
+            <label description="Authorizations" languagecode="1033" />
+          </labels>
+          <columns>
+            <column width="100%">
+              <sections>
+                <section name="tab_2_section_1" id="70bc1494-03e5-4aa9-8dab-3b00fa2d7351" IsUserDefined="0" locklevel="0" showlabel="true" showbar="false" layout="varwidth" celllabelalignment="Left" celllabelposition="Left" columns="11" labelwidth="115">
+                  <labels>
+                    <label description="Authorizations" languagecode="1033" />
+                  </labels>
+                  <rows>
+                    <row>
+                      <cell locklevel="0" id="{a0297272-7924-4fee-8399-6d517a8a2a27}">
+                        <labels>
+                          <label description="" languagecode="1033" />
+                        </labels>
+                      </cell>
+                      <cell locklevel="0" id="{180c2bde-24c1-4890-a762-54dc6b5fac97}">
+                        <labels>
+                          <label description="" languagecode="1033" />
+                        </labels>
+                      </cell>
+                    </row>
+                    <row>
+                      <cell locklevel="0" id="{07c8d3c8-9685-4020-bbe5-e04073082b37}" rowspan="4" colspan="1" auto="false">
+                        <labels>
+                          <label description="Assigned Authorizations" languagecode="1033" />
+                        </labels>
+                        <control indicationOfSubgrid="true" id="Subgrid_new_1" classid="{E7A81278-8635-4D9E-8D4D-59480B391C5B}">
+                          <parameters>
+                            <RecordsPerPage>4</RecordsPerPage>
+                            <AutoExpand>Fixed</AutoExpand>
+                            <EnableQuickFind>false</EnableQuickFind>
+                            <EnableViewPicker>false</EnableViewPicker>
+                            <EnableChartPicker>true</EnableChartPicker>
+                            <ChartGridMode>All</ChartGridMode>
+                            <RelationshipName>geip_authorization_DivisionOrg_geip_organization</RelationshipName>
+                            <TargetEntityType>geip_authorization</TargetEntityType>
+                            <ViewId>{97DD4657-A5DC-418C-B0FD-AAB4EA210184}</ViewId>
+                            <ViewIds>{97DD4657-A5DC-418C-B0FD-AAB4EA210184}</ViewIds>
+                            <VisualizationId>{43A12B96-CBAD-F011-BBD3-001DD80560C8}</VisualizationId>
+                          </parameters>
+                        </control>
+                      </cell>
+                      <cell locklevel="0" id="{48102a49-bf8c-4037-b4d7-a4e8681c7cd4}" rowspan="4" colspan="1" auto="false">
+                        <labels>
+                          <label description="Unfilled Authorizations" languagecode="1033" />
+                        </labels>
+                        <control indicationOfSubgrid="true" id="Subgrid_new_2" classid="{E7A81278-8635-4D9E-8D4D-59480B391C5B}">
+                          <parameters>
+                            <RecordsPerPage>4</RecordsPerPage>
+                            <AutoExpand>Fixed</AutoExpand>
+                            <EnableQuickFind>false</EnableQuickFind>
+                            <EnableViewPicker>false</EnableViewPicker>
+                            <EnableChartPicker>true</EnableChartPicker>
+                            <ChartGridMode>All</ChartGridMode>
+                            <RelationshipName>geip_authorization_DivisionOrg_geip_organization</RelationshipName>
+                            <TargetEntityType>geip_authorization</TargetEntityType>
+                            <ViewId>{97DD4657-A5DC-418C-B0FD-AAB4EA210184}</ViewId>
+                            <ViewIds>{97DD4657-A5DC-418C-B0FD-AAB4EA210184}</ViewIds>
+                            <VisualizationId>{43A12B96-CBAD-F011-BBD3-001DD80560C8}</VisualizationId>
+                          </parameters>
+                        </control>
+                      </cell>
+                    </row>
+                    <row>
+                      <cell locklevel="0" id="{161af0e0-0387-4566-9417-8c53b2cad9b2}">
+                        <labels>
+                          <label description="" languagecode="1033" />
+                        </labels>
+                      </cell>
+                    </row>
+                    <row>
+                      <cell locklevel="0" id="{467462e5-a2fb-4d36-8f1f-d219b9b9ec1b}">
+                        <labels>
+                          <label description="" languagecode="1033" />
+                        </labels>
+                      </cell>
+                    </row>
+                    <row>
+                      <cell locklevel="0" id="{35df0a3d-552d-4809-84e8-92591cab00f7}">
+                        <labels>
+                          <label description="" languagecode="1033" />
+                        </labels>
+                      </cell>
+                    </row>
+                  </rows>
+                </section>
+              </sections>
+            </column>
+          </columns>
+        </tab>
+      </tabs>
+      <header id="{59aa179b-f650-42a7-b462-f2d71833cdd8}" celllabelposition="Top" columns="111" labelwidth="115" celllabelalignment="Left">
+        <rows>
+          <row>
+            <cell id="{643e0da6-3d46-43e4-a46d-a77fc3248c87}" showlabel="false" labelid="{8d03c550-dbdf-4fb2-9bcb-8ecef902d0d2}">
+              <labels>
+                <label description="" languagecode="1033" />
+              </labels>
+            </cell>
+            <cell id="{980d1f39-3a35-4ca1-95f9-d7496a0a56ce}" showlabel="false" labelid="{67779060-3703-4ab1-9106-c89a27d592c8}">
+              <labels>
+                <label description="" languagecode="1033" />
+              </labels>
+            </cell>
+            <cell id="{5631b949-ca46-4174-8097-cd408188e570}" showlabel="false" labelid="{2a2e240a-61c6-47b3-8b9f-3d7df1683e63}">
+              <labels>
+                <label description="" languagecode="1033" />
+              </labels>
+            </cell>
+            <cell id="{7664e1a6-0a04-48d7-a9e0-ed1802a577a0}" colspan="1" rowspan="1" labelid="{9a46809c-e057-462e-bc7f-8579d6cbca97}">
+              <labels>
+                <label description="Owner" languagecode="1033" />
+              </labels>
+              <control id="header_ownerid" classid="{270BD3DB-D9AF-4782-9025-509E298DEC0A}" datafieldname="ownerid" />
+            </cell>
+          </row>
+        </rows>
+      </header>
+      <footer id="{ea6a127a-e46b-4c2e-931c-1c467b607d9c}" celllabelposition="Top" columns="111" labelwidth="115" celllabelalignment="Left">
+        <rows>
+          <row>
+            <cell id="{a571c23e-ae6b-42b6-890d-1cbfaab50887}" showlabel="false" labelid="{a0413058-747e-4ad7-8163-58c56f55e483}">
+              <labels>
+                <label description="" languagecode="1033" />
+              </labels>
+            </cell>
+            <cell id="{88e76857-3b48-4d85-a4a9-0df216cb080e}" showlabel="false" labelid="{9369a006-f4a6-4fc4-9eb7-f1c69dd7847e}">
+              <labels>
+                <label description="" languagecode="1033" />
+              </labels>
+            </cell>
+            <cell id="{03be2c6f-b023-4073-9dc9-b7a45f56f691}" showlabel="false" labelid="{c4f29b8b-0685-417a-ba6d-51b40d831e23}">
+              <labels>
+                <label description="" languagecode="1033" />
+              </labels>
+            </cell>
+          </row>
+        </rows>
+      </footer>
+      <DisplayConditions Order="3" FallbackForm="true">
+        <Role Id="{627090ff-40a3-4053-8790-584edc5be201}" />
+        <Role Id="{119f245c-3cc8-4b62-b31c-d1a046ced15d}" />
+      </DisplayConditions>
+      <Navigation>
+        <NavBar>
+          <NavBarByRelationshipItem Area="Info" Show="false" RelationshipName="geip_contact_Organization_geip_organization" Id="nav_geip_contact_Organization_geip_organization" Sequence="10000">
+            <Titles>
+              <Title Text="Contacts" LCID="1033" />
+            </Titles>
+          </NavBarByRelationshipItem>
+          <NavBarByRelationshipItem Area="Info" Show="false" RelationshipName="geip_geip_organization_geip_opr_organization" Id="nav_geip_geip_organization_geip_opr_organization" Sequence="10000">
+            <Titles>
+              <Title Text="OPRS" LCID="1033" />
+            </Titles>
+          </NavBarByRelationshipItem>
+          <NavBarByRelationshipItem Area="Info" Show="false" RelationshipName="geip_contact_OPROrganization_geip_organization" Id="nav_geip_contact_OPROrganization_geip_organization" Sequence="10000">
+            <Titles>
+              <Title Text="Contacts" LCID="1033" />
+            </Titles>
+          </NavBarByRelationshipItem>
+          <NavBarByRelationshipItem Area="Info" Show="false" RelationshipName="geip_contact_BranchOrganization_geip_organizat" Id="nav_geip_contact_BranchOrganization_geip_organizat" Sequence="10000">
+            <Titles>
+              <Title Text="Contacts" LCID="1033" />
+            </Titles>
+          </NavBarByRelationshipItem>
+          <NavBarByRelationshipItem Area="Info" Show="false" RelationshipName="geip_contact_StaffOrganization_geip_organizati" Id="nav_geip_contact_StaffOrganization_geip_organizati" Sequence="10000">
+            <Titles>
+              <Title Text="Contacts" LCID="1033" />
+            </Titles>
+          </NavBarByRelationshipItem>
+          <NavBarByRelationshipItem Area="Info" Show="true" RelationshipName="geip_contact_DivisionOrganization_geip_organiz" Id="nav_geip_contact_DivisionOrganization_geip_organiz" Sequence="10000">
+            <Titles>
+              <Title Text="Personnel" LCID="1033" />
+            </Titles>
+          </NavBarByRelationshipItem>
+        </NavBar>
+      </Navigation>
+      <formLibraries>
+        <Library name="geip_Organization.js" libraryUniqueId="{ddc665f4-ba8f-4120-a3e7-63a8da3d2ac8}" />
+      </formLibraries>
+      <events>
+        <event name="onload" application="false" active="false">
+          <Handlers>
+            <Handler functionName="SwitchFormBasedOnDesignationType" libraryName="geip_Organization.js" handlerUniqueId="{a671ccaa-c976-4fe7-a8ee-bb92dd5d750a}" enabled="true" parameters="" passExecutionContext="true" />
+            <Handler functionName="setRelatedOrgsView" libraryName="geip_Organization.js" handlerUniqueId="{8e5f6454-855e-44b4-945b-4005ad0b2476}" enabled="true" parameters="" passExecutionContext="true" />
+          </Handlers>
+        </event>
+      </events>
+    </form>
+    <IsCustomizable>1</IsCustomizable>
+    <CanBeDeleted>1</CanBeDeleted>
+    <LocalizedNames>
+      <LocalizedName description="Division" languagecode="1033" />
+    </LocalizedNames>
+    <Descriptions>
+      <Description description="A form for this entity." languagecode="1033" />
+    </Descriptions>
+  </systemform>
+</forms>

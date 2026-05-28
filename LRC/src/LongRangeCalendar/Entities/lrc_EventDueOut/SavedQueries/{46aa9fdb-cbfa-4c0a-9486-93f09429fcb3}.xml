@@ -1,0 +1,37 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<savedqueries xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <savedquery>
+    <IsCustomizable>1</IsCustomizable>
+    <CanBeDeleted>0</CanBeDeleted>
+    <isquickfindquery>0</isquickfindquery>
+    <isprivate>0</isprivate>
+    <isdefault>0</isdefault>
+    <savedqueryid>{46aa9fdb-cbfa-4c0a-9486-93f09429fcb3}</savedqueryid>
+    <layoutxml>
+      <grid name="resultset" jump="lrc_name" select="1" icon="1" preview="1">
+        <row name="result" id="lrc_eventdueoutid">
+          <cell name="lrc_name" width="300" />
+          <cell name="createdon" width="125" />
+        </row>
+      </grid>
+    </layoutxml>
+    <querytype>0</querytype>
+    <fetchxml>
+      <fetch version="1.0" mapping="logical">
+        <entity name="lrc_eventdueout">
+          <attribute name="lrc_eventdueoutid" />
+          <attribute name="lrc_name" />
+          <attribute name="createdon" />
+          <order attribute="lrc_name" descending="false" />
+          <filter type="and">
+            <condition attribute="statecode" operator="eq" value="1" />
+          </filter>
+        </entity>
+      </fetch>
+    </fetchxml>
+    <IntroducedVersion>1.0.0.0</IntroducedVersion>
+    <LocalizedNames>
+      <LocalizedName description="Inactive Event Due-Outs" languagecode="1033" />
+    </LocalizedNames>
+  </savedquery>
+</savedqueries>

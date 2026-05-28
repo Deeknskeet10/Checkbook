@@ -1,0 +1,346 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ImportExportXml version="9.2.26042.173" SolutionPackageVersion="9.2" languagecode="1033" generatedBy="CrmLive" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" OrganizationVersion="9.2.26042.173" OrganizationSchemaType="Standard" CRMServerServiceabilityVersion="9.2.26043.00177">
+  <SolutionManifest>
+    <UniqueName>LongRangeCalendar</UniqueName>
+    <LocalizedNames>
+      <LocalizedName description="Long Range Calendar" languagecode="1033" />
+    </LocalizedNames>
+    <Descriptions />
+    <Version>1.0.0.1</Version>
+    <Managed>0</Managed>
+    <Publisher>
+      <UniqueName>longRangeCalendar</UniqueName>
+      <LocalizedNames>
+        <LocalizedName description="Long Range Calendar" languagecode="1033" />
+      </LocalizedNames>
+      <Descriptions>
+        <Description description="G3's Long Range Calendar" languagecode="1033" />
+      </Descriptions>
+      <EMailAddress xsi:nil="true"></EMailAddress>
+      <SupportingWebsiteUrl xsi:nil="true"></SupportingWebsiteUrl>
+      <CustomizationPrefix>lrc</CustomizationPrefix>
+      <CustomizationOptionValuePrefix>85645</CustomizationOptionValuePrefix>
+      <Addresses>
+        <Address>
+          <AddressNumber>1</AddressNumber>
+          <AddressTypeCode>1</AddressTypeCode>
+          <City xsi:nil="true"></City>
+          <County xsi:nil="true"></County>
+          <Country xsi:nil="true"></Country>
+          <Fax xsi:nil="true"></Fax>
+          <FreightTermsCode xsi:nil="true"></FreightTermsCode>
+          <ImportSequenceNumber xsi:nil="true"></ImportSequenceNumber>
+          <Latitude xsi:nil="true"></Latitude>
+          <Line1 xsi:nil="true"></Line1>
+          <Line2 xsi:nil="true"></Line2>
+          <Line3 xsi:nil="true"></Line3>
+          <Longitude xsi:nil="true"></Longitude>
+          <Name xsi:nil="true"></Name>
+          <PostalCode xsi:nil="true"></PostalCode>
+          <PostOfficeBox xsi:nil="true"></PostOfficeBox>
+          <PrimaryContactName xsi:nil="true"></PrimaryContactName>
+          <ShippingMethodCode>1</ShippingMethodCode>
+          <StateOrProvince xsi:nil="true"></StateOrProvince>
+          <Telephone1 xsi:nil="true"></Telephone1>
+          <Telephone2 xsi:nil="true"></Telephone2>
+          <Telephone3 xsi:nil="true"></Telephone3>
+          <TimeZoneRuleVersionNumber xsi:nil="true"></TimeZoneRuleVersionNumber>
+          <UPSZone xsi:nil="true"></UPSZone>
+          <UTCOffset xsi:nil="true"></UTCOffset>
+          <UTCConversionTimeZoneCode xsi:nil="true"></UTCConversionTimeZoneCode>
+        </Address>
+        <Address>
+          <AddressNumber>2</AddressNumber>
+          <AddressTypeCode>1</AddressTypeCode>
+          <City xsi:nil="true"></City>
+          <County xsi:nil="true"></County>
+          <Country xsi:nil="true"></Country>
+          <Fax xsi:nil="true"></Fax>
+          <FreightTermsCode xsi:nil="true"></FreightTermsCode>
+          <ImportSequenceNumber xsi:nil="true"></ImportSequenceNumber>
+          <Latitude xsi:nil="true"></Latitude>
+          <Line1 xsi:nil="true"></Line1>
+          <Line2 xsi:nil="true"></Line2>
+          <Line3 xsi:nil="true"></Line3>
+          <Longitude xsi:nil="true"></Longitude>
+          <Name xsi:nil="true"></Name>
+          <PostalCode xsi:nil="true"></PostalCode>
+          <PostOfficeBox xsi:nil="true"></PostOfficeBox>
+          <PrimaryContactName xsi:nil="true"></PrimaryContactName>
+          <ShippingMethodCode>1</ShippingMethodCode>
+          <StateOrProvince xsi:nil="true"></StateOrProvince>
+          <Telephone1 xsi:nil="true"></Telephone1>
+          <Telephone2 xsi:nil="true"></Telephone2>
+          <Telephone3 xsi:nil="true"></Telephone3>
+          <TimeZoneRuleVersionNumber xsi:nil="true"></TimeZoneRuleVersionNumber>
+          <UPSZone xsi:nil="true"></UPSZone>
+          <UTCOffset xsi:nil="true"></UTCOffset>
+          <UTCConversionTimeZoneCode xsi:nil="true"></UTCConversionTimeZoneCode>
+        </Address>
+      </Addresses>
+    </Publisher>
+    <RootComponents>
+      <RootComponent type="1" schemaName="geip_organization" behavior="0" />
+      <RootComponent type="1" schemaName="lrc_event" behavior="0" />
+      <RootComponent type="1" schemaName="lrc_eventdueout" behavior="0" />
+      <RootComponent type="62" schemaName="lrc_LongRangeCalendar" behavior="0" />
+      <RootComponent type="80" schemaName="lrc_LongRangeCalendar" behavior="0" />
+    </RootComponents>
+    <MissingDependencies>
+      <MissingDependency>
+        <Required type="1" schemaName="aft_afteventoprs" displayName="AFT Event OPRs" solution="Active" />
+        <Dependent type="1" schemaName="geip_organization" displayName="Organization" />
+      </MissingDependency>
+      <MissingDependency>
+        <Required type="1" schemaName="cr2f7_dtsinprocessing" displayName="DTS In Processing" solution="Active" />
+        <Dependent type="1" schemaName="geip_organization" displayName="Organization" />
+      </MissingDependency>
+      <MissingDependency>
+        <Required type="1" schemaName="cr2f7_rajprojecttracking" displayName="Project-Efficiency" solution="Active" />
+        <Dependent type="1" schemaName="geip_organization" displayName="Organization" />
+      </MissingDependency>
+      <MissingDependency>
+        <Required type="1" schemaName="geip_accessrequest" displayName="Request" solution="Active" />
+        <Dependent type="1" schemaName="geip_organization" displayName="Organization" />
+      </MissingDependency>
+      <MissingDependency>
+        <Required type="1" schemaName="geip_authorization" displayName="Authorization" solution="Active" />
+        <Dependent type="1" schemaName="geip_organization" displayName="Organization" />
+      </MissingDependency>
+      <MissingDependency>
+        <Required type="1" schemaName="geip_authorization" displayName="Authorization" solution="Active" />
+        <Dependent type="60" displayName="Division" parentDisplayName="Organization" id="{cd8beb55-b5c1-ed11-83fd-001dd803c225}" />
+      </MissingDependency>
+      <MissingDependency>
+        <Required type="1" schemaName="geip_dailyperstatreport" displayName="Daily Perstat Report" solution="Active" />
+        <Dependent type="1" schemaName="geip_organization" displayName="Organization" />
+      </MissingDependency>
+      <MissingDependency>
+        <Required type="1" schemaName="geip_inprocessing" displayName="In-Processing" solution="Active" />
+        <Dependent type="1" schemaName="geip_organization" displayName="Organization" />
+      </MissingDependency>
+      <MissingDependency>
+        <Required type="1" schemaName="geip_personnelstatus" displayName="Personnel Status" solution="Active" />
+        <Dependent type="1" schemaName="geip_organization" displayName="Organization" />
+      </MissingDependency>
+      <MissingDependency>
+        <Required type="1" schemaName="geip_soldierhealthdata" displayName="AFT Event Roster" solution="Active" />
+        <Dependent type="1" schemaName="geip_organization" displayName="Organization" />
+      </MissingDependency>
+      <MissingDependency>
+        <Required type="1" schemaName="geip_worklocation" displayName="Work Location" solution="Active" />
+        <Dependent type="1" schemaName="geip_organization" displayName="Organization" />
+      </MissingDependency>
+      <MissingDependency>
+        <Required type="10" schemaName="geip_authorization_DivisionOrg_geip_organization" displayName="geip_authorization_DivisionOrg_geip_organization" parentSchemaName="geip_organization" parentDisplayName="Organization" solution="Active" />
+        <Dependent type="60" displayName="Division" parentDisplayName="Organization" id="{cd8beb55-b5c1-ed11-83fd-001dd803c225}" />
+      </MissingDependency>
+      <MissingDependency>
+        <Required type="10" schemaName="geip_contact_BranchOrganization_geip_organizat" displayName="geip_contact_BranchOrganization_geip_organizat" parentSchemaName="geip_organization" parentDisplayName="Organization" solution="Active" />
+        <Dependent type="60" displayName="Branch" parentDisplayName="Organization" id="{21b94e63-b5c1-ed11-83fd-001dd803c225}" />
+      </MissingDependency>
+      <MissingDependency>
+        <Required type="10" schemaName="geip_contact_BranchOrganization_geip_organizat" displayName="geip_contact_BranchOrganization_geip_organizat" parentSchemaName="geip_organization" parentDisplayName="Organization" solution="Active" />
+        <Dependent type="60" displayName="Facilities Mgmt - Branch" parentDisplayName="Organization" id="{5deca3cb-fee6-ef11-9342-001dd80597ee}" />
+      </MissingDependency>
+      <MissingDependency>
+        <Required type="10" schemaName="geip_contact_DivisionOrganization_geip_organiz" displayName="geip_contact_DivisionOrganization_geip_organiz" parentSchemaName="geip_organization" parentDisplayName="Organization" solution="Active" />
+        <Dependent type="60" displayName="Facilities Mgmt - Division" parentDisplayName="Organization" id="{a4410b42-ffe6-ef11-9342-001dd820636c}" />
+      </MissingDependency>
+      <MissingDependency>
+        <Required type="10" schemaName="geip_contact_DivisionOrganization_geip_organiz" displayName="geip_contact_DivisionOrganization_geip_organiz" parentSchemaName="geip_organization" parentDisplayName="Organization" solution="Active" />
+        <Dependent type="60" displayName="Division" parentDisplayName="Organization" id="{cd8beb55-b5c1-ed11-83fd-001dd803c225}" />
+      </MissingDependency>
+      <MissingDependency>
+        <Required type="10" schemaName="geip_contact_OPROrganization_geip_organization" displayName="geip_contact_OPROrganization_geip_organization" parentSchemaName="geip_organization" parentDisplayName="Organization" solution="Active" />
+        <Dependent type="60" displayName="Facilities Mgmt - OPR" parentDisplayName="Organization" id="{325c38c8-ffe6-ef11-9342-001dd820636c}" />
+      </MissingDependency>
+      <MissingDependency>
+        <Required type="10" schemaName="geip_contact_OPROrganization_geip_organization" displayName="geip_contact_OPROrganization_geip_organization" parentSchemaName="geip_organization" parentDisplayName="Organization" solution="Active" />
+        <Dependent type="60" displayName="OPR" parentDisplayName="Organization" id="{4ead0d2c-b5c1-ed11-83fd-001dd803c225}" />
+      </MissingDependency>
+      <MissingDependency>
+        <Required type="10" schemaName="geip_contact_Organization_geip_organization" displayName="geip_contact_Organization_geip_organization" parentSchemaName="geip_organization" parentDisplayName="Organization" solution="Active" />
+        <Dependent type="60" displayName="Organization" parentDisplayName="Organization" id="{00378e86-2ca5-49b0-b245-3c04d4ab4537}" />
+      </MissingDependency>
+      <MissingDependency>
+        <Required type="10" schemaName="geip_contact_Organization_geip_organization" displayName="geip_contact_Organization_geip_organization" parentSchemaName="geip_organization" parentDisplayName="Organization" solution="Active" />
+        <Dependent type="60" displayName="Portal - Staff" parentDisplayName="Organization" id="{2114138e-95dd-ef11-8eea-001dd820636c}" />
+      </MissingDependency>
+      <MissingDependency>
+        <Required type="10" schemaName="geip_contact_Organization_geip_organization" displayName="geip_contact_Organization_geip_organization" parentSchemaName="geip_organization" parentDisplayName="Organization" solution="Active" />
+        <Dependent type="60" displayName="Portal - Branch" parentDisplayName="Organization" id="{284aa87f-94dd-ef11-8eea-001dd80597ee}" />
+      </MissingDependency>
+      <MissingDependency>
+        <Required type="10" schemaName="geip_contact_Organization_geip_organization" displayName="geip_contact_Organization_geip_organization" parentSchemaName="geip_organization" parentDisplayName="Organization" solution="Active" />
+        <Dependent type="60" displayName="Facilities Mgmt - Organization" parentDisplayName="Organization" id="{34c12a1e-02e7-ef11-9342-001dd820636c}" />
+      </MissingDependency>
+      <MissingDependency>
+        <Required type="10" schemaName="geip_contact_Organization_geip_organization" displayName="geip_contact_Organization_geip_organization" parentSchemaName="geip_organization" parentDisplayName="Organization" solution="Active" />
+        <Dependent type="60" displayName="Organization Minimal Form" parentDisplayName="Organization" id="{40878807-cbaa-f011-bbd3-001dd805a74b}" />
+      </MissingDependency>
+      <MissingDependency>
+        <Required type="10" schemaName="geip_contact_Organization_geip_organization" displayName="geip_contact_Organization_geip_organization" parentSchemaName="geip_organization" parentDisplayName="Organization" solution="Active" />
+        <Dependent type="60" displayName="Organization main form" parentDisplayName="Organization" id="{491fe393-cefc-ee11-a1fe-001dd8059d03}" />
+      </MissingDependency>
+      <MissingDependency>
+        <Required type="10" schemaName="geip_contact_Organization_geip_organization" displayName="geip_contact_Organization_geip_organization" parentSchemaName="geip_organization" parentDisplayName="Organization" solution="Active" />
+        <Dependent type="60" displayName="Portal - OPR" parentDisplayName="Organization" id="{57505df3-94dd-ef11-8eea-001dd80597ee}" />
+      </MissingDependency>
+      <MissingDependency>
+        <Required type="10" schemaName="geip_contact_Organization_geip_organization" displayName="geip_contact_Organization_geip_organization" parentSchemaName="geip_organization" parentDisplayName="Organization" solution="Active" />
+        <Dependent type="60" displayName="Portal - Division" parentDisplayName="Organization" id="{c54866d0-94dd-ef11-8eea-001dd805ad8d}" />
+      </MissingDependency>
+      <MissingDependency>
+        <Required type="10" schemaName="geip_contact_Organization_geip_organization" displayName="geip_contact_Organization_geip_organization" parentSchemaName="geip_organization" parentDisplayName="Organization" solution="Active" />
+        <Dependent type="60" displayName="Portal - Organization" parentDisplayName="Organization" id="{f731ac50-95dd-ef11-8eea-001dd805ad8d}" />
+      </MissingDependency>
+      <MissingDependency>
+        <Required type="10" schemaName="geip_contact_StaffOrganization_geip_organizati" displayName="geip_contact_StaffOrganization_geip_organizati" parentSchemaName="geip_organization" parentDisplayName="Organization" solution="Active" />
+        <Dependent type="60" displayName="Staff" parentDisplayName="Organization" id="{11adf341-b5c1-ed11-83fd-001dd80610d9}" />
+      </MissingDependency>
+      <MissingDependency>
+        <Required type="10" schemaName="geip_contact_StaffOrganization_geip_organizati" displayName="geip_contact_StaffOrganization_geip_organizati" parentSchemaName="geip_organization" parentDisplayName="Organization" solution="Active" />
+        <Dependent type="60" displayName="Facilities Mgmt - Staff" parentDisplayName="Organization" id="{99d0c486-ffe6-ef11-9342-001dd805ad8d}" />
+      </MissingDependency>
+      <MissingDependency>
+        <Required type="26" schemaName="Active Persons" displayName="Active Persons" parentSchemaName="contact" parentDisplayName="Contact" solution="Active" id="{1c10ab99-8551-ed11-bba0-001dd80721ac}" />
+        <Dependent type="60" displayName="Organization" parentDisplayName="Organization" id="{00378e86-2ca5-49b0-b245-3c04d4ab4537}" />
+      </MissingDependency>
+      <MissingDependency>
+        <Required type="26" schemaName="Active Persons" displayName="Active Persons" parentSchemaName="contact" parentDisplayName="Contact" solution="Active" id="{1c10ab99-8551-ed11-bba0-001dd80721ac}" />
+        <Dependent type="60" displayName="Staff" parentDisplayName="Organization" id="{11adf341-b5c1-ed11-83fd-001dd80610d9}" />
+      </MissingDependency>
+      <MissingDependency>
+        <Required type="26" schemaName="Active Persons" displayName="Active Persons" parentSchemaName="contact" parentDisplayName="Contact" solution="Active" id="{1c10ab99-8551-ed11-bba0-001dd80721ac}" />
+        <Dependent type="60" displayName="Branch" parentDisplayName="Organization" id="{21b94e63-b5c1-ed11-83fd-001dd803c225}" />
+      </MissingDependency>
+      <MissingDependency>
+        <Required type="26" schemaName="Active Persons" displayName="Active Persons" parentSchemaName="contact" parentDisplayName="Contact" solution="Active" id="{1c10ab99-8551-ed11-bba0-001dd80721ac}" />
+        <Dependent type="60" displayName="Facilities Mgmt - OPR" parentDisplayName="Organization" id="{325c38c8-ffe6-ef11-9342-001dd820636c}" />
+      </MissingDependency>
+      <MissingDependency>
+        <Required type="26" schemaName="Active Persons" displayName="Active Persons" parentSchemaName="contact" parentDisplayName="Contact" solution="Active" id="{1c10ab99-8551-ed11-bba0-001dd80721ac}" />
+        <Dependent type="60" displayName="Facilities Mgmt - Organization" parentDisplayName="Organization" id="{34c12a1e-02e7-ef11-9342-001dd820636c}" />
+      </MissingDependency>
+      <MissingDependency>
+        <Required type="26" schemaName="Active Persons" displayName="Active Persons" parentSchemaName="contact" parentDisplayName="Contact" solution="Active" id="{1c10ab99-8551-ed11-bba0-001dd80721ac}" />
+        <Dependent type="60" displayName="Organization main form" parentDisplayName="Organization" id="{491fe393-cefc-ee11-a1fe-001dd8059d03}" />
+      </MissingDependency>
+      <MissingDependency>
+        <Required type="26" schemaName="Active Persons" displayName="Active Persons" parentSchemaName="contact" parentDisplayName="Contact" solution="Active" id="{1c10ab99-8551-ed11-bba0-001dd80721ac}" />
+        <Dependent type="60" displayName="OPR" parentDisplayName="Organization" id="{4ead0d2c-b5c1-ed11-83fd-001dd803c225}" />
+      </MissingDependency>
+      <MissingDependency>
+        <Required type="26" schemaName="Active Persons" displayName="Active Persons" parentSchemaName="contact" parentDisplayName="Contact" solution="Active" id="{1c10ab99-8551-ed11-bba0-001dd80721ac}" />
+        <Dependent type="60" displayName="Facilities Mgmt - Branch" parentDisplayName="Organization" id="{5deca3cb-fee6-ef11-9342-001dd80597ee}" />
+      </MissingDependency>
+      <MissingDependency>
+        <Required type="26" schemaName="Active Persons" displayName="Active Persons" parentSchemaName="contact" parentDisplayName="Contact" solution="Active" id="{1c10ab99-8551-ed11-bba0-001dd80721ac}" />
+        <Dependent type="60" displayName="Facilities Mgmt - Staff" parentDisplayName="Organization" id="{99d0c486-ffe6-ef11-9342-001dd805ad8d}" />
+      </MissingDependency>
+      <MissingDependency>
+        <Required type="26" schemaName="Active Persons" displayName="Active Persons" parentSchemaName="contact" parentDisplayName="Contact" solution="Active" id="{1c10ab99-8551-ed11-bba0-001dd80721ac}" />
+        <Dependent type="60" displayName="Facilities Mgmt - Division" parentDisplayName="Organization" id="{a4410b42-ffe6-ef11-9342-001dd820636c}" />
+      </MissingDependency>
+      <MissingDependency>
+        <Required type="26" schemaName="Active Persons" displayName="Active Persons" parentSchemaName="contact" parentDisplayName="Contact" solution="Active" id="{1c10ab99-8551-ed11-bba0-001dd80721ac}" />
+        <Dependent type="60" displayName="Division" parentDisplayName="Organization" id="{cd8beb55-b5c1-ed11-83fd-001dd803c225}" />
+      </MissingDependency>
+      <MissingDependency>
+        <Required type="26" schemaName="Authorizations" displayName="Authorizations" parentSchemaName="geip_authorization" parentDisplayName="Authorization" solution="Active" id="{97dd4657-a5dc-418c-b0fd-aab4ea210184}" />
+        <Dependent type="60" displayName="Division" parentDisplayName="Organization" id="{cd8beb55-b5c1-ed11-83fd-001dd803c225}" />
+      </MissingDependency>
+      <MissingDependency>
+        <Required type="59" schemaName="Filled by UIC" displayName="Filled by UIC" parentSchemaName="geip_authorization" parentDisplayName="Authorization" solution="Active" id="{43a12b96-cbad-f011-bbd3-001dd80560c8}" />
+        <Dependent type="60" displayName="Division" parentDisplayName="Organization" id="{cd8beb55-b5c1-ed11-83fd-001dd803c225}" />
+      </MissingDependency>
+      <MissingDependency>
+        <Required type="61" schemaName="cr2f7_facilitiesOrgs" displayName="cr2f7_facilitiesOrgs" solution="Active" />
+        <Dependent type="60" displayName="Facilities Mgmt - OPR" parentDisplayName="Organization" id="{325c38c8-ffe6-ef11-9342-001dd820636c}" />
+      </MissingDependency>
+      <MissingDependency>
+        <Required type="61" schemaName="cr2f7_facilitiesOrgs" displayName="cr2f7_facilitiesOrgs" solution="Active" />
+        <Dependent type="60" displayName="Facilities Mgmt - Organization" parentDisplayName="Organization" id="{34c12a1e-02e7-ef11-9342-001dd820636c}" />
+      </MissingDependency>
+      <MissingDependency>
+        <Required type="61" schemaName="cr2f7_facilitiesOrgs" displayName="cr2f7_facilitiesOrgs" solution="Active" />
+        <Dependent type="60" displayName="Facilities Mgmt - Branch" parentDisplayName="Organization" id="{5deca3cb-fee6-ef11-9342-001dd80597ee}" />
+      </MissingDependency>
+      <MissingDependency>
+        <Required type="61" schemaName="cr2f7_facilitiesOrgs" displayName="cr2f7_facilitiesOrgs" solution="Active" />
+        <Dependent type="60" displayName="Facilities Mgmt - Staff" parentDisplayName="Organization" id="{99d0c486-ffe6-ef11-9342-001dd805ad8d}" />
+      </MissingDependency>
+      <MissingDependency>
+        <Required type="61" schemaName="cr2f7_facilitiesOrgs" displayName="cr2f7_facilitiesOrgs" solution="Active" />
+        <Dependent type="60" displayName="Facilities Mgmt - Division" parentDisplayName="Organization" id="{a4410b42-ffe6-ef11-9342-001dd820636c}" />
+      </MissingDependency>
+      <MissingDependency>
+        <Required type="61" schemaName="geip_Organization.js" displayName="geip_Organization.js" solution="Active" />
+        <Dependent type="60" displayName="Organization" parentDisplayName="Organization" id="{00378e86-2ca5-49b0-b245-3c04d4ab4537}" />
+      </MissingDependency>
+      <MissingDependency>
+        <Required type="61" schemaName="geip_Organization.js" displayName="geip_Organization.js" solution="Active" />
+        <Dependent type="60" displayName="Staff" parentDisplayName="Organization" id="{11adf341-b5c1-ed11-83fd-001dd80610d9}" />
+      </MissingDependency>
+      <MissingDependency>
+        <Required type="61" schemaName="geip_Organization.js" displayName="geip_Organization.js" solution="Active" />
+        <Dependent type="60" displayName="Portal - Staff" parentDisplayName="Organization" id="{2114138e-95dd-ef11-8eea-001dd820636c}" />
+      </MissingDependency>
+      <MissingDependency>
+        <Required type="61" schemaName="geip_Organization.js" displayName="geip_Organization.js" solution="Active" />
+        <Dependent type="60" displayName="Branch" parentDisplayName="Organization" id="{21b94e63-b5c1-ed11-83fd-001dd803c225}" />
+      </MissingDependency>
+      <MissingDependency>
+        <Required type="61" schemaName="geip_Organization.js" displayName="geip_Organization.js" solution="Active" />
+        <Dependent type="60" displayName="Portal - Branch" parentDisplayName="Organization" id="{284aa87f-94dd-ef11-8eea-001dd80597ee}" />
+      </MissingDependency>
+      <MissingDependency>
+        <Required type="61" schemaName="geip_Organization.js" displayName="geip_Organization.js" solution="Active" />
+        <Dependent type="60" displayName="Organization Minimal Form" parentDisplayName="Organization" id="{40878807-cbaa-f011-bbd3-001dd805a74b}" />
+      </MissingDependency>
+      <MissingDependency>
+        <Required type="61" schemaName="geip_Organization.js" displayName="geip_Organization.js" solution="Active" />
+        <Dependent type="60" displayName="Organization main form" parentDisplayName="Organization" id="{491fe393-cefc-ee11-a1fe-001dd8059d03}" />
+      </MissingDependency>
+      <MissingDependency>
+        <Required type="61" schemaName="geip_Organization.js" displayName="geip_Organization.js" solution="Active" />
+        <Dependent type="60" displayName="OPR" parentDisplayName="Organization" id="{4ead0d2c-b5c1-ed11-83fd-001dd803c225}" />
+      </MissingDependency>
+      <MissingDependency>
+        <Required type="61" schemaName="geip_Organization.js" displayName="geip_Organization.js" solution="Active" />
+        <Dependent type="60" displayName="Portal - OPR" parentDisplayName="Organization" id="{57505df3-94dd-ef11-8eea-001dd80597ee}" />
+      </MissingDependency>
+      <MissingDependency>
+        <Required type="61" schemaName="geip_Organization.js" displayName="geip_Organization.js" solution="Active" />
+        <Dependent type="60" displayName="Portal - Division" parentDisplayName="Organization" id="{c54866d0-94dd-ef11-8eea-001dd805ad8d}" />
+      </MissingDependency>
+      <MissingDependency>
+        <Required type="61" schemaName="geip_Organization.js" displayName="geip_Organization.js" solution="Active" />
+        <Dependent type="60" displayName="Division" parentDisplayName="Organization" id="{cd8beb55-b5c1-ed11-83fd-001dd803c225}" />
+      </MissingDependency>
+      <MissingDependency>
+        <Required type="61" schemaName="geip_Organization.js" displayName="geip_Organization.js" solution="Active" />
+        <Dependent type="60" displayName="Portal - Organization" parentDisplayName="Organization" id="{f731ac50-95dd-ef11-8eea-001dd805ad8d}" />
+      </MissingDependency>
+      <MissingDependency>
+        <Required type="61" schemaName="msdyn_/Images/AppModule_Default_Icon.png" displayName="msdyn_/Images/AppModule_Default_Icon.png" solution="AppModuleWebResources (2.5)" />
+        <Dependent type="80" schemaName="lrc_LongRangeCalendar" displayName="Long Range Calendar" />
+      </MissingDependency>
+      <MissingDependency>
+        <Required type="61" schemaName="msf_icons_org16" displayName="msf_icons_org16" solution="Active" />
+        <Dependent type="1" schemaName="geip_organization" displayName="Organization" />
+      </MissingDependency>
+      <MissingDependency>
+        <Required type="9" schemaName="geip_organizationdesignation" displayName="Organization Designation" solution="Active" />
+        <Dependent type="2" schemaName="geip_designation" displayName="Designation" parentSchemaName="geip_organization" parentDisplayName="Organization" />
+      </MissingDependency>
+      <MissingDependency>
+        <Required type="SettingDefinition" displayName="AppChannel" solution="msdyn_AppFrameworkInfraExtensions (1.0.0.16)" id.uniquename="AppChannel">
+          <package appName="PowerAppsAppFramework Package" version="1.0.0.25">PowerAppsAppFramework_Anchor (1.0.0.25)</package>
+        </Required>
+        <Dependent type="AppSetting" displayName="parentappmoduleid.uniquename=lrc_LongRangeCalendar,settingdefinitionid.uniquename=AppChannel" id.parentappmoduleid.uniquename="lrc_LongRangeCalendar" id.settingdefinitionid.uniquename="AppChannel" />
+      </MissingDependency>
+    </MissingDependencies>
+  </SolutionManifest>
+</ImportExportXml>

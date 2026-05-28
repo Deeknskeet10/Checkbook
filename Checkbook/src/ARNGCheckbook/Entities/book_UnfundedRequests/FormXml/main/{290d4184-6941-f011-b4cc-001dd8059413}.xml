@@ -1,0 +1,457 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<forms xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <systemform>
+    <formid>{290d4184-6941-f011-b4cc-001dd8059413}</formid>
+    <IntroducedVersion>1.0.0.5</IntroducedVersion>
+    <FormPresentation>1</FormPresentation>
+    <FormActivationState>1</FormActivationState>
+    <form headerdensity="HighWithControls">
+      <tabs>
+        <tab verticallayout="true" id="{80da5eeb-5975-4297-804f-0c74b1748979}" IsUserDefined="1" labelid="{75e73edc-751c-4454-89b9-716b5cedb68c}">
+          <labels>
+            <label description="General" languagecode="1033" />
+          </labels>
+          <columns>
+            <column width="100%">
+              <sections>
+                <section showlabel="true" showbar="false" IsUserDefined="0" id="{64aaaeed-862b-4c39-b6b8-9c608ca22a36}" columns="11" labelid="{b5e5dd00-f898-41ce-8e9a-51435249fd91}" name="general">
+                  <labels>
+                    <label description="General" languagecode="1033" />
+                  </labels>
+                  <rows>
+                    <row>
+                      <cell id="{a59bac5c-1a5e-47b7-8927-00621648bbbf}" locklevel="0" colspan="1" rowspan="1" labelid="{4c17d5e7-c9ca-4bdb-9c14-34f2013648c4}">
+                        <labels>
+                          <label description="State" languagecode="1033" />
+                        </labels>
+                        <control id="book_state" classid="{270BD3DB-D9AF-4782-9025-509E298DEC0A}" datafieldname="book_state" disabled="true" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{b686f3ca-3641-4cf4-8bcf-a9ce0aff2ced}" locklevel="0" colspan="1" rowspan="1" labelid="{f083d31d-8149-4493-abdd-8e9aa073cf88}">
+                        <labels>
+                          <label description="Drop Dead Date" languagecode="1033" />
+                        </labels>
+                        <control id="book_dropdeaddate" classid="{5B773807-9FB2-42DB-97C3-7A91EFF8ADFF}" datafieldname="book_dropdeaddate" disabled="false" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{811bde8b-ff44-4294-8ad5-8e882bcbc980}" locklevel="0" colspan="1" rowspan="1" labelid="{6aad7790-68b5-4418-8da6-dcf619b25e83}">
+                        <labels>
+                          <label description="Priority" languagecode="1033" />
+                        </labels>
+                        <control id="book_priority" classid="{C6D124CA-7EDA-4A60-AEA9-7FB8D318B68F}" datafieldname="book_priority" disabled="false" />
+                      </cell>
+                      <cell id="{652f151c-f38c-47ed-abdf-b86d2f6f26f9}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="State Unfunded Amount" languagecode="1033" />
+                        </labels>
+                        <control id="book_unfundedamount" classid="{C3EFE0C3-0EC6-42BE-8349-CBD9079DFD8E}" datafieldname="book_unfundedamount" disabled="false" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell locklevel="0" id="{5280e0a1-bc36-4c3c-98f9-0416a6fb1c83}">
+                        <labels>
+                          <label description="" languagecode="1033" />
+                        </labels>
+                      </cell>
+                      <cell id="{ed27403e-5c51-4360-856d-4a725aac073a}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="OPR Unfunded Amount" languagecode="1033" />
+                        </labels>
+                        <control id="book_oprunfundedamount" classid="{C3EFE0C3-0EC6-42BE-8349-CBD9079DFD8E}" datafieldname="book_oprunfundedamount" disabled="false" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell locklevel="0" id="{7f57eb8d-cf54-4144-96ff-0fea31230f84}">
+                        <labels>
+                          <label description="" languagecode="1033" />
+                        </labels>
+                      </cell>
+                      <cell id="{6896e85a-a089-4e0e-8b31-61f16495061e}" locklevel="0" colspan="1" rowspan="1" visible="false">
+                        <labels>
+                          <label description="Higher Level UFR" languagecode="1033" />
+                        </labels>
+                        <control id="book_higherlevelufr" classid="{270BD3DB-D9AF-4782-9025-509E298DEC0A}" datafieldname="book_higherlevelufr" disabled="false" />
+                      </cell>
+                    </row>
+                  </rows>
+                </section>
+                <section name="null_section_5" id="3c8ec78e-0a1f-4052-a046-5e1126acb337" IsUserDefined="0" locklevel="0" showlabel="true" showbar="false" layout="varwidth" celllabelalignment="Left" celllabelposition="Left" columns="1" labelwidth="115">
+                  <labels>
+                    <label description="Risk" languagecode="1033" />
+                  </labels>
+                  <rows>
+                    <row />
+                    <row>
+                      <cell id="{5d5e3d7e-e49f-4f92-b4ea-585149409ac3}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="Risk" languagecode="1033" />
+                        </labels>
+                        <control id="book_newrisk" classid="{3EF39988-22BB-4F0B-BBBE-64B5A3748AEE}" datafieldname="book_newrisk" disabled="false" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell locklevel="0" id="{8d718264-1868-44cd-8dbd-28ecab4d0a38}" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="Internal State Risk" languagecode="1033" />
+                        </labels>
+                        <control id="book_risk" classid="{F9A8A302-114E-466A-B582-6771B2AE0D92}" datafieldname="book_risk" uniqueid="{5ed1ada6-a7c0-47f4-91d0-3fda24024984}" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{5ba1e4fb-9be8-48ef-98af-478f5e4fcde3}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="Risk Statement" languagecode="1033" />
+                        </labels>
+                        <control id="book_newriskstatement" classid="{E0DECE4B-6FC8-4A8F-A065-082708572369}" datafieldname="book_newriskstatement" disabled="false" />
+                      </cell>
+                    </row>
+                  </rows>
+                </section>
+                <section name="null_section_3" id="8bfed17f-0465-4e88-9f8b-ca5cec2a86f8" IsUserDefined="0" locklevel="0" showlabel="false" showbar="false" layout="varwidth" celllabelalignment="Left" celllabelposition="Left" columns="1" labelwidth="115" labelid="{6c944596-b115-4a30-bd60-806817ac5e51}">
+                  <labels>
+                    <label description="Timeline" languagecode="1033" />
+                  </labels>
+                  <rows>
+                    <row />
+                    <row>
+                      <cell locklevel="0" id="{e5c3bc97-23e5-4a6e-88aa-24eef1b619ab}" rowspan="15" colspan="1" labelid="{61dee1fd-1fbe-4d93-8175-cc4ff4f58b84}">
+                        <labels>
+                          <label description="Note Text" languagecode="1033" />
+                        </labels>
+                        <control id="notescontrol" classid="{06375649-C143-495E-A496-C962E5B4488E}" disabled="false">
+                          <parameters>
+                            <UClientUniqueName>Notes</UClientUniqueName>
+                          </parameters>
+                        </control>
+                      </cell>
+                    </row>
+                    <row />
+                    <row />
+                    <row />
+                    <row />
+                    <row />
+                    <row />
+                    <row />
+                    <row />
+                    <row />
+                    <row />
+                    <row />
+                    <row />
+                    <row />
+                    <row />
+                  </rows>
+                </section>
+              </sections>
+            </column>
+          </columns>
+        </tab>
+        <tab name="tab_2" id="2a856daa-117b-46ee-9db1-d9e2d10ee9ee" IsUserDefined="0" locklevel="0" showlabel="true">
+          <labels>
+            <label description="Requirements" languagecode="1033" />
+          </labels>
+          <columns>
+            <column width="100%">
+              <sections>
+                <section name="tab_2_section_1" id="5e9743dc-221e-4ab2-b125-d2c9cd91d24f" IsUserDefined="0" locklevel="0" showlabel="true" showbar="false" layout="varwidth" celllabelalignment="Left" celllabelposition="Left" columns="11" labelwidth="115">
+                  <labels>
+                    <label description="Unfunded Amounts" languagecode="1033" />
+                  </labels>
+                  <rows>
+                    <row>
+                      <cell id="{4ae797a4-bd2f-43bb-97e7-bef64d13631d}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="Unfunded Amount" languagecode="1033" />
+                        </labels>
+                        <control id="book_unfundedamount" classid="{C3EFE0C3-0EC6-42BE-8349-CBD9079DFD8E}" datafieldname="book_unfundedamount" disabled="false" />
+                      </cell>
+                      <cell locklevel="0" id="{1738e7f1-8f33-4bde-b7c0-c382602d68cd}">
+                        <labels>
+                          <label description="" languagecode="1033" />
+                        </labels>
+                      </cell>
+                    </row>
+                    <row>
+                      <cell locklevel="0" id="{fa215d5c-28ad-4ad5-b621-e73e1092dac1}">
+                        <labels>
+                          <label description="" languagecode="1033" />
+                        </labels>
+                      </cell>
+                      <cell id="{db532596-966e-4f9b-a41c-598c8c5fa22d}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="OPR Unfunded Amount" languagecode="1033" />
+                        </labels>
+                        <control id="book_oprunfundedamount" classid="{C3EFE0C3-0EC6-42BE-8349-CBD9079DFD8E}" datafieldname="book_oprunfundedamount" disabled="false" />
+                      </cell>
+                    </row>
+                  </rows>
+                </section>
+                <section name="null_section_4" id="86d7fc4c-d107-4119-a028-0d3f717f0121" IsUserDefined="0" locklevel="0" showlabel="true" showbar="false" layout="varwidth" celllabelalignment="Left" celllabelposition="Left" columns="11" labelwidth="115" labelid="{76a5dd62-6481-43e1-a470-94570df5f2f3}">
+                  <labels>
+                    <label description="Related Requirement" languagecode="1033" />
+                  </labels>
+                  <rows>
+                    <row>
+                      <cell id="{29989e93-f594-4dff-863d-05f22542807b}" locklevel="0" colspan="1" rowspan="1" labelid="{60064600-6552-453f-b93e-62977eba8a0a}">
+                        <labels>
+                          <label description="Prioritization" languagecode="1033" />
+                        </labels>
+                        <control id="book_staterequirement" classid="{270BD3DB-D9AF-4782-9025-509E298DEC0A}" datafieldname="book_staterequirement" disabled="true" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell locklevel="0" id="{ced07d4d-60de-4a25-a19f-6d4a42e889d5}" colspan="1" rowspan="1" labelid="{e0d29bc6-8cc2-444a-babc-80bc4dfd1dae}">
+                        <labels>
+                          <label description="Prioritization" languagecode="1033" />
+                        </labels>
+                        <control id="QuickviewControl1749050765494" classid="{5C5600E0-1D6E-4205-A272-BE80DA87FD42}" datafieldname="book_staterequirement">
+                          <parameters>
+                            <DisplayAsCustomer360Tile>false</DisplayAsCustomer360Tile>
+                            <QuickForms>&lt;QuickFormIds&gt;&lt;QuickFormId entityname="book_prioritization"&gt;1b9b4ec5-f1ac-4b7b-90e2-125b0ee87fe7&lt;/QuickFormId&gt;&lt;/QuickFormIds&gt;</QuickForms>
+                          </parameters>
+                        </control>
+                      </cell>
+                    </row>
+                    <row>
+                      <cell locklevel="0" id="{cd364cb7-7666-44e4-b747-2427f48d03b9}">
+                        <labels>
+                          <label description="" languagecode="1033" />
+                        </labels>
+                      </cell>
+                      <cell id="{3f7246d6-37f5-4718-99a1-1a0c63bbb854}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="Requirement Funding" languagecode="1033" />
+                        </labels>
+                        <control id="book_requirementfunding" classid="{270BD3DB-D9AF-4782-9025-509E298DEC0A}" datafieldname="book_requirementfunding" disabled="false" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell locklevel="0" id="{06a49c70-af8c-4954-bcff-2df3c7fe58eb}">
+                        <labels>
+                          <label description="" languagecode="1033" />
+                        </labels>
+                      </cell>
+                      <cell locklevel="0" id="{a4d0b18d-4056-4a37-a846-e4959ca711b2}" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="New QV control 1764692820941" languagecode="1033" />
+                        </labels>
+                        <control id="QuickviewControl1764692820941" classid="{5C5600E0-1D6E-4205-A272-BE80DA87FD42}" datafieldname="book_requirementfunding">
+                          <parameters>
+                            <DisplayAsCustomer360Tile>false</DisplayAsCustomer360Tile>
+                            <QuickForms>&lt;QuickFormIds&gt;&lt;QuickFormId entityname="book_requirementfunding"&gt;77b94498-dc87-46a4-a952-e0ddcc7b4afa&lt;/QuickFormId&gt;&lt;/QuickFormIds&gt;</QuickForms>
+                          </parameters>
+                        </control>
+                      </cell>
+                    </row>
+                  </rows>
+                </section>
+              </sections>
+            </column>
+          </columns>
+        </tab>
+        <tab name="tab_3" id="908bfc35-6216-4789-99e5-53dde2ccd600" IsUserDefined="0" locklevel="0" showlabel="true">
+          <labels>
+            <label description="Outcome" languagecode="1033" />
+          </labels>
+          <columns>
+            <column width="100%">
+              <sections>
+                <section name="tab_3_section_1" id="76063be7-2795-473e-bafd-42518c33204d" IsUserDefined="0" locklevel="0" showlabel="true" showbar="false" layout="varwidth" celllabelalignment="Left" celllabelposition="Left" columns="1" labelwidth="115">
+                  <labels>
+                    <label description="Resourcing Outcome" languagecode="1033" />
+                  </labels>
+                  <rows>
+                    <row />
+                    <row>
+                      <cell id="{c001a7df-37bd-49a3-98cb-50d9b7ff6940}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="NPM State Recommendation" languagecode="1033" />
+                        </labels>
+                        <control id="book_npmstaterecommendation" classid="{3EF39988-22BB-4F0B-BBBE-64B5A3748AEE}" datafieldname="book_npmstaterecommendation" disabled="false" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{5c73c371-4ded-42bf-ad17-7574714fe7ce}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="Outcome" languagecode="1033" />
+                        </labels>
+                        <control id="book_outcome" classid="{3EF39988-22BB-4F0B-BBBE-64B5A3748AEE}" datafieldname="book_outcome" disabled="false" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{c438fd30-dac5-45b5-98bd-90f4055b8707}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="Outcome Amount" languagecode="1033" />
+                        </labels>
+                        <control id="book_outcomeamount" classid="{533B9E00-756B-4312-95A0-DC888637AC78}" datafieldname="book_outcomeamount" disabled="false" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{6881f92f-71ac-4939-a9a5-d7303bac7f9f}" locklevel="0" colspan="1" rowspan="5">
+                        <labels>
+                          <label description="Outcome Narrative" languagecode="1033" />
+                        </labels>
+                        <control id="book_outcomenarrative" classid="{E0DECE4B-6FC8-4A8F-A065-082708572369}" datafieldname="book_outcomenarrative" disabled="false" />
+                      </cell>
+                    </row>
+                    <row />
+                    <row />
+                    <row />
+                    <row />
+                  </rows>
+                </section>
+              </sections>
+            </column>
+          </columns>
+        </tab>
+      </tabs>
+      <header id="{83f52fcb-275a-49aa-869f-8eaebb862abb}" celllabelposition="Top" columns="111" labelwidth="115" celllabelalignment="Left">
+        <rows>
+          <row>
+            <cell id="{5bf754ea-387a-4432-a831-23ffeff7af26}" showlabel="false" labelid="{410e9a79-b01f-45ae-a73b-c5620f74d015}">
+              <labels>
+                <label description="" languagecode="1033" />
+              </labels>
+            </cell>
+            <cell id="{1a96b7dc-c01e-4ec6-85a7-d90aa3523c51}" showlabel="false" labelid="{fbd9fe11-5ef6-4a98-bbcc-19cc5cbd18f5}">
+              <labels>
+                <label description="" languagecode="1033" />
+              </labels>
+            </cell>
+            <cell id="{23e5178d-efe7-4978-8f08-4f1cd2891a51}" showlabel="false" labelid="{001d133a-210f-43e5-bbb9-08443c2c2838}">
+              <labels>
+                <label description="" languagecode="1033" />
+              </labels>
+            </cell>
+            <cell locklevel="0" id="{a02304ae-fd67-4a4e-b369-ae8823c8e92f}">
+              <labels>
+                <label description="" languagecode="1033" />
+              </labels>
+            </cell>
+            <cell locklevel="0" id="{55292c81-a669-492c-9d3e-e2f33c567cd2}">
+              <labels>
+                <label description="" languagecode="1033" />
+              </labels>
+            </cell>
+            <cell locklevel="0" id="{3a438000-c58a-4b5c-9b13-3f0c30dc27df}">
+              <labels>
+                <label description="" languagecode="1033" />
+              </labels>
+            </cell>
+            <cell id="{d08a21b6-59c0-44f7-a9d0-9e10ca69b92d}" locklevel="0" colspan="1" rowspan="1">
+              <labels>
+                <label description="Outcome" languagecode="1033" />
+              </labels>
+              <control id="header_book_outcome" classid="{3EF39988-22BB-4F0B-BBBE-64B5A3748AEE}" datafieldname="book_outcome" disabled="false" />
+            </cell>
+            <cell id="{b7e26d6a-a5c5-4ea7-94b4-ff9913c3870b}" visible="true" labelid="{ca529cf6-f0d5-4b73-bfed-90c1d4b7dc09}" colspan="1" rowspan="1">
+              <labels>
+                <label description="Owner" languagecode="1033" />
+              </labels>
+              <control id="header_ownerid" classid="{270BD3DB-D9AF-4782-9025-509E298DEC0A}" datafieldname="ownerid" />
+            </cell>
+            <cell locklevel="0" id="{409e2110-0742-4ad8-b2a7-44dd1739cc29}">
+              <labels>
+                <label description="" languagecode="1033" />
+              </labels>
+            </cell>
+            <cell id="{1e419a2a-1bf1-45de-93b3-74ac25ecd999}" locklevel="0" colspan="1" rowspan="1">
+              <labels>
+                <label description="Owning Business Unit" languagecode="1033" />
+              </labels>
+              <control id="header_owningbusinessunit" classid="{270BD3DB-D9AF-4782-9025-509E298DEC0A}" datafieldname="owningbusinessunit" disabled="false" />
+            </cell>
+            <cell id="{9b7e55a1-e54d-4fea-87a5-818436d1e1ab}" locklevel="0" colspan="1" rowspan="1">
+              <labels>
+                <label description="Status" languagecode="1033" />
+              </labels>
+              <control id="header_statecode" classid="{3EF39988-22BB-4F0B-BBBE-64B5A3748AEE}" datafieldname="statecode" disabled="false" />
+            </cell>
+          </row>
+        </rows>
+      </header>
+      <footer id="{61b21b7d-fabb-40ec-87ef-ac87409c385d}" celllabelposition="Top" columns="111" labelwidth="115" celllabelalignment="Left">
+        <rows>
+          <row>
+            <cell id="{490451d2-0b11-4f6a-ad97-aab36ccd56e4}" showlabel="false" labelid="{02ccb183-fb5a-4a0b-b6d0-da8d3b5d5d90}">
+              <labels>
+                <label description="" languagecode="1033" />
+              </labels>
+            </cell>
+            <cell id="{6ddf276a-e5b9-4c9b-9165-94765c238f89}" showlabel="false" labelid="{90a114b3-26e6-44e6-8586-06626413139c}">
+              <labels>
+                <label description="" languagecode="1033" />
+              </labels>
+            </cell>
+            <cell id="{f1aaea5d-cdb3-4dc6-a598-9d3f8e51d310}" showlabel="false" labelid="{517dad7b-bafb-46d2-b2eb-fcfee052de0b}">
+              <labels>
+                <label description="" languagecode="1033" />
+              </labels>
+            </cell>
+          </row>
+        </rows>
+      </footer>
+      <DisplayConditions Order="1" FallbackForm="true">
+        <Role Id="{C1474AE9-3E19-F011-998A-001DD8059413}" />
+        <Role Id="{14EE21C6-2121-F011-998A-001DD805B842}" />
+        <Role Id="{07E298E4-3C19-F011-998A-001DD8059413}" />
+        <Role Id="{C60574A3-3D19-F011-998A-001DD805A06B}" />
+        <Role Id="{9E0CD767-7A2A-F011-8C4E-001DD805B842}" />
+        <Role Id="{B83D1A3A-3E19-F011-998A-001DD8059413}" />
+        <Role Id="{C8B81746-2221-F011-998A-001DD805A06B}" />
+        <Role Id="{68202041-3D19-F011-998A-001DD8059413}" />
+        <Role Id="{68840012-3C19-F011-998A-001DD805A06B}" />
+        <Role Id="{627090ff-40a3-4053-8790-584edc5be201}" />
+        <Role Id="{119f245c-3cc8-4b62-b31c-d1a046ced15d}" />
+      </DisplayConditions>
+      <formLibraries>
+        <Library name="crbc0_swapFormsUFR" libraryUniqueId="{d14f13e5-cb12-4ecb-9871-67423ab68abf}" />
+      </formLibraries>
+      <events>
+        <event name="onload" application="false" active="false">
+          <Handlers>
+            <Handler functionName="SwitchUFRForm" libraryName="crbc0_swapFormsUFR" handlerUniqueId="{387e45c5-2bce-4dfb-b316-8086676c03ec}" enabled="true" parameters="" passExecutionContext="true" />
+          </Handlers>
+        </event>
+      </events>
+      <controlDescriptions>
+        <controlDescription forControl="{5ed1ada6-a7c0-47f4-91d0-3fda24024984}">
+          <customControl id="{3EF39988-22BB-4F0B-BBBE-64B5A3748AEE}">
+            <parameters>
+              <datafieldname>book_risk</datafieldname>
+            </parameters>
+          </customControl>
+          <customControl id="{3EF39988-22BB-4F0B-BBBE-64B5A3748AEE}">
+            <parameters>
+              <datafieldname>book_risk</datafieldname>
+            </parameters>
+          </customControl>
+          <customControl formFactor="0" name="MscrmControls.OptionSet.OptionSetControl">
+            <parameters>
+              <value type="OptionSet">book_risk</value>
+            </parameters>
+          </customControl>
+          <customControl formFactor="2" name="MscrmControls.OptionSet.OptionSetControl">
+            <parameters>
+              <value type="OptionSet">book_risk</value>
+            </parameters>
+          </customControl>
+          <customControl formFactor="1" name="MscrmControls.OptionSet.OptionSetControl">
+            <parameters>
+              <value type="OptionSet">book_risk</value>
+            </parameters>
+          </customControl>
+        </controlDescription>
+      </controlDescriptions>
+    </form>
+    <IsCustomizable>1</IsCustomizable>
+    <CanBeDeleted>1</CanBeDeleted>
+    <LocalizedNames>
+      <LocalizedName description="UFR - State" languagecode="1033" />
+    </LocalizedNames>
+    <Descriptions>
+      <Description description="State related Form" languagecode="1033" />
+    </Descriptions>
+  </systemform>
+</forms>

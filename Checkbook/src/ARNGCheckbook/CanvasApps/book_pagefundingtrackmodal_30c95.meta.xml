@@ -1,0 +1,34 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<CanvasApp xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <Name>book_pagefundingtrackmodal_30c95</Name>
+  <AppVersion>2026-01-05T18:32:56Z</AppVersion>
+  <Status>Ready</Status>
+  <CreatedByClientVersion>3.25065.7.0</CreatedByClientVersion>
+  <MinClientVersion>3.25065.7.0</MinClientVersion>
+  <Tags>{"primaryDeviceWidth":"400","primaryDeviceHeight":"147","supportsPortrait":"true","supportsLandscape":"true","primaryFormFactor":"Tablet","showStatusBar":"false","publisherVersion":"3.25065.7","minimumRequiredApiVersion":"2.2.0","hasComponent":"false","hasUnlockedComponent":"false","isUnifiedRootApp":"false","sienaVersion":"20250721T124341Z-3.25065.7.0"}</Tags>
+  <IsCdsUpgraded>0</IsCdsUpgraded>
+  <GalleryItemId xsi:nil="true"></GalleryItemId>
+  <BackgroundColor>RGBA(0,176,240,1)</BackgroundColor>
+  <DisplayName>Page - Funding Track Modal</DisplayName>
+  <Description>Modal Pop-up for Funding Track to LOA Generation</Description>
+  <CommitMessage></CommitMessage>
+  <Publisher></Publisher>
+  <AuthorizationReferences>[]</AuthorizationReferences>
+  <ConnectionReferences>{"610d7c87-0558-4225-a209-d0e012157545":{"id":"/providers/microsoft.powerapps/apis/shared_logicflows","displayName":"Logic flows","iconUri":"https://connectorsiconsfairfax.z5.web.core.usgovcloudapi.net/v1.0.1774/1.0.1774.4397/logicflows/icon.png","dataSources":["FundingTrack-GenerateLOAs"],"dependencies":["c447cf97-4f4b-4348-bad4-af88c0e750b1"],"dependents":[],"parameterHints":{"workflowName":{"value":"251a1692-e20e-46a6-863f-320c4da2aced"},"workflowEntityId":{"value":"dfa5e343-ed60-f011-bec2-001dd8059413"},"workflowDisplayName":{"value":"Funding Track - Generate LOAs"},"c447cf97-4f4b-4348-bad4-af88c0e750b1":{"value":"shared_commondataserviceforapps"}},"parameterHintsV2":{"workflowName":{"value":"251a1692-e20e-46a6-863f-320c4da2aced"},"workflowEntityId":{"value":"dfa5e343-ed60-f011-bec2-001dd8059413"},"workflowDisplayName":{"value":"Funding Track - Generate LOAs"},"shared_commondataserviceforapps":{"value":"c447cf97-4f4b-4348-bad4-af88c0e750b1"}},"isOnPremiseConnection":false,"bypassConsent":false,"dataSets":{},"apiTier":"Standard","actions":["Run"]},"c447cf97-4f4b-4348-bad4-af88c0e750b1":{"id":"/providers/microsoft.powerapps/apis/shared_commondataserviceforapps","displayName":"Microsoft Dataverse","iconUri":"https://connectorsiconsfairfax.z5.web.core.usgovcloudapi.net/releases/v1.0.1789/1.0.1789.4525/commondataserviceforapps/icon.png","dataSources":[],"dependencies":[],"dependents":["610d7c87-0558-4225-a209-d0e012157545"],"parameterHints":{},"parameterHintsV2":{},"isOnPremiseConnection":false,"bypassConsent":false,"dataSets":{},"apiTier":"Premium"}}</ConnectionReferences>
+  <DatabaseReferences>{}</DatabaseReferences>
+  <AppComponents>[]</AppComponents>
+  <AppComponentDependencies>[]</AppComponentDependencies>
+  <CanConsumeAppPass>1</CanConsumeAppPass>
+  <CanvasAppType>2</CanvasAppType>
+  <BypassConsent>0</BypassConsent>
+  <AdminControlBypassConsent>0</AdminControlBypassConsent>
+  <EmbeddedApp xsi:nil="true"></EmbeddedApp>
+  <IntroducedVersion>1.0</IntroducedVersion>
+  <CdsDependencies>{"cdsdependencies":[{"componenttype":29,"dependencyid":"dfa5e343-ed60-f011-bec2-001dd8059413","componenttypeplatformname":"Workflow"}]}</CdsDependencies>
+  <IsCustomizable>1</IsCustomizable>
+  <BackgroundImageUri>/CanvasApps/book_pagefundingtrackmodal_30c95_BackgroundImageUri</BackgroundImageUri>
+  <DocumentUri>/CanvasApps/book_pagefundingtrackmodal_30c95_DocumentUri.msapp</DocumentUri>
+  <AdditionalUris>
+    <AdditionalUri>/CanvasApps/book_pagefundingtrackmodal_30c95_AdditionalUris0_identity.json</AdditionalUri>
+  </AdditionalUris>
+</CanvasApp>

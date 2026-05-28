@@ -1,0 +1,40 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<savedqueries xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <savedquery>
+    <IsCustomizable>1</IsCustomizable>
+    <CanBeDeleted>1</CanBeDeleted>
+    <isquickfindquery>0</isquickfindquery>
+    <isprivate>0</isprivate>
+    <isdefault>0</isdefault>
+    <savedqueryid>{4104fb43-7ebf-ed11-83fe-001dd8065ae4}</savedqueryid>
+    <layoutxml>
+      <grid name="resultset" jump="geip_name" select="1" icon="1" preview="1">
+        <row name="result" id="geip_organizationid">
+          <cell name="geip_name" width="200" />
+          <cell name="geip_designation" width="100" />
+          <cell name="geip_organization" width="189" />
+        </row>
+      </grid>
+    </layoutxml>
+    <querytype>0</querytype>
+    <fetchxml>
+      <fetch version="1.0" output-format="xml-platform" mapping="logical" distinct="false">
+        <entity name="geip_organization">
+          <attribute name="geip_name" />
+          <attribute name="geip_designation" />
+          <attribute name="geip_organization" />
+          <attribute name="geip_organizationid" />
+          <filter type="and">
+            <condition attribute="geip_organizationid" operator="under" value="{6F3C96E0-F4BD-ED11-9885-001DD802E10F}" uiname="ARNG (Organization)" uitype="geip_organization" />
+            <condition attribute="geip_designation" operator="eq" value="338130000" />
+          </filter>
+          <order attribute="geip_name" descending="false" />
+        </entity>
+      </fetch>
+    </fetchxml>
+    <IntroducedVersion>1.1.6.2</IntroducedVersion>
+    <LocalizedNames>
+      <LocalizedName description="Branches (ARNG)" languagecode="1033" />
+    </LocalizedNames>
+  </savedquery>
+</savedqueries>

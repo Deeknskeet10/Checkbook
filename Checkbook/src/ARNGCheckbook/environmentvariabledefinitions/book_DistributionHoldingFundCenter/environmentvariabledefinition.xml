@@ -1,0 +1,13 @@
+<environmentvariabledefinition schemaname="book_DistributionHoldingFundCenter">
+  <description default="Fund Center GUID that holds the debit side of every generated Distribution (the role A18 plays today). Read by the Generate Distributions plugin.">
+    <label description="Fund Center GUID that holds the debit side of every generated Distribution (the role A18 plays today). Read by the Generate Distributions plugin." languagecode="1033" />
+  </description>
+  <displayname default="ARNG Checkbook - Distribution Holding Fund Center">
+    <label description="ARNG Checkbook - Distribution Holding Fund Center" languagecode="1033" />
+  </displayname>
+  <introducedversion>1.2.0</introducedversion>
+  <iscustomizable>1</iscustomizable>
+  <isrequired>1</isrequired>
+  <secretstore>0</secretstore>
+  <type>100000000</type>
+</environmentvariabledefinition>

@@ -1,0 +1,139 @@
+import * as React from "react";
+import { EVENT_TYPES, ViewMode, colorFor } from "./types";
+import { monthShort, toISODate } from "./dateUtils";
+
+export interface ToolbarProps {
+    view: ViewMode;
+    onView: (v: ViewMode) => void;
+    windowStart: Date;
+    windowEnd: Date;
+    onPrev: () => void;
+    onNext: () => void;
+    onToday: () => void;
+    onJump: (d: Date) => void;
+    typeFilter: string;
+    onTypeFilter: (t: string) => void;
+    keyword: string;
+    onKeyword: (s: string) => void;
+    lanes: string[];
+    hiddenLanes: ReadonlySet<string>;
+    onToggleLane: (l: string) => void;
+    totalShown: number;
+    typeCounts: Record<string, number>;
+    onExport: () => void;
+    onPrint: () => void;
+    busy: boolean;
+    error: string | null;
+}
+
+export const Toolbar: React.FC<ToolbarProps> = (props) => {
+    const { windowStart, windowEnd } = props;
+    const rangeLabel = `${windowStart.getDate()} ${monthShort(windowStart)} – ${windowEnd.getDate()} ${monthShort(
+        windowEnd
+    )} ${windowEnd.getFullYear()}`;
+
+    return (
+        <div className="cal-tb">
+            <div className="cal-tb__row">
+                <div className="cal-tb__group">
+                    <button className="cal-btn" onClick={props.onPrev} title="Previous period" aria-label="Previous">
+                        ◀
+                    </button>
+                    <button className="cal-btn" onClick={props.onToday} title="Jump to today">
+                        Today
+                    </button>
+                    <button className="cal-btn" onClick={props.onNext} title="Next period" aria-label="Next">
+                        ▶
+                    </button>
+                    <span className="cal-tb__range">{rangeLabel}</span>
+                    <input
+                        className="cal-input"
+                        type="date"
+                        value={toISODate(windowStart)}
+                        onChange={(e) => {
+                            const v = e.target.value;
+                            if (v) props.onJump(new Date(`${v}T00:00:00`));
+                        }}
+                        title="Jump to date"
+                    />
+                </div>
+
+                <div className="cal-tb__group">
+                    <div className="cal-seg">
+                        <button
+                            className={`cal-seg__btn${props.view === "twoWeek" ? " cal-seg__btn--on" : ""}`}
+                            onClick={() => props.onView("twoWeek")}
+                        >
+                            2 Weeks
+                        </button>
+                        <button
+                            className={`cal-seg__btn${props.view === "thirtyDay" ? " cal-seg__btn--on" : ""}`}
+                            onClick={() => props.onView("thirtyDay")}
+                        >
+                            30 Days
+                        </button>
+                    </div>
+                </div>
+
+                <div className="cal-tb__group">
+                    <select
+                        className="cal-input"
+                        value={props.typeFilter}
+                        onChange={(e) => props.onTypeFilter(e.target.value)}
+                        title="Filter by event type"
+                    >
+                        <option value="">All types</option>
+                        {EVENT_TYPES.map((t) => (
+                            <option key={t} value={t}>
+                                {t}
+                            </option>
+                        ))}
+                    </select>
+                    <input
+                        className="cal-input"
+                        type="search"
+                        placeholder="Search events…"
+                        value={props.keyword}
+                        onChange={(e) => props.onKeyword(e.target.value)}
+                    />
+                    <details className="cal-lanes">
+                        <summary className="cal-btn">Lanes</summary>
+                        <div className="cal-lanes__menu">
+                            {props.lanes.map((l) => (
+                                <label key={l} className="cal-lanes__item">
+                                    <input
+                                        type="checkbox"
+                                        checked={!props.hiddenLanes.has(l)}
+                                        onChange={() => props.onToggleLane(l)}
+                                    />
+                                    {l}
+                                </label>
+                            ))}
+                        </div>
+                    </details>
+                </div>
+
+                <div className="cal-tb__group cal-tb__group--right">
+                    <button className="cal-btn" onClick={props.onExport} title="Export visible events to CSV">
+                        Export
+                    </button>
+                    <button className="cal-btn" onClick={props.onPrint} title="Print the calendar">
+                        Print
+                    </button>
+                </div>
+            </div>
+
+            <div className="cal-tb__summary">
+                <span className="cal-tb__count">{props.totalShown} event(s)</span>
+                {EVENT_TYPES.filter((t) => (props.typeCounts[t] ?? 0) > 0).map((t) => (
+                    <span className="cal-legend" key={t}>
+                        <span className="cal-legend__swatch" style={{ backgroundColor: colorFor(t) }} />
+                        {t}: {props.typeCounts[t]}
+                    </span>
+                ))}
+                {props.busy && <span className="cal-tb__busy">Saving…</span>}
+                {props.error && <span className="cal-tb__error">{props.error}</span>}
+            </div>
+        </div>
+    );
+};

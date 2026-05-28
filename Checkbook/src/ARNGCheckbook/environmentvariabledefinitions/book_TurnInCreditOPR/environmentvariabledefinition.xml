@@ -1,0 +1,13 @@
+<environmentvariabledefinition schemaname="book_TurnInCreditOPR">
+  <description default="Which OPR should Turn-ins go to - determines the LOA to be used.">
+    <label description="Which OPR should Turn-ins go to - determines the LOA to be used." languagecode="1033" />
+  </description>
+  <displayname default="ARNG Checkbook - Turn-In OPR">
+    <label description="ARNG Checkbook - Turn-In OPR" languagecode="1033" />
+  </displayname>
+  <introducedversion>1.11.0.41</introducedversion>
+  <iscustomizable>1</iscustomizable>
+  <isrequired>0</isrequired>
+  <secretstore>0</secretstore>
+  <type>100000000</type>
+</environmentvariabledefinition>

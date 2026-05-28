@@ -1,0 +1,5 @@
+book_availableamount: =Decimal(book_newtotaltdp - Sum(book_january, book_february, book_march, book_april, book_may, book_june, book_july, book_august, book_september, book_october, book_november, book_december))
+book_newtotaltdp: =If(IsBlank(book_UnfundedRequest), If(IsBlank(book_Prioritization), If(book_withholding = book_spendplan_book_spendplan_book_withholding.'1', book_RequirementFunding.book_newwithholding, book_RequirementFunding.book_newfundedamount), book_Prioritization.book_newfundedamounttdp), book_UnfundedRequest.book_unfundedamount)
+book_spendplantotal: =Sum(book_january, book_february, book_march, book_april, book_may, book_june, book_july, book_august, book_september, book_october, book_november, book_december)
+book_spendplantype: =If(!IsBlank(book_UnfundedRequest), "Unfunded Request", If(!IsBlank(book_Prioritization), "Prioritization", "Requirement"))
+book_total: =Float(0)

@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<manifest>
+  <control namespace="LongRangeCalendar" constructor="Calendar" version="0.2.0"
+           display-name-key="Long Range Calendar"
+           description-key="Swim-lane long-range calendar for G-3/5/7 events. Renders lrc_Event records in lanes by owning division, color-coded by event type, across a rolling 2-week / 30-day window. Dates only, no times."
+           control-type="virtual" >
+    <external-service-usage enabled="false">
+    </external-service-usage>
+
+    <!-- Control-level input: default visible window. -->
+    <property name="defaultView" display-name-key="Default View"
+              description-key="Initial time window shown when the calendar loads."
+              of-type="Enum" usage="input" required="false">
+      <value name="twoWeek" display-name-key="2 Weeks" description-key="Rolling 14-day window">twoWeek</value>
+      <value name="thirtyDay" display-name-key="30 Days" description-key="Rolling 30-day window">thirtyDay</value>
+    </property>
+
+    <!-- Bound to a view/subgrid of lrc_Event. One record = one calendar event. -->
+    <data-set name="events" display-name-key="Events">
+      <!-- Event name — the text shown on the calendar tile (e.g. "G-3 Orientation Conference"). -->
+      <property-set name="eventName" display-name-key="Event Name"
+                    description-key="lrc_Name — primary label shown on the calendar tile."
+                    of-type="SingleLine.Text" usage="bound" required="true" />
+      <!-- Drives color coding; standardized across all lanes. -->
+      <property-set name="eventType" display-name-key="Event Type"
+                    description-key="lrc_EventType — Conference, Exercise, Meeting, etc. Drives tile color."
+                    of-type="OptionSet" usage="bound" required="true" />
+      <!-- Date range (dates only — no times on the visible calendar). -->
+      <property-set name="startDate" display-name-key="Start Date"
+                    description-key="lrc_StartDate"
+                    of-type="DateAndTime.DateOnly" usage="bound" required="true" />
+      <property-set name="endDate" display-name-key="End Date"
+                    description-key="lrc_EndDate"
+                    of-type="DateAndTime.DateOnly" usage="bound" required="false" />
+      <!-- Owning division — determines the swim lane the tile renders in. -->
+      <property-set name="division" display-name-key="Division"
+                    description-key="lrc_Division — lookup to geip_Organization; determines the swim lane."
+                    of-type="Lookup.Simple" usage="bound" required="false" />
+      <!-- Optional detail shown in the side panel / hover, not on the tile. -->
+      <property-set name="description" display-name-key="Description"
+                    description-key="lrc_DetailedDescription"
+                    of-type="Multiple" usage="bound" required="false" />
+      <property-set name="location" display-name-key="Location"
+                    description-key="lrc_Location"
+                    of-type="SingleLine.Text" usage="bound" required="false" />
+      <property-set name="pocName" display-name-key="POC Name"
+                    description-key="lrc_POCName"
+                    of-type="SingleLine.Text" usage="bound" required="false" />
+      <property-set name="pocEmail" display-name-key="POC Email"
+                    description-key="lrc_POCEmail"
+                    of-type="SingleLine.Email" usage="bound" required="false" />
+      <property-set name="pocPhone" display-name-key="POC Phone"
+                    description-key="lrc_POCPhone"
+                    of-type="SingleLine.Phone" usage="bound" required="false" />
+    </data-set>
+
+    <resources>
+      <code path="index.ts" order="1"/>
+      <css path="css/Calendar.css" order="1" />
+      <platform-library name="React" version="16.14.0" />
+      <platform-library name="Fluent" version="9.68.0" />
+    </resources>
+
+    <!-- WebAPI is used to fetch related due-outs and optional detail fields not in the bound view. -->
+    <feature-usage>
+      <uses-feature name="WebAPI" required="true" />
+    </feature-usage>
+  </control>
+</manifest>

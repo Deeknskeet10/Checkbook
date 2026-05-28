@@ -1,0 +1,62 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Workflow WorkflowId="{e01f6c9a-8df0-f011-8407-001dd805b06e}" Name="Turn-In - Approval Process" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <XamlFileName>/Workflows/Turn-In-ApprovalProcess-E01F6C9A-8DF0-F011-8407-001DD805B06E.xaml</XamlFileName>
+  <Type>1</Type>
+  <Subprocess>0</Subprocess>
+  <Category>4</Category>
+  <Mode>0</Mode>
+  <Scope>4</Scope>
+  <OnDemand>0</OnDemand>
+  <TriggerOnCreate>1</TriggerOnCreate>
+  <TriggerOnDelete>0</TriggerOnDelete>
+  <AsyncAutodelete>0</AsyncAutodelete>
+  <SyncWorkflowLogOnFailure>0</SyncWorkflowLogOnFailure>
+  <StateCode>1</StateCode>
+  <StatusCode>2</StatusCode>
+  <processorder>100</processorder>
+  <RunAs>1</RunAs>
+  <UniqueName>book_turninapprovalprocess</UniqueName>
+  <IsTransacted>1</IsTransacted>
+  <IntroducedVersion>1.11.0.2</IntroducedVersion>
+  <IsCustomizable>1</IsCustomizable>
+  <BusinessProcessType>0</BusinessProcessType>
+  <IsCustomProcessingStepAllowedForOtherPublishers>1</IsCustomProcessingStepAllowedForOtherPublishers>
+  <ProcessTriggerScope>1</ProcessTriggerScope>
+  <ModernFlowType>0</ModernFlowType>
+  <PrimaryEntity>book_Turnin</PrimaryEntity>
+  <LocalizedNames>
+    <LocalizedName languagecode="1033" description="Turn-In - Approval Process" />
+  </LocalizedNames>
+  <labels>
+    <steplabels id="{ff95b8ad-85cf-410e-b729-3e34cd472ef3}">
+      <label languagecode="1033" description="Initiation" />
+    </steplabels>
+    <steplabels id="{d81fce58-03ff-47f7-ab40-367f0e6fe85c}">
+      <label languagecode="1033" description="Fund Center" />
+    </steplabels>
+    <steplabels id="{1c447583-b668-43b9-b98e-2eb6b10343ec}">
+      <label languagecode="1033" description="Fund" />
+    </steplabels>
+    <steplabels id="{4790755e-1eea-483d-aac4-deda84bc54bb}">
+      <label languagecode="1033" description="PG" />
+    </steplabels>
+    <steplabels id="{407d9af2-1d9e-4e8b-beac-3c8ffc2a6ba1}">
+      <label languagecode="1033" description="Amount" />
+    </steplabels>
+    <steplabels id="{c6439456-678e-4fac-9c79-9d93acf0dd4e}">
+      <label languagecode="1033" description="Turn-In Details" />
+    </steplabels>
+    <steplabels id="{7cfcecc3-b05a-407c-a6e1-0d9b83b2daf9}">
+      <label languagecode="1033" description="State Input" />
+    </steplabels>
+    <steplabels id="{493a2298-5de5-4936-a2c8-0698a8e5b537}">
+      <label languagecode="1033" description="Identified Turn-In Amount" />
+    </steplabels>
+    <steplabels id="{7cba05ae-d4af-4602-b5dd-54b4eda1cf14}">
+      <label languagecode="1033" description="State Approval" />
+    </steplabels>
+    <steplabels id="{6683a384-cf96-4abc-9dea-ecefda0c16dc}">
+      <label languagecode="1033" description="State Approved" />
+    </steplabels>
+  </labels>
+</Workflow>

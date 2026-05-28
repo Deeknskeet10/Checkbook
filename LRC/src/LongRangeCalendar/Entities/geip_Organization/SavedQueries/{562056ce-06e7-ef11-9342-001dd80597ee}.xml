@@ -1,0 +1,44 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<savedqueries xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <savedquery>
+    <IsCustomizable>1</IsCustomizable>
+    <CanBeDeleted>1</CanBeDeleted>
+    <isquickfindquery>0</isquickfindquery>
+    <isprivate>0</isprivate>
+    <isdefault>0</isdefault>
+    <savedqueryid>{562056ce-06e7-ef11-9342-001dd80597ee}</savedqueryid>
+    <layoutxml>
+      <grid name="resultset" jump="geip_name" select="1" icon="1" preview="1">
+        <row name="result" id="geip_organizationid">
+          <cell name="geip_name" width="200" />
+          <cell name="geip_organization" width="169" />
+          <cell name="geip_designation" width="133" />
+          <cell name="geip_chief" width="135" />
+          <cell name="geip_deputy" width="134" />
+          <cell name="geip_perstatadmin" width="201" />
+        </row>
+      </grid>
+    </layoutxml>
+    <querytype>0</querytype>
+    <fetchxml>
+      <fetch version="1.0" output-format="xml-platform" mapping="logical">
+        <entity name="geip_organization">
+          <attribute name="geip_name" />
+          <attribute name="geip_organizationid" />
+          <attribute name="geip_designation" />
+          <attribute name="geip_organization" />
+          <attribute name="geip_chief" />
+          <attribute name="geip_deputy" />
+          <attribute name="geip_perstatadmin" />
+        </entity>
+      </fetch>
+    </fetchxml>
+    <IntroducedVersion>1.0.0.6</IntroducedVersion>
+    <LocalizedNames>
+      <LocalizedName description="Facilities - Organizations" languagecode="1033" />
+    </LocalizedNames>
+    <Descriptions>
+      <Description description="Shows Assigned Individuals associated with Organization" languagecode="1033" />
+    </Descriptions>
+  </savedquery>
+</savedqueries>

@@ -1,0 +1,270 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<forms xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <systemform>
+    <formid>{310f8987-bde2-49ef-a32b-14744e3bc697}</formid>
+    <IntroducedVersion>1.0.0.0</IntroducedVersion>
+    <FormPresentation>1</FormPresentation>
+    <FormActivationState>1</FormActivationState>
+    <form headerdensity="HighWithControls">
+      <tabs>
+        <tab verticallayout="true" id="{b1294715-125f-42b2-9803-812c993b6863}" IsUserDefined="1">
+          <labels>
+            <label description="General" languagecode="1033" />
+          </labels>
+          <columns>
+            <column width="50%">
+              <sections>
+                <section showlabel="true" showbar="false" IsUserDefined="0" id="{039ce232-11df-4f88-868d-9950de9ecb2f}" name="general">
+                  <labels>
+                    <label description="Event Details" languagecode="1033" />
+                  </labels>
+                  <rows>
+                    <row>
+                      <cell id="{67f66968-e525-4bde-9f7b-37179157fb5b}">
+                        <labels>
+                          <label description="Name" languagecode="1033" />
+                        </labels>
+                        <control id="lrc_name" classid="{4273EDBD-AC1D-40d3-9FB2-095C621B552D}" datafieldname="lrc_name" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{010c3dc8-4222-4dea-83df-52d388cb4d3a}" visible="false">
+                        <labels>
+                          <label description="Owner" languagecode="1033" />
+                        </labels>
+                        <control id="ownerid" classid="{270BD3DB-D9AF-4782-9025-509E298DEC0A}" datafieldname="ownerid" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{890903c7-ea91-4011-af79-a7aa1eb133b5}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="Event Type" languagecode="1033" />
+                        </labels>
+                        <control id="lrc_eventtype" classid="{3EF39988-22BB-4F0B-BBBE-64B5A3748AEE}" datafieldname="lrc_eventtype" disabled="false" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{48c1e613-a19a-428e-a54c-047399fab77e}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="Location" languagecode="1033" />
+                        </labels>
+                        <control id="lrc_location" classid="{4273EDBD-AC1D-40D3-9FB2-095C621B552D}" datafieldname="lrc_location" disabled="false" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{2fcab584-354a-4311-bdb9-229a0883a934}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="Start Date" languagecode="1033" />
+                        </labels>
+                        <control id="lrc_startdate" classid="{5B773807-9FB2-42DB-97C3-7A91EFF8ADFF}" datafieldname="lrc_startdate" disabled="false" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{dad37843-4df0-455a-ae4e-5a43aa87c1c0}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="End Date" languagecode="1033" />
+                        </labels>
+                        <control id="lrc_enddate" classid="{5B773807-9FB2-42DB-97C3-7A91EFF8ADFF}" datafieldname="lrc_enddate" disabled="false" />
+                      </cell>
+                    </row>
+                  </rows>
+                </section>
+                <section name="null_section_5" id="202ef7a4-d791-4eba-bdde-436de6acfd27" IsUserDefined="0" locklevel="0" showlabel="true" showbar="false" layout="varwidth" celllabelalignment="Left" celllabelposition="Top" columns="1" labelwidth="115">
+                  <labels>
+                    <label description="Event Description" languagecode="1033" />
+                  </labels>
+                  <rows>
+                    <row />
+                    <row>
+                      <cell id="{4abcfdef-4264-4ed3-8395-8c7e1834c16f}" locklevel="0" colspan="1" rowspan="4" auto="true">
+                        <labels>
+                          <label description="Detailed Description" languagecode="1033" />
+                        </labels>
+                        <control id="lrc_detaileddescription" classid="{E0DECE4B-6FC8-4A8F-A065-082708572369}" datafieldname="lrc_detaileddescription" disabled="false" />
+                      </cell>
+                    </row>
+                    <row />
+                    <row />
+                    <row />
+                  </rows>
+                </section>
+              </sections>
+            </column>
+            <column width="50%">
+              <sections>
+                <section name="_section_600" id="0d013984-f8f5-4782-93fc-6bdc62ae1a78" IsUserDefined="0" locklevel="0" showlabel="true" showbar="false" layout="varwidth" celllabelalignment="Left" celllabelposition="Left" columns="1" labelwidth="115">
+                  <labels>
+                    <label description="Point of Contact" languagecode="1033" />
+                  </labels>
+                  <rows>
+                    <row />
+                    <row>
+                      <cell id="{1a2b8260-0c1a-4336-bc0e-952fe3b03e3f}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="POC Name" languagecode="1033" />
+                        </labels>
+                        <control id="lrc_pocname" classid="{4273EDBD-AC1D-40D3-9FB2-095C621B552D}" datafieldname="lrc_pocname" disabled="false" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{24cfcc59-bc0b-45df-91dd-afed91900573}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="POC Email" languagecode="1033" />
+                        </labels>
+                        <control id="lrc_pocemail" classid="{ADA2203E-B4CD-49BE-9DDF-234642B43B52}" datafieldname="lrc_pocemail" disabled="false" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{cfb9293d-ce05-4787-a331-4dcf2b4cb66d}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="POC Phone" languagecode="1033" />
+                        </labels>
+                        <control id="lrc_pocphone" classid="{4273EDBD-AC1D-40D3-9FB2-095C621B552D}" datafieldname="lrc_pocphone" disabled="false" />
+                      </cell>
+                    </row>
+                  </rows>
+                </section>
+                <section name="null_section_4" id="4b6741c0-fb7f-4cc9-9546-8a948fc0e7c5" IsUserDefined="0" locklevel="0" showlabel="true" showbar="false" layout="varwidth" celllabelalignment="Left" celllabelposition="Left" columns="1" labelwidth="115">
+                  <labels>
+                    <label description="Organization" languagecode="1033" />
+                  </labels>
+                  <rows>
+                    <row />
+                    <row>
+                      <cell id="{1413039d-baaa-40af-b244-6be87eb581e3}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="Directorate" languagecode="1033" />
+                        </labels>
+                        <control id="lrc_directorate" classid="{270BD3DB-D9AF-4782-9025-509E298DEC0A}" datafieldname="lrc_directorate" disabled="false" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{d2263619-afce-42c2-a411-f5b1e0b25ffc}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="Staff" languagecode="1033" />
+                        </labels>
+                        <control id="lrc_staff" classid="{270BD3DB-D9AF-4782-9025-509E298DEC0A}" datafieldname="lrc_staff" disabled="false" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{253fbab9-b378-4a7c-b697-d679107b0eff}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="Division" languagecode="1033" />
+                        </labels>
+                        <control id="lrc_division" classid="{270BD3DB-D9AF-4782-9025-509E298DEC0A}" datafieldname="lrc_division" disabled="false" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{a0eea6ca-9a0b-4971-8ab2-2f326d43f1d8}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="Branch" languagecode="1033" />
+                        </labels>
+                        <control id="lrc_branch" classid="{270BD3DB-D9AF-4782-9025-509E298DEC0A}" datafieldname="lrc_branch" disabled="false" />
+                      </cell>
+                    </row>
+                  </rows>
+                </section>
+              </sections>
+            </column>
+          </columns>
+        </tab>
+        <tab name="tab_2" id="2c18be44-d81f-4f26-b44a-cddfd27eb332" IsUserDefined="0" locklevel="0" showlabel="true">
+          <labels>
+            <label description="Due-Outs" languagecode="1033" />
+          </labels>
+          <columns>
+            <column width="100%">
+              <sections>
+                <section name="tab_2_section_1" id="0736cf48-8f3b-4f3f-99d9-10c6d4dcdcdb" IsUserDefined="0" locklevel="0" showlabel="true" showbar="false" layout="varwidth" celllabelalignment="Left" celllabelposition="Left" columns="1" labelwidth="115">
+                  <labels>
+                    <label description="Active Due-Outs" languagecode="1033" />
+                  </labels>
+                  <rows>
+                    <row />
+                    <row>
+                      <cell locklevel="0" id="{4f43c0ba-04b3-4953-931f-b8f40259ffcf}" rowspan="4" colspan="1" auto="false" showlabel="false">
+                        <labels>
+                          <label description="New SG control 1779980857084" languagecode="1033" />
+                        </labels>
+                        <control indicationOfSubgrid="true" id="Subgrid_new_1" classid="{E7A81278-8635-4D9E-8D4D-59480B391C5B}">
+                          <parameters>
+                            <RecordsPerPage>4</RecordsPerPage>
+                            <AutoExpand>Fixed</AutoExpand>
+                            <EnableQuickFind>false</EnableQuickFind>
+                            <EnableViewPicker>false</EnableViewPicker>
+                            <EnableChartPicker>true</EnableChartPicker>
+                            <ChartGridMode>All</ChartGridMode>
+                            <RelationshipName>lrc_eventdueout_Event_lrc_event</RelationshipName>
+                            <TargetEntityType>lrc_eventdueout</TargetEntityType>
+                            <ViewId>{E361ABC5-0152-4AF6-BC49-59478BC8D098}</ViewId>
+                            <ViewIds>{E361ABC5-0152-4AF6-BC49-59478BC8D098}</ViewIds>
+                          </parameters>
+                        </control>
+                      </cell>
+                    </row>
+                    <row />
+                    <row />
+                    <row />
+                  </rows>
+                </section>
+              </sections>
+            </column>
+          </columns>
+        </tab>
+      </tabs>
+      <header id="{db10f85a-046a-4175-a229-4dfa8e2d9062}" celllabelposition="Top" columns="111" labelwidth="115" celllabelalignment="Left">
+        <rows>
+          <row>
+            <cell id="{ec97ef4a-0e5a-47d1-a7ca-3f53594e426a}" showlabel="false">
+              <labels>
+                <label description="" languagecode="1033" />
+              </labels>
+            </cell>
+            <cell id="{11cc44db-0e5f-4bed-aa5f-cd309d67974d}" showlabel="false">
+              <labels>
+                <label description="" languagecode="1033" />
+              </labels>
+            </cell>
+            <cell id="{20bc37aa-fd08-4b3b-84de-9670e123485c}" showlabel="false">
+              <labels>
+                <label description="" languagecode="1033" />
+              </labels>
+            </cell>
+          </row>
+        </rows>
+      </header>
+      <footer id="{5d1225f0-d9be-4b74-a96e-a8f95e5d1599}" celllabelposition="Top" columns="111" labelwidth="115" celllabelalignment="Left">
+        <rows>
+          <row>
+            <cell id="{ffa82de9-3336-40a3-91a8-c908bf794046}" showlabel="false">
+              <labels>
+                <label description="" languagecode="1033" />
+              </labels>
+            </cell>
+            <cell id="{49a139da-2618-4296-b7c5-e21ec08e6328}" showlabel="false">
+              <labels>
+                <label description="" languagecode="1033" />
+              </labels>
+            </cell>
+            <cell id="{37681596-be50-4407-ad60-78048a1fcec5}" showlabel="false">
+              <labels>
+                <label description="" languagecode="1033" />
+              </labels>
+            </cell>
+          </row>
+        </rows>
+      </footer>
+      <DisplayConditions Order="0" FallbackForm="true">
+        <Everyone />
+      </DisplayConditions>
+    </form>
+    <IsCustomizable>1</IsCustomizable>
+    <CanBeDeleted>1</CanBeDeleted>
+    <LocalizedNames>
+      <LocalizedName description="Information" languagecode="1033" />
+    </LocalizedNames>
+    <Descriptions>
+      <Description description="A form for this entity." languagecode="1033" />
+    </Descriptions>
+  </systemform>
+</forms>

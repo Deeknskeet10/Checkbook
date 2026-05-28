@@ -1,0 +1,38 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<savedqueries xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <savedquery>
+    <IsCustomizable>1</IsCustomizable>
+    <CanBeDeleted>1</CanBeDeleted>
+    <isquickfindquery>0</isquickfindquery>
+    <isprivate>0</isprivate>
+    <isdefault>0</isdefault>
+    <savedqueryid>{294cfc8e-90d4-ed11-a7c6-001dd8065e20}</savedqueryid>
+    <layoutxml>
+      <grid name="resultset" jump="geip_name" select="1" icon="1" preview="1">
+        <row name="result" id="geip_organizationid">
+          <cell name="geip_name" width="194" />
+          <cell name="geip_designation" width="127" />
+          <cell name="geip_organization" width="180" />
+        </row>
+      </grid>
+    </layoutxml>
+    <querytype>0</querytype>
+    <fetchxml>
+      <fetch version="1.0" output-format="xml-platform" mapping="logical" distinct="true">
+        <entity name="geip_organization">
+          <attribute name="geip_name" />
+          <attribute name="geip_organizationid" />
+          <attribute name="geip_designation" />
+          <attribute name="geip_organization" />
+          <filter type="and">
+            <condition attribute="geip_designation" operator="eq" value="338130002" />
+          </filter>
+        </entity>
+      </fetch>
+    </fetchxml>
+    <IntroducedVersion>1.1.9.0</IntroducedVersion>
+    <LocalizedNames>
+      <LocalizedName description="OPR's" languagecode="1033" />
+    </LocalizedNames>
+  </savedquery>
+</savedqueries>
