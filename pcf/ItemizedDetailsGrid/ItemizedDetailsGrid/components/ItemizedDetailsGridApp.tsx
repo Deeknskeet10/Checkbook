@@ -42,6 +42,7 @@ const ALIAS = {
 
 const ITEMIZED_DETAILS_ENTITY = "book_itemizeddetails";
 const REQUIREMENT_DETAILS_ENTITY = "book_requirementdetails";
+const ITEM_ENTITY = "book_item";
 
 type NumericField = "quantity" | "requestedAmount" | "validatedAmount" | "fundedAmount";
 type TextField = "npmComment" | "stateComment";
@@ -208,27 +209,50 @@ export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
     const missing = ids.filter((id) => !contexts[id]);
     if (missing.length === 0) return;
 
-    const select =
-      "?$select=book_name,_book_item_value,_book_quantitytype_value," +
-      "_book_tdc_value,book_category";
+    // Quantity Type and Category live on book_item now, not on the
+    // Requirement Detail — so we fetch the RD for Item/TDC/name, then chain
+    // a second retrieve on the linked Item for quantitytype/category.
+    const rdSelect = "?$select=book_name,_book_item_value,_book_tdc_value";
+    const itemSelect = "?$select=_book_quantitytype_value,book_category";
     const fv = "@OData.Community.Display.V1.FormattedValue";
 
     missing.forEach((id) => {
       webAPI
-        .retrieveRecord(REQUIREMENT_DETAILS_ENTITY, id, select)
+        .retrieveRecord(REQUIREMENT_DETAILS_ENTITY, id, rdSelect)
         .then((rd: ComponentFramework.WebApi.Entity) => {
           setContexts((prev) => ({
             ...prev,
             [id]: {
               name: (rd.book_name as string) || "",
               item: (rd[`_book_item_value${fv}`] as string) || "",
-              quantityType:
-                (rd[`_book_quantitytype_value${fv}`] as string) || "",
+              quantityType: "",
               tdc: (rd[`_book_tdc_value${fv}`] as string) || "",
-              category: (rd[`book_category${fv}`] as string) || "",
+              category: "",
             },
           }));
-          return;
+          return (rd._book_item_value as string | undefined) ?? null;
+        })
+        .then((itemId) =>
+          itemId
+            ? webAPI.retrieveRecord(ITEM_ENTITY, itemId, itemSelect)
+            : null
+        )
+        .then((item: ComponentFramework.WebApi.Entity | null) => {
+          if (!item) return null;
+          setContexts((prev) => {
+            const cur = prev[id];
+            if (!cur) return prev;
+            return {
+              ...prev,
+              [id]: {
+                ...cur,
+                quantityType:
+                  (item[`_book_quantitytype_value${fv}`] as string) || "",
+                category: (item[`book_category${fv}`] as string) || "",
+              },
+            };
+          });
+          return null;
         })
         .catch(() => {
           /* leave context blank on failure */
