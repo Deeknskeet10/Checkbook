@@ -28,6 +28,7 @@ export class Calendar implements ComponentFramework.ReactControl<IInputs, IOutpu
             webAPI: context.webAPI,
             defaultView: view === "twoWeek" ? "twoWeek" : "thirtyDay",
             width: context.mode.allocatedWidth,
+            height: context.mode.allocatedHeight,
             refresh: () => context.parameters.events.refresh(),
         };
         return React.createElement(CalendarApp, props);

@@ -15,6 +15,7 @@ export interface ICalendarProps {
     webAPI: ComponentFramework.WebApi;
     defaultView: ViewMode;
     width: number;
+    height: number;
     refresh: () => void;
 }
 
@@ -25,7 +26,15 @@ function errMessage(err: unknown): string {
 }
 
 export const CalendarApp: React.FC<ICalendarProps> = (props) => {
-    const { dataset, webAPI, width } = props;
+    const { dataset, webAPI, width, height } = props;
+
+    // The PCF host reports its container size via allocatedWidth/Height (we opt in
+    // with trackContainerResize). Apply them so the control fills its container in
+    // model-driven pages, where CSS height:100% otherwise collapses to content.
+    const rootStyle: React.CSSProperties = {
+        width: width > 0 ? width : "100%",
+        height: height > 0 ? height : "100%",
+    };
 
     const [view, setView] = React.useState<ViewMode>(props.defaultView);
     const [anchor, setAnchor] = React.useState<Date>(() => startOfDay(new Date()));
@@ -134,7 +143,7 @@ export const CalendarApp: React.FC<ICalendarProps> = (props) => {
     const selectedDueOuts = selectedId ? dueOuts.filter((d) => d.eventId === selectedId) : [];
 
     return (
-        <div className="cal-root">
+        <div className="cal-root" style={rootStyle}>
             <Toolbar
                 view={view}
                 onView={setView}
