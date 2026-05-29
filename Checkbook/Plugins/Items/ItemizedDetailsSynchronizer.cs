@@ -72,7 +72,7 @@ namespace Checkbook.Plugins.Items
 
             var prioritizationIds = GetPrioritizationsForRequirement(service, requirement.Id);
             tracingService.Trace(
-                $"Found {prioritizationIds.Count} Prioritization(s) for Requirement {requirement.Id}.");
+                $"Found {prioritizationIds.Count} Itemized Prioritization(s) for Requirement {requirement.Id}.");
 
             var created = 0;
             foreach (var prioritizationId in prioritizationIds)
@@ -128,11 +128,27 @@ namespace Checkbook.Plugins.Items
             tracingService.Trace(
                 $"Found {detailIds.Count} Requirement Detail(s) for Requirement {requirement.Id}.");
 
+            if (detailIds.Count == 0)
+            {
+                tracingService.Trace(
+                    "Requirement has no Requirement Details; leaving Prioritization in Direct funding mode.");
+                return;
+            }
+
+            // The Requirement already itemizes its funding, so this Prioritization
+            // adopts Itemized mode. Flip the flag before seeding so the rollup that
+            // fires on each Itemized Detail create sees the Prioritization as Itemized.
+            service.Update(new Entity(EntityNames.Prioritization, prioritizationId)
+            {
+                [PrioritizationAttributes.FundingMode] =
+                    new OptionSetValue(FundingModeValues.Itemized)
+            });
+
             foreach (var detailId in detailIds)
                 CreateItemizedDetail(service, prioritizationId, detailId);
 
             tracingService.Trace(
-                $"Created {detailIds.Count} Itemized Detail(s) for new Prioritization.");
+                $"Set Prioritization to Itemized and created {detailIds.Count} Itemized Detail(s).");
         }
 
         /// <summary>
@@ -172,8 +188,11 @@ namespace Checkbook.Plugins.Items
         }
 
         /// <summary>
-        /// Returns the ids of every active Prioritization whose Requirement Funding
-        /// points at the given Requirement.
+        /// Returns the ids of every active, Itemized-mode Prioritization whose
+        /// Requirement Funding points at the given Requirement. Direct-mode
+        /// Prioritizations are intentionally excluded so adding a Requirement Detail
+        /// never fans an Itemized Detail onto a manually-funded Prioritization (which
+        /// would let <see cref="PrioritizationItemizedRollup"/> zero its funding).
         /// </summary>
         private static List<Guid> GetPrioritizationsForRequirement(
             IOrganizationService service, Guid requirementId)
@@ -188,7 +207,11 @@ namespace Checkbook.Plugins.Items
                         new ConditionExpression(
                             PrioritizationAttributes.StateCode,
                             ConditionOperator.Equal,
-                            StateCodeValues.Active)
+                            StateCodeValues.Active),
+                        new ConditionExpression(
+                            PrioritizationAttributes.FundingMode,
+                            ConditionOperator.Equal,
+                            FundingModeValues.Itemized)
                     }
                 }
             };

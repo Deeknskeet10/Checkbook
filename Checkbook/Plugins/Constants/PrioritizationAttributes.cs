@@ -13,6 +13,7 @@ namespace Checkbook.Plugins.Constants
         public const string RequestedAmount = "book_newrequestedamount";
         public const string UnfundedAmount = "book_unfundedamount";
         public const string ValidatedAmount = "book_validatedamount";
+        public const string FundingMode = "book_fundingmode";
         public const string RequirementFunding = "book_requirementfunding";
         public const string Requirement = "book_requirement";
         public const string State = "book_state";

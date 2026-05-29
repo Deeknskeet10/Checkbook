@@ -94,22 +94,23 @@ const useStyles = makeStyles({
     whiteSpace: "nowrap",
   },
   numberInput: {
-    minWidth: "96px",
-    width: "96px",
-  },
-  qtyInput: {
     minWidth: "72px",
     width: "72px",
   },
+  qtyInput: {
+    minWidth: "56px",
+    width: "56px",
+  },
   commentInput: {
     minWidth: "160px",
+    width: "160px",
   },
   totalsRow: {
     fontWeight: tokens.fontWeightSemibold,
     backgroundColor: tokens.colorNeutralBackground2,
   },
   amount: {
-    textAlign: "right",
+    textAlign: "center",
     fontVariantNumeric: "tabular-nums",
   },
   status: {
@@ -370,7 +371,7 @@ export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
       value={displayValue(row, field)}
       onChange={(_e, data) => onCellChange(row.recordId, field, data.value)}
       onBlur={() => commitCell(row, field)}
-      input={{ style: { textAlign: "right", fontVariantNumeric: "tabular-nums" } }}
+      input={{ style: { textAlign: "center", fontVariantNumeric: "tabular-nums" } }}
     />
   );
 

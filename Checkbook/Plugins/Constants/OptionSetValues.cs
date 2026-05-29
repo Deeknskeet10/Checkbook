@@ -22,6 +22,17 @@ namespace Checkbook.Plugins.Constants
     }
 
     /// <summary>
+    /// Funding mode values for book_prioritization.book_fundingmode.
+    /// Direct = funding entered manually on the Prioritization; Itemized = funding
+    /// rolled up from book_itemizeddetails children.
+    /// </summary>
+    public static class FundingModeValues
+    {
+        public const int Direct = 0;
+        public const int Itemized = 1;
+    }
+
+    /// <summary>
     /// Direction values for book_ledger.book_ledgerdirection.
     /// </summary>
     public static class LedgerDirectionValues

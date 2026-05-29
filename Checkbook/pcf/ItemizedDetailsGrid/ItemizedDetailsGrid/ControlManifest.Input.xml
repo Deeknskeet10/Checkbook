@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <manifest>
-  <control namespace="ARNGCheckbook" constructor="ItemizedDetailsGrid" version="0.1.3"
+  <control namespace="ARNGCheckbook" constructor="ItemizedDetailsGrid" version="0.1.4"
            display-name-key="ItemizedDetailsGrid"
            description-key="Editable grid for the Itemized Details of a Prioritization: NPMs enter Quantity, Requested/Validated/Funded amounts and comments inline, with live totals. Read-only context columns Item and TDC come from the linked Requirement Detail; Quantity Type and Category come from the linked Item."
            control-type="virtual" >

@@ -20,9 +20,9 @@ namespace Checkbook.Plugins.Items
     /// - Delete: recalc the (PreImage) parent.
     ///
     /// When a Prioritization has no remaining Itemized Details the three roll-up fields
-    /// are set to zero. Because the plugin only ever runs in response to an Itemized
-    /// Detail change, a Prioritization that has never had Itemized Details is never
-    /// written to — its funding amounts stay under manual control.
+    /// are set to zero. The roll-up only ever writes to Prioritizations whose
+    /// book_fundingmode is Itemized; Direct-mode Prioritizations keep their
+    /// manually-entered funding even if a stray Itemized Detail change reaches here.
     /// </summary>
     public class PrioritizationItemizedRollup : PluginBase
     {
@@ -93,6 +93,22 @@ namespace Checkbook.Plugins.Items
         private static void RecalculatePrioritization(
             IOrganizationService service, ITracingService tracingService, Guid prioritizationId)
         {
+            // Only roll up onto Prioritizations that opted into Itemized funding.
+            // A Direct-mode Prioritization that somehow has a stray Itemized Detail
+            // keeps its manually-entered funding untouched.
+            var prioritization = service.Retrieve(
+                EntityNames.Prioritization,
+                prioritizationId,
+                new ColumnSet(PrioritizationAttributes.FundingMode));
+            var fundingMode = prioritization
+                .GetAttributeValue<OptionSetValue>(PrioritizationAttributes.FundingMode);
+            if (fundingMode == null || fundingMode.Value != FundingModeValues.Itemized)
+            {
+                tracingService.Trace(
+                    $"Prioritization {prioritizationId} is not Itemized; skipping roll-up.");
+                return;
+            }
+
             var query = new QueryExpression(EntityNames.ItemizedDetails)
             {
                 ColumnSet = new ColumnSet(
