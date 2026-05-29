@@ -133,14 +133,39 @@ namespace Checkbook.Plugins.TurnIns
             // so the nested Prio updates above do not trigger it. Invoke the shared
             // helper directly for each unique parent RF — same pattern RealignmentProcessor
             // uses (see Plugins/Realignments/RealignmentProcessor.cs).
-            var parentRfIds = items
+            //
+            // The roll-up only recomputes RF.FundedAmount/ValidatedAmount from child Prios;
+            // it does NOT touch RF.TDP (TDP is the RF's allocation from the LOA, not a Prio
+            // roll-up). So we must also shrink RF.TDP by the amount pulled from that RF's
+            // prioritizations — mirroring the RF-only path in TurnInRequirementFundingUpdater,
+            // which reduces both TDP and Funded. Without this, RF.TDP stays high, the
+            // difference surfaces as Withhold (TDP − Funded), and LOA TDP Remaining
+            // (LOA.TDP − Σ RF.TDP) goes negative.
+            var rfPulledTotals = items
                 .Where(i => i.Prioritization != null && i.RequirementFunding != null)
-                .Select(i => i.RequirementFunding.Id)
-                .Distinct()
-                .ToList();
-            foreach (var rfId in parentRfIds)
+                .GroupBy(i => i.RequirementFunding.Id)
+                .ToDictionary(g => g.Key, g => g.Sum(i => i.Amount));
+
+            foreach (var pair in rfPulledTotals)
             {
-                tracing.Trace($"Rolling up parent RF {rfId} after Prio reduction.");
+                var rfId = pair.Key;
+                var pulled = pair.Value;
+
+                var rf = service.Retrieve(
+                    EntityNames.RequirementFunding,
+                    rfId,
+                    new ColumnSet(RequirementFundingAttributes.TDP));
+                decimal oldTdp = NumericHelper.ToDecimal(rf, RequirementFundingAttributes.TDP) ?? 0m;
+                decimal newTdp = oldTdp - pulled;
+                if (newTdp < 0m) newTdp = 0m;
+
+                tracing.Trace($"Reducing parent RF {rfId} TDP: {oldTdp} -> {newTdp} (pulled {pulled}).");
+                service.Update(new Entity(EntityNames.RequirementFunding, rfId)
+                {
+                    [RequirementFundingAttributes.TDP] = newTdp,
+                });
+
+                tracing.Trace($"Rolling up parent RF {rfId} Funded after Prio reduction.");
                 PrioritizationRollupHelper.RecalculateRFFunded(service, rfId, tracing);
             }
 
