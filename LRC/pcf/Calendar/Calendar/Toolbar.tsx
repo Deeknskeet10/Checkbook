@@ -1,5 +1,5 @@
 import * as React from "react";
-import { EVENT_TYPES, ViewMode, colorFor } from "./types";
+import { EVENT_TYPES, Level, LEVELS, ViewMode, colorFor } from "./types";
 import { monthShort, toISODate } from "./dateUtils";
 
 export interface ToolbarProps {
@@ -15,9 +15,11 @@ export interface ToolbarProps {
     onTypeFilter: (t: string) => void;
     keyword: string;
     onKeyword: (s: string) => void;
-    lanes: string[];
-    hiddenLanes: ReadonlySet<string>;
-    onToggleLane: (l: string) => void;
+    orgOptions: Record<Level, string[]>;
+    orgFilters: Record<Level, string>;
+    onOrgFilter: (level: Level, value: string) => void;
+    onExpandAll: () => void;
+    onCollapseAll: () => void;
     totalShown: number;
     typeCounts: Record<string, number>;
     onExport: () => void;
@@ -73,44 +75,12 @@ export const Toolbar: React.FC<ToolbarProps> = (props) => {
                             30 Days
                         </button>
                     </div>
-                </div>
-
-                <div className="cal-tb__group">
-                    <select
-                        className="cal-input"
-                        value={props.typeFilter}
-                        onChange={(e) => props.onTypeFilter(e.target.value)}
-                        title="Filter by event type"
-                    >
-                        <option value="">All types</option>
-                        {EVENT_TYPES.map((t) => (
-                            <option key={t} value={t}>
-                                {t}
-                            </option>
-                        ))}
-                    </select>
-                    <input
-                        className="cal-input"
-                        type="search"
-                        placeholder="Search events…"
-                        value={props.keyword}
-                        onChange={(e) => props.onKeyword(e.target.value)}
-                    />
-                    <details className="cal-lanes">
-                        <summary className="cal-btn">Lanes</summary>
-                        <div className="cal-lanes__menu">
-                            {props.lanes.map((l) => (
-                                <label key={l} className="cal-lanes__item">
-                                    <input
-                                        type="checkbox"
-                                        checked={!props.hiddenLanes.has(l)}
-                                        onChange={() => props.onToggleLane(l)}
-                                    />
-                                    {l}
-                                </label>
-                            ))}
-                        </div>
-                    </details>
+                    <button className="cal-btn" onClick={props.onExpandAll} title="Expand all lanes">
+                        Expand all
+                    </button>
+                    <button className="cal-btn" onClick={props.onCollapseAll} title="Collapse to roll-up">
+                        Collapse
+                    </button>
                 </div>
 
                 <div className="cal-tb__group cal-tb__group--right">
@@ -121,6 +91,45 @@ export const Toolbar: React.FC<ToolbarProps> = (props) => {
                         Print
                     </button>
                 </div>
+            </div>
+
+            <div className="cal-tb__row">
+                {LEVELS.map((level) => (
+                    <select
+                        key={level}
+                        className="cal-input"
+                        value={props.orgFilters[level]}
+                        onChange={(e) => props.onOrgFilter(level, e.target.value)}
+                        title={`Filter by ${level}`}
+                    >
+                        <option value="">All {level}s</option>
+                        {props.orgOptions[level].map((name) => (
+                            <option key={name} value={name}>
+                                {name}
+                            </option>
+                        ))}
+                    </select>
+                ))}
+                <select
+                    className="cal-input"
+                    value={props.typeFilter}
+                    onChange={(e) => props.onTypeFilter(e.target.value)}
+                    title="Filter by event type"
+                >
+                    <option value="">All types</option>
+                    {EVENT_TYPES.map((t) => (
+                        <option key={t} value={t}>
+                            {t}
+                        </option>
+                    ))}
+                </select>
+                <input
+                    className="cal-input"
+                    type="search"
+                    placeholder="Search events…"
+                    value={props.keyword}
+                    onChange={(e) => props.onKeyword(e.target.value)}
+                />
             </div>
 
             <div className="cal-tb__summary">

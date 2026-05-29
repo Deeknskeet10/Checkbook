@@ -241,16 +241,55 @@
     border-right: 2px solid #c8c8c8;
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    padding: 0 10px;
+    gap: 4px;
+    padding: 0 10px 0 8px;
     font-weight: 600;
     box-sizing: border-box;
+}
+
+/* Depth shading: top-level (Directorate) darkest, deeper levels lighter. */
+.cal__lanelabel--d0 {
+    background: #eef1f5;
+    font-weight: 700;
+}
+.cal__lanelabel--d1 {
+    background: #f4f6f9;
+}
+.cal__lanelabel--d2 {
+    background: #f9fafb;
+    font-weight: 500;
+}
+.cal__lanelabel--d3 {
+    background: #fcfcfd;
+    font-weight: 500;
+}
+.cal__lanelabel--unassigned {
+    background: #f6f3ee;
+    font-style: italic;
+    font-weight: 500;
+}
+
+.cal__caret {
+    border: 0;
+    background: none;
+    cursor: pointer;
+    font-size: 10px;
+    line-height: 1;
+    padding: 2px;
+    color: #555;
+    flex: 0 0 auto;
+}
+
+.cal__caret--leaf {
+    cursor: default;
+    color: #bbb;
 }
 
 .cal__lanename {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    flex: 1 1 auto;
 }
 
 .cal__lanecount {

@@ -1,4 +1,4 @@
-import { CalEvent, DueOut, SWIM_LANES, UNASSIGNED } from "./types";
+import { CalEvent, DueOut, LaneNode, Level, LEVELS, OrgVal, PathStep, UNASSIGNED } from "./types";
 import { fromValue, toISODate } from "./dateUtils";
 
 type DataSet = ComponentFramework.PropertyTypes.DataSet;
@@ -21,8 +21,17 @@ function lookupId(v: unknown): string | null {
     return raw ? raw.replace(/[{}]/g, "") : null;
 }
 
-function resolveLane(divisionName: string): string {
-    return (SWIM_LANES as readonly string[]).includes(divisionName) ? divisionName : UNASSIGNED;
+// Dataset property-set name for each org level (matches the manifest bindings).
+const LEVEL_PROP: Record<Level, string> = {
+    Directorate: "directorate",
+    Staff: "staff",
+    Division: "division",
+    Branch: "branch",
+};
+
+// Stable key for an org at a level — its id when known, else its name.
+function stepKey(level: Level, org: OrgVal): string {
+    return `${level}|${org.id ?? org.name}`;
 }
 
 export function readEvents(dataset: DataSet): CalEvent[] {
@@ -33,16 +42,28 @@ export function readEvents(dataset: DataSet): CalEvent[] {
         const start = fromValue(rec.getValue("startDate"));
         if (!start) continue; // cannot place an event without a start date
         const end = fromValue(rec.getValue("endDate")) ?? start;
-        const divisionName = (rec.getFormattedValue("division") || "").trim();
+
+        const orgs: Partial<Record<Level, OrgVal>> = {};
+        const path: PathStep[] = [];
+        for (const level of LEVELS) {
+            const prop = LEVEL_PROP[level];
+            const name = (rec.getFormattedValue(prop) || "").trim();
+            if (!name) continue;
+            const org: OrgVal = { id: lookupId(rec.getValue(prop)), name };
+            orgs[level] = org;
+            path.push({ level, key: stepKey(level, org), name });
+        }
+        const laneKey = path.length ? path[path.length - 1].key : UNASSIGNED;
+
         out.push({
             id,
             name: rec.getFormattedValue("eventName") || "(untitled)",
             type: rec.getFormattedValue("eventType") || "Other",
             start,
             end: end < start ? start : end,
-            divisionName,
-            divisionId: lookupId(rec.getValue("division")),
-            laneName: resolveLane(divisionName),
+            orgs,
+            path,
+            laneKey,
             location: rec.getFormattedValue("location") || "",
             description: rec.getFormattedValue("description") || "",
             pocName: rec.getFormattedValue("pocName") || "",
@@ -53,14 +74,103 @@ export function readEvents(dataset: DataSet): CalEvent[] {
     return out;
 }
 
-// Maps each lane name to a known geip_Organization id, harvested from events
-// already in that lane — used to set the division lookup on cross-lane drops.
-export function laneDivisionMap(events: CalEvent[]): Record<string, string> {
-    const map: Record<string, string> = {};
-    for (const e of events) {
-        if (e.divisionId && !map[e.laneName]) map[e.laneName] = e.divisionId;
+// Build the collapsible lane tree from the events' org paths. Nesting follows
+// each event's own path of set levels, so an event that skips a level nests its
+// next set level directly. Roll-up counts include the whole subtree.
+export function buildLaneTree(events: CalEvent[]): LaneNode[] {
+    interface Acc extends LaneNode {
+        childMap: Map<string, Acc>;
     }
-    return map;
+    const make = (key: string, level: LaneNode["level"], name: string, depth: number): Acc => ({
+        key,
+        level,
+        name,
+        depth,
+        children: [],
+        childMap: new Map(),
+        direct: [],
+        rollup: 0,
+    });
+
+    const rootMap = new Map<string, Acc>();
+    const unassigned: CalEvent[] = [];
+
+    for (const e of events) {
+        if (e.path.length === 0) {
+            unassigned.push(e);
+            continue;
+        }
+        let map = rootMap;
+        let parentKey = "";
+        let node: Acc | undefined;
+        e.path.forEach((step, i) => {
+            const key = parentKey ? `${parentKey}>${step.key}` : step.key;
+            let n = map.get(key);
+            if (!n) {
+                n = make(key, step.level, step.name, i);
+                map.set(key, n);
+            }
+            n.rollup++;
+            parentKey = key;
+            map = n.childMap;
+            node = n;
+        });
+        node!.direct.push(e);
+    }
+
+    const finalize = (accs: Map<string, Acc>): LaneNode[] =>
+        [...accs.values()]
+            .sort((a, b) => a.name.localeCompare(b.name))
+            .map((a) => ({
+                key: a.key,
+                level: a.level,
+                name: a.name,
+                depth: a.depth,
+                children: finalize(a.childMap),
+                direct: a.direct,
+                rollup: a.rollup,
+            }));
+
+    const roots = finalize(rootMap);
+    if (unassigned.length) {
+        roots.push({
+            key: UNASSIGNED,
+            level: UNASSIGNED,
+            name: UNASSIGNED,
+            depth: 0,
+            children: [],
+            direct: unassigned,
+            rollup: unassigned.length,
+        });
+    }
+    return roots;
+}
+
+// All events in a node's subtree (direct + descendants) — used to render the
+// roll-up tiles when a node is collapsed.
+export function subtreeEvents(node: LaneNode): CalEvent[] {
+    const out = [...node.direct];
+    for (const c of node.children) out.push(...subtreeEvents(c));
+    return out;
+}
+
+// Distinct org names present at each level, for the filter dropdowns.
+export function distinctOrgsByLevel(events: CalEvent[]): Record<Level, string[]> {
+    const sets: Record<Level, Set<string>> = {
+        Directorate: new Set(),
+        Staff: new Set(),
+        Division: new Set(),
+        Branch: new Set(),
+    };
+    for (const e of events) {
+        for (const level of LEVELS) {
+            const o = e.orgs[level];
+            if (o) sets[level].add(o.name);
+        }
+    }
+    const out = {} as Record<Level, string[]>;
+    for (const level of LEVELS) out[level] = [...sets[level]].sort((a, b) => a.localeCompare(b));
+    return out;
 }
 
 function chunk<T>(arr: T[], size: number): T[][] {
@@ -99,21 +209,19 @@ export async function updateEventSchedule(
     webAPI: ComponentFramework.WebApi,
     eventId: string,
     newStart: Date,
-    newEnd: Date,
-    divisionId: string | null
+    newEnd: Date
 ): Promise<void> {
     const data: Record<string, unknown> = {
         lrc_startdate: toISODate(newStart),
         lrc_enddate: toISODate(newEnd),
     };
-    if (divisionId) data["lrc_Division@odata.bind"] = `/geip_organizations(${divisionId})`;
     await webAPI.updateRecord("lrc_event", eventId, data as ComponentFramework.WebApi.Entity);
 }
 
 export function exportEventsCsv(events: CalEvent[]): void {
     if (typeof document === "undefined") return;
     const esc = (s: string) => `"${(s ?? "").replace(/"/g, '""')}"`;
-    const header = ["Event", "Type", "Start", "End", "Lane", "Division", "Location", "POC", "Email", "Phone"];
+    const header = ["Event", "Type", "Start", "End", "Directorate", "Staff", "Division", "Branch", "Location", "POC", "Email", "Phone"];
     const lines = [header.join(",")];
     for (const e of events) {
         lines.push(
@@ -122,8 +230,10 @@ export function exportEventsCsv(events: CalEvent[]): void {
                 esc(e.type),
                 esc(toISODate(e.start)),
                 esc(toISODate(e.end)),
-                esc(e.laneName),
-                esc(e.divisionName),
+                esc(e.orgs.Directorate?.name ?? ""),
+                esc(e.orgs.Staff?.name ?? ""),
+                esc(e.orgs.Division?.name ?? ""),
+                esc(e.orgs.Branch?.name ?? ""),
                 esc(e.location),
                 esc(e.pocName),
                 esc(e.pocEmail),

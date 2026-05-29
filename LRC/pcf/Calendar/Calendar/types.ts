@@ -1,16 +1,26 @@
 export type ViewMode = "twoWeek" | "thirtyDay";
 
-// The five canonical G-3/5/7 swim lanes (requirements). Division lookups are
-// matched against these by name; anything else falls into UNASSIGNED.
-export const SWIM_LANES = [
-    "External & G-3/7 Front Office",
-    "Operations Division",
-    "Training Division",
-    "Resource Integration Division",
-    "Force Generation Division",
-] as const;
+// Org-hierarchy levels, top-to-bottom. Lane nesting follows this order:
+// an event's deepest populated level is its lane; the levels above it are
+// roll-up parents. Each level corresponds to a geip_Organization lookup on
+// lrc_Event (lrc_Directorate, lrc_Staff, lrc_Division, lrc_Branch).
+export const LEVELS = ["Directorate", "Staff", "Division", "Branch"] as const;
+export type Level = (typeof LEVELS)[number];
 
+// Name of the bucket for events with no org level set at all.
 export const UNASSIGNED = "Unassigned";
+
+export interface OrgVal {
+    id: string | null;
+    name: string;
+}
+
+// One step in an event's lane path (an org assigned at a given level).
+export interface PathStep {
+    level: Level;
+    key: string; // stable key for this org at this level
+    name: string;
+}
 
 // Standardized color per event type, applied across all lanes (requirements).
 export const TYPE_COLORS: Record<string, string> = {
@@ -35,14 +45,40 @@ export interface CalEvent {
     type: string;
     start: Date;
     end: Date;
-    laneName: string;
-    divisionName: string;
-    divisionId: string | null;
+    // Org assignment per level (only levels that are set are present).
+    orgs: Partial<Record<Level, OrgVal>>;
+    // Set levels in LEVELS order — the event's nesting path (deepest last).
+    path: PathStep[];
+    // Key of the deepest node the event belongs to, or UNASSIGNED.
+    laneKey: string;
     location: string;
     description: string;
     pocName: string;
     pocEmail: string;
     pocPhone: string;
+}
+
+// A node in the collapsible lane tree.
+export interface LaneNode {
+    key: string; // full path key (unique per tree position)
+    level: Level | typeof UNASSIGNED;
+    name: string;
+    depth: number; // 0-based nesting depth
+    children: LaneNode[];
+    direct: CalEvent[]; // events whose deepest level is exactly this node
+    rollup: number; // count of events in this node's subtree (incl. direct)
+}
+
+// A lane row to render, produced by flattening the tree against expand state.
+export interface VisibleLane {
+    key: string;
+    name: string;
+    level: Level | typeof UNASSIGNED;
+    depth: number;
+    hasChildren: boolean;
+    expanded: boolean;
+    count: number; // roll-up count shown on the lane label
+    events: CalEvent[]; // tiles to render (direct if expanded, subtree if collapsed)
 }
 
 export interface DueOut {

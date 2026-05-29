@@ -1,5 +1,5 @@
 import * as React from "react";
-import { CalEvent, DueOut, colorFor } from "./types";
+import { CalEvent, DueOut, LEVELS, colorFor } from "./types";
 import { formatRangeNoYear } from "./dateUtils";
 
 export interface DetailPanelProps {
@@ -29,8 +29,9 @@ export const DetailPanel: React.FC<DetailPanelProps> = ({ event, dueOuts, onClos
             <div className="cal-dp__body">
                 <Field label="Type" value={event.type} />
                 <Field label="Dates" value={formatRangeNoYear(event.start, event.end)} />
-                <Field label="Swim Lane" value={event.laneName} />
-                <Field label="Division" value={event.divisionName} />
+                {LEVELS.map((level) => (
+                    <Field key={level} label={level} value={event.orgs[level]?.name ?? ""} />
+                ))}
                 <Field label="Location" value={event.location} />
                 <Field label="Description" value={event.description} />
                 <Field label="POC" value={event.pocName} />

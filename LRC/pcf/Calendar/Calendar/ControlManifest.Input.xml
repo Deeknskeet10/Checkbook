@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <manifest>
-  <control namespace="LongRangeCalendar" constructor="Calendar" version="0.2.1"
+  <control namespace="LongRangeCalendar" constructor="Calendar" version="0.3.0"
            display-name-key="Long Range Calendar"
            description-key="Swim-lane long-range calendar for G-3/5/7 events. Renders lrc_Event records in lanes by owning division, color-coded by event type, across a rolling 2-week / 30-day window. Dates only, no times."
            control-type="virtual" >
@@ -32,9 +32,20 @@
       <property-set name="endDate" display-name-key="End Date"
                     description-key="lrc_EndDate"
                     of-type="DateAndTime.DateOnly" usage="bound" required="false" />
-      <!-- Owning division — determines the swim lane the tile renders in. -->
+      <!-- Org-hierarchy assignments. Lanes nest top-to-bottom in this order:
+           Directorate > Staff > Division > Branch. Each is a geip_Organization
+           lookup; an event's deepest set level is its lane, higher levels roll up. -->
+      <property-set name="directorate" display-name-key="Directorate"
+                    description-key="lrc_Directorate — lookup to geip_Organization; top swim-lane level."
+                    of-type="Lookup.Simple" usage="bound" required="false" />
+      <property-set name="staff" display-name-key="Staff"
+                    description-key="lrc_Staff — lookup to geip_Organization; nests under Directorate."
+                    of-type="Lookup.Simple" usage="bound" required="false" />
       <property-set name="division" display-name-key="Division"
-                    description-key="lrc_Division — lookup to geip_Organization; determines the swim lane."
+                    description-key="lrc_Division — lookup to geip_Organization; nests under Staff."
+                    of-type="Lookup.Simple" usage="bound" required="false" />
+      <property-set name="branch" display-name-key="Branch"
+                    description-key="lrc_Branch — lookup to geip_Organization; deepest swim-lane level."
                     of-type="Lookup.Simple" usage="bound" required="false" />
       <!-- Optional detail shown in the side panel / hover, not on the tile. -->
       <property-set name="description" display-name-key="Description"
