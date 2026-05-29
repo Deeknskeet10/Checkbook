@@ -58,7 +58,7 @@
       <code path="index.ts" order="1"/>
       <css path="css/Calendar.css" order="1" />
       <platform-library name="React" version="16.14.0" />
-      <platform-library name="Fluent" version="9.68.0" />
+      <platform-library name="Fluent" version="9.46.2" />
     </resources>
 
     <!-- WebAPI is used to fetch related due-outs and optional detail fields not in the bound view. -->
