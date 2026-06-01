@@ -28,6 +28,7 @@ export class ItemizedDetailsGrid
     const props: ItemizedDetailsGridProps = {
       dataset: context.parameters.itemizedDetails,
       webAPI: context.webAPI,
+      navigation: context.navigation,
       isDisabled: context.mode.isControlDisabled,
       width: context.mode.allocatedWidth,
     };

@@ -17,14 +17,17 @@ import {
   Text,
   Button,
   Tooltip,
+  Link,
 } from "@fluentui/react-components";
 
 type DataSet = ComponentFramework.PropertyTypes.DataSet;
 type WebApi = ComponentFramework.WebApi;
+type Navigation = ComponentFramework.Navigation;
 
 export interface ItemizedDetailsGridProps {
   dataset: DataSet;
   webAPI: WebApi;
+  navigation: Navigation;
   isDisabled: boolean;
   width: number;
 }
@@ -43,6 +46,7 @@ const ALIAS = {
 const ITEMIZED_DETAILS_ENTITY = "book_itemizeddetails";
 const REQUIREMENT_DETAILS_ENTITY = "book_requirementdetails";
 const ITEM_ENTITY = "book_item";
+const TDC_ENTITY = "book_tdc";
 
 type NumericField = "quantity" | "requestedAmount" | "validatedAmount" | "fundedAmount";
 type TextField = "npmComment" | "stateComment";
@@ -63,6 +67,8 @@ interface RequirementItemContext {
   item: string;
   quantityType: string;
   tdc: string;
+  tdcId: string | null;
+  tdcLongName: string;
   category: string;
 }
 
@@ -155,7 +161,7 @@ function formatCurrency(value: number): string {
 export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
   props
 ) => {
-  const { dataset, webAPI, isDisabled } = props;
+  const { dataset, webAPI, navigation, isDisabled } = props;
   const styles = useStyles();
 
   // alias (property-set name) -> real column logical name, e.g. "book_requestedamount".
@@ -215,12 +221,15 @@ export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
     // a second retrieve on the linked Item for quantitytype/category.
     const rdSelect = "?$select=book_name,_book_item_value,_book_tdc_value";
     const itemSelect = "?$select=_book_quantitytype_value,book_category";
+    const tdcSelect = "?$select=book_tdcname";
     const fv = "@OData.Community.Display.V1.FormattedValue";
 
     missing.forEach((id) => {
+      let tdcId: string | null = null;
       webAPI
         .retrieveRecord(REQUIREMENT_DETAILS_ENTITY, id, rdSelect)
         .then((rd: ComponentFramework.WebApi.Entity) => {
+          tdcId = (rd._book_tdc_value as string | undefined) ?? null;
           setContexts((prev) => ({
             ...prev,
             [id]: {
@@ -228,6 +237,8 @@ export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
               item: (rd[`_book_item_value${fv}`] as string) || "",
               quantityType: "",
               tdc: (rd[`_book_tdc_value${fv}`] as string) || "",
+              tdcId,
+              tdcLongName: "",
               category: "",
             },
           }));
@@ -254,6 +265,23 @@ export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
             };
           });
           return null;
+        })
+        .then(() =>
+          tdcId ? webAPI.retrieveRecord(TDC_ENTITY, tdcId, tdcSelect) : null
+        )
+        .then((tdc: ComponentFramework.WebApi.Entity | null) => {
+          if (!tdc) return;
+          setContexts((prev) => {
+            const cur = prev[id];
+            if (!cur) return prev;
+            return {
+              ...prev,
+              [id]: {
+                ...cur,
+                tdcLongName: (tdc.book_tdcname as string) || "",
+              },
+            };
+          });
         })
         .catch(() => {
           /* leave context blank on failure */
@@ -455,7 +483,23 @@ export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
                       {ctx?.quantityType ?? ""}
                     </TableCell>
                     <TableCell className={styles.contextCell}>
-                      {ctx?.tdc ?? ""}
+                      {ctx?.tdcId ? (
+                        <Link
+                          as="button"
+                          onClick={() =>
+                            navigation.openForm({
+                              entityName: TDC_ENTITY,
+                              entityId: ctx.tdcId as string,
+                              openInNewWindow: false,
+                            })
+                          }
+                        >
+                          {ctx.tdc}
+                          {ctx.tdcLongName ? ` — ${ctx.tdcLongName}` : ""}
+                        </Link>
+                      ) : (
+                        ctx?.tdc ?? ""
+                      )}
                     </TableCell>
                     <TableCell className={styles.amount}>
                       {numericCell(row, "quantity", styles.qtyInput)}
