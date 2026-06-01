@@ -1,5 +1,5 @@
 import * as React from "react";
-import { EVENT_TYPES, Level, LEVELS, ViewMode, colorFor } from "./types";
+import { EVENT_TYPES, Level, LEVELS, VIEW_CONFIGS, VIEW_MODES, ViewMode, colorFor } from "./types";
 import { monthShort, toISODate } from "./dateUtils";
 
 export interface ToolbarProps {
@@ -61,20 +61,18 @@ export const Toolbar: React.FC<ToolbarProps> = (props) => {
                 </div>
 
                 <div className="cal-tb__group">
-                    <div className="cal-seg">
-                        <button
-                            className={`cal-seg__btn${props.view === "twoWeek" ? " cal-seg__btn--on" : ""}`}
-                            onClick={() => props.onView("twoWeek")}
-                        >
-                            2 Weeks
-                        </button>
-                        <button
-                            className={`cal-seg__btn${props.view === "thirtyDay" ? " cal-seg__btn--on" : ""}`}
-                            onClick={() => props.onView("thirtyDay")}
-                        >
-                            30 Days
-                        </button>
-                    </div>
+                    <select
+                        className="cal-input"
+                        value={props.view}
+                        onChange={(e) => props.onView(e.target.value as ViewMode)}
+                        title="Time window"
+                    >
+                        {VIEW_MODES.map((m) => (
+                            <option key={m} value={m}>
+                                {VIEW_CONFIGS[m].label}
+                            </option>
+                        ))}
+                    </select>
                     <button className="cal-btn" onClick={props.onExpandAll} title="Expand all lanes">
                         Expand all
                     </button>

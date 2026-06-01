@@ -1,6 +1,6 @@
 import * as React from "react";
-import { CalEvent, DueOut, Level, LEVELS, VisibleLane, ViewMode } from "./types";
-import { addDays, diffDays, startOfDay } from "./dateUtils";
+import { CalEvent, DueOut, Level, LEVELS, VIEW_CONFIGS, VisibleLane, ViewMode } from "./types";
+import { addDays, diffDays, startOfDay, weekStart } from "./dateUtils";
 import {
     buildLaneTree,
     distinctOrgsByLevel,
@@ -80,9 +80,11 @@ export const CalendarApp: React.FC<ICalendarProps> = (props) => {
         };
     }, [idsKey, webAPI]);
 
-    const days = view === "twoWeek" ? 14 : 30;
-    const windowStart = anchor;
-    const windowEnd = addDays(windowStart, days - 1);
+    const cfg = VIEW_CONFIGS[view];
+    const totalDays = cfg.columns * cfg.unitDays;
+    // Week-mode windows align to Monday so each column is a full ISO-ish week.
+    const windowStart = cfg.unit === "week" ? weekStart(anchor) : anchor;
+    const windowEnd = addDays(windowStart, totalDays - 1);
 
     const matches = React.useCallback(
         (e: CalEvent): boolean => {
@@ -103,8 +105,9 @@ export const CalendarApp: React.FC<ICalendarProps> = (props) => {
     );
 
     const inWindow = React.useCallback(
-        (e: CalEvent): boolean => diffDays(windowStart, e.end) >= 0 && diffDays(windowStart, e.start) <= days - 1,
-        [windowStart, days]
+        (e: CalEvent): boolean =>
+            diffDays(windowStart, e.end) >= 0 && diffDays(windowStart, e.start) <= totalDays - 1,
+        [windowStart, totalDays]
     );
 
     const filtered = React.useMemo(() => events.filter(matches), [events, matches]);
@@ -142,7 +145,9 @@ export const CalendarApp: React.FC<ICalendarProps> = (props) => {
     for (const e of windowed) typeCounts[e.type] = (typeCounts[e.type] ?? 0) + 1;
     const totalShown = windowed.length;
 
-    const colWidth = Math.max(view === "twoWeek" ? 70 : 34, Math.floor(((width > 0 ? width : 1000) - LABEL_W - 2) / days));
+    // Min column width: wide for week-mode (room for "27 - 2 May"), narrow for day-mode.
+    const minColW = cfg.unit === "week" ? 90 : view === "twoWeek" ? 70 : 34;
+    const colWidth = Math.max(minColW, Math.floor(((width > 0 ? width : 1000) - LABEL_W - 2) / cfg.columns));
 
     const allKeys = React.useMemo(() => {
         const keys: string[] = [];
@@ -190,8 +195,8 @@ export const CalendarApp: React.FC<ICalendarProps> = (props) => {
                 onView={setView}
                 windowStart={windowStart}
                 windowEnd={windowEnd}
-                onPrev={() => setAnchor((a) => addDays(a, -days))}
-                onNext={() => setAnchor((a) => addDays(a, days))}
+                onPrev={() => setAnchor((a) => addDays(a, -totalDays))}
+                onNext={() => setAnchor((a) => addDays(a, totalDays))}
                 onToday={() => setAnchor(startOfDay(new Date()))}
                 onJump={(d) => setAnchor(startOfDay(d))}
                 typeFilter={typeFilter}
@@ -215,7 +220,9 @@ export const CalendarApp: React.FC<ICalendarProps> = (props) => {
                     lanes={visibleLanes}
                     dueOuts={dueOuts}
                     windowStart={windowStart}
-                    days={days}
+                    columns={cfg.columns}
+                    unitDays={cfg.unitDays}
+                    columnUnit={cfg.unit}
                     colWidth={colWidth}
                     labelWidth={LABEL_W}
                     selectedId={selectedId}

@@ -1,4 +1,27 @@
-export type ViewMode = "twoWeek" | "thirtyDay";
+export type ViewMode = "twoWeek" | "thirtyDay" | "sixtyDay" | "ninetyDay" | "oneTwentyDay";
+
+// Column unit: each column on the grid is either one day or one week.
+export type ColumnUnit = "day" | "week";
+
+export interface ViewConfig {
+    unit: ColumnUnit;
+    columns: number; // number of columns to render
+    unitDays: number; // 1 for day mode, 7 for week mode
+    label: string; // shown in the view picker
+}
+
+// View modes ≤ 30 days use day columns; longer outlooks switch to week columns
+// so the swim-lane bar metaphor stays readable. Week counts are rounded up
+// from the headline day total so the window covers at least N days.
+export const VIEW_CONFIGS: Record<ViewMode, ViewConfig> = {
+    twoWeek:      { unit: "day",  columns: 14, unitDays: 1, label: "2 Weeks" },
+    thirtyDay:    { unit: "day",  columns: 30, unitDays: 1, label: "30 Days" },
+    sixtyDay:     { unit: "week", columns: 9,  unitDays: 7, label: "60 Days" },
+    ninetyDay:    { unit: "week", columns: 13, unitDays: 7, label: "90 Days" },
+    oneTwentyDay: { unit: "week", columns: 18, unitDays: 7, label: "120 Days" },
+};
+
+export const VIEW_MODES = Object.keys(VIEW_CONFIGS) as ViewMode[];
 
 // Org-hierarchy levels, top-to-bottom. Lane nesting follows this order:
 // an event's deepest populated level is its lane; the levels above it are

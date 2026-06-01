@@ -421,6 +421,67 @@
     white-space: pre-wrap;
 }
 
+/* Rich-text container for HTML-typed fields (e.g. lrc_DetailedDescription). */
+.cal-dp__html {
+    font-size: 12px;
+    line-height: 1.4;
+    word-wrap: break-word;
+    overflow-wrap: anywhere;
+}
+
+.cal-dp__html p {
+    margin: 0 0 6px;
+}
+
+.cal-dp__html p:last-child {
+    margin-bottom: 0;
+}
+
+.cal-dp__html h1,
+.cal-dp__html h2,
+.cal-dp__html h3,
+.cal-dp__html h4 {
+    margin: 8px 0 4px;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.cal-dp__html ul,
+.cal-dp__html ol {
+    margin: 4px 0 6px;
+    padding-left: 20px;
+}
+
+.cal-dp__html li {
+    margin: 1px 0;
+}
+
+.cal-dp__html a {
+    color: #0078d4;
+}
+
+.cal-dp__html img,
+.cal-dp__html table {
+    max-width: 100%;
+    height: auto;
+}
+
+.cal-dp__html table {
+    border-collapse: collapse;
+}
+
+.cal-dp__html table td,
+.cal-dp__html table th {
+    border: 1px solid #d0d0d0;
+    padding: 2px 4px;
+}
+
+.cal-dp__html pre,
+.cal-dp__html code {
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
 .cal-dp__muted {
     color: #aaa;
 }

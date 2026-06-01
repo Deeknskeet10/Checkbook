@@ -24,6 +24,13 @@ export function isWeekStart(d: Date): boolean {
     return d.getDay() === 1;
 }
 
+// Monday of the week containing d.
+export function weekStart(d: Date): Date {
+    const dow = d.getDay(); // Sun=0..Sat=6
+    const offset = dow === 0 ? -6 : 1 - dow;
+    return addDays(d, offset);
+}
+
 export function weekdayShort(d: Date): string {
     return d.toLocaleString("en-US", { weekday: "narrow" });
 }

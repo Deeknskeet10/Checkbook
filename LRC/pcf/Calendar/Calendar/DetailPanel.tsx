@@ -16,6 +16,19 @@ const Field: React.FC<{ label: string; value: string }> = ({ label, value }) =>
         </div>
     ) : null;
 
+// Rich-text (HTML) field. Dataverse stores rich-text columns as raw HTML
+// authored through Power Apps' rich-text editor; render it as markup.
+const HtmlField: React.FC<{ label: string; html: string }> = ({ label, html }) => {
+    const stripped = html.replace(/<[^>]+>/g, "").trim();
+    if (!stripped) return null;
+    return (
+        <div className="cal-dp__field">
+            <div className="cal-dp__label">{label}</div>
+            <div className="cal-dp__html" dangerouslySetInnerHTML={{ __html: html }} />
+        </div>
+    );
+};
+
 export const DetailPanel: React.FC<DetailPanelProps> = ({ event, dueOuts, onClose }) => {
     const sorted = [...dueOuts].sort((a, b) => (a.due?.getTime() ?? 0) - (b.due?.getTime() ?? 0));
     return (
@@ -33,7 +46,7 @@ export const DetailPanel: React.FC<DetailPanelProps> = ({ event, dueOuts, onClos
                     <Field key={level} label={level} value={event.orgs[level]?.name ?? ""} />
                 ))}
                 <Field label="Location" value={event.location} />
-                <Field label="Description" value={event.description} />
+                <HtmlField label="Description" html={event.description} />
                 <Field label="POC" value={event.pocName} />
                 <Field label="Email" value={event.pocEmail} />
                 <Field label="Phone" value={event.pocPhone} />

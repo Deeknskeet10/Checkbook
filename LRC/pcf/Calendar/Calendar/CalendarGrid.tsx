@@ -1,6 +1,6 @@
 import * as React from "react";
-import { CalEvent, DueOut, UNASSIGNED, VisibleLane, colorFor } from "./types";
-import { addDays, diffDays, isSameDay, isWeekStart, monthShort, weekdayShort } from "./dateUtils";
+import { CalEvent, ColumnUnit, DueOut, UNASSIGNED, VisibleLane, colorFor } from "./types";
+import { addDays, diffDays, isWeekStart, monthShort, weekdayShort } from "./dateUtils";
 
 const HEADER_H = 48;
 const BAR_H = 22;
@@ -15,11 +15,19 @@ interface Positioned {
     en: number;
 }
 
+interface Column {
+    index: number;
+    start: Date;
+    end: Date;
+}
+
 export interface CalendarGridProps {
     lanes: VisibleLane[];
     dueOuts: DueOut[];
     windowStart: Date;
-    days: number;
+    columns: number;
+    unitDays: number;
+    columnUnit: ColumnUnit;
     colWidth: number;
     labelWidth: number;
     selectedId: string | null;
@@ -56,13 +64,20 @@ function pack(items: Positioned[]): Positioned[][] {
 }
 
 export const CalendarGrid: React.FC<CalendarGridProps> = (props) => {
-    const { lanes, dueOuts, windowStart, days, colWidth, labelWidth, selectedId } = props;
+    const { lanes, dueOuts, windowStart, columns, unitDays, columnUnit, colWidth, labelWidth, selectedId } = props;
     const draggedRef = React.useRef<CalEvent | null>(null);
     const today = new Date();
+    const isWeek = columnUnit === "week";
+    const totalDays = columns * unitDays;
 
-    const dayList = React.useMemo(
-        () => Array.from({ length: days }, (_, i) => addDays(windowStart, i)),
-        [windowStart, days]
+    const colList = React.useMemo<Column[]>(
+        () =>
+            Array.from({ length: columns }, (_, i) => {
+                const start = addDays(windowStart, i * unitDays);
+                const end = addDays(start, unitDays - 1);
+                return { index: i, start, end };
+            }),
+        [windowStart, columns, unitDays]
     );
 
     const dueOutsByEvent = React.useMemo(() => {
@@ -74,16 +89,27 @@ export const CalendarGrid: React.FC<CalendarGridProps> = (props) => {
         return m;
     }, [dueOuts]);
 
-    const innerWidth = labelWidth + days * colWidth;
+    const innerWidth = labelWidth + columns * colWidth;
 
-    const handleDrop = (dayIdx: number) => (ev: React.DragEvent) => {
+    // Drop: snap to the column. In week mode we preserve the event's original
+    // day-of-week within the dropped week so a Wednesday event stays a Wednesday.
+    const handleDrop = (colIdx: number) => (ev: React.DragEvent) => {
         ev.preventDefault();
         const dragged = draggedRef.current;
         draggedRef.current = null;
-        if (dragged) props.onReschedule(dragged, addDays(windowStart, dayIdx));
+        if (!dragged) return;
+        let newStart = addDays(windowStart, colIdx * unitDays);
+        if (isWeek) {
+            const dow = (dragged.start.getDay() + 6) % 7; // Mon=0..Sun=6
+            newStart = addDays(newStart, dow);
+        }
+        props.onReschedule(dragged, newStart);
     };
 
     const allowDrop = (ev: React.DragEvent) => ev.preventDefault();
+
+    const colContainsToday = (c: Column): boolean =>
+        diffDays(c.start, today) >= 0 && diffDays(c.start, today) < unitDays;
 
     return (
         <div className="cal">
@@ -93,20 +119,25 @@ export const CalendarGrid: React.FC<CalendarGridProps> = (props) => {
                     <div className="cal__corner" style={{ width: labelWidth }}>
                         Organization
                     </div>
-                    {dayList.map((d, i) => {
-                        const showMonth = i === 0 || d.getDate() === 1;
-                        const wknd = d.getDay() === 0 || d.getDay() === 6;
+                    {colList.map((c, i) => {
+                        const prev = colList[i - 1];
+                        const showMonth = i === 0 || c.start.getMonth() !== prev?.start.getMonth();
+                        const wknd = !isWeek && (c.start.getDay() === 0 || c.start.getDay() === 6);
                         const cls = [
                             "cal__dayhead",
-                            isWeekStart(d) ? "cal__col--week" : "",
+                            !isWeek && isWeekStart(c.start) ? "cal__col--week" : "",
                             wknd ? "cal__col--wknd" : "",
-                            isSameDay(d, today) ? "cal__col--today" : "",
-                        ].join(" ");
+                            colContainsToday(c) ? "cal__col--today" : "",
+                        ]
+                            .filter(Boolean)
+                            .join(" ");
                         return (
                             <div className={cls} key={i} style={{ width: colWidth }}>
-                                <span className="cal__mon">{showMonth ? monthShort(d) : ""}</span>
-                                <span className="cal__dnum">{d.getDate()}</span>
-                                <span className="cal__dow">{weekdayShort(d)}</span>
+                                <span className="cal__mon">{showMonth ? monthShort(c.start) : ""}</span>
+                                <span className="cal__dnum">
+                                    {isWeek ? `${c.start.getDate()} – ${c.end.getDate()}` : c.start.getDate()}
+                                </span>
+                                <span className="cal__dow">{isWeek ? "Wk" : weekdayShort(c.start)}</span>
                             </div>
                         );
                     })}
@@ -116,25 +147,28 @@ export const CalendarGrid: React.FC<CalendarGridProps> = (props) => {
                 {lanes.map((lane) => {
                     const positioned: Positioned[] = [];
                     for (const e of lane.events) {
-                        const sIdx = diffDays(windowStart, e.start);
-                        const eIdx = diffDays(windowStart, e.end);
-                        if (eIdx < 0 || sIdx > days - 1) continue;
-                        positioned.push({ e, s: clamp(sIdx, 0, days - 1), en: clamp(eIdx, 0, days - 1) });
+                        const sDays = diffDays(windowStart, e.start);
+                        const eDays = diffDays(windowStart, e.end);
+                        if (eDays < 0 || sDays > totalDays - 1) continue;
+                        const sIdx = clamp(Math.floor(sDays / unitDays), 0, columns - 1);
+                        const eIdx = clamp(Math.floor(eDays / unitDays), 0, columns - 1);
+                        positioned.push({ e, s: sIdx, en: eIdx });
                     }
                     const rows = pack(positioned);
 
-                    // Due-out markers for this lane, grouped by day column.
-                    const dueByDay: Record<number, DueOut[]> = {};
+                    // Due-out markers grouped by column index.
+                    const dueByCol: Record<number, DueOut[]> = {};
                     for (const e of lane.events) {
                         for (const d of dueOutsByEvent[e.id] ?? []) {
                             if (!d.due) continue;
-                            const idx = diffDays(windowStart, d.due);
-                            if (idx < 0 || idx > days - 1) continue;
-                            if (!dueByDay[idx]) dueByDay[idx] = [];
-                            dueByDay[idx].push(d);
+                            const dDays = diffDays(windowStart, d.due);
+                            if (dDays < 0 || dDays > totalDays - 1) continue;
+                            const idx = Math.floor(dDays / unitDays);
+                            if (!dueByCol[idx]) dueByCol[idx] = [];
+                            dueByCol[idx].push(d);
                         }
                     }
-                    const hasStrip = Object.keys(dueByDay).length > 0;
+                    const hasStrip = Object.keys(dueByCol).length > 0;
                     const stripH = hasStrip ? STRIP_H : 0;
                     const nRows = Math.max(1, rows.length);
                     const bodyH = stripH + nRows * (BAR_H + BAR_GAP) + LANE_PAD * 2;
@@ -165,16 +199,18 @@ export const CalendarGrid: React.FC<CalendarGridProps> = (props) => {
                                 </span>
                                 <span className="cal__lanecount">{lane.count}</span>
                             </div>
-                            <div className="cal__lanebody" style={{ width: days * colWidth, height: bodyH }}>
+                            <div className="cal__lanebody" style={{ width: columns * colWidth, height: bodyH }}>
                                 {/* drop cells + weekly delineation */}
-                                {dayList.map((d, i) => {
-                                    const wknd = d.getDay() === 0 || d.getDay() === 6;
+                                {colList.map((c, i) => {
+                                    const wknd = !isWeek && (c.start.getDay() === 0 || c.start.getDay() === 6);
                                     const cls = [
                                         "cal__cell",
-                                        isWeekStart(d) ? "cal__col--week" : "",
+                                        !isWeek && isWeekStart(c.start) ? "cal__col--week" : "",
                                         wknd ? "cal__col--wknd" : "",
-                                        isSameDay(d, today) ? "cal__col--today" : "",
-                                    ].join(" ");
+                                        colContainsToday(c) ? "cal__col--today" : "",
+                                    ]
+                                        .filter(Boolean)
+                                        .join(" ");
                                     return (
                                         <div
                                             className={cls}
@@ -188,9 +224,9 @@ export const CalendarGrid: React.FC<CalendarGridProps> = (props) => {
 
                                 {/* due-out strip */}
                                 {hasStrip &&
-                                    Object.keys(dueByDay).map((k) => {
+                                    Object.keys(dueByCol).map((k) => {
                                         const idx = Number(k);
-                                        const list = dueByDay[idx];
+                                        const list = dueByCol[idx];
                                         const title = list
                                             .map((d) => `Due-out: ${d.task}${d.completed ? " (done)" : ""}`)
                                             .join("\n");

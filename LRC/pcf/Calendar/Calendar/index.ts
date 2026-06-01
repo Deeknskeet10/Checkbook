@@ -22,11 +22,15 @@ export class Calendar implements ComponentFramework.ReactControl<IInputs, IOutpu
     }
 
     public updateView(context: ComponentFramework.Context<IInputs>): React.ReactElement {
-        const view = context.parameters.defaultView.raw;
+        const raw = context.parameters.defaultView.raw as string | null;
+        const validViews = ["twoWeek", "thirtyDay", "sixtyDay", "ninetyDay", "oneTwentyDay"] as const;
+        const defaultView = (validViews as readonly string[]).includes(raw ?? "")
+            ? (raw as (typeof validViews)[number])
+            : "thirtyDay";
         const props: ICalendarProps = {
             dataset: context.parameters.events,
             webAPI: context.webAPI,
-            defaultView: view === "twoWeek" ? "twoWeek" : "thirtyDay",
+            defaultView,
             width: context.mode.allocatedWidth,
             height: context.mode.allocatedHeight,
             refresh: () => context.parameters.events.refresh(),
