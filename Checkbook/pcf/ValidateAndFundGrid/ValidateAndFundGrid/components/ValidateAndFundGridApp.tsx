@@ -71,6 +71,77 @@ const parseMoney = (s: string): number => {
   return isNaN(n) ? 0 : n;
 };
 
+/**
+ * Sanitize free-typed currency text: digits, an optional leading `-`, and at
+ * most one decimal point followed by up to two digits. Keeps the user's
+ * literal text so partial decimals like "100." don't snap back to "100".
+ */
+const sanitizeMoneyText = (s: string): string => {
+  let out = (s ?? "").replace(/[^0-9.-]/g, "");
+  // Only one leading `-`.
+  const neg = out.startsWith("-");
+  out = (neg ? "-" : "") + out.replace(/-/g, "");
+  // Only one decimal point.
+  const dot = out.indexOf(".");
+  if (dot !== -1) {
+    out =
+      out.slice(0, dot + 1) +
+      out.slice(dot + 1).replace(/\./g, "").slice(0, 2);
+  }
+  return out;
+};
+
+/**
+ * Right-aligned currency input that preserves the literal text the user is
+ * typing (including a trailing "." or "100.5" en route to "100.50"). Reports
+ * the parsed numeric value to the parent on every keystroke, and reformats
+ * the displayed text to two decimal places on blur.
+ */
+const MoneyInput: React.FC<{
+  value: number;
+  onChange: (n: number) => void;
+}> = ({ value, onChange }) => {
+  const [text, setText] = React.useState<string>(() =>
+    value === 0 ? "" : value.toFixed(2),
+  );
+  // Track the numeric value we last emitted so external resets (cancel, reload)
+  // re-seed the displayed text without clobbering in-progress typing.
+  const lastEmittedRef = React.useRef<number>(value);
+  React.useEffect(() => {
+    if (value !== lastEmittedRef.current) {
+      setText(value === 0 ? "" : value.toFixed(2));
+      lastEmittedRef.current = value;
+    }
+  }, [value]);
+
+  return (
+    <Input
+      appearance="outline"
+      value={text}
+      onChange={(_e, d) => {
+        const cleaned = sanitizeMoneyText(d.value);
+        setText(cleaned);
+        const parsed = parseMoney(cleaned);
+        lastEmittedRef.current = parsed;
+        onChange(parsed);
+      }}
+      onBlur={() => {
+        const parsed = parseMoney(text);
+        const formatted = text.trim() === "" ? "" : parsed.toFixed(2);
+        setText(formatted);
+        if (parsed !== lastEmittedRef.current) {
+          lastEmittedRef.current = parsed;
+          onChange(parsed);
+        }
+      }}
+      style={{ maxWidth: 140, marginLeft: "auto" }}
+      input={{
+        style: { textAlign: "right", fontVariantNumeric: "tabular-nums" },
+      }}
+    />
+  );
+};
+
 const stripBraces = (id: string): string =>
   id.replace(/[{}]/g, "").toLowerCase();
 
@@ -248,27 +319,29 @@ export const ValidateAndFundGridApp: React.FC<ValidateAndFundGridProps> = (
   const overAllocated = tdp != null && totals.funded > tdp;
 
   // --- Editing ----------------------------------------------------------
-  const updatePrio = (
+  const updatePrioMoney = (
     id: string,
     field: "validated" | "funded",
-    raw: string
+    value: number
   ): void => {
     setPrioRows((prev) =>
-      prev.map((r) => (r.id === id ? { ...r, [field]: parseMoney(raw) } : r))
+      prev.map((r) => (r.id === id ? { ...r, [field]: value } : r))
     );
   };
 
-  const updateItem = (
+  const updateItemMoney = (
     id: string,
-    field: "validated" | "funded" | "npmComment",
-    raw: string
+    field: "validated" | "funded",
+    value: number
   ): void => {
     setItemRows((prev) =>
-      prev.map((r) =>
-        r.id === id
-          ? { ...r, [field]: field === "npmComment" ? raw : parseMoney(raw) }
-          : r
-      )
+      prev.map((r) => (r.id === id ? { ...r, [field]: value } : r))
+    );
+  };
+
+  const updateItemComment = (id: string, raw: string): void => {
+    setItemRows((prev) =>
+      prev.map((r) => (r.id === id ? { ...r, npmComment: raw } : r))
     );
   };
 
@@ -372,21 +445,6 @@ export const ValidateAndFundGridApp: React.FC<ValidateAndFundGridProps> = (
       </div>
     );
   };
-
-  const moneyInput = (
-    value: number,
-    onChange: (v: string) => void
-  ): React.ReactElement => (
-    <Input
-      appearance="outline"
-      value={String(value)}
-      onChange={(_e, d) => onChange(d.value)}
-      style={{ maxWidth: 140, marginLeft: "auto" }}
-      input={{
-        style: { textAlign: "right", fontVariantNumeric: "tabular-nums" },
-      }}
-    />
-  );
 
   return (
     <FluentProvider theme={webLightTheme} style={{ width: "100%" }}>
@@ -586,18 +644,24 @@ export const ValidateAndFundGridApp: React.FC<ValidateAndFundGridProps> = (
                         <td style={tdNum}>{fmtMoney(p.requested)}</td>
                         <td style={tdNum}>
                           {editMode && !eff.derived ? (
-                            moneyInput(p.validated, (v) =>
-                              updatePrio(p.id, "validated", v)
-                            )
+                            <MoneyInput
+                              value={p.validated}
+                              onChange={(n) =>
+                                updatePrioMoney(p.id, "validated", n)
+                              }
+                            />
                           ) : (
                             fmtMoney(eff.validated)
                           )}
                         </td>
                         <td style={tdNum}>
                           {editMode && !eff.derived ? (
-                            moneyInput(p.funded, (v) =>
-                              updatePrio(p.id, "funded", v)
-                            )
+                            <MoneyInput
+                              value={p.funded}
+                              onChange={(n) =>
+                                updatePrioMoney(p.id, "funded", n)
+                              }
+                            />
                           ) : (
                             fmtMoney(eff.funded)
                           )}
@@ -645,18 +709,32 @@ export const ValidateAndFundGridApp: React.FC<ValidateAndFundGridProps> = (
                                     </td>
                                     <td style={tdNum}>
                                       {editMode ? (
-                                        moneyInput(it.validated, (v) =>
-                                          updateItem(it.id, "validated", v)
-                                        )
+                                        <MoneyInput
+                                          value={it.validated}
+                                          onChange={(n) =>
+                                            updateItemMoney(
+                                              it.id,
+                                              "validated",
+                                              n
+                                            )
+                                          }
+                                        />
                                       ) : (
                                         fmtMoney(it.validated)
                                       )}
                                     </td>
                                     <td style={tdNum}>
                                       {editMode ? (
-                                        moneyInput(it.funded, (v) =>
-                                          updateItem(it.id, "funded", v)
-                                        )
+                                        <MoneyInput
+                                          value={it.funded}
+                                          onChange={(n) =>
+                                            updateItemMoney(
+                                              it.id,
+                                              "funded",
+                                              n
+                                            )
+                                          }
+                                        />
                                       ) : (
                                         fmtMoney(it.funded)
                                       )}
@@ -668,11 +746,7 @@ export const ValidateAndFundGridApp: React.FC<ValidateAndFundGridProps> = (
                                           resize="vertical"
                                           value={it.npmComment}
                                           onChange={(_e, d) =>
-                                            updateItem(
-                                              it.id,
-                                              "npmComment",
-                                              d.value
-                                            )
+                                            updateItemComment(it.id, d.value)
                                           }
                                         />
                                       ) : (

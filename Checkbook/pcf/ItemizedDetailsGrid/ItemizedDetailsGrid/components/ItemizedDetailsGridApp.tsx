@@ -270,7 +270,7 @@ export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
           tdcId ? webAPI.retrieveRecord(TDC_ENTITY, tdcId, tdcSelect) : null
         )
         .then((tdc: ComponentFramework.WebApi.Entity | null) => {
-          if (!tdc) return;
+          if (!tdc) return null;
           setContexts((prev) => {
             const cur = prev[id];
             if (!cur) return prev;
@@ -282,6 +282,7 @@ export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
               },
             };
           });
+          return null;
         })
         .catch(() => {
           /* leave context blank on failure */
@@ -486,13 +487,13 @@ export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
                       {ctx?.tdcId ? (
                         <Link
                           as="button"
-                          onClick={() =>
-                            navigation.openForm({
+                          onClick={() => {
+                            void navigation.openForm({
                               entityName: TDC_ENTITY,
-                              entityId: ctx.tdcId as string,
+                              entityId: ctx.tdcId!,
                               openInNewWindow: false,
-                            })
-                          }
+                            });
+                          }}
                         >
                           {ctx.tdc}
                           {ctx.tdcLongName ? ` — ${ctx.tdcLongName}` : ""}
