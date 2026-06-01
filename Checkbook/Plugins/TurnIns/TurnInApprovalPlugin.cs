@@ -185,6 +185,18 @@ namespace Checkbook.Plugins.TurnIns
                 TDPCalculationHelper.RecalculateLOATDP(service, loaId, tracing);
             }
 
+            // ---- 7. Deactivate the Turn-In to keep the work queue clean ----
+            // Mirrors TurnInDeactivator's statecode/statuscode for the denial path so
+            // both completion outcomes (approved or denied) land in the same inactive
+            // state. This nested Update re-enters at Depth 2, where the orchestrator's
+            // own depth guard and TurnInDeactivator's depth guard both short-circuit.
+            tracing.Trace($"Deactivating completed Turn-In {turnInId}.");
+            service.Update(new Entity(EntityNames.Turnin, turnInId)
+            {
+                ["statecode"] = new OptionSetValue(StateCodeValues.Inactive),
+                ["statuscode"] = new OptionSetValue(2),
+            });
+
             tracing.Trace("TurnInApprovalPlugin completed successfully.");
         }
     }
