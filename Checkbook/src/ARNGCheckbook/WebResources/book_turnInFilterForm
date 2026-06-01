@@ -6,7 +6,8 @@ var TurnInItem = window.TurnInItem || {};
         fundId: null,
         pgId: null,
         fiscalYear: null,
-        fundCenterId: null
+        fundCenterId: null,
+        stateId: null
     };
 
     this.onLoad = function (executionContext) {
@@ -39,14 +40,36 @@ var TurnInItem = window.TurnInItem || {};
                     self.setRequirementFundingView(reqFundingControl);
                 }
 
-                // Prioritization can still use addPreSearch since it's a simple filter
+                // The Turn-In's Fund Center is the state-level (level 3, e.g. A18TX).
+                // Prioritizations should be selectable from ANY Fund Center in that
+                // state, so resolve the Fund Center's State and filter Prioritizations
+                // by book_state rather than by the exact Fund Center.
+                if (parentData.fundCenterId) {
+                    self.fetchFundCenterState(parentData.fundCenterId, formContext);
+                }
+            },
+            function (error) {
+                console.log("Error fetching parent Turn-In data: " + error.message);
+            }
+        );
+    };
+
+    this.fetchFundCenterState = function (fundCenterId, formContext) {
+        var self = this;
+
+        Xrm.WebApi.retrieveRecord("book_fundcenter", fundCenterId,
+            "?$select=_book_state_value"
+        ).then(
+            function (result) {
+                parentData.stateId = result._book_state_value;
+
                 var prioritizationControl = formContext.getControl("book_prioritization");
                 if (prioritizationControl) {
                     prioritizationControl.addPreSearch(self.filterPrioritizations);
                 }
             },
             function (error) {
-                console.log("Error fetching parent Turn-In data: " + error.message);
+                console.log("Error fetching Fund Center state: " + error.message);
             }
         );
     };
@@ -90,14 +113,15 @@ var TurnInItem = window.TurnInItem || {};
     this.filterPrioritizations = function (executionContext) {
         var formContext = executionContext.getFormContext();
 
-        if (!parentData.fundCenterId) {
+        if (!parentData.stateId) {
             return;
         }
 
+        // Allow Prioritizations from any Fund Center within the Turn-In's state.
         var filter = `
             <filter type="and">
                 <condition attribute="statecode" operator="eq" value="0" />
-                <condition attribute="book_fundcenter" operator="eq" value="${parentData.fundCenterId}" />
+                <condition attribute="book_state" operator="eq" value="${parentData.stateId}" />
             </filter>
         `;
 
