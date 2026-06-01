@@ -134,9 +134,9 @@ const MoneyInput: React.FC<{
           onChange(parsed);
         }
       }}
-      style={{ maxWidth: 140, marginLeft: "auto" }}
+      style={{ maxWidth: 140, marginLeft: "auto", marginRight: "auto" }}
       input={{
-        style: { textAlign: "right", fontVariantNumeric: "tabular-nums" },
+        style: { textAlign: "center", fontVariantNumeric: "tabular-nums" },
       }}
     />
   );

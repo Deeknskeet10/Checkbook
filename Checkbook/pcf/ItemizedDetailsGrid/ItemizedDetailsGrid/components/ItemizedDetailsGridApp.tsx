@@ -100,12 +100,12 @@ const useStyles = makeStyles({
     whiteSpace: "nowrap",
   },
   numberInput: {
-    minWidth: "72px",
-    width: "72px",
+    minWidth: "64px",
+    width: "64px",
   },
   qtyInput: {
-    minWidth: "56px",
-    width: "56px",
+    minWidth: "48px",
+    width: "48px",
   },
   commentInput: {
     minWidth: "160px",
@@ -115,9 +115,18 @@ const useStyles = makeStyles({
     fontWeight: tokens.fontWeightSemibold,
     backgroundColor: tokens.colorNeutralBackground2,
   },
+  // Numeric columns: TableCell/TableHeaderCell render their children inside a
+  // flex container, so plain text-align centers the literal text node but
+  // doesn't position child elements (the <Input> in edit cells, the <span>
+  // wrapping read-only amounts). justifyContent centers those flex children
+  // so headers and values share the same axis. Width keeps the four amount
+  // columns tight, leaving more room for the comment columns.
   amount: {
     textAlign: "center",
+    justifyContent: "center",
     fontVariantNumeric: "tabular-nums",
+    minWidth: "76px",
+    width: "76px",
   },
   status: {
     marginLeft: "6px",
