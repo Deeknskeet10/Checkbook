@@ -202,7 +202,6 @@ namespace Checkbook.Plugins.Distributions
 <fetch aggregate='true' no-lock='true'>
   <entity name='book_prioritization'>
     <attribute name='book_newfundedamounttdp' alias='total_funding' aggregate='sum' />
-    <attribute name='book_newfiscalyear'      alias='fy'            groupby='true' />
     <filter type='and'>
       <condition attribute='statecode'                operator='eq' value='0' />
       <condition attribute='book_newfundedamounttdp' operator='gt' value='0' />
@@ -224,7 +223,8 @@ namespace Checkbook.Plugins.Distributions
           <attribute name='book_pgid' alias='pg_id' groupby='true' />
         </link-entity>
         <link-entity name='book_fund' from='book_fundid' to='book_fund' link-type='inner' alias='fund'>
-          <attribute name='book_fundid' alias='fund_id' groupby='true' />
+          <attribute name='book_fundid'     alias='fund_id' groupby='true' />
+          <attribute name='book_fiscalyear' alias='fy'      groupby='true' />
         </link-entity>
       </link-entity>
     </link-entity>
