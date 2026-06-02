@@ -70,21 +70,22 @@ namespace Checkbook.Plugins.Items
                 return;
             }
 
-            var prioritizationIds = GetPrioritizationsForRequirement(service, requirement.Id);
+            var prioritizations = GetPrioritizationsForRequirement(service, requirement.Id);
             tracingService.Trace(
-                $"Found {prioritizationIds.Count} Itemized Prioritization(s) for Requirement {requirement.Id}.");
+                $"Found {prioritizations.Count} Itemized Prioritization(s) for Requirement {requirement.Id}.");
 
             var created = 0;
-            foreach (var prioritizationId in prioritizationIds)
+            foreach (var p in prioritizations)
             {
-                if (ItemizedDetailExists(service, prioritizationId, detailId))
+                if (ItemizedDetailExists(service, p.Id, detailId))
                 {
                     tracingService.Trace(
-                        $"Itemized Detail already exists for Prioritization {prioritizationId}; skipping.");
+                        $"Itemized Detail already exists for Prioritization {p.Id}; skipping.");
                     continue;
                 }
 
-                CreateItemizedDetail(service, prioritizationId, detailId);
+                var owningBu = p.GetAttributeValue<EntityReference>("owningbusinessunit");
+                CreateItemizedDetail(service, p.Id, detailId, owningBu);
                 created++;
             }
 
@@ -135,6 +136,14 @@ namespace Checkbook.Plugins.Items
                 return;
             }
 
+            // The Target on Create may not carry owningbusinessunit (Dataverse sets it
+            // after the input message materialises), so read it back.
+            var owningBu = service.Retrieve(
+                    EntityNames.Prioritization,
+                    prioritizationId,
+                    new ColumnSet("owningbusinessunit"))
+                .GetAttributeValue<EntityReference>("owningbusinessunit");
+
             // The Requirement already itemizes its funding, so this Prioritization
             // adopts Itemized mode. Flip the flag before seeding so the rollup that
             // fires on each Itemized Detail create sees the Prioritization as Itemized.
@@ -145,7 +154,7 @@ namespace Checkbook.Plugins.Items
             });
 
             foreach (var detailId in detailIds)
-                CreateItemizedDetail(service, prioritizationId, detailId);
+                CreateItemizedDetail(service, prioritizationId, detailId, owningBu);
 
             tracingService.Trace(
                 $"Set Prioritization to Itemized and created {detailIds.Count} Itemized Detail(s).");
@@ -194,12 +203,12 @@ namespace Checkbook.Plugins.Items
         /// never fans an Itemized Detail onto a manually-funded Prioritization (which
         /// would let <see cref="PrioritizationItemizedRollup"/> zero its funding).
         /// </summary>
-        private static List<Guid> GetPrioritizationsForRequirement(
+        private static List<Entity> GetPrioritizationsForRequirement(
             IOrganizationService service, Guid requirementId)
         {
             var query = new QueryExpression(EntityNames.Prioritization)
             {
-                ColumnSet = new ColumnSet(false),
+                ColumnSet = new ColumnSet("owningbusinessunit"),
                 Criteria =
                 {
                     Conditions =
@@ -226,8 +235,8 @@ namespace Checkbook.Plugins.Items
                 requirementId);
 
             return service.RetrieveMultiple(query).Entities
-                .Select(e => e.Id)
-                .Distinct()
+                .GroupBy(e => e.Id)
+                .Select(g => g.First())
                 .ToList();
         }
 
@@ -290,11 +299,13 @@ namespace Checkbook.Plugins.Items
         }
 
         /// <summary>
-        /// Creates an Itemized Detail carrying only the two lookups. Quantity and the
+        /// Creates an Itemized Detail carrying only the two lookups (and the parent
+        /// Prioritization's owning BU, so state users can see it). Quantity and the
         /// Requested/Validated/Funded amounts are left for the user to populate.
         /// </summary>
         private static void CreateItemizedDetail(
-            IOrganizationService service, Guid prioritizationId, Guid requirementDetailId)
+            IOrganizationService service, Guid prioritizationId, Guid requirementDetailId,
+            EntityReference owningBu)
         {
             var itemizedDetail = new Entity(EntityNames.ItemizedDetails)
             {
@@ -303,6 +314,8 @@ namespace Checkbook.Plugins.Items
                 [ItemizedDetailsAttributes.RequirementItem] =
                     new EntityReference(EntityNames.RequirementDetails, requirementDetailId)
             };
+            if (owningBu != null)
+                itemizedDetail["owningbusinessunit"] = owningBu;
 
             service.Create(itemizedDetail);
         }
