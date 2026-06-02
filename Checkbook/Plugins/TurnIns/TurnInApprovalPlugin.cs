@@ -134,13 +134,22 @@ namespace Checkbook.Plugins.TurnIns
             // helper directly for each unique parent RF — same pattern RealignmentProcessor
             // uses (see Plugins/Realignments/RealignmentProcessor.cs).
             //
-            // The roll-up only recomputes RF.FundedAmount/ValidatedAmount from child Prios;
-            // it does NOT touch RF.TDP (TDP is the RF's allocation from the LOA, not a Prio
-            // roll-up). So we must also shrink RF.TDP by the amount pulled from that RF's
-            // prioritizations — mirroring the RF-only path in TurnInRequirementFundingUpdater,
-            // which reduces both TDP and Funded. Without this, RF.TDP stays high, the
-            // difference surfaces as Withhold (TDP − Funded), and LOA TDP Remaining
-            // (LOA.TDP − Σ RF.TDP) goes negative.
+            // Order matters: roll up RF.FundedAmount FIRST, then reduce RF.TDP.
+            // RequirementFundingTDPValidator (pre-op on RF Update) compares effective
+            // FundedAmount against effective TDP using target ∪ preImage. If we
+            // shrank TDP first, the preImage Funded would still be the pre-Turn-In
+            // total — the rollup hadn't fanned up from the depth-2 Prio update — and
+            // the validator would reject the TDP reduction with "Funded Amount
+            // cannot exceed TDP". Rolling up first lowers RF.Funded so the TDP
+            // reduction's pre-image already reflects the post-Turn-In value.
+            //
+            // The roll-up only recomputes RF.FundedAmount/ValidatedAmount from child
+            // Prios; it does NOT touch RF.TDP (TDP is the RF's allocation from the
+            // LOA, not a Prio roll-up). So after the roll-up we still need to shrink
+            // RF.TDP by the amount pulled — mirroring the RF-only path in
+            // TurnInRequirementFundingUpdater. Without that step, RF.TDP stays high,
+            // the difference surfaces as Withhold (TDP − Funded), and LOA TDP
+            // Remaining (LOA.TDP − Σ RF.TDP) goes negative.
             var rfPulledTotals = items
                 .Where(i => i.Prioritization != null && i.RequirementFunding != null)
                 .GroupBy(i => i.RequirementFunding.Id)
@@ -150,6 +159,9 @@ namespace Checkbook.Plugins.TurnIns
             {
                 var rfId = pair.Key;
                 var pulled = pair.Value;
+
+                tracing.Trace($"Rolling up parent RF {rfId} Funded after Prio reduction.");
+                PrioritizationRollupHelper.RecalculateRFFunded(service, rfId, tracing);
 
                 var rf = service.Retrieve(
                     EntityNames.RequirementFunding,
@@ -164,9 +176,6 @@ namespace Checkbook.Plugins.TurnIns
                 {
                     [RequirementFundingAttributes.TDP] = newTdp,
                 });
-
-                tracing.Trace($"Rolling up parent RF {rfId} Funded after Prio reduction.");
-                PrioritizationRollupHelper.RecalculateRFFunded(service, rfId, tracing);
             }
 
             // ---- 6. Recalculate LOA TDP / TDP Remaining for every LOA touched ----
