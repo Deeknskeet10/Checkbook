@@ -35,8 +35,10 @@ namespace Checkbook.Plugins.LOAs.Helpers
     /// • MDEP is appended only for fiscal years <see cref="MdepInNameLastFy"/> and earlier
     ///   (FY26 keeps the FY26 alternate-key composite intact; FY27+ drops it).
     ///
-    /// Fiscal year is parsed from the <b>last two digits</b> of the Fund name,
-    /// e.g. <c>206010D26 → 26</c> — the convention the user maintains for fund codes.
+    /// Fiscal year is parsed from the <b>last two digits</b> of the Fund name
+    /// (e.g. <c>...26 → 26</c>). Any character may precede those digits — the
+    /// trailing-letter slot (D / F / X / etc.) carries other meaning and is
+    /// not interpreted here.
     /// </summary>
     public static class LOANameBuilder
     {
@@ -96,8 +98,7 @@ namespace Checkbook.Plugins.LOAs.Helpers
             var match = FyTrailer.Match(fundName ?? string.Empty);
             if (!match.Success)
                 throw new ArgumentException(
-                    $"Fund name '{fundName}' does not end in a 2-digit fiscal year " +
-                    "(expected format like '206010D26').");
+                    $"Fund name '{fundName}' does not end in a 2-digit fiscal year.");
             return int.Parse(match.Groups[1].Value);
         }
 
