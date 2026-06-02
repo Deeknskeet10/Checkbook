@@ -175,9 +175,11 @@ export const ValidateAndFundGridApp: React.FC<ValidateAndFundGridProps> = (
         funded: num(r.getValue("fundedAmount")),
       }))
       .sort((a, b) => {
+        const byState = a.stateName.localeCompare(b.stateName);
+        if (byState !== 0) return byState;
         const pa = a.statePriority ?? Number.MAX_SAFE_INTEGER;
         const pb = b.statePriority ?? Number.MAX_SAFE_INTEGER;
-        return pa !== pb ? pa - pb : a.stateName.localeCompare(b.stateName);
+        return pa - pb;
       });
   }, [dataset.sortedRecordIds.join("|")]);
 
