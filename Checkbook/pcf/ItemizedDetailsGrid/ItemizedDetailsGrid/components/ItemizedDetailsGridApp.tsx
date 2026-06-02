@@ -95,17 +95,55 @@ const useStyles = makeStyles({
     justifyContent: "space-between",
     ...shorthands.padding("4px", "2px", "8px", "2px"),
   },
+  // Lets the table extend past the form's width on narrow screens instead of
+  // squeezing every column into the visible area.
+  scrollContainer: {
+    width: "100%",
+    overflowX: "auto",
+  },
   contextCell: {
     color: tokens.colorNeutralForeground3,
     whiteSpace: "nowrap",
   },
+  // First column stacks Name / Category / Quantity; the RD name can be long,
+  // so this is the one column that wraps rather than nowraps.
+  firstCol: {
+    minWidth: "220px",
+    maxWidth: "280px",
+    whiteSpace: "normal",
+    wordBreak: "break-word",
+    verticalAlign: "top",
+  },
+  firstColName: {
+    fontWeight: tokens.fontWeightSemibold,
+    display: "flex",
+    alignItems: "center",
+    flexWrap: "wrap",
+    columnGap: "4px",
+  },
+  firstColMeta: {
+    display: "block",
+    fontSize: tokens.fontSizeBase200,
+    color: tokens.colorNeutralForeground3,
+    marginTop: "2px",
+  },
+  firstColQuantity: {
+    display: "flex",
+    alignItems: "center",
+    gap: "6px",
+    marginTop: "4px",
+  },
+  firstColLabel: {
+    fontSize: tokens.fontSizeBase200,
+    color: tokens.colorNeutralForeground3,
+  },
   numberInput: {
-    minWidth: "64px",
-    width: "64px",
+    minWidth: "110px",
+    width: "110px",
   },
   qtyInput: {
-    minWidth: "48px",
-    width: "48px",
+    minWidth: "72px",
+    width: "72px",
   },
   commentInput: {
     minWidth: "160px",
@@ -119,14 +157,14 @@ const useStyles = makeStyles({
   // flex container, so plain text-align centers the literal text node but
   // doesn't position child elements (the <Input> in edit cells, the <span>
   // wrapping read-only amounts). justifyContent centers those flex children
-  // so headers and values share the same axis. Width keeps the four amount
-  // columns tight, leaving more room for the comment columns.
+  // so headers and values share the same axis. Width is sized for "$32,000.00"
+  // with the Fluent Input's ~22px of internal padding.
   amount: {
     textAlign: "center",
     justifyContent: "center",
     fontVariantNumeric: "tabular-nums",
-    minWidth: "76px",
-    width: "76px",
+    minWidth: "120px",
+    width: "120px",
   },
   status: {
     marginLeft: "6px",
@@ -460,96 +498,97 @@ export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
             Requirement Details are added to the Requirement.
           </div>
         ) : (
-          <Table size="small" aria-label="Itemized Details">
-            <TableHeader>
-              <TableRow>
-                <TableHeaderCell>Item</TableHeaderCell>
-                <TableHeaderCell>Category</TableHeaderCell>
-                <TableHeaderCell>Quantity Type</TableHeaderCell>
-                <TableHeaderCell>TDC</TableHeaderCell>
-                <TableHeaderCell className={styles.amount}>Quantity</TableHeaderCell>
-                <TableHeaderCell className={styles.amount}>Requested</TableHeaderCell>
-                <TableHeaderCell className={styles.amount}>Validated</TableHeaderCell>
-                <TableHeaderCell className={styles.amount}>Funded</TableHeaderCell>
-                <TableHeaderCell>NPM Comment</TableHeaderCell>
-                <TableHeaderCell>State Comment</TableHeaderCell>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {datasetRows.map((row) => {
-                const ctx = row.requirementItemId
-                  ? contexts[row.requirementItemId]
-                  : undefined;
-                return (
-                  <TableRow key={row.recordId}>
-                    <TableCell>
-                      {ctx?.item ?? row.requirementItemName}
-                      {renderStatus(row.recordId)}
-                    </TableCell>
-                    <TableCell className={styles.contextCell}>
-                      {ctx?.category ?? ""}
-                    </TableCell>
-                    <TableCell className={styles.contextCell}>
-                      {ctx?.quantityType ?? ""}
-                    </TableCell>
-                    <TableCell className={styles.contextCell}>
-                      {ctx?.tdcId ? (
-                        <Link
-                          as="button"
-                          onClick={() => {
-                            void navigation.openForm({
-                              entityName: TDC_ENTITY,
-                              entityId: ctx.tdcId!,
-                              openInNewWindow: false,
-                            });
-                          }}
-                        >
-                          {ctx.tdc}
-                          {ctx.tdcLongName ? ` — ${ctx.tdcLongName}` : ""}
-                        </Link>
-                      ) : (
-                        ctx?.tdc ?? ""
-                      )}
-                    </TableCell>
-                    <TableCell className={styles.amount}>
-                      {numericCell(row, "quantity", styles.qtyInput)}
-                    </TableCell>
-                    <TableCell className={styles.amount}>
-                      {numericCell(row, "requestedAmount", styles.numberInput)}
-                    </TableCell>
-                    <TableCell className={styles.amount}>
-                      {readOnlyAmount(row, "validatedAmount")}
-                    </TableCell>
-                    <TableCell className={styles.amount}>
-                      {readOnlyAmount(row, "fundedAmount")}
-                    </TableCell>
-                    <TableCell className={styles.contextCell}>
-                      {row.npmComment}
-                    </TableCell>
-                    <TableCell>{commentCell(row, "stateComment")}</TableCell>
-                  </TableRow>
-                );
-              })}
-              <TableRow className={styles.totalsRow}>
-                <TableCell>Totals</TableCell>
-                <TableCell />
-                <TableCell />
-                <TableCell />
-                <TableCell />
-                <TableCell className={styles.amount}>
-                  {formatCurrency(totals.requested)}
-                </TableCell>
-                <TableCell className={styles.amount}>
-                  {formatCurrency(totals.validated)}
-                </TableCell>
-                <TableCell className={styles.amount}>
-                  {formatCurrency(totals.funded)}
-                </TableCell>
-                <TableCell />
-                <TableCell />
-              </TableRow>
-            </TableBody>
-          </Table>
+          <div className={styles.scrollContainer}>
+            <Table size="small" aria-label="Itemized Details">
+              <TableHeader>
+                <TableRow>
+                  <TableHeaderCell className={styles.firstCol}>Name</TableHeaderCell>
+                  <TableHeaderCell>Quantity Type</TableHeaderCell>
+                  <TableHeaderCell>TDC</TableHeaderCell>
+                  <TableHeaderCell className={styles.amount}>Requested</TableHeaderCell>
+                  <TableHeaderCell className={styles.amount}>Validated</TableHeaderCell>
+                  <TableHeaderCell className={styles.amount}>Funded</TableHeaderCell>
+                  <TableHeaderCell>NPM Comment</TableHeaderCell>
+                  <TableHeaderCell>State Comment</TableHeaderCell>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {datasetRows.map((row) => {
+                  const ctx = row.requirementItemId
+                    ? contexts[row.requirementItemId]
+                    : undefined;
+                  return (
+                    <TableRow key={row.recordId}>
+                      <TableCell className={styles.firstCol}>
+                        <div className={styles.firstColName}>
+                          <span>{ctx?.name ?? row.requirementItemName}</span>
+                          {renderStatus(row.recordId)}
+                        </div>
+                        <span className={styles.firstColMeta}>
+                          Category: {ctx?.category ?? ""}
+                        </span>
+                        <div className={styles.firstColQuantity}>
+                          <span className={styles.firstColLabel}>Quantity:</span>
+                          {numericCell(row, "quantity", styles.qtyInput)}
+                        </div>
+                      </TableCell>
+                      <TableCell className={styles.contextCell}>
+                        {ctx?.quantityType ?? ""}
+                      </TableCell>
+                      <TableCell className={styles.contextCell}>
+                        {ctx?.tdcId ? (
+                          <Link
+                            as="button"
+                            onClick={() => {
+                              void navigation.openForm({
+                                entityName: TDC_ENTITY,
+                                entityId: ctx.tdcId!,
+                                openInNewWindow: false,
+                              });
+                            }}
+                          >
+                            {ctx.tdc}
+                            {ctx.tdcLongName ? ` — ${ctx.tdcLongName}` : ""}
+                          </Link>
+                        ) : (
+                          ctx?.tdc ?? ""
+                        )}
+                      </TableCell>
+                      <TableCell className={styles.amount}>
+                        {numericCell(row, "requestedAmount", styles.numberInput)}
+                      </TableCell>
+                      <TableCell className={styles.amount}>
+                        {readOnlyAmount(row, "validatedAmount")}
+                      </TableCell>
+                      <TableCell className={styles.amount}>
+                        {readOnlyAmount(row, "fundedAmount")}
+                      </TableCell>
+                      <TableCell className={styles.contextCell}>
+                        {row.npmComment}
+                      </TableCell>
+                      <TableCell>{commentCell(row, "stateComment")}</TableCell>
+                    </TableRow>
+                  );
+                })}
+                <TableRow className={styles.totalsRow}>
+                  <TableCell className={styles.firstCol}>Totals</TableCell>
+                  <TableCell />
+                  <TableCell />
+                  <TableCell className={styles.amount}>
+                    {formatCurrency(totals.requested)}
+                  </TableCell>
+                  <TableCell className={styles.amount}>
+                    {formatCurrency(totals.validated)}
+                  </TableCell>
+                  <TableCell className={styles.amount}>
+                    {formatCurrency(totals.funded)}
+                  </TableCell>
+                  <TableCell />
+                  <TableCell />
+                </TableRow>
+              </TableBody>
+            </Table>
+          </div>
         )}
 
         {hasNextPage && (
