@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <manifest>
-  <control namespace="ARNGCheckbook" constructor="ItemizedDetailsGrid" version="0.1.7"
+  <control namespace="ARNGCheckbook" constructor="ItemizedDetailsGrid" version="0.1.8"
            display-name-key="ItemizedDetailsGrid"
-           description-key="Editable grid for the Itemized Details of a Prioritization: NPMs enter Quantity, Requested/Validated/Funded amounts and comments inline, with live totals. The first column stacks the Requirement Detail name, Category (from the linked Item), and an editable Quantity. Read-only context columns Quantity Type and TDC come from the linked Requirement Detail and Item; the table scrolls horizontally on narrow screens."
+           description-key="Editable grid for the Itemized Details of a Prioritization: NPMs enter Quantity, Requested and State Comment inline, with live totals. The first column stacks the Item name, Category, and Quantity Type (all read-only from the linked Item). TDC, Quantity, Requested, Validated, Funded, and NPM Comment follow; the table scrolls horizontally on narrow screens."
            control-type="virtual" >
     <external-service-usage enabled="false">
     </external-service-usage>

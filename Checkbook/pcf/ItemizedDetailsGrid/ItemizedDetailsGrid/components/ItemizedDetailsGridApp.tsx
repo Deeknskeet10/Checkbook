@@ -105,8 +105,8 @@ const useStyles = makeStyles({
     color: tokens.colorNeutralForeground3,
     whiteSpace: "nowrap",
   },
-  // First column stacks Name / Category / Quantity; the RD name can be long,
-  // so this is the one column that wraps rather than nowraps.
+  // First column stacks Item name / Category / Quantity Type; Item names can
+  // be long, so this is the one column that wraps rather than nowraps.
   firstCol: {
     minWidth: "220px",
     maxWidth: "280px",
@@ -127,19 +127,15 @@ const useStyles = makeStyles({
     color: tokens.colorNeutralForeground3,
     marginTop: "2px",
   },
-  firstColQuantity: {
-    display: "flex",
-    alignItems: "center",
-    gap: "6px",
-    marginTop: "4px",
-  },
-  firstColLabel: {
-    fontSize: tokens.fontSizeBase200,
-    color: tokens.colorNeutralForeground3,
-  },
   numberInput: {
     minWidth: "110px",
     width: "110px",
+  },
+  qtyCol: {
+    textAlign: "center",
+    justifyContent: "center",
+    minWidth: "90px",
+    width: "90px",
   },
   qtyInput: {
     minWidth: "72px",
@@ -502,9 +498,9 @@ export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
             <Table size="small" aria-label="Itemized Details">
               <TableHeader>
                 <TableRow>
-                  <TableHeaderCell className={styles.firstCol}>Name</TableHeaderCell>
-                  <TableHeaderCell>Quantity Type</TableHeaderCell>
+                  <TableHeaderCell className={styles.firstCol}>Item</TableHeaderCell>
                   <TableHeaderCell>TDC</TableHeaderCell>
+                  <TableHeaderCell className={styles.qtyCol}>Quantity</TableHeaderCell>
                   <TableHeaderCell className={styles.amount}>Requested</TableHeaderCell>
                   <TableHeaderCell className={styles.amount}>Validated</TableHeaderCell>
                   <TableHeaderCell className={styles.amount}>Funded</TableHeaderCell>
@@ -521,19 +517,15 @@ export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
                     <TableRow key={row.recordId}>
                       <TableCell className={styles.firstCol}>
                         <div className={styles.firstColName}>
-                          <span>{ctx?.name ?? row.requirementItemName}</span>
+                          <span>{ctx?.item?.trim() ? ctx.item : row.requirementItemName}</span>
                           {renderStatus(row.recordId)}
                         </div>
                         <span className={styles.firstColMeta}>
                           Category: {ctx?.category ?? ""}
                         </span>
-                        <div className={styles.firstColQuantity}>
-                          <span className={styles.firstColLabel}>Quantity:</span>
-                          {numericCell(row, "quantity", styles.qtyInput)}
-                        </div>
-                      </TableCell>
-                      <TableCell className={styles.contextCell}>
-                        {ctx?.quantityType ?? ""}
+                        <span className={styles.firstColMeta}>
+                          Quantity Type: {ctx?.quantityType ?? ""}
+                        </span>
                       </TableCell>
                       <TableCell className={styles.contextCell}>
                         {ctx?.tdcId ? (
@@ -553,6 +545,9 @@ export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
                         ) : (
                           ctx?.tdc ?? ""
                         )}
+                      </TableCell>
+                      <TableCell className={styles.qtyCol}>
+                        {numericCell(row, "quantity", styles.qtyInput)}
                       </TableCell>
                       <TableCell className={styles.amount}>
                         {numericCell(row, "requestedAmount", styles.numberInput)}
