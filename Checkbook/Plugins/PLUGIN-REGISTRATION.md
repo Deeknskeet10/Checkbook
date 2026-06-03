@@ -59,14 +59,23 @@ leaves orphaned Itemized Details on every child Prioritization.
 | 1 | Delete  | `book_requirementdetails` | **Pre-Operation**  | **Synchronous**  | *(none)*             | Wipes children before the parent row goes. **Sync** so failure rolls back the Delete. |
 | 2 | Create  | `book_requirementdetails` | Post-Operation | Asynchronous | *(none)*             | Fans the new detail out to every existing Prioritization of the parent Requirement. |
 | 3 | Create  | `book_prioritization`     | Post-Operation | Asynchronous | *(none)*             | Seeds Itemized Details on a new Prioritization from the Requirement's existing details. |
+| 4 | Update  | `book_prioritization`     | Post-Operation | Asynchronous | `book_requirementfunding` | Re-points Itemized Details when the user swaps the RF to a different Requirement. **Requires PreImage** (see below). |
 
-**PRT field values for each step (common to all three):**
+**PRT field values for each step (common to all four):**
 
 - **Run in User's Context**: `Calling User`
 - **Execution Order**: `1`
 - **Deployment**: `Server Only`
 - **Description**: copy the row's *Notes* column above
-- **No pre/post images** required
+
+**PreImage on step 4 (`Update of book_prioritization`):**
+
+- **Name**: `PreImage`
+- **Entity Alias**: `PreImage`
+- **Stage**: `Pre-image` (PRT default for Update steps)
+- **Parameters**: `book_requirementfunding`
+
+Steps 1–3 do not need any pre/post images.
 
 ---
 
@@ -80,6 +89,7 @@ sort the right pane by **Message** then by **Primary Entity**.
   - [ ] Step: `Delete of book_requirementdetails` — Pre-Operation, Sync
   - [ ] Step: `Create of book_requirementdetails` — Post-Operation, Async
   - [ ] Step: `Create of book_prioritization` — Post-Operation, Async
+  - [ ] Step: `Update of book_prioritization` — Post-Operation, Async, filter `book_requirementfunding`, **PreImage** `PreImage` with `book_requirementfunding`
 
 **Smoke test** (run in the env after registration):
 
@@ -94,9 +104,15 @@ sort the right pane by **Message** then by **Primary Entity**.
 5. Add a new Requirement Detail to the same Requirement; within ~30 seconds
    (async step), a matching Itemized Detail should appear on each child
    Prioritization.
+6. On a Prioritization currently itemized against Requirement **A**, change
+   `book_requirementfunding` to an RF that points to Requirement **B**. Within
+   ~30 seconds the Itemized Details linked to A's RDs should be gone and a new
+   set seeded from B's RDs. If B has zero RDs, the Prioritization should drop
+   to `FundingMode = Direct`.
 
 If step 4 leaves an orphan, the **Delete / Pre-Operation / Sync** step is
-missing or mis-registered.
+missing or mis-registered. If step 6 leaves stale Itemized Details, the
+**Update of book_prioritization** step (or its PreImage) is missing.
 
 ---
 

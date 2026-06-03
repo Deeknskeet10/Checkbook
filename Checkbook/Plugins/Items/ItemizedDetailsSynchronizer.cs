@@ -25,6 +25,10 @@ namespace Checkbook.Plugins.Items
     ///       remove every Itemized Detail that points back to the deleted Requirement Detail.
     /// - book_prioritization Create      (Post-Operation, Async):
     ///       seed Itemized Details for the new Prioritization from the Requirement's details.
+    /// - book_prioritization Update      (Post-Operation, Async, filtering book_requirementfunding):
+    ///       when the user re-points a Prioritization to a different Requirement Funding
+    ///       (and therefore a different Requirement), wipe the now-stale Itemized Details
+    ///       and reseed from the new Requirement's details.
     ///
     /// Newly created Itemized Details carry only the two lookups (book_prioritization,
     /// book_requirementitem); users populate the quantity and funding amounts afterward.
@@ -46,6 +50,8 @@ namespace Checkbook.Plugins.Items
                 HandleRequirementDetailDeleted(context, service, tracingService);
             else if (message == "Create" && entity == EntityNames.Prioritization)
                 HandlePrioritizationCreated(context, service, tracingService);
+            else if (message == "Update" && entity == EntityNames.Prioritization)
+                HandlePrioritizationRequirementFundingChanged(context, service, tracingService);
             else
                 tracingService.Trace($"No handler for {message} on {entity}.");
         }
@@ -161,6 +167,103 @@ namespace Checkbook.Plugins.Items
         }
 
         /// <summary>
+        /// The Prioritization's book_requirementfunding lookup changed. If the new RF
+        /// points to a different Requirement than the old one, the existing Itemized
+        /// Details are now linked to Requirement Details of the wrong Requirement —
+        /// delete them all and reseed from the new Requirement's Requirement Details.
+        /// </summary>
+        private void HandlePrioritizationRequirementFundingChanged(
+            IPluginExecutionContext context,
+            IOrganizationService service,
+            ITracingService tracingService)
+        {
+            var target = GetTarget(context);
+            if (!target.Contains(PrioritizationAttributes.RequirementFunding))
+            {
+                tracingService.Trace(
+                    "book_requirementfunding not in Target; nothing to do.");
+                return;
+            }
+
+            var prioritizationId = context.PrimaryEntityId;
+            var preImage = TryGetPreImage(context);
+
+            var oldRf = preImage?.GetAttributeValue<EntityReference>(
+                PrioritizationAttributes.RequirementFunding);
+            var newRf = target.GetAttributeValue<EntityReference>(
+                PrioritizationAttributes.RequirementFunding);
+
+            if (newRf == null)
+            {
+                tracingService.Trace(
+                    "New Requirement Funding is null; nothing to sync.");
+                return;
+            }
+
+            var oldRequirementId = oldRf != null
+                ? GetRequirementIdFromRequirementFunding(service, oldRf.Id)
+                : Guid.Empty;
+            var newRequirementId = GetRequirementIdFromRequirementFunding(service, newRf.Id);
+
+            if (newRequirementId == Guid.Empty)
+            {
+                tracingService.Trace(
+                    "New Requirement Funding has no Requirement; nothing to sync.");
+                return;
+            }
+
+            if (oldRequirementId == newRequirementId)
+            {
+                tracingService.Trace(
+                    $"Requirement unchanged ({newRequirementId}); Itemized Details remain valid.");
+                return;
+            }
+
+            var existing = GetItemizedDetailsForPrioritization(service, prioritizationId);
+            tracingService.Trace(
+                $"Deleting {existing.Count} stale Itemized Detail(s) on Prioritization {prioritizationId}.");
+            foreach (var id in existing)
+                service.Delete(EntityNames.ItemizedDetails, id);
+
+            var detailIds = GetRequirementDetails(service, newRequirementId);
+            tracingService.Trace(
+                $"Found {detailIds.Count} Requirement Detail(s) for new Requirement {newRequirementId}.");
+
+            if (detailIds.Count == 0)
+            {
+                // No items to itemize against — drop the Prioritization back to Direct
+                // so the user can hand-enter funding instead of being stranded in
+                // Itemized mode with nothing to roll up from.
+                service.Update(new Entity(EntityNames.Prioritization, prioritizationId)
+                {
+                    [PrioritizationAttributes.FundingMode] =
+                        new OptionSetValue(FundingModeValues.Direct)
+                });
+                tracingService.Trace(
+                    "New Requirement has no Requirement Details; set Prioritization to Direct.");
+                return;
+            }
+
+            var owningBu = service.Retrieve(
+                    EntityNames.Prioritization,
+                    prioritizationId,
+                    new ColumnSet("owningbusinessunit"))
+                .GetAttributeValue<EntityReference>("owningbusinessunit");
+
+            service.Update(new Entity(EntityNames.Prioritization, prioritizationId)
+            {
+                [PrioritizationAttributes.FundingMode] =
+                    new OptionSetValue(FundingModeValues.Itemized)
+            });
+
+            foreach (var detailId in detailIds)
+                CreateItemizedDetail(service, prioritizationId, detailId, owningBu);
+
+            tracingService.Trace(
+                $"Set Prioritization to Itemized and created {detailIds.Count} Itemized Detail(s).");
+        }
+
+        /// <summary>
         /// A Requirement Detail is being deleted — delete every Itemized Detail that
         /// points back to it. The book_requirementitem relationship cascades as
         /// RemoveLink, so without this they would be left orphaned. Runs Pre-Operation
@@ -237,6 +340,45 @@ namespace Checkbook.Plugins.Items
             return service.RetrieveMultiple(query).Entities
                 .GroupBy(e => e.Id)
                 .Select(g => g.First())
+                .ToList();
+        }
+
+        /// <summary>
+        /// Returns the Requirement Id behind a Requirement Funding, or Guid.Empty if
+        /// the RF doesn't exist or has no Requirement.
+        /// </summary>
+        private static Guid GetRequirementIdFromRequirementFunding(
+            IOrganizationService service, Guid requirementFundingId)
+        {
+            var rf = service.Retrieve(
+                EntityNames.RequirementFunding,
+                requirementFundingId,
+                new ColumnSet(RequirementFundingAttributes.Requirement));
+            return rf.GetAttributeValue<EntityReference>(
+                RequirementFundingAttributes.Requirement)?.Id ?? Guid.Empty;
+        }
+
+        /// <summary>Returns the ids of every Itemized Detail currently on a Prioritization.</summary>
+        private static List<Guid> GetItemizedDetailsForPrioritization(
+            IOrganizationService service, Guid prioritizationId)
+        {
+            var query = new QueryExpression(EntityNames.ItemizedDetails)
+            {
+                ColumnSet = new ColumnSet(false),
+                Criteria =
+                {
+                    Conditions =
+                    {
+                        new ConditionExpression(
+                            ItemizedDetailsAttributes.Prioritization,
+                            ConditionOperator.Equal,
+                            prioritizationId)
+                    }
+                }
+            };
+
+            return service.RetrieveMultiple(query).Entities
+                .Select(e => e.Id)
                 .ToList();
         }
 
