@@ -294,16 +294,11 @@ export const RequirementDetailsRankApp: React.FC<RequirementDetailsRankProps> = 
                           color: "#0078D4",
                         }}
                       >
-                        {row.name}
+                        {row.itemLabel?.trim() ? row.itemLabel : row.name}
                       </strong>
-                      {row.itemLabel && (
-                        <Badge appearance="outline" color="informative">
-                          Item: {row.itemLabel}
-                        </Badge>
-                      )}
-                      {row.tdcLabel && (
-                        <Badge appearance="outline" color="informative">
-                          TDC: {row.tdcLabel}
+                      {inherited?.quantityType && (
+                        <Badge appearance="tint" color="informative">
+                          {inherited.quantityType}
                         </Badge>
                       )}
                       {inherited?.category && (
@@ -311,9 +306,9 @@ export const RequirementDetailsRankApp: React.FC<RequirementDetailsRankProps> = 
                           {inherited.category}
                         </Badge>
                       )}
-                      {inherited?.quantityType && (
-                        <Badge appearance="tint" color="informative">
-                          {inherited.quantityType}
+                      {row.tdcLabel && (
+                        <Badge appearance="outline" color="informative">
+                          TDC: {row.tdcLabel}
                         </Badge>
                       )}
                     </div>
