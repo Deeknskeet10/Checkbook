@@ -205,6 +205,96 @@ missing or mis-registered. If step 6 leaves stale Itemized Details, the
 
 ---
 
+## Schema additions required (must exist in env before deploying this build)
+
+Before registering the FundingEvent and Turn-In plugins below, three columns must
+be added to `book_turnin` in the maker portal. The plugin code references their
+schema names directly; the build will succeed without them, but at runtime the
+Create / Update messages will fail.
+
+| Column                  | Type                 | Default | Notes                                                                                  |
+|-------------------------|----------------------|---------|----------------------------------------------------------------------------------------|
+| `book_origin`           | Choice (option set)  | `State` | Values: **State** = `0`, **Sweep** = `1`. Distinguishes Kind A (state-submitted) from Kind B (sweep-created over-allocation tracker). |
+| `book_afpamount`        | Decimal (2 decimals) | `0`     | AFP amount that will flow back to A18 on approval. Auto-populated by `TurnInAmountCalculator` for Kind A; written by `GenerateDistributions` for Kind B. |
+| `book_allotmentamount`  | Decimal (2 decimals) | `0`     | Allotment amount that will flow back to A18 on approval. Same population sources as above. |
+
+`book_newamount` keeps its existing schema; its semantic meaning narrows to
+"TDP amount being returned (Kind A) or 0 (Kind B)" — no migration needed.
+
+---
+
+## Steps to register (Funding Event + Turn-In financial flow)
+
+### `Checkbook.Plugins.Validation.FundingEventValidator`
+
+Enforces the two invariants that `FundingPercentageHelper` and the Generate
+Distributions sweep rely on: (A) no two same-type Funding Events with
+overlapping date ranges; (B) for every (Fund, PG/SAG) and every date,
+Allotment percentage ≤ AFP percentage.
+
+| # | Message | Primary entity         | Stage          | Mode        | Filtering attributes                                                                 | Notes                                  |
+|---|---------|------------------------|----------------|-------------|--------------------------------------------------------------------------------------|----------------------------------------|
+| 1 | Create  | `book_fundingevent`    | Pre-Operation  | Synchronous | *(none)*                                                                             | Validates own dates + type vs siblings. |
+| 2 | Update  | `book_fundingevent`    | Pre-Operation  | Synchronous | `book_fundingtype, book_startdate, book_enddate, statecode`                          | Re-validates on any range/type change. **Requires PreImage.** |
+| 3 | Create  | `book_fundingdetails`  | Pre-Operation  | Synchronous | *(none)*                                                                             | Validates Allotment ≤ AFP for the new row. |
+| 4 | Update  | `book_fundingdetails`  | Pre-Operation  | Synchronous | `book_distributionpercentage, book_fund, book_pgsag, book_fundingevent, statecode`   | Re-validates on pct / fund / PG change. **Requires PreImage.** |
+
+**Common PRT field values** for all four steps:
+- **Run in User's Context**: `Calling User`
+- **Execution Order**: `1`
+- **Deployment**: `Server Only`
+
+**PreImage** on steps 2 and 4:
+- **Name** / **Entity Alias**: `PreImage`
+- **Parameters (step 2)**: `book_name, book_fundingtype, book_startdate, book_enddate, statecode`
+- **Parameters (step 4)**: `book_fundingevent, book_fund, book_pgsag, book_distributionpercentage, statecode`
+
+### `Checkbook.Plugins.TurnIns.TurnInAmountCalculator`
+
+Pre-op writer that keeps `book_afpamount` and `book_allotmentamount` in sync
+with `book_newamount × current_pct` for **Kind A** Turn-Ins. Skips entirely when
+`book_origin = Sweep` — the Generate Distributions sweep owns those values for
+Kind B records.
+
+| # | Message | Primary entity | Stage         | Mode        | Filtering attributes                                                                  | Notes |
+|---|---------|----------------|---------------|-------------|----------------------------------------------------------------------------------------|-------|
+| 1 | Create  | `book_turnin`  | Pre-Operation | Synchronous | *(none)*                                                                              | Initial AFP/Allotment computation. |
+| 2 | Update  | `book_turnin`  | Pre-Operation | Synchronous | `book_newamount, book_fund, book_pg, book_fundcenter, book_origin`                    | Re-computes on any input change. **Requires PreImage.** |
+
+**PreImage** on step 2:
+- **Name** / **Entity Alias**: `PreImage`
+- **Parameters**: `book_newamount, book_fund, book_pg, book_fundcenter, book_origin`
+
+### `Checkbook.Plugins.Distributions.GenerateDistributionsPlugin`
+
+Custom API handler `book_GenerateDistributions` — already registered. After
+deploying this build, no step changes are required; behavior changes only:
+- Existing-credit sums are now filtered by FundingType (no more AFP↔Allotment entanglement).
+- Sweep Turn-Ins are now `Origin = Sweep` with per-type amounts on `book_afpamount` / `book_allotmentamount`.
+- Open Sweep Turn-Ins decay as baseline catches up; deactivate when both type amounts hit 0.
+
+---
+
+## Verification checklist (financial flow)
+
+- [ ] `book_turnin` has the three new columns (`book_origin`, `book_afpamount`, `book_allotmentamount`).
+- [ ] **Plug-in:** `Checkbook.Plugins.Validation.FundingEventValidator`
+  - [ ] Create + Update of `book_fundingevent` — Pre-Op Sync, Update has PreImage
+  - [ ] Create + Update of `book_fundingdetails` — Pre-Op Sync, Update has PreImage
+- [ ] **Plug-in:** `Checkbook.Plugins.TurnIns.TurnInAmountCalculator`
+  - [ ] Create + Update of `book_turnin` — Pre-Op Sync, Update has PreImage
+
+**Smoke tests** (run in the env after registration):
+
+1. **Non-overlap (A)** — create a second active AFP Funding Event whose `[StartDate, EndDate]` intersects an existing AFP event's range; save should fail with "overlaps another active AFP event."
+2. **Allotment ≤ AFP (B)** — set an Allotment Funding Detail to a pct > the AFP pct for the same (Fund, PG/SAG) in the same date range; save should fail naming the offending segment.
+3. **Kind A AFP/Allotment calculation** — create a new state-submitted Turn-In (`Origin = State`) with TDP = $100, Fund/PG that has AFP pct = 50 and Allotment pct = 30 today; `book_afpamount` should auto-fill to $50, `book_allotmentamount` to $30.
+4. **Kind A approval** — approve the Turn-In from (3); two Distribution pairs should appear (one AFP, one Allotment), each at the pre-computed amount with `book_fundingevent` populated so `book_fundingtype` resolves.
+5. **Sweep overage detection** — invoke `book_GenerateDistributions` against a bucket whose existing AFP credits exceed target by $40; an `Origin = Sweep` Turn-In should appear with `book_afpamount = 40` and `book_allotmentamount = 0`.
+6. **Sweep decay** — raise the AFP Funding Detail pct so target catches up to existing; re-run `book_GenerateDistributions`; the Sweep Turn-In's `book_afpamount` should drop. When it (and Allotment amount) reach 0, the Turn-In deactivates.
+
+---
+
 ## Adding more plugins to this doc
 
 When other plugin classes are wired into PRT, append a new `###` section under

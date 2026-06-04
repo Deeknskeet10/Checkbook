@@ -100,6 +100,21 @@ namespace Checkbook.Plugins.Constants
     }
 
     /// <summary>
+    /// Origin values for book_turnin.book_origin. Distinguishes a state-submitted
+    /// Turn-In (Kind A — has items, awaits BE approval, real money returns on approval)
+    /// from a sweep-created over-allocation tracker (Kind B — created by
+    /// GenerateDistributions when existing credits exceed the current target; its
+    /// amount decays as baseline catches up). The Distributions sweep only mutates
+    /// or deactivates Sweep-origin records.
+    /// Column must be created in the maker portal before this assembly is deployed.
+    /// </summary>
+    public static class TurnInOriginValues
+    {
+        public const int State = 0;
+        public const int Sweep = 1;
+    }
+
+    /// <summary>
     /// Decision values for book_realignments.book_bedecision.
     /// NOTE: confirm values in the target env — most custom picklists in this solution
     /// start at 100000000, but BE Decision is documented as 0/1 here.

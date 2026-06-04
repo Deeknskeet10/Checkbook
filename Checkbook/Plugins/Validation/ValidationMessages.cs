@@ -1,3 +1,5 @@
+using System;
+
 namespace Checkbook.Plugins.Validation
 {
     /// <summary>
@@ -206,6 +208,32 @@ namespace Checkbook.Plugins.Validation
         /// </summary>
         public const string RealignmentSameLOA =
             "Credited and Debited Lines of Accounting cannot be the same.";
+
+        #endregion
+
+        #region Funding Event / Funding Detail Validation Messages
+
+        /// <summary>
+        /// Error when two active Funding Events of the same type would overlap in time.
+        /// </summary>
+        public static string OverlappingFundingEvents(string typeName, string thisName, string otherName)
+        {
+            return $"Funding Event '{thisName}' overlaps another active {typeName} event '{otherName}'. " +
+                   $"Two {typeName} events may not be in effect at the same time.";
+        }
+
+        /// <summary>
+        /// Error when, at some point in time, the active Allotment percentage for a
+        /// given (Fund, PG/SAG) would exceed the active AFP percentage.
+        /// </summary>
+        public static string AllotmentExceedsAFP(
+            string fundName, string pgName, DateTime onDate,
+            decimal allotmentPct, decimal afpPct)
+        {
+            return $"Allotment ({allotmentPct}%) would exceed AFP ({afpPct}%) for " +
+                   $"Fund '{fundName}', PG/SAG '{pgName}' on {onDate:yyyy-MM-dd}. " +
+                   $"Allotment must never exceed AFP.";
+        }
 
         #endregion
 

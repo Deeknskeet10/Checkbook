@@ -116,9 +116,13 @@ namespace Checkbook.Plugins.TurnIns
             tracing.Trace("Creating ledger entries...");
             TurnInLedgerCreator.CreateLedgerEntries(service, tracing, turnInId, loaResolution);
 
-            // ---- 2. Distributions (debit grouped by Fund/PG; one credit) ----
+            // ---- 2. Distributions — AFP + Allotment (debit at state FC, credit at A18) ----
+            // Sized from book_afpamount / book_allotmentamount on the Turn-In header
+            // (populated by TurnInAmountCalculator for Kind A, by GenerateDistributions
+            // for Kind B). No TDP-side distribution; TDP moves via the Ledger + RF/Prio
+            // updates below.
             tracing.Trace("Creating distribution entries...");
-            TurnInDistributionCreator.CreateDistributions(service, tracing, merged, items, headerAmount);
+            TurnInDistributionCreator.CreateDistributions(service, tracing, merged);
 
             // ---- 3. Update child Prioritizations (items with a Prio) ----
             tracing.Trace("Updating Prioritizations...");

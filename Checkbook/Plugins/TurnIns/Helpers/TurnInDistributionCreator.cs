@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Xrm.Sdk;
 using Microsoft.Xrm.Sdk.Query;
@@ -9,142 +8,124 @@ using Checkbook.Plugins.Helpers;
 namespace Checkbook.Plugins.TurnIns.Helpers
 {
     /// <summary>
-    /// Creates Distributions for an approved Turn-In.
+    /// Creates AFP and Allotment Distributions for an approved Turn-In.
     ///
-    /// Design (per Phase-3 business rules):
-    /// - DEBIT distributions: grouped by the source LOAs' (Fund, PG) tuples. One debit
-    ///   Distribution per unique (Fund, PG) across the Turn-In items, summed.
-    ///   FundCenter = the Turn-In's own book_fundcenter (the state-specific A18XX, e.g. A18MN).
-    /// - CREDIT distribution: a single Distribution.
-    ///   FundCenter = "A18" main — resolved as the active FundCenter with no parent.
-    ///   Fund + PG = the Turn-In header's fund + pg.
+    /// AFP and Allotment are the only ledger types that flow through book_distributions.
+    /// TDP isn't a Distribution — it moves via TurnInLedgerCreator and the RF / Prio /
+    /// LOA updates in the orchestrator.
     ///
-    /// All amount columns are Decimal (book_newamount). No Money type used.
+    /// Reads pre-computed book_afpamount and book_allotmentamount off the Turn-In header
+    /// (set by TurnInAmountCalculator for Kind A records and by GenerateDistributions
+    /// for Kind B records). For each non-zero amount, emits one debit/credit pair:
+    ///   • Debit  FC = the Turn-In's own FundCenter (state, e.g. A18MN)
+    ///   • Credit FC = the A18 root (single active FundCenter with no parent)
+    ///   • Fund + PG = the Turn-In header's Fund + PG (matches the FundingDetails row
+    ///     that produced the percentage)
+    /// Both sides carry book_fundingevent so the formula column book_fundingtype resolves.
     /// </summary>
     public static class TurnInDistributionCreator
     {
         public static void CreateDistributions(
             IOrganizationService service,
             ITracingService tracing,
-            Entity turnIn,
-            List<TurnInItemRecord> items,
-            decimal headerAmount)
+            Entity turnIn)
         {
-            tracing.Trace("TurnInDistributionCreator: creating distributions...");
-
-            if (headerAmount <= 0m)
-                throw new InvalidPluginExecutionException("Distribution amount must be greater than zero.");
+            tracing.Trace("TurnInDistributionCreator: creating AFP/Allotment distributions...");
 
             var turnInFundCenter = turnIn.GetAttributeValue<EntityReference>(TurninAttributes.FundCenter);
-            if (turnInFundCenter == null)
+            var turnInFund       = turnIn.GetAttributeValue<EntityReference>(TurninAttributes.Fund);
+            var turnInPg         = turnIn.GetAttributeValue<EntityReference>(TurninAttributes.PG);
+            if (turnInFundCenter == null || turnInFund == null || turnInPg == null)
+            {
                 throw new InvalidPluginExecutionException(
-                    "Turn-In is missing Fund Center (book_fundcenter). Cannot create debit distributions.");
+                    "Turn-In is missing FundCenter / Fund / PG — cannot create distributions.");
+            }
 
-            var turnInFund = turnIn.GetAttributeValue<EntityReference>(TurninAttributes.Fund);
-            var turnInPg = turnIn.GetAttributeValue<EntityReference>(TurninAttributes.PG);
-            if (turnInFund == null)
-                throw new InvalidPluginExecutionException("Turn-In is missing Fund (book_fund).");
-            if (turnInPg == null)
-                throw new InvalidPluginExecutionException("Turn-In is missing PG (book_pg).");
+            var afpAmount   = NumericHelper.ToDecimal(turnIn, TurninAttributes.AFPAmount) ?? 0m;
+            var allotAmount = NumericHelper.ToDecimal(turnIn, TurninAttributes.AllotmentAmount) ?? 0m;
+
+            if (afpAmount <= 0m && allotAmount <= 0m)
+            {
+                tracing.Trace("Both AFP and Allotment amounts ≤ 0 — no Distributions to create.");
+                return;
+            }
 
             var turnInRef = turnIn.ToEntityReference();
-
-            // -----------------------------------------------------------------
-            // Build (Fund, PG) → sum-of-amounts for DEBIT distributions.
-            // Multiple items may share the same (Fund, PG); we collapse them.
-            // -----------------------------------------------------------------
-            var debitGroups = new Dictionary<FundPgKey, decimal>();
-
-            foreach (var item in items)
-            {
-                if (item.LOAFund == null || item.LOAPG == null)
-                {
-                    throw new InvalidPluginExecutionException(
-                        $"Source LOA for a Turn-In Item is missing Fund or PG. " +
-                        $"LOA={item.LOA?.Id.ToString() ?? "(null)"}. Cannot group Distributions.");
-                }
-
-                var key = new FundPgKey(item.LOAFund.Id, item.LOAPG.Id);
-                if (!debitGroups.ContainsKey(key))
-                    debitGroups[key] = 0m;
-                debitGroups[key] += item.Amount;
-            }
-
-            tracing.Trace($"Debit distribution groups: {debitGroups.Count} unique (Fund, PG) pairs.");
-
-            // -----------------------------------------------------------------
-            // Resolve the CREDIT side fund center: the A18 root — defined here as
-            // the single active FundCenter with no parent. If the env ever has
-            // more than one parent-less active FC, ResolveRootFundCenter throws.
-            // -----------------------------------------------------------------
             var creditFundCenter = ResolveRootFundCenter(service, tracing);
+            var asOf = DateTime.UtcNow.Date;
 
-            // -----------------------------------------------------------------
-            // Create DEBIT distributions (one per (Fund, PG) bucket).
-            // Track the first debit id so the credit distribution can link back
-            // to a debit via book_debiteddistribution — same convention used by
-            // DistributionBucketProcessor (credit.DebitedDistribution = debitId)
-            // and TurnInLedgerCreator (credit.RelatedEntry = first debit).
-            // -----------------------------------------------------------------
-            Guid? firstDebitId = null;
-            foreach (var kvp in debitGroups)
+            int created = 0;
+            if (afpAmount > 0m)
             {
-                var fundId = kvp.Key.FundId;
-                var pgId = kvp.Key.PgId;
-                var amount = kvp.Value;
-
-                var debit = new Entity(EntityNames.Distributions);
-                debit[DistributionsAttributes.Amount] = amount; // Decimal write
-                debit[DistributionsAttributes.Fund] = new EntityReference(EntityNames.Fund, fundId);
-                debit[DistributionsAttributes.PGSAG] = new EntityReference(EntityNames.PG, pgId);
-                debit[DistributionsAttributes.FundCenter] = turnInFundCenter;
-                debit[DistributionsAttributes.DisbursementDirection] =
-                    new OptionSetValue(DisbursementDirectionValues.Debit);
-                debit[DistributionsAttributes.Remarks] = "Turn-In Debit Distribution";
-                debit[DistributionsAttributes.TurnIn] = turnInRef;
-
-                var id = service.Create(debit);
-                if (firstDebitId == null) firstDebitId = id;
-                tracing.Trace(
-                    $"Created DEBIT distribution {id}: Amount={amount:C}, " +
-                    $"Fund={fundId}, PG={pgId}, FC={turnInFundCenter.Id}");
+                created += EmitPair(service, tracing, turnInRef, turnInFund, turnInPg,
+                                    turnInFundCenter, creditFundCenter,
+                                    FundingTypeValues.AFP, "AFP", afpAmount, asOf);
+            }
+            if (allotAmount > 0m)
+            {
+                created += EmitPair(service, tracing, turnInRef, turnInFund, turnInPg,
+                                    turnInFundCenter, creditFundCenter,
+                                    FundingTypeValues.Allotment, "Allotment", allotAmount, asOf);
             }
 
-            // -----------------------------------------------------------------
-            // Create the single CREDIT distribution.
-            // Link to the first debit via book_debiteddistribution so the
-            // credit↔debit relationship is queryable downstream.
-            // -----------------------------------------------------------------
-            var credit = new Entity(EntityNames.Distributions);
-            credit[DistributionsAttributes.Amount] = headerAmount; // Decimal write
-            credit[DistributionsAttributes.Fund] = turnInFund;
-            credit[DistributionsAttributes.PGSAG] = turnInPg;
-            credit[DistributionsAttributes.FundCenter] = creditFundCenter;
-            credit[DistributionsAttributes.DisbursementDirection] =
-                new OptionSetValue(DisbursementDirectionValues.Credit);
-            credit[DistributionsAttributes.Remarks] = "Turn-In Credit Distribution";
-            credit[DistributionsAttributes.TurnIn] = turnInRef;
-            if (firstDebitId.HasValue)
-                credit[DistributionsAttributes.DebitedDistribution] =
-                    new EntityReference(EntityNames.Distributions, firstDebitId.Value);
-
-            var creditId = service.Create(credit);
-            tracing.Trace(
-                $"Created CREDIT distribution {creditId}: Amount={headerAmount:C}, " +
-                $"Fund={turnInFund.Id}, PG={turnInPg.Id}, FC={creditFundCenter.Id} (A18 root), " +
-                $"DebitedDistribution={firstDebitId?.ToString() ?? "(none)"}");
-
-            tracing.Trace("TurnInDistributionCreator: all distributions created successfully.");
+            tracing.Trace($"TurnInDistributionCreator: {created} distribution row(s) created.");
         }
 
-        /// <summary>
-        /// Resolves the "A18" root Fund Center — the active FundCenter with no parent.
-        /// Per the Phase-3 design, this is treated as the single credit-side FC for
-        /// Turn-Ins. Throws if zero or more-than-one parent-less FundCenters exist.
-        /// </summary>
-        private static EntityReference ResolveRootFundCenter(
+        private static int EmitPair(
             IOrganizationService service,
-            ITracingService tracing)
+            ITracingService tracing,
+            EntityReference turnInRef,
+            EntityReference fundRef,
+            EntityReference pgRef,
+            EntityReference debitFc,
+            EntityReference creditFc,
+            int fundingType,
+            string typeName,
+            decimal amount,
+            DateTime asOf)
+        {
+            var resolution = FundingPercentageHelper.Resolve(
+                service, tracing, fundRef.Id, pgRef.Id, fundingType, asOf);
+            if (resolution == null)
+            {
+                tracing.Trace(
+                    $"  {typeName} amount = {amount:C} but no active {typeName} FundingEvent for " +
+                    $"(Fund={fundRef.Id}, PG={pgRef.Id}) at {asOf:yyyy-MM-dd}. Skipping pair — " +
+                    $"the column should not have been populated without an active event.");
+                return 0;
+            }
+
+            var debit = new Entity(EntityNames.Distributions);
+            debit[DistributionsAttributes.Amount]                = amount;
+            debit[DistributionsAttributes.Fund]                  = fundRef;
+            debit[DistributionsAttributes.PGSAG]                 = pgRef;
+            debit[DistributionsAttributes.FundCenter]            = debitFc;
+            debit[DistributionsAttributes.FundingEvent]          = resolution.FundingEvent;
+            debit[DistributionsAttributes.DisbursementDirection] = new OptionSetValue(DisbursementDirectionValues.Debit);
+            debit[DistributionsAttributes.Remarks]               = $"Turn-In {typeName} Debit";
+            debit[DistributionsAttributes.TurnIn]                = turnInRef;
+            var debitId = service.Create(debit);
+
+            var credit = new Entity(EntityNames.Distributions);
+            credit[DistributionsAttributes.Amount]                = amount;
+            credit[DistributionsAttributes.Fund]                  = fundRef;
+            credit[DistributionsAttributes.PGSAG]                 = pgRef;
+            credit[DistributionsAttributes.FundCenter]            = creditFc;
+            credit[DistributionsAttributes.FundingEvent]          = resolution.FundingEvent;
+            credit[DistributionsAttributes.DisbursementDirection] = new OptionSetValue(DisbursementDirectionValues.Credit);
+            credit[DistributionsAttributes.Remarks]               = $"Turn-In {typeName} Credit";
+            credit[DistributionsAttributes.TurnIn]                = turnInRef;
+            credit[DistributionsAttributes.DebitedDistribution]   = new EntityReference(EntityNames.Distributions, debitId);
+            var creditId = service.Create(credit);
+
+            tracing.Trace(
+                $"  → {typeName} pair Debit={debitId} Credit={creditId} Amount={amount:C} " +
+                $"Fund={fundRef.Id} PG={pgRef.Id} FE={resolution.FundingEvent.Id}");
+            return 2;
+        }
+
+        private static EntityReference ResolveRootFundCenter(
+            IOrganizationService service, ITracingService tracing)
         {
             var query = new QueryExpression(EntityNames.FundCenter)
             {
@@ -157,7 +138,7 @@ namespace Checkbook.Plugins.TurnIns.Helpers
                         new ConditionExpression(FundCenterAttributes.StateCode, ConditionOperator.Equal, StateCodeValues.Active),
                     }
                 },
-                TopCount = 2, // pull 2 so we can detect ambiguity
+                TopCount = 2,
             };
 
             var roots = service.RetrieveMultiple(query).Entities;
@@ -165,42 +146,19 @@ namespace Checkbook.Plugins.TurnIns.Helpers
             {
                 throw new InvalidPluginExecutionException(
                     "Could not resolve the root (A18 main) Fund Center: no active Fund Center " +
-                    "exists with a null parent. Configure the root Fund Center before " +
-                    "approving a Turn-In.");
+                    "exists with a null parent.");
             }
             if (roots.Count > 1)
             {
                 var names = string.Join(", ", roots.Select(e => e.GetAttributeValue<string>(FundCenterAttributes.Name)));
                 throw new InvalidPluginExecutionException(
                     $"Ambiguous root Fund Center: more than one active Fund Center has a null " +
-                    $"parent ({names}). The Phase-3 design assumes a single root; collapse to one " +
-                    $"or update ResolveRootFundCenter with a tighter rule.");
+                    $"parent ({names}).");
             }
 
             var root = roots[0];
-            var name = root.GetAttributeValue<string>(FundCenterAttributes.Name);
-            tracing.Trace($"Resolved root Fund Center: {root.Id} '{name}'");
+            tracing.Trace($"Resolved root Fund Center: {root.Id} '{root.GetAttributeValue<string>(FundCenterAttributes.Name)}'");
             return root.ToEntityReference();
-        }
-
-        /// <summary>
-        /// Composite key for (Fund, PG) grouping. EntityReference doesn't ship with
-        /// a stable Equals/GetHashCode usable as a dictionary key, so use Guid pairs.
-        /// </summary>
-        private readonly struct FundPgKey : IEquatable<FundPgKey>
-        {
-            public Guid FundId { get; }
-            public Guid PgId { get; }
-
-            public FundPgKey(Guid fundId, Guid pgId)
-            {
-                FundId = fundId;
-                PgId = pgId;
-            }
-
-            public bool Equals(FundPgKey other) => FundId == other.FundId && PgId == other.PgId;
-            public override bool Equals(object obj) => obj is FundPgKey o && Equals(o);
-            public override int GetHashCode() => FundId.GetHashCode() ^ (PgId.GetHashCode() << 1);
         }
     }
 }

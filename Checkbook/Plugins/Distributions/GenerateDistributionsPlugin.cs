@@ -85,9 +85,8 @@ namespace Checkbook.Plugins.Distributions
 
             foreach (var fundingEvent in fundingEvents)
             {
-                tracing.Trace(
-                    $"Processing FundingEvent {fundingEvent.Id} (type = " +
-                    $"{fundingEvent.GetAttributeValue<OptionSetValue>(FundingEventAttributes.FundingType)?.Value}).");
+                var fundingType = fundingEvent.GetAttributeValue<OptionSetValue>(FundingEventAttributes.FundingType)?.Value ?? -1;
+                tracing.Trace($"Processing FundingEvent {fundingEvent.Id} (type = {fundingType}).");
 
                 var fundingEventRef = fundingEvent.ToEntityReference();
 
@@ -96,7 +95,8 @@ namespace Checkbook.Plugins.Distributions
                 {
                     var fcMeta = GetFundCenterMeta(service, fcCache, bucket.FundCenterId);
                     var r = DistributionBucketProcessor.Process(
-                        service, tracing, bucket, fundingEventRef, holdingFundCenterId, fcMeta?.OwningBusinessUnit);
+                        service, tracing, bucket, fundingEventRef, fundingType,
+                        holdingFundCenterId, fcMeta?.OwningBusinessUnit);
                     totalCreated += r.DistributionsCreated;
                     totalTurnIns += r.TurnInsCreated;
                     totalSkipped += r.Skipped;
@@ -107,7 +107,8 @@ namespace Checkbook.Plugins.Distributions
                 {
                     var fcMeta = GetFundCenterMeta(service, fcCache, bucket.FundCenterId);
                     var r = DistributionBucketProcessor.Process(
-                        service, tracing, bucket, fundingEventRef, holdingFundCenterId, fcMeta?.OwningBusinessUnit);
+                        service, tracing, bucket, fundingEventRef, fundingType,
+                        holdingFundCenterId, fcMeta?.OwningBusinessUnit);
                     totalCreated += r.DistributionsCreated;
                     totalTurnIns += r.TurnInsCreated;
                     totalSkipped += r.Skipped;
