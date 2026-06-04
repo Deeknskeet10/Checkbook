@@ -6,7 +6,7 @@
   <PrimaryEntity>book_realignments</PrimaryEntity>
   <AsyncAutoDelete>0</AsyncAutoDelete>
   <Description>Update of a Realignment - Update Same SAG and Fund</Description>
-  <FilteringAttributes>book_newcreditedloa,book_creditedprioritization,book_newcreditedrequirement,book_newdebitedloa,book_debitedprioritization,book_newdebitedrequirement</FilteringAttributes>
+  <FilteringAttributes>book_newcreditedloa,book_creditedprioritization,book_newcreditedrequirement,book_newdebitedloa,book_debitedprioritization,book_newdebitedrequirement,book_newstateapproved,book_bedecision,book_newamount,book_fund</FilteringAttributes>
   <ImpersonatingUserIdName>Microsoft Flow CDS Integration Service DoD</ImpersonatingUserIdName>
   <InvocationSource>1</InvocationSource>
   <Mode>0</Mode>
@@ -20,7 +20,7 @@
   <SdkMessageProcessingStepImages>
     <SdkMessageProcessingStepImage Name="SamePreImage">
       <SdkMessageProcessingStepImageId>{4768f43a-b752-f111-bec6-001dd8204135}</SdkMessageProcessingStepImageId>
-      <Attributes>book_newcreditedloa,book_creditedprioritization,book_newcreditedrequirement,book_newdebitedloa,book_debitedprioritization,book_newdebitedrequirement</Attributes>
+      <Attributes>book_newcreditedloa,book_creditedprioritization,book_newcreditedrequirement,book_newdebitedloa,book_debitedprioritization,book_newdebitedrequirement,book_newamount,book_fund</Attributes>
       <EntityAlias>PreImage</EntityAlias>
       <ImageType>0</ImageType>
       <MessagePropertyName>Target</MessagePropertyName>

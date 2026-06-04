@@ -52,6 +52,21 @@ namespace Checkbook.Plugins.Realignments
             if (amount < 0m)
                 throw new InvalidPluginExecutionException($"Realignment amount ({amount}) cannot be negative.");
 
+            // ===== Chain consistency =====
+            // Runs on every save so users can't bypass the form's cascading filters
+            // by populating fields bottom-up (Prior → RF → LOA → Fund) and ending up
+            // with selections that don't actually match the Prioritization's real
+            // parents. The RealignmentProcessor trusts the form-selected RFs/LOAs to
+            // apply debits/credits, so a mismatch here = silent corruption of the
+            // real parent RF's rollups.
+            var formFund = GetEffectiveEntityReference(target, preImg, RealignmentsAttributes.Fund);
+            ValidateChainConsistency(
+                service, tracing,
+                effDebitPrior, effCreditPrior,
+                effDebitReq, effCreditReq,
+                debitLoaRef, creditLoaRef,
+                formFund);
+
             // ===== Realignment type & funds-availability =====
             if (amount > 0m)
             {
@@ -199,6 +214,93 @@ namespace Checkbook.Plugins.Realignments
             }
 
             tracing.Trace($"Prior→Prior validation succeeded for amount {amount:N2} (available = {fundedTdp:N2})");
+        }
+
+        // ===== Chain consistency validation =====
+        private void ValidateChainConsistency(
+            IOrganizationService service,
+            ITracingService tracing,
+            EntityReference debitPrior,
+            EntityReference creditPrior,
+            EntityReference debitRF,
+            EntityReference creditRF,
+            EntityReference debitLOA,
+            EntityReference creditLOA,
+            EntityReference formFund)
+        {
+            ValidateOneSideChain(service, tracing, "Debited", debitPrior, debitRF, debitLOA, formFund);
+            ValidateOneSideChain(service, tracing, "Credited", creditPrior, creditRF, creditLOA, formFund);
+        }
+
+        private void ValidateOneSideChain(
+            IOrganizationService service,
+            ITracingService tracing,
+            string side,
+            EntityReference priorRef,
+            EntityReference rfRef,
+            EntityReference loaRef,
+            EntityReference formFund)
+        {
+            // Prior → RF (and Prior → LOA, if the Prior carries one)
+            if (priorRef != null)
+            {
+                if (rfRef == null)
+                    throw new InvalidPluginExecutionException(
+                        $"{side} Requirement Funding must be selected when a {side} Prioritization is provided.");
+
+                var prior = service.Retrieve(
+                    EntityNames.Prioritization,
+                    priorRef.Id,
+                    new ColumnSet(
+                        PrioritizationAttributes.RequirementFunding,
+                        PrioritizationAttributes.LineOfAccounting));
+
+                var priorRf = prior.GetAttributeValue<EntityReference>(PrioritizationAttributes.RequirementFunding);
+                if (priorRf == null || priorRf.Id != rfRef.Id)
+                    throw new InvalidPluginExecutionException(
+                        $"{side} chain mismatch: the {side} Prioritization's parent Requirement Funding " +
+                        $"does not match the {side} Requirement Funding selected on the form. " +
+                        $"Re-select the chain top-down so the selections agree.");
+
+                var priorLoa = prior.GetAttributeValue<EntityReference>(PrioritizationAttributes.LineOfAccounting);
+                if (priorLoa != null && loaRef != null && priorLoa.Id != loaRef.Id)
+                    throw new InvalidPluginExecutionException(
+                        $"{side} chain mismatch: the {side} Prioritization's Line of Accounting " +
+                        $"does not match the {side} LOA selected on the form.");
+            }
+
+            // RF → LOA
+            if (rfRef != null && loaRef != null)
+            {
+                var rf = service.Retrieve(
+                    EntityNames.RequirementFunding,
+                    rfRef.Id,
+                    new ColumnSet(RequirementFundingAttributes.LineOfAccounting));
+
+                var rfLoa = rf.GetAttributeValue<EntityReference>(RequirementFundingAttributes.LineOfAccounting);
+                if (rfLoa == null || rfLoa.Id != loaRef.Id)
+                    throw new InvalidPluginExecutionException(
+                        $"{side} chain mismatch: the {side} Requirement Funding's Line of Accounting " +
+                        $"does not match the {side} LOA selected on the form.");
+            }
+
+            // LOA → Fund (only enforced when the form has a Fund populated, so historical
+            // records without a Fund selection still validate)
+            if (loaRef != null && formFund != null)
+            {
+                var loa = service.Retrieve(
+                    EntityNames.FundingLine,
+                    loaRef.Id,
+                    new ColumnSet(FundingLineAttributes.Fund));
+
+                var loaFund = loa.GetAttributeValue<EntityReference>(FundingLineAttributes.Fund);
+                if (loaFund == null || loaFund.Id != formFund.Id)
+                    throw new InvalidPluginExecutionException(
+                        $"{side} chain mismatch: the {side} LOA's Fund " +
+                        $"does not match the Fund selected on the form.");
+            }
+
+            tracing.Trace($"{side} chain consistency validated.");
         }
 
         // Helper: does an RF have any child Prioritizations (Active)?
