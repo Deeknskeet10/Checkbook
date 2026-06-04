@@ -25,7 +25,9 @@ namespace Checkbook.Plugins.Realignments
             debit[LedgerAttributes.Realignment] =
                 new EntityReference(EntityNames.Realignments, realignmentId);
 
-            // FIXED: LedgerDirection must be OptionSetValue
+            debit[LedgerAttributes.LedgerType] =
+                new OptionSetValue(LedgerTypeValues.Realignment);
+
             debit[LedgerAttributes.LedgerDirection] =
                 new OptionSetValue(LedgerDirectionValues.Debited);
 
@@ -40,7 +42,9 @@ namespace Checkbook.Plugins.Realignments
             credit[LedgerAttributes.Realignment] =
                 new EntityReference(EntityNames.Realignments, realignmentId);
 
-            // FIXED: LedgerDirection must be OptionSetValue
+            credit[LedgerAttributes.LedgerType] =
+                new OptionSetValue(LedgerTypeValues.Realignment);
+
             credit[LedgerAttributes.LedgerDirection] =
                 new OptionSetValue(LedgerDirectionValues.Credited);
 
