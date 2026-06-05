@@ -1,5 +1,6 @@
 using System;
 using Microsoft.Xrm.Sdk;
+using Microsoft.Xrm.Sdk.Messages;
 using Microsoft.Xrm.Sdk.Query;
 using Checkbook.Plugins.Constants;
 
@@ -197,25 +198,33 @@ namespace Checkbook.Plugins.LOAs.Helpers
 
         private static bool IsApeAssociated(IOrganizationService service, Guid loaId, Guid apeId)
         {
-            // Query book_ape with a link to the intersect entity (whose name matches the
-            // relationship name for a custom N:N). Filter both sides of the join.
-            var query = new QueryExpression(EntityNames.APE)
+            // Use RetrieveRequest with RelatedEntitiesQuery so we reference the
+            // relationship by name (which Dataverse honors) instead of guessing the
+            // intersect entity's logical name — the two don't always match.
+            var rel = new Relationship(FundingLineAttributes.APERelationship);
+
+            var relatedApes = new QueryExpression(EntityNames.APE)
             {
                 ColumnSet = new ColumnSet(false),
                 TopCount = 1,
                 NoLock = true,
-                Criteria = new FilterExpression(LogicalOperator.And)
+                Criteria = new FilterExpression
                 {
                     Conditions = { new ConditionExpression("book_apeid", ConditionOperator.Equal, apeId) },
                 },
             };
-            var link = query.AddLink(
-                FundingLineAttributes.APERelationship,
-                "book_apeid",
-                "book_apeid");
-            link.LinkCriteria.AddCondition("book_fundinglineid", ConditionOperator.Equal, loaId);
 
-            return service.RetrieveMultiple(query).Entities.Count > 0;
+            var request = new RetrieveRequest
+            {
+                Target = new EntityReference(EntityNames.FundingLine, loaId),
+                ColumnSet = new ColumnSet(false),
+                RelatedEntitiesQuery = new RelationshipQueryCollection { { rel, relatedApes } },
+            };
+
+            var response = (RetrieveResponse)service.Execute(request);
+
+            return response.Entity.RelatedEntities.TryGetValue(rel, out var related)
+                && related.Entities.Count > 0;
         }
 
         private static string ResolveName(
