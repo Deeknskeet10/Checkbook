@@ -165,7 +165,9 @@ namespace Checkbook.Plugins.LOAs.Helpers
 
         /// <summary>
         /// Associates the LOA with the FT's APE via the book_FundingLine_book_APE_book_APE N:N.
-        /// Idempotent: catches the "already related" exception silently.
+        /// Idempotent: pre-checks the intersect and skips when the link already exists.
+        /// Catching the duplicate-key fault from Associate inside a transaction-bound
+        /// Custom API poisons the transaction, so we must avoid throwing in the first place.
         /// </summary>
         public static void AssociateApe(
             IOrganizationService service,
@@ -178,20 +180,42 @@ namespace Checkbook.Plugins.LOAs.Helpers
                 tracing.Trace($"LOA {loaId}: no APE on FT — skipping association.");
                 return;
             }
-            try
+
+            if (IsApeAssociated(service, loaId, ape.Id))
             {
-                service.Associate(
-                    EntityNames.FundingLine,
-                    loaId,
-                    new Relationship(FundingLineAttributes.APERelationship),
-                    new EntityReferenceCollection { ape });
-                tracing.Trace($"LOA {loaId}: associated APE {ape.Id}.");
+                tracing.Trace($"LOA {loaId}: APE {ape.Id} already associated — skipping.");
+                return;
             }
-            catch (Exception ex)
+
+            service.Associate(
+                EntityNames.FundingLine,
+                loaId,
+                new Relationship(FundingLineAttributes.APERelationship),
+                new EntityReferenceCollection { ape });
+            tracing.Trace($"LOA {loaId}: associated APE {ape.Id}.");
+        }
+
+        private static bool IsApeAssociated(IOrganizationService service, Guid loaId, Guid apeId)
+        {
+            // Query book_ape with a link to the intersect entity (whose name matches the
+            // relationship name for a custom N:N). Filter both sides of the join.
+            var query = new QueryExpression(EntityNames.APE)
             {
-                // Most commonly: the association already exists (Dataverse throws on dup).
-                tracing.Trace($"LOA {loaId}: APE {ape.Id} association skipped ({ex.Message}).");
-            }
+                ColumnSet = new ColumnSet(false),
+                TopCount = 1,
+                NoLock = true,
+                Criteria = new FilterExpression(LogicalOperator.And)
+                {
+                    Conditions = { new ConditionExpression("book_apeid", ConditionOperator.Equal, apeId) },
+                },
+            };
+            var link = query.AddLink(
+                FundingLineAttributes.APERelationship,
+                "book_apeid",
+                "book_apeid");
+            link.LinkCriteria.AddCondition("book_fundinglineid", ConditionOperator.Equal, loaId);
+
+            return service.RetrieveMultiple(query).Entities.Count > 0;
         }
 
         private static string ResolveName(
