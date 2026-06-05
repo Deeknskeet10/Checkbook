@@ -93,8 +93,21 @@ namespace Checkbook.Plugins.LOAs
                 touchedLoaIds.Add(loaId);
             }
 
+            // Re-run support: even when no new FTs were linked this run, we still
+            // want to refresh TDP on every LOA currently in scope. This makes the
+            // Custom API idempotent — clicking Generate after editing FT amounts
+            // (or after manually fixing data) re-aggregates without needing a
+            // separate recalc endpoint.
+            var preLinkedAdded = 0;
+            foreach (var loaId in QueryLinkedLoaIdsInScope(service, fiscalYearFilter))
+            {
+                if (touchedLoaIds.Add(loaId))
+                    preLinkedAdded++;
+            }
+            tracing.Trace($"Added {preLinkedAdded} already-linked LOAs to the recalc set.");
+
             tracing.Trace($"Resolved {created} created + {linked} linked + {skipped} skipped " +
-                          $"across {touchedLoaIds.Count} touched LOAs. Recalculating TDP.");
+                          $"across {touchedLoaIds.Count} LOAs to recalc. Recalculating TDP.");
 
             if (touchedLoaIds.Count > 0)
                 TDPCalculationHelper.BatchRecalculateLOATDP(service, touchedLoaIds, tracing);
@@ -102,6 +115,53 @@ namespace Checkbook.Plugins.LOAs
             context.OutputParameters["Created"] = created;
             context.OutputParameters["Linked"]  = linked;
             context.OutputParameters["Skipped"] = skipped;
+        }
+
+        /// <summary>
+        /// Pages through every active Funding Track in scope that already has an LOA
+        /// link, yielding distinct LOA ids. Used to broaden the recalc set on re-runs
+        /// so re-clicking Generate refreshes TDP on existing LOAs too.
+        /// </summary>
+        private static IEnumerable<Guid> QueryLinkedLoaIdsInScope(
+            IOrganizationService service,
+            int fiscalYearFilter)
+        {
+            var query = new QueryExpression(EntityNames.FundingTrack)
+            {
+                ColumnSet = new ColumnSet(FundingTrackAttributes.LineOfAccounting),
+                Criteria = new FilterExpression(LogicalOperator.And)
+                {
+                    Conditions =
+                    {
+                        new ConditionExpression(FundingTrackAttributes.StateCode,        ConditionOperator.Equal,    StateCodeValues.Active),
+                        new ConditionExpression(FundingTrackAttributes.LineOfAccounting, ConditionOperator.NotNull),
+                    },
+                },
+                PageInfo = new PagingInfo { Count = 500, PageNumber = 1, ReturnTotalRecordCount = false },
+                NoLock = true,
+            };
+
+            if (fiscalYearFilter > 0)
+            {
+                var fundLink = query.AddLink(EntityNames.Fund, FundingTrackAttributes.Fund, FundAttributes.Id);
+                fundLink.EntityAlias = "fund";
+                fundLink.LinkCriteria.AddCondition(FundAttributes.FiscalYear, ConditionOperator.Equal, fiscalYearFilter);
+            }
+
+            var seen = new HashSet<Guid>();
+            while (true)
+            {
+                var page = service.RetrieveMultiple(query);
+                foreach (var ft in page.Entities)
+                {
+                    var loa = ft.GetAttributeValue<EntityReference>(FundingTrackAttributes.LineOfAccounting);
+                    if (loa != null && seen.Add(loa.Id))
+                        yield return loa.Id;
+                }
+                if (!page.MoreRecords) yield break;
+                query.PageInfo.PageNumber++;
+                query.PageInfo.PagingCookie = page.PagingCookie;
+            }
         }
 
         /// <summary>

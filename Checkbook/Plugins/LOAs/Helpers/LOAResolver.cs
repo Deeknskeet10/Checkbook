@@ -155,7 +155,14 @@ namespace Checkbook.Plugins.LOAs.Helpers
             loa[FundingLineAttributes.DollarType]         = grain.DollarType;
             loa[FundingLineAttributes.PG]                 = grain.PG;
             loa[FundingLineAttributes.SAG]                = grain.SAG;
-            loa[FundingLineAttributes.MDEP]               = grain.MDEP;
+
+            // MDEP is only carried on the LOA for fiscal years that still include it
+            // in the canonical name (FY26 and earlier). FY27+ LOAs intentionally
+            // collapse across MDEPs and must leave the field empty.
+            var fy = LOANameBuilder.ParseFiscalYear(grain.NameParts.FundName);
+            if (fy <= LOANameBuilder.MdepInNameLastFy)
+                loa[FundingLineAttributes.MDEP] = grain.MDEP;
+
             // FY is also set by LOANameSetter for safety, but include it here for clarity.
             if (grain.FiscalYear != null)
                 loa[FundingLineAttributes.FiscalYear] = grain.FiscalYear;
