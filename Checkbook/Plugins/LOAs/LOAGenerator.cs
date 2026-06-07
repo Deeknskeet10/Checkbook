@@ -27,6 +27,12 @@ namespace Checkbook.Plugins.LOAs
     ///   <c>Created</c> (int) — new LOAs created.
     ///   <c>Linked</c>  (int) — FTs linked to a pre-existing LOA.
     ///   <c>Skipped</c> (int) — FTs skipped (missing grain, name build failed, etc).
+    ///   <c>Failed</c>  (int) — FTs that threw an exception during processing.
+    ///   <c>FailedDetails</c> (string) — semicolon-delimited "ftId: reason" list
+    ///                                   so the caller can show the user which FTs failed.
+    ///
+    /// One FT failing never aborts the batch — exceptions are caught per-row, counted,
+    /// and the loop continues so the rest of the run still completes.
     /// </summary>
     public class LOAGenerator : PluginBase
     {
@@ -53,44 +59,59 @@ namespace Checkbook.Plugins.LOAs
             var created = 0;
             var linked  = 0;
             var skipped = 0;
+            var failed  = 0;
+            var failedDetails = new List<string>();
             var touchedLoaIds = new HashSet<Guid>();
 
             foreach (var ft in QueryUnlinkedFundingTracks(service, fiscalYearFilter))
             {
-                var grain = LOAResolver.Resolve(service, ft, tracing);
-                if (grain == null)
+                try
                 {
-                    skipped++;
-                    continue;
-                }
+                    var grain = LOAResolver.Resolve(service, ft, tracing);
+                    if (grain == null)
+                    {
+                        skipped++;
+                        continue;
+                    }
 
-                var matchedId = LOAResolver.FindByName(service, grain.CanonicalName);
-                Guid loaId;
-                if (matchedId.HasValue)
+                    var matchedId = LOAResolver.FindByName(service, grain.CanonicalName);
+                    Guid loaId;
+                    if (matchedId.HasValue)
+                    {
+                        loaId = matchedId.Value;
+                        linked++;
+                        tracing.Trace($"FT {ft.Id}: linking to existing LOA '{grain.CanonicalName}' → {loaId}.");
+                    }
+                    else
+                    {
+                        var owningBu = ft.GetAttributeValue<EntityReference>("owningbusinessunit");
+                        var loaEntity = LOAResolver.BuildLOAEntity(grain, owningBu);
+                        loaId = service.Create(loaEntity);
+                        created++;
+                        tracing.Trace($"FT {ft.Id}: created new LOA '{grain.CanonicalName}' → {loaId}.");
+                    }
+
+                    // Link the FT to the LOA. The synchronizer guards Depth>1 so won't recurse.
+                    var ftUpdate = new Entity(EntityNames.FundingTrack, ft.Id);
+                    ftUpdate[FundingTrackAttributes.LineOfAccounting] =
+                        new EntityReference(EntityNames.FundingLine, loaId);
+                    service.Update(ftUpdate);
+
+                    if (grain.APE != null)
+                        LOAResolver.AssociateApe(service, loaId, grain.APE, tracing);
+
+                    touchedLoaIds.Add(loaId);
+                }
+                catch (Exception ex)
                 {
-                    loaId = matchedId.Value;
-                    linked++;
-                    tracing.Trace($"FT {ft.Id}: linking to existing LOA '{grain.CanonicalName}' → {loaId}.");
+                    // One bad row (duplicate-key violations on the LOA unique index,
+                    // FaultException from Associate, etc) must not abort the whole batch.
+                    // Record the failure and move on so the remaining FTs still get processed.
+                    failed++;
+                    var reason = (ex.InnerException?.Message ?? ex.Message ?? ex.GetType().Name).Trim();
+                    failedDetails.Add($"{ft.Id}: {reason}");
+                    tracing.Trace($"FT {ft.Id}: FAILED — {reason}");
                 }
-                else
-                {
-                    var owningBu = ft.GetAttributeValue<EntityReference>("owningbusinessunit");
-                    var loaEntity = LOAResolver.BuildLOAEntity(grain, owningBu);
-                    loaId = service.Create(loaEntity);
-                    created++;
-                    tracing.Trace($"FT {ft.Id}: created new LOA '{grain.CanonicalName}' → {loaId}.");
-                }
-
-                // Link the FT to the LOA. The synchronizer guards Depth>1 so won't recurse.
-                var ftUpdate = new Entity(EntityNames.FundingTrack, ft.Id);
-                ftUpdate[FundingTrackAttributes.LineOfAccounting] =
-                    new EntityReference(EntityNames.FundingLine, loaId);
-                service.Update(ftUpdate);
-
-                if (grain.APE != null)
-                    LOAResolver.AssociateApe(service, loaId, grain.APE, tracing);
-
-                touchedLoaIds.Add(loaId);
             }
 
             // Re-run support: even when no new FTs were linked this run, we still
@@ -106,7 +127,7 @@ namespace Checkbook.Plugins.LOAs
             }
             tracing.Trace($"Added {preLinkedAdded} already-linked LOAs to the recalc set.");
 
-            tracing.Trace($"Resolved {created} created + {linked} linked + {skipped} skipped " +
+            tracing.Trace($"Resolved {created} created + {linked} linked + {skipped} skipped + {failed} failed " +
                           $"across {touchedLoaIds.Count} LOAs to recalc. Recalculating TDP.");
 
             if (touchedLoaIds.Count > 0)
@@ -115,6 +136,8 @@ namespace Checkbook.Plugins.LOAs
             context.OutputParameters["Created"] = created;
             context.OutputParameters["Linked"]  = linked;
             context.OutputParameters["Skipped"] = skipped;
+            context.OutputParameters["Failed"]  = failed;
+            context.OutputParameters["FailedDetails"] = string.Join("; ", failedDetails);
         }
 
         /// <summary>

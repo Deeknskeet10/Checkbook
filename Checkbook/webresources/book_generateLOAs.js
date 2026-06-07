@@ -175,14 +175,26 @@ var LOAGenerator = (function () {
     var created = (body && body.Created) || 0;
     var linked = (body && body.Linked) || 0;
     var skipped = (body && body.Skipped) || 0;
+    var failed = (body && body.Failed) || 0;
+    var failedDetails = (body && body.FailedDetails) || "";
 
-    Xrm.Navigation.openAlertDialog({
-      text:
-        "LOA generation complete.\n\n" +
-        "Created: " + created + "\n" +
-        "Linked:  " + linked + "\n" +
-        "Skipped: " + skipped
-    }).then(function () {
+    var text =
+      "LOA generation complete.\n\n" +
+      "Created: " + created + "\n" +
+      "Linked:  " + linked + "\n" +
+      "Skipped: " + skipped + "\n" +
+      "Failed:  " + failed;
+
+    if (failed > 0 && failedDetails) {
+      // Show the first few so the alert stays readable; the rest are in the
+      // plugin trace log for diagnosis.
+      var entries = failedDetails.split(";").map(function (s) { return s.trim(); }).filter(Boolean);
+      var preview = entries.slice(0, 5).join("\n  ");
+      var more = entries.length > 5 ? "\n  …and " + (entries.length - 5) + " more (see plugin trace)." : "";
+      text += "\n\nFailed Funding Tracks:\n  " + preview + more;
+    }
+
+    Xrm.Navigation.openAlertDialog({ text: text }).then(function () {
       if (primaryControl && typeof primaryControl.refresh === "function") {
         primaryControl.refresh();
       }
