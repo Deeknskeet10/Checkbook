@@ -6,6 +6,7 @@ export interface DetailPanelProps {
     event: CalEvent;
     dueOuts: DueOut[];
     onClose: () => void;
+    onOpen: () => void;
 }
 
 const Field: React.FC<{ label: string; value: string }> = ({ label, value }) =>
@@ -29,15 +30,20 @@ const HtmlField: React.FC<{ label: string; html: string }> = ({ label, html }) =
     );
 };
 
-export const DetailPanel: React.FC<DetailPanelProps> = ({ event, dueOuts, onClose }) => {
+export const DetailPanel: React.FC<DetailPanelProps> = ({ event, dueOuts, onClose, onOpen }) => {
     const sorted = [...dueOuts].sort((a, b) => (a.due?.getTime() ?? 0) - (b.due?.getTime() ?? 0));
     return (
         <div className="cal-dp">
             <div className="cal-dp__head" style={{ borderTopColor: colorFor(event.type) }}>
                 <div className="cal-dp__title">{event.name}</div>
-                <button className="cal-dp__close" onClick={onClose} aria-label="Close">
-                    ×
-                </button>
+                <div className="cal-dp__actions">
+                    <button className="cal-dp__open" onClick={onOpen} title="Open event record">
+                        Open
+                    </button>
+                    <button className="cal-dp__close" onClick={onClose} aria-label="Close">
+                        ×
+                    </button>
+                </div>
             </div>
             <div className="cal-dp__body">
                 <Field label="Type" value={event.type} />

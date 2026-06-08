@@ -393,6 +393,29 @@
     font-size: 14px;
 }
 
+.cal-dp__actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.cal-dp__open {
+    border: 1px solid #0078d4;
+    background: #0078d4;
+    color: #fff;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 3px;
+    cursor: pointer;
+    line-height: 1.4;
+}
+
+.cal-dp__open:hover {
+    background: #106ebe;
+    border-color: #106ebe;
+}
+
 .cal-dp__close {
     border: 0;
     background: none;

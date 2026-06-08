@@ -25,6 +25,7 @@ export interface ICalendarProps {
     width: number;
     height: number;
     refresh: () => void;
+    openRecord: (entityId: string) => void;
 }
 
 function errMessage(err: unknown): string {
@@ -231,7 +232,12 @@ export const CalendarApp: React.FC<ICalendarProps> = (props) => {
                     onToggleExpand={toggleExpand}
                 />
                 {selected && (
-                    <DetailPanel event={selected} dueOuts={selectedDueOuts} onClose={() => setSelectedId(null)} />
+                    <DetailPanel
+                        event={selected}
+                        dueOuts={selectedDueOuts}
+                        onClose={() => setSelectedId(null)}
+                        onOpen={() => props.openRecord(selected.id)}
+                    />
                 )}
             </div>
         </div>
