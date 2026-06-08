@@ -4,6 +4,7 @@ using Microsoft.Xrm.Sdk;
 using Microsoft.Xrm.Sdk.Query;
 using Checkbook.Plugins.Base;
 using Checkbook.Plugins.Constants;
+using Checkbook.Plugins.Helpers;
 using Checkbook.Plugins.LOAs.Helpers;
 
 namespace Checkbook.Plugins.LOAs
@@ -16,10 +17,12 @@ namespace Checkbook.Plugins.LOAs
     ///   (optionally filtered by Fund fiscal year).
     /// • For each FT, resolves its LOA grain, find-or-creates the matching LOA,
     ///   links the FT, and associates the FT's APE with the LOA.
+    /// • At the end of the batch, recalcs TDP once per unique LOA touched.
     ///
-    /// TDP recalculation is intentionally NOT done here — the PostOp
-    /// <c>FundingTrackTDPRecalculator</c> fires on every FT Update we issue and
-    /// already recalcs the affected LOA's TDP synchronously.
+    /// The PostOp <c>FundingTrackTDPRecalculator</c> short-circuits at Depth>1,
+    /// so the FT updates we issue from inside this Custom API don't trigger it.
+    /// We do the recalc explicitly here — once per LOA rather than once per FT
+    /// — to keep the work bounded by the LOA count, not the FT count.
     ///
     /// Input parameters:
     ///   <c>FiscalYear</c> (int, optional) — Fund FY option-set value to limit the scope.
@@ -76,6 +79,7 @@ namespace Checkbook.Plugins.LOAs
             var failed  = 0;
             var attempted = 0;
             var failedDetails = new List<string>();
+            var touchedLoaIds = new HashSet<Guid>();
 
             foreach (var ft in QueryUnlinkedFundingTracks(service, fiscalYearFilter))
             {
@@ -120,6 +124,8 @@ namespace Checkbook.Plugins.LOAs
 
                     if (grain.APE != null)
                         LOAResolver.AssociateApe(service, loaId, grain.APE, tracing);
+
+                    touchedLoaIds.Add(loaId);
                 }
                 catch (Exception ex)
                 {
@@ -131,6 +137,12 @@ namespace Checkbook.Plugins.LOAs
                     failedDetails.Add($"{ft.Id}: {reason}");
                     tracing.Trace($"FT {ft.Id}: FAILED — {reason}");
                 }
+            }
+
+            if (touchedLoaIds.Count > 0)
+            {
+                tracing.Trace($"Recalculating TDP for {touchedLoaIds.Count} touched LOAs.");
+                TDPCalculationHelper.BatchRecalculateLOATDP(service, touchedLoaIds, tracing);
             }
 
             var remaining = CountUnlinkedFundingTracks(service, fiscalYearFilter);
