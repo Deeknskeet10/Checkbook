@@ -15,6 +15,12 @@ var LOAGenerator = (function () {
   var FUND_ENTITY = "book_fund";
   var FUND_FY_ATTRIBUTE = "book_fiscalyear";
 
+  // FTs attempted per Custom API invocation. Chosen to stay well under the
+  // 2-minute sync sandbox limit on production data: each FT triggers the
+  // PostOp FundingTrackTDPRecalculator (~5 calls) plus the link itself, so
+  // ~200/batch is conservative. Tune here if the env is noticeably faster/slower.
+  var BATCH_SIZE = 200;
+
   function run(primaryControl, fiscalYearOptionValue) {
     if (typeof fiscalYearOptionValue === "number" && fiscalYearOptionValue > 0) {
       confirmAndExecute(primaryControl, fiscalYearOptionValue, "FY (option value " + fiscalYearOptionValue + ")");
@@ -131,66 +137,122 @@ var LOAGenerator = (function () {
   }
 
   function execute(primaryControl, fiscalYear) {
-    Xrm.Utility.showProgressIndicator("Generating LOAs. This may take a few minutes…");
+    Xrm.Utility.showProgressIndicator("Generating LOAs…");
 
-    Xrm.WebApi.online.execute(buildRequest(fiscalYear)).then(
-      function (response) {
-        if (!response.ok) {
-          handleError(new Error("Custom API returned HTTP " + response.status));
-          return;
-        }
-        response.json().then(
-          function (body) {
-            Xrm.Utility.closeProgressIndicator();
-            showResult(body, primaryControl);
-          },
-          handleError
-        );
-      },
-      handleError
-    );
+    // Aggregates across all batches in this run.
+    var totals = {
+      created: 0,
+      linked: 0,
+      skipped: 0,
+      failed: 0,
+      failedDetails: []
+    };
+    // Captured from the first batch's Remaining so we can render "X of Y" progress.
+    // Remaining shrinks each batch as FTs get linked, but FTs that are skipped or
+    // failed stay in the unlinked pool and continue to count toward Remaining.
+    var totalToProcess = null;
+
+    runBatch();
+
+    function runBatch() {
+      Xrm.WebApi.online.execute(buildRequest(fiscalYear, BATCH_SIZE)).then(
+        function (response) {
+          if (!response.ok) {
+            handleError(new Error("Custom API returned HTTP " + response.status));
+            return;
+          }
+          response.json().then(
+            function (body) {
+              var batchCreated = (body && body.Created) || 0;
+              var batchLinked  = (body && body.Linked)  || 0;
+              var batchSkipped = (body && body.Skipped) || 0;
+              var batchFailed  = (body && body.Failed)  || 0;
+              var remaining    = (body && body.Remaining) || 0;
+              var batchDetails = (body && body.FailedDetails) || "";
+
+              totals.created += batchCreated;
+              totals.linked  += batchLinked;
+              totals.skipped += batchSkipped;
+              totals.failed  += batchFailed;
+              if (batchDetails) {
+                batchDetails.split(";").forEach(function (entry) {
+                  var trimmed = entry.trim();
+                  if (trimmed) totals.failedDetails.push(trimmed);
+                });
+              }
+
+              if (totalToProcess === null) {
+                // First batch — Remaining now is "left over after this batch";
+                // total in scope = what we processed + what's left.
+                totalToProcess = (batchCreated + batchLinked + batchSkipped + batchFailed) + remaining;
+              }
+
+              // Stop when nothing's left, or when this batch made no forward
+              // progress (Created+Linked == 0 means everything attempted was
+              // skipped or failed — the same FTs will keep being re-fetched).
+              var madeProgress = (batchCreated + batchLinked) > 0;
+              if (remaining === 0 || !madeProgress) {
+                Xrm.Utility.closeProgressIndicator();
+                showResult(totals, remaining, primaryControl);
+                return;
+              }
+
+              var processed = totalToProcess - remaining;
+              Xrm.Utility.showProgressIndicator(
+                "Generating LOAs… " + processed + " of " + totalToProcess + " processed."
+              );
+              runBatch();
+            },
+            handleError
+          );
+        },
+        handleError
+      );
+    }
   }
 
-  // FiscalYear = 0 → process all FYs.
-  function buildRequest(fiscalYear) {
+  // FiscalYear = 0 → process all FYs. BatchSize > 0 → process at most that
+  // many FTs this call and return Remaining so the caller can loop.
+  function buildRequest(fiscalYear, batchSize) {
     return {
       FiscalYear: fiscalYear,
+      BatchSize: batchSize,
       getMetadata: function () {
         return {
           boundParameter: null,
           operationType: 0, // 0 = Action, 1 = Function, 2 = CRUD
           operationName: "book_GenerateLOAs",
           parameterTypes: {
-            FiscalYear: {
-              typeName: "Edm.Int32",
-              structuralProperty: 1 // 1 = PrimitiveType
-            }
+            FiscalYear: { typeName: "Edm.Int32", structuralProperty: 1 },
+            BatchSize:  { typeName: "Edm.Int32", structuralProperty: 1 }
           }
         };
       }
     };
   }
 
-  function showResult(body, primaryControl) {
-    var created = (body && body.Created) || 0;
-    var linked = (body && body.Linked) || 0;
-    var skipped = (body && body.Skipped) || 0;
-    var failed = (body && body.Failed) || 0;
-    var failedDetails = (body && body.FailedDetails) || "";
-
+  function showResult(totals, remaining, primaryControl) {
     var text =
       "LOA generation complete.\n\n" +
-      "Created: " + created + "\n" +
-      "Linked:  " + linked + "\n" +
-      "Skipped: " + skipped + "\n" +
-      "Failed:  " + failed;
+      "Created: " + totals.created + "\n" +
+      "Linked:  " + totals.linked + "\n" +
+      "Skipped: " + totals.skipped + "\n" +
+      "Failed:  " + totals.failed;
 
-    if (failed > 0 && failedDetails) {
+    if (remaining > 0) {
+      // We stopped because the last batch made no forward progress — every
+      // remaining FT was either skipped or failed and would keep recycling.
+      text += "\n\n" + remaining + " Funding Track(s) still unlinked " +
+              "(unresolvable — see Skipped/Failed details).";
+    }
+
+    if (totals.failedDetails.length > 0) {
       // Show the first few so the alert stays readable; the rest are in the
       // plugin trace log for diagnosis.
-      var entries = failedDetails.split(";").map(function (s) { return s.trim(); }).filter(Boolean);
-      var preview = entries.slice(0, 5).join("\n  ");
-      var more = entries.length > 5 ? "\n  …and " + (entries.length - 5) + " more (see plugin trace)." : "";
+      var preview = totals.failedDetails.slice(0, 5).join("\n  ");
+      var more = totals.failedDetails.length > 5
+        ? "\n  …and " + (totals.failedDetails.length - 5) + " more (see plugin trace)."
+        : "";
       text += "\n\nFailed Funding Tracks:\n  " + preview + more;
     }
 

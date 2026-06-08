@@ -4,7 +4,6 @@ using Microsoft.Xrm.Sdk;
 using Microsoft.Xrm.Sdk.Query;
 using Checkbook.Plugins.Base;
 using Checkbook.Plugins.Constants;
-using Checkbook.Plugins.Helpers;
 using Checkbook.Plugins.LOAs.Helpers;
 
 namespace Checkbook.Plugins.LOAs
@@ -13,21 +12,31 @@ namespace Checkbook.Plugins.LOAs
     /// Custom API handler for <c>book_GenerateLOAs</c>. The bulk-mode counterpart
     /// to <see cref="FundingTrackLOASynchronizer"/>:
     ///
-    /// • Iterates every active Funding Track that has no LOA linked yet
+    /// • Iterates active Funding Tracks that have no LOA linked yet
     ///   (optionally filtered by Fund fiscal year).
     /// • For each FT, resolves its LOA grain, find-or-creates the matching LOA,
     ///   links the FT, and associates the FT's APE with the LOA.
-    /// • Recalculates TDP on every touched LOA at the end.
+    ///
+    /// TDP recalculation is intentionally NOT done here — the PostOp
+    /// <c>FundingTrackTDPRecalculator</c> fires on every FT Update we issue and
+    /// already recalcs the affected LOA's TDP synchronously.
     ///
     /// Input parameters:
     ///   <c>FiscalYear</c> (int, optional) — Fund FY option-set value to limit the scope.
     ///                                       Pass 0 or omit to process all FYs.
+    ///   <c>BatchSize</c>  (int, optional) — Max number of FTs to attempt this invocation.
+    ///                                       Pass 0 or omit for "process all in scope" (legacy).
+    ///                                       Use to stay under the 2-minute sync sandbox limit
+    ///                                       on large datasets; caller loops until Remaining=0.
     ///
     /// Output parameters:
-    ///   <c>Created</c> (int) — new LOAs created.
-    ///   <c>Linked</c>  (int) — FTs linked to a pre-existing LOA.
-    ///   <c>Skipped</c> (int) — FTs skipped (missing grain, name build failed, etc).
-    ///   <c>Failed</c>  (int) — FTs that threw an exception during processing.
+    ///   <c>Created</c>   (int) — new LOAs created.
+    ///   <c>Linked</c>    (int) — FTs linked to a pre-existing LOA.
+    ///   <c>Skipped</c>   (int) — FTs skipped (missing grain, name build failed, etc).
+    ///   <c>Failed</c>    (int) — FTs that threw an exception during processing.
+    ///   <c>Remaining</c> (int) — Active unlinked FTs still in scope after this batch.
+    ///                            Caller stops when this reaches 0, or when Created+Linked=0
+    ///                            for a batch (stuck on unresolvable FTs).
     ///   <c>FailedDetails</c> (string) — semicolon-delimited "ftId: reason" list
     ///                                   so the caller can show the user which FTs failed.
     ///
@@ -53,18 +62,30 @@ namespace Checkbook.Plugins.LOAs
             if (context.InputParameters.TryGetValue("FiscalYear", out var fyRaw) && fyRaw is int fy && fy > 0)
                 fiscalYearFilter = fy;
 
+            int batchSize = 0;
+            if (context.InputParameters.TryGetValue("BatchSize", out var bsRaw) && bsRaw is int bs && bs > 0)
+                batchSize = bs;
+
             tracing.Trace($"Generating LOAs (FiscalYear filter = " +
-                          $"{(fiscalYearFilter == 0 ? "none" : fiscalYearFilter.ToString())}).");
+                          $"{(fiscalYearFilter == 0 ? "none" : fiscalYearFilter.ToString())}, " +
+                          $"BatchSize = {(batchSize == 0 ? "unlimited" : batchSize.ToString())}).");
 
             var created = 0;
             var linked  = 0;
             var skipped = 0;
             var failed  = 0;
+            var attempted = 0;
             var failedDetails = new List<string>();
-            var touchedLoaIds = new HashSet<Guid>();
 
             foreach (var ft in QueryUnlinkedFundingTracks(service, fiscalYearFilter))
             {
+                if (batchSize > 0 && attempted >= batchSize)
+                {
+                    tracing.Trace($"Reached BatchSize cap ({batchSize}); stopping this invocation.");
+                    break;
+                }
+                attempted++;
+
                 try
                 {
                     var grain = LOAResolver.Resolve(service, ft, tracing);
@@ -99,8 +120,6 @@ namespace Checkbook.Plugins.LOAs
 
                     if (grain.APE != null)
                         LOAResolver.AssociateApe(service, loaId, grain.APE, tracing);
-
-                    touchedLoaIds.Add(loaId);
                 }
                 catch (Exception ex)
                 {
@@ -114,77 +133,53 @@ namespace Checkbook.Plugins.LOAs
                 }
             }
 
-            // Re-run support: even when no new FTs were linked this run, we still
-            // want to refresh TDP on every LOA currently in scope. This makes the
-            // Custom API idempotent — clicking Generate after editing FT amounts
-            // (or after manually fixing data) re-aggregates without needing a
-            // separate recalc endpoint.
-            var preLinkedAdded = 0;
-            foreach (var loaId in QueryLinkedLoaIdsInScope(service, fiscalYearFilter))
-            {
-                if (touchedLoaIds.Add(loaId))
-                    preLinkedAdded++;
-            }
-            tracing.Trace($"Added {preLinkedAdded} already-linked LOAs to the recalc set.");
+            var remaining = CountUnlinkedFundingTracks(service, fiscalYearFilter);
 
-            tracing.Trace($"Resolved {created} created + {linked} linked + {skipped} skipped + {failed} failed " +
-                          $"across {touchedLoaIds.Count} LOAs to recalc. Recalculating TDP.");
+            tracing.Trace($"Batch done: {created} created, {linked} linked, " +
+                          $"{skipped} skipped, {failed} failed, {attempted} attempted, " +
+                          $"{remaining} still unlinked in scope.");
 
-            if (touchedLoaIds.Count > 0)
-                TDPCalculationHelper.BatchRecalculateLOATDP(service, touchedLoaIds, tracing);
-
-            context.OutputParameters["Created"] = created;
-            context.OutputParameters["Linked"]  = linked;
-            context.OutputParameters["Skipped"] = skipped;
-            context.OutputParameters["Failed"]  = failed;
+            context.OutputParameters["Created"]   = created;
+            context.OutputParameters["Linked"]    = linked;
+            context.OutputParameters["Skipped"]   = skipped;
+            context.OutputParameters["Failed"]    = failed;
+            context.OutputParameters["Remaining"] = remaining;
             context.OutputParameters["FailedDetails"] = string.Join("; ", failedDetails);
         }
 
         /// <summary>
-        /// Pages through every active Funding Track in scope that already has an LOA
-        /// link, yielding distinct LOA ids. Used to broaden the recalc set on re-runs
-        /// so re-clicking Generate refreshes TDP on existing LOAs too.
+        /// Counts active Funding Tracks in scope that still have no LOA linked.
+        /// Used to populate the <c>Remaining</c> output so the JS caller knows
+        /// whether another batch is needed.
         /// </summary>
-        private static IEnumerable<Guid> QueryLinkedLoaIdsInScope(
+        private static int CountUnlinkedFundingTracks(
             IOrganizationService service,
             int fiscalYearFilter)
         {
-            var query = new QueryExpression(EntityNames.FundingTrack)
-            {
-                ColumnSet = new ColumnSet(FundingTrackAttributes.LineOfAccounting),
-                Criteria = new FilterExpression(LogicalOperator.And)
-                {
-                    Conditions =
-                    {
-                        new ConditionExpression(FundingTrackAttributes.StateCode,        ConditionOperator.Equal,    StateCodeValues.Active),
-                        new ConditionExpression(FundingTrackAttributes.LineOfAccounting, ConditionOperator.NotNull),
-                    },
-                },
-                PageInfo = new PagingInfo { Count = 500, PageNumber = 1, ReturnTotalRecordCount = false },
-                NoLock = true,
-            };
+            var fyLink = fiscalYearFilter > 0
+                ? $@"<link-entity name='{EntityNames.Fund}' from='{FundAttributes.Id}' to='{FundingTrackAttributes.Fund}' alias='fund'>
+                       <filter><condition attribute='{FundAttributes.FiscalYear}' operator='eq' value='{fiscalYearFilter}' /></filter>
+                     </link-entity>"
+                : string.Empty;
 
-            if (fiscalYearFilter > 0)
-            {
-                var fundLink = query.AddLink(EntityNames.Fund, FundingTrackAttributes.Fund, FundAttributes.Id);
-                fundLink.EntityAlias = "fund";
-                fundLink.LinkCriteria.AddCondition(FundAttributes.FiscalYear, ConditionOperator.Equal, fiscalYearFilter);
-            }
+            var fetch = $@"
+                <fetch aggregate='true' no-lock='true'>
+                  <entity name='{EntityNames.FundingTrack}'>
+                    <attribute name='{FundingTrackAttributes.Id}' alias='cnt' aggregate='count' />
+                    <filter type='and'>
+                      <condition attribute='{FundingTrackAttributes.StateCode}'        operator='eq'   value='{StateCodeValues.Active}' />
+                      <condition attribute='{FundingTrackAttributes.LineOfAccounting}' operator='null' />
+                    </filter>
+                    {fyLink}
+                  </entity>
+                </fetch>";
 
-            var seen = new HashSet<Guid>();
-            while (true)
-            {
-                var page = service.RetrieveMultiple(query);
-                foreach (var ft in page.Entities)
-                {
-                    var loa = ft.GetAttributeValue<EntityReference>(FundingTrackAttributes.LineOfAccounting);
-                    if (loa != null && seen.Add(loa.Id))
-                        yield return loa.Id;
-                }
-                if (!page.MoreRecords) yield break;
-                query.PageInfo.PageNumber++;
-                query.PageInfo.PagingCookie = page.PagingCookie;
-            }
+            var result = service.RetrieveMultiple(new FetchExpression(fetch));
+            if (result.Entities.Count == 0) return 0;
+
+            var aliased = result.Entities[0].GetAttributeValue<AliasedValue>("cnt");
+            if (aliased?.Value is int i) return i;
+            return 0;
         }
 
         /// <summary>
