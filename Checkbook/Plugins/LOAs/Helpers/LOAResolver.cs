@@ -142,9 +142,10 @@ namespace Checkbook.Plugins.LOAs.Helpers
 
         /// <summary>
         /// Builds a new <c>book_fundingline</c> entity (un-persisted) populated from the grain.
-        /// The name is intentionally NOT pre-set — LOANameSetter (PreOp Create) writes it.
+        /// The name and owningbusinessunit are intentionally NOT pre-set — LOANameSetter
+        /// (PreOp Create) writes them so admin/form-created LOAs go through the same path.
         /// </summary>
-        public static Entity BuildLOAEntity(LOAGrain grain, EntityReference owningBusinessUnit)
+        public static Entity BuildLOAEntity(LOAGrain grain)
         {
             if (grain == null) throw new ArgumentNullException(nameof(grain));
 
@@ -166,8 +167,6 @@ namespace Checkbook.Plugins.LOAs.Helpers
             // FY is also set by LOANameSetter for safety, but include it here for clarity.
             if (grain.FiscalYear != null)
                 loa[FundingLineAttributes.FiscalYear] = grain.FiscalYear;
-            if (owningBusinessUnit != null)
-                loa["owningbusinessunit"] = owningBusinessUnit;
             return loa;
         }
 

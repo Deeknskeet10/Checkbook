@@ -109,8 +109,7 @@ namespace Checkbook.Plugins.LOAs
                     }
                     else
                     {
-                        var owningBu = ft.GetAttributeValue<EntityReference>("owningbusinessunit");
-                        var loaEntity = LOAResolver.BuildLOAEntity(grain, owningBu);
+                        var loaEntity = LOAResolver.BuildLOAEntity(grain);
                         loaId = service.Create(loaEntity);
                         created++;
                         tracing.Trace($"FT {ft.Id}: created new LOA '{grain.CanonicalName}' → {loaId}.");
@@ -215,8 +214,7 @@ namespace Checkbook.Plugins.LOAs
                     FundingTrackAttributes.SAG,
                     FundingTrackAttributes.MDEP,
                     FundingTrackAttributes.APE,
-                    FundingTrackAttributes.LineOfAccounting,
-                    "owningbusinessunit"),
+                    FundingTrackAttributes.LineOfAccounting),
                 Criteria = new FilterExpression(LogicalOperator.And)
                 {
                     Conditions =

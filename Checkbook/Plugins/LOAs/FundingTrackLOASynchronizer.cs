@@ -96,9 +96,8 @@ namespace Checkbook.Plugins.LOAs
                 return;
             }
 
-            // Find existing LOA by name, or create one. New LOA's name + FY are
-            // populated by LOANameSetter in its own PreOp Create step.
-            var owningBu = preImage.GetAttributeValue<EntityReference>("owningbusinessunit");
+            // Find existing LOA by name, or create one. New LOA's name + FY + BU
+            // are populated by LOANameSetter in its own PreOp Create step.
             var matchedId = LOAResolver.FindByName(service, grain.CanonicalName);
             Guid loaId;
             if (matchedId.HasValue)
@@ -108,7 +107,7 @@ namespace Checkbook.Plugins.LOAs
             }
             else
             {
-                var loaEntity = LOAResolver.BuildLOAEntity(grain, owningBu);
+                var loaEntity = LOAResolver.BuildLOAEntity(grain);
                 loaId = service.Create(loaEntity);
                 tracing.Trace($"Created new LOA '{grain.CanonicalName}' → {loaId}.");
             }
