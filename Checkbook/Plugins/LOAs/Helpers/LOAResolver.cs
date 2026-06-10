@@ -117,6 +117,35 @@ namespace Checkbook.Plugins.LOAs.Helpers
         }
 
         /// <summary>
+        /// Finds the LOA that the FT should link to, picking the right lookup strategy
+        /// for the grain's fiscal year.
+        ///
+        /// FY27+ LOAs identify uniquely by canonical name (MDEP collapses into the
+        /// name slot). FY26 and earlier carry a Dataverse alternate key on
+        /// (Fund, OPR, BOC, DollarType, PG, MDEP) that is stricter than the name —
+        /// two grains with distinct canonical names can still collide on the
+        /// composite key (e.g., differing SAG/APE), so we must check both before
+        /// attempting Create. A composite-key fault would poison the Custom API's
+        /// transaction and cascade across the rest of the batch.
+        /// </summary>
+        public static Guid? FindExisting(
+            IOrganizationService service,
+            LOAGrain grain,
+            ITracingService tracing)
+        {
+            if (grain == null) throw new ArgumentNullException(nameof(grain));
+
+            var byName = FindByName(service, grain.CanonicalName);
+            if (byName.HasValue) return byName;
+
+            var fy = LOANameBuilder.ParseFiscalYear(grain.NameParts.FundName);
+            if (fy > LOANameBuilder.MdepInNameLastFy)
+                return null;
+
+            return FindByCompositeKey(service, grain, tracing);
+        }
+
+        /// <summary>
         /// Finds an existing LOA by canonical name. Returns the LOA id, or null
         /// if no active LOA bears that name.
         /// </summary>
@@ -138,6 +167,50 @@ namespace Checkbook.Plugins.LOAs.Helpers
             };
             var result = service.RetrieveMultiple(query);
             return result.Entities.Count > 0 ? result.Entities[0].Id : (Guid?)null;
+        }
+
+        /// <summary>
+        /// Finds an existing LOA on the FY26 composite alternate key
+        /// (Fund, OPR, BOC, DollarType, PG, MDEP). Returns null if any of those
+        /// key fields are missing on the grain — Dataverse only enforces the
+        /// alternate key when all fields are populated, so a null in this slot
+        /// means there is no constraint to collide with.
+        /// </summary>
+        private static Guid? FindByCompositeKey(
+            IOrganizationService service,
+            LOAGrain grain,
+            ITracingService tracing)
+        {
+            if (grain.Fund == null || grain.OPR == null || grain.BOC == null
+                || grain.DollarType == null || grain.PG == null || grain.MDEP == null)
+                return null;
+
+            var query = new QueryExpression(EntityNames.FundingLine)
+            {
+                ColumnSet = new ColumnSet(FundingLineAttributes.Id, FundingLineAttributes.Name),
+                TopCount = 1,
+                Criteria = new FilterExpression(LogicalOperator.And)
+                {
+                    Conditions =
+                    {
+                        new ConditionExpression(FundingLineAttributes.Fund,               ConditionOperator.Equal, grain.Fund.Id),
+                        new ConditionExpression(FundingLineAttributes.DisbursingOfficial, ConditionOperator.Equal, grain.OPR.Id),
+                        new ConditionExpression(FundingLineAttributes.BOC,                ConditionOperator.Equal, grain.BOC.Id),
+                        new ConditionExpression(FundingLineAttributes.DollarType,         ConditionOperator.Equal, grain.DollarType.Id),
+                        new ConditionExpression(FundingLineAttributes.PG,                 ConditionOperator.Equal, grain.PG.Id),
+                        new ConditionExpression(FundingLineAttributes.MDEP,               ConditionOperator.Equal, grain.MDEP.Id),
+                        new ConditionExpression(FundingLineAttributes.StateCode,          ConditionOperator.Equal, StateCodeValues.Active),
+                    },
+                },
+                NoLock = true,
+            };
+            var result = service.RetrieveMultiple(query);
+            if (result.Entities.Count == 0) return null;
+
+            var hit = result.Entities[0];
+            var hitName = hit.GetAttributeValue<string>(FundingLineAttributes.Name);
+            tracing.Trace($"Composite-key match: '{grain.CanonicalName}' collides with existing LOA '{hitName}' ({hit.Id}).");
+            return hit.Id;
         }
 
         /// <summary>

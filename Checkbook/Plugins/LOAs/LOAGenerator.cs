@@ -99,7 +99,7 @@ namespace Checkbook.Plugins.LOAs
                         continue;
                     }
 
-                    var matchedId = LOAResolver.FindByName(service, grain.CanonicalName);
+                    var matchedId = LOAResolver.FindExisting(service, grain, tracing);
                     Guid loaId;
                     if (matchedId.HasValue)
                     {

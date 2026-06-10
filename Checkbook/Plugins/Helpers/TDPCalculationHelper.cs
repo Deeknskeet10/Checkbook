@@ -391,23 +391,34 @@ namespace Checkbook.Plugins.Helpers
                 {
                     tracingService.Trace($"Processing LOA: {loaId}");
 
-                    var totalFromTracks = cache.GetFundingTrackTotal(service, loaId);
-                    var ledgerNet = GetLedgerNetAmount(service, loaId);
-                    var totalTDP = totalFromTracks + ledgerNet;
+                    try
+                    {
+                        var totalFromTracks = cache.GetFundingTrackTotal(service, loaId);
+                        var ledgerNet = GetLedgerNetAmount(service, loaId);
+                        var totalTDP = totalFromTracks + ledgerNet;
 
-                    var allocatedTDP = TDPCalculationHelper.GetAllocatedTDP(service, loaId);
-                    var tdpRemaining = totalTDP - allocatedTDP;
+                        var allocatedTDP = TDPCalculationHelper.GetAllocatedTDP(service, loaId);
+                        var tdpRemaining = totalTDP - allocatedTDP;
 
-                    var updateEntity = new Entity(EntityNames.FundingLine, loaId);
-                            updateEntity[FundingLineAttributes.TDP] = totalTDP;
-                            updateEntity[FundingLineAttributes.TDPRemaining] = tdpRemaining;
+                        var updateEntity = new Entity(EntityNames.FundingLine, loaId);
+                        updateEntity[FundingLineAttributes.TDP] = totalTDP;
+                        updateEntity[FundingLineAttributes.TDPRemaining] = tdpRemaining;
 
-                            service.Update(updateEntity);
-                            tracingService.Trace($"LOA {loaId}: TDP={totalTDP}, Remaining={tdpRemaining}");
-                        }
-
-                        tracingService.Trace("Batch recalculation complete");
+                        service.Update(updateEntity);
+                        tracingService.Trace($"LOA {loaId}: TDP={totalTDP}, Remaining={tdpRemaining}");
+                    }
+                    catch (Exception ex)
+                    {
+                        // One missing/locked LOA must not abort the whole recalc pass.
+                        // Common cause: an upstream Create earlier in this transaction
+                        // was rolled back, leaving an orphan id in the touched set.
+                        var reason = (ex.InnerException?.Message ?? ex.Message ?? ex.GetType().Name).Trim();
+                        tracingService.Trace($"LOA {loaId}: recalc FAILED — {reason}");
+                    }
                 }
+
+                tracingService.Trace("Batch recalculation complete");
+            }
                 // Returns the net ledger impact for an LOA: sum(Credited) - sum(Debited).
         public static decimal GetLedgerNetAmount(IOrganizationService service, Guid loaId)
         {
