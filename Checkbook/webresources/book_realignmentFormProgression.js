@@ -1,16 +1,27 @@
 // Realignment form — top-down section gating.
 // Register as JScript web resource "book_realignmentFormProgression" and
-// add as an OnLoad library on the "Realign Requirement" main form, calling
-// RealignmentFormProgression.onLoad with the execution context passed in.
+// add as an OnLoad library on the "Realign Requirement" and "Realign Admin"
+// main forms, calling RealignmentFormProgression.onLoad with the execution
+// context passed in.
 //
-// Behavior:
-//   • Fund populated                                         → show LOA section
+// Visibility (applies to the standard "Realign Requirement" form):
+//   • Fund populated                                          → show LOA section
 //   • Debited LOA AND Credited LOA populated                  → show RF section
-//   • Debited Requirement AND Credited Requirement populated → show Prioritization section
+//   • Debited Requirement AND Credited Requirement populated  → show Prioritization
 //   • Clearing a field at any level clears every downstream field on its side
 //     (debit clears debit, credit clears credit) so the other side's work is
 //     preserved. Clearing Fund clears both sides since Fund is the shared root.
 //     Sections re-hide whenever they lose their prerequisites.
+//
+// Required-level gating:
+//   • LOA and RF fields are required whenever their section is visible.
+//   • Prioritization is required only when the current user is a "State User"
+//     — i.e. they belong to a team carrying one of the STATE_ROLES below.
+//     Non-State users (e.g. NPM-only, Budget Executor) can still see and use
+//     Prioritization but are not forced to fill it.
+//   • On the "Realign Admin" form, only LOA is required. RF still appears
+//     once LOA is set (and Prioritization once RF is set) so admins can use
+//     them if they want, but both stay optional regardless of values.
 //
 // We treat debit and credit as one gate (BOTH must be set to advance) because
 // a realignment isn't meaningful until both sides of the move are chosen.
@@ -36,11 +47,22 @@ var RealignmentFormProgression = (function () {
     creditPrio: "book_creditedprioritization"
   };
 
+  var ADMIN_FORM_LABEL = "Realign Admin";
+
+  // Substring-matched against each role name on the user's teams — mirrors
+  // the role check pattern used in book_checkbookButtons.js.
+  var STATE_ROLES = ["State PM", "State Approver", "State Administrator", "FC Reviewer"];
+
+  // Role lookup is async. Default to "State User" until the lookup resolves so
+  // a fast saver isn't allowed to skip required Prioritization fields.
+  var isStateUserCache = true;
+  var isAdminFormCache = false;
+
   function onLoad(executionContext) {
     var formContext = executionContext.getFormContext();
 
-    // Wire change handlers. Each handler clears its dependants and then
-    // refreshes section visibility from current values.
+    isAdminFormCache = isAdminForm(formContext);
+
     onChange(formContext, FIELD.fund, function () {
       if (isEmpty(formContext, FIELD.fund)) {
         clearFields(formContext, [
@@ -82,6 +104,15 @@ var RealignmentFormProgression = (function () {
     });
 
     applyVisibility(formContext);
+
+    // Once the role lookup completes, re-apply so non-State users get the
+    // Prioritization section dropped to optional.
+    getUserIsStateUser().then(function (flag) {
+      isStateUserCache = flag;
+      applyVisibility(formContext);
+    }).catch(function (err) {
+      console.error("RealignmentFormProgression: role lookup failed: " + (err && err.message));
+    });
   }
 
   function applyVisibility(formContext) {
@@ -89,12 +120,33 @@ var RealignmentFormProgression = (function () {
     var loaSet  = !isEmpty(formContext, FIELD.debitLoa) && !isEmpty(formContext, FIELD.creditLoa);
     var rfSet   = !isEmpty(formContext, FIELD.debitRf)  && !isEmpty(formContext, FIELD.creditRf);
 
-    setSectionVisible(formContext, SECTION.loa,  fundSet);
-    setSectionVisible(formContext, SECTION.rf,   fundSet && loaSet);
-    setSectionVisible(formContext, SECTION.prio, fundSet && loaSet && rfSet);
+    if (isAdminFormCache) {
+      // Admin form: same progressive reveal, but LOA is the only required
+      // block — RF and Prioritization stay visible-but-optional.
+      setSectionVisible(formContext, SECTION.loa,  fundSet,                    true);
+      setSectionVisible(formContext, SECTION.rf,   fundSet && loaSet,          false);
+      setSectionVisible(formContext, SECTION.prio, fundSet && loaSet && rfSet, false);
+      return;
+    }
+
+    setSectionVisible(formContext, SECTION.loa, fundSet,                    true);
+    setSectionVisible(formContext, SECTION.rf,  fundSet && loaSet,          true);
+    setSectionVisible(formContext, SECTION.prio, fundSet && loaSet && rfSet, isStateUserCache);
   }
 
   // --- helpers -------------------------------------------------------------
+
+  function isAdminForm(formContext) {
+    try {
+      var selector = formContext.ui.formSelector;
+      if (!selector) return false;
+      var item = selector.getCurrentItem();
+      if (!item) return false;
+      return item.getLabel() === ADMIN_FORM_LABEL;
+    } catch (e) {
+      return false;
+    }
+  }
 
   function isEmpty(formContext, name) {
     var attr = formContext.getAttribute(name);
@@ -119,11 +171,64 @@ var RealignmentFormProgression = (function () {
     if (attr) attr.addOnChange(handler);
   }
 
-  function setSectionVisible(formContext, sectionName, visible) {
+  function setSectionVisible(formContext, sectionName, visible, requireWhenVisible) {
     var tab = formContext.ui.tabs.get(TAB);
     if (!tab) return;
     var section = tab.sections.get(sectionName);
-    if (section) section.setVisible(visible);
+    if (!section) return;
+    section.setVisible(visible);
+    // Hidden sections drop to "none" so they never block save. Visible
+    // sections honor requireWhenVisible — callers pass false to keep a
+    // visible section optional (e.g. Prioritization for non-State users).
+    var required = visible && requireWhenVisible ? "required" : "none";
+    section.controls.forEach(function (c) {
+      var attr = c.getAttribute && c.getAttribute();
+      if (attr && typeof attr.setRequiredLevel === "function") {
+        attr.setRequiredLevel(required);
+      }
+    });
+  }
+
+  // --- role lookup --------------------------------------------------------
+  // Mirrors getUserRolesByTeamAssociation in book_checkbookButtons.js: fetch
+  // the user's teams, expand each team's roles, then substring-match role
+  // names against STATE_ROLES (role names are "Book - State PM", etc., so a
+  // substring like "State PM" is enough).
+
+  function getUserIsStateUser() {
+    var userId = Xrm.Utility.getGlobalContext().userSettings.userId;
+    return getUserTeams(userId).then(function (teams) {
+      return Promise.all(teams.map(function (t) { return getTeamRoles(t.teamid); }));
+    }).then(function (perTeam) {
+      for (var i = 0; i < perTeam.length; i++) {
+        var teamEntities = perTeam[i];
+        for (var j = 0; j < teamEntities.length; j++) {
+          var assoc = teamEntities[j].teamroles_association;
+          if (!Array.isArray(assoc)) continue;
+          for (var k = 0; k < assoc.length; k++) {
+            var name = assoc[k].name || "";
+            for (var r = 0; r < STATE_ROLES.length; r++) {
+              if (name.indexOf(STATE_ROLES[r]) !== -1) return true;
+            }
+          }
+        }
+      }
+      return false;
+    });
+  }
+
+  function getUserTeams(userId) {
+    return Xrm.WebApi.retrieveMultipleRecords(
+      "team",
+      "?$filter=teammembership_association/any(o:o/systemuserid eq " + userId + ")&$select=name,teamid"
+    ).then(function (r) { return r.entities; });
+  }
+
+  function getTeamRoles(teamId) {
+    return Xrm.WebApi.retrieveMultipleRecords(
+      "team",
+      "?$expand=teamroles_association($select=name)&$filter=teamid eq '" + teamId + "'"
+    ).then(function (r) { return r.entities; });
   }
 
   return { onLoad: onLoad };
