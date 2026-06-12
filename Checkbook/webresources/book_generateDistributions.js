@@ -1,0 +1,168 @@
+// Command-bar entry point for the book_GenerateDistributions Custom API.
+// Register as JScript web resource "book_generateDistributions" and point the
+// modern command's Run JavaScript action at: DistributionGenerator.run
+//
+// Parameters from the command bar (in order):
+//   1. PrimaryControl (required — refreshed after the API completes)
+//   2. FundingType Integer (optional)
+//      • Pass nothing / -1 → user is prompted to pick AFP / Allotment / Both
+//      • 0 → AFP only      (skips the prompt)
+//      • 1 → Allotment only
+//      • 2 → Both          (omit FundingType in the request payload)
+//
+// The Custom API step is registered Async (see Plugins/Distributions/REGISTRATION.md),
+// so the Web API call returns once the system job is enqueued — well before
+// the plugin actually finishes. We surface a "started" alert with guidance to
+// refresh in ~30–60s. The progress indicator only covers the enqueue round-trip.
+var DistributionGenerator = (function () {
+  "use strict";
+
+  var FUNDING_TYPE_AFP = 0;
+  var FUNDING_TYPE_ALLOTMENT = 1;
+  var FUNDING_TYPE_BOTH = 2;
+
+  function run(primaryControl, fundingTypeOptionValue) {
+    var preset = normalizePreset(fundingTypeOptionValue);
+    if (preset !== null) {
+      confirmAndExecute(primaryControl, preset.value, preset.label);
+      return;
+    }
+
+    promptForFundingType().then(
+      function (choice) {
+        if (!choice) return;
+        confirmAndExecute(primaryControl, choice.value, choice.label);
+      },
+      handleError
+    );
+  }
+
+  function normalizePreset(raw) {
+    if (typeof raw !== "number") return null;
+    if (raw === FUNDING_TYPE_AFP) return { value: FUNDING_TYPE_AFP, label: "AFP only" };
+    if (raw === FUNDING_TYPE_ALLOTMENT) return { value: FUNDING_TYPE_ALLOTMENT, label: "Allotment only" };
+    if (raw === FUNDING_TYPE_BOTH) return { value: FUNDING_TYPE_BOTH, label: "Both AFP and Allotment" };
+    return null;
+  }
+
+  // Resolves to { value, label } or null on cancel/invalid.
+  function promptForFundingType() {
+    return new Promise(function (resolve) {
+      var raw = window.prompt(
+        "Generate Distributions — choose a Funding Type:\n\n" +
+          "0. Both AFP and Allotment (default)\n" +
+          "1. AFP only\n" +
+          "2. Allotment only\n\n" +
+          "Enter a number from the list above:",
+        "0"
+      );
+      if (raw === null) {
+        resolve(null);
+        return;
+      }
+      var n = parseInt(raw, 10);
+      if (n === 0) resolve({ value: FUNDING_TYPE_BOTH, label: "Both AFP and Allotment" });
+      else if (n === 1) resolve({ value: FUNDING_TYPE_AFP, label: "AFP only" });
+      else if (n === 2) resolve({ value: FUNDING_TYPE_ALLOTMENT, label: "Allotment only" });
+      else {
+        Xrm.Navigation.openAlertDialog({ text: "Invalid selection: '" + raw + "'." });
+        resolve(null);
+      }
+    });
+  }
+
+  function confirmAndExecute(primaryControl, fundingType, fundingTypeLabel) {
+    Xrm.Navigation.openConfirmDialog(
+      {
+        title: "Generate Distributions",
+        text:
+          "Generate Distributions for " + fundingTypeLabel + "?\n\n" +
+          "This will:\n" +
+          "  • Deactivate active Distributions not yet entered into GFEBS.\n" +
+          "  • Create debit/credit Distribution pairs to reach the target funded amount.\n" +
+          "  • Create overage Turn-Ins where existing credits exceed the target " +
+          "(unless an open Turn-In already exists for that bucket).\n\n" +
+          "The job runs asynchronously — typically completes in under a minute."
+      },
+      { height: 320, width: 520 }
+    ).then(function (result) {
+      if (!result || !result.confirmed) return;
+      execute(primaryControl, fundingType);
+    });
+  }
+
+  function execute(primaryControl, fundingType) {
+    Xrm.Utility.showProgressIndicator("Starting Distribution generation…");
+
+    Xrm.WebApi.online.execute(buildRequest(fundingType)).then(
+      function (response) {
+        Xrm.Utility.closeProgressIndicator();
+        if (!response.ok && response.status !== 204) {
+          handleError(new Error("Custom API returned HTTP " + response.status));
+          return;
+        }
+        showStarted(primaryControl);
+      },
+      function (error) {
+        Xrm.Utility.closeProgressIndicator();
+        handleError(error);
+      }
+    );
+  }
+
+  // FundingType = 2 → omit the param so the plugin processes both.
+  function buildRequest(fundingType) {
+    var includeFundingType =
+      fundingType === FUNDING_TYPE_AFP || fundingType === FUNDING_TYPE_ALLOTMENT;
+
+    var req = {
+      getMetadata: function () {
+        var parameterTypes = {};
+        if (includeFundingType) {
+          parameterTypes.FundingType = { typeName: "Edm.Int32", structuralProperty: 1 };
+        }
+        return {
+          boundParameter: null,
+          operationType: 0, // 0 = Action, 1 = Function, 2 = CRUD
+          operationName: "book_GenerateDistributions",
+          parameterTypes: parameterTypes
+        };
+      }
+    };
+
+    if (includeFundingType) {
+      req.FundingType = fundingType;
+    }
+
+    return req;
+  }
+
+  function showStarted(primaryControl) {
+    Xrm.Navigation.openAlertDialog({
+      text:
+        "Distribution generation started.\n\n" +
+        "The system job runs asynchronously and typically completes within a " +
+        "minute. Refresh this view (or the Distribution / Turn-In grids) " +
+        "shortly to see the new records.\n\n" +
+        "If results don't appear after a couple of minutes, check System Jobs " +
+        "for a failed book_GenerateDistributions run."
+    }).then(function () {
+      if (primaryControl && typeof primaryControl.refresh === "function") {
+        primaryControl.refresh();
+      }
+    });
+  }
+
+  function handleError(error) {
+    Xrm.Utility.closeProgressIndicator();
+    var message = (error && (error.message || error.toString())) || "Unknown error.";
+    Xrm.Navigation.openErrorDialog({
+      message: "Distribution generation failed to start.",
+      details: message
+    });
+  }
+
+  return {
+    run: run
+  };
+})();
