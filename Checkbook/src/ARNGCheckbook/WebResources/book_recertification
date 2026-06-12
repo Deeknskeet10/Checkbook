@@ -1,0 +1,175 @@
+// Command-bar entry points for the Certify / Decertify buttons on a view of
+// Requirements. Register as JScript web resource "book_recertification" and
+// point the modern commands' Run JavaScript actions at:
+//   Recertification.certify    (pass SelectedControl)
+//   Recertification.decertify  (pass SelectedControl)
+//
+// Toggles book_recertification (two-options) across every selected row.
+// Sized for the full-view case (~1600 rows) — uses $batch so a few hundred
+// updates fit in 2 round-trips instead of 1600.
+var Recertification = (function () {
+  "use strict";
+
+  var FIELD = "book_recertification";
+  // Dataverse caps a single changeset at 1000 ops; leaving headroom for safety.
+  var BATCH_SIZE = 900;
+
+  function certify(selectedControl)   { return run(selectedControl, true,  "Certify"); }
+  function decertify(selectedControl) { return run(selectedControl, false, "Decertify"); }
+
+  function run(selectedControl, value, verb) {
+    var selection = readSelection(selectedControl);
+    if (!selection) return;
+    if (selection.ids.length === 0) {
+      Xrm.Navigation.openAlertDialog({ text: "Select one or more rows first." });
+      return;
+    }
+
+    Xrm.Navigation.openConfirmDialog(
+      {
+        title: verb,
+        text: verb + " " + selection.ids.length + " " + selection.entityName + " record(s)?\n\n" +
+              FIELD + " will be set to " + (value ? "Yes" : "No") + "."
+      },
+      { height: 200, width: 420 }
+    ).then(function (result) {
+      if (!result || !result.confirmed) return;
+      execute(selectedControl, selection, value, verb);
+    });
+  }
+
+  function readSelection(selectedControl) {
+    try {
+      var grid = selectedControl.getGrid();
+      var rows = grid.getSelectedRows().getAll();
+      var ids = [];
+      var entityName = null;
+      for (var i = 0; i < rows.length; i++) {
+        var ent = rows[i].getData().getEntity();
+        if (!entityName) entityName = ent.getEntityName();
+        ids.push(String(ent.getId()).replace(/[{}]/g, "").toLowerCase());
+      }
+      return { ids: ids, entityName: entityName };
+    } catch (e) {
+      Xrm.Navigation.openErrorDialog({
+        message: "Could not read the selected rows.",
+        details: (e && e.message) || String(e)
+      });
+      return null;
+    }
+  }
+
+  function execute(selectedControl, selection, value, verb) {
+    var total = selection.ids.length;
+    var done = 0;
+    var failures = [];
+
+    Xrm.Utility.showProgressIndicator(verb + "… 0 of " + total);
+
+    runBatch();
+
+    function runBatch() {
+      if (done >= total) {
+        Xrm.Utility.closeProgressIndicator();
+        showResult(selectedControl, verb, total, failures);
+        return;
+      }
+      var chunk = selection.ids.slice(done, done + BATCH_SIZE);
+      sendBatch(selection.entityName, chunk, value).then(
+        function (batchFailures) {
+          done += chunk.length;
+          if (batchFailures && batchFailures.length) {
+            failures = failures.concat(batchFailures);
+          }
+          Xrm.Utility.showProgressIndicator(verb + "… " + done + " of " + total);
+          runBatch();
+        },
+        function (err) {
+          // Whole-batch failure (network / auth). Record and move on so a
+          // partial run still reports something useful.
+          done += chunk.length;
+          failures.push({ id: "(batch of " + chunk.length + ")", error: (err && err.message) || String(err) });
+          runBatch();
+        }
+      );
+    }
+  }
+
+  function sendBatch(entityName, ids, value) {
+    var changeSet = ids.map(function (id) {
+      var record = { entityType: entityName, id: id };
+      record[FIELD] = value;
+      return {
+        getMetadata: function () {
+          return {
+            boundParameter: null,
+            operationType: 2, // CRUD
+            operationName: "Update",
+            parameterTypes: {}
+          };
+        },
+        entity: record
+      };
+    });
+
+    var request = {
+      changeSets: [changeSet],
+      getMetadata: function () {
+        return {
+          boundParameter: null,
+          operationType: 2,
+          operationName: "$batch",
+          parameterTypes: {}
+        };
+      }
+    };
+
+    return Xrm.WebApi.online.executeMultiple
+      ? Xrm.WebApi.online.executeMultiple([request]).then(parseBatchResponses)
+      : Xrm.WebApi.online.execute(request).then(parseBatchResponse);
+
+    function parseBatchResponses(responses) {
+      // executeMultiple resolves to an array of Responses (one per request).
+      var fails = [];
+      (responses || []).forEach(function (r) {
+        collectFails(r, fails);
+      });
+      return fails;
+    }
+    function parseBatchResponse(response) {
+      var fails = [];
+      collectFails(response, fails);
+      return fails;
+    }
+    function collectFails(response, fails) {
+      if (!response) return;
+      if (response.ok) return;
+      fails.push({
+        id: "(batch)",
+        error: "HTTP " + (response.status || "?") + " " + (response.statusText || "")
+      });
+    }
+  }
+
+  function showResult(selectedControl, verb, total, failures) {
+    var succeeded = total - failures.length;
+    var text = verb + " complete.\n\n" +
+               "Updated: " + succeeded + "\n" +
+               "Failed:  " + failures.length;
+    if (failures.length) {
+      var preview = failures.slice(0, 5).map(function (f) { return f.id + ": " + f.error; }).join("\n  ");
+      var more = failures.length > 5 ? "\n  …and " + (failures.length - 5) + " more." : "";
+      text += "\n\nFailures:\n  " + preview + more;
+    }
+    Xrm.Navigation.openAlertDialog({ text: text }).then(function () {
+      if (selectedControl && typeof selectedControl.refresh === "function") {
+        selectedControl.refresh();
+      }
+    });
+  }
+
+  return {
+    certify: certify,
+    decertify: decertify
+  };
+})();

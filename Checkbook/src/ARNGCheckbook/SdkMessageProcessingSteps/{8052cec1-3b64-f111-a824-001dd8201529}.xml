@@ -1,0 +1,30 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<SdkMessageProcessingStep Name="Checkbook.Plugins.LOAs.LOANameSetter: Update of book_fundingline" SdkMessageProcessingStepId="{8052cec1-3b64-f111-a824-001dd8201529}" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <SdkMessageId>20bebb1b-ea3e-db11-86a7-000a3a5473e8</SdkMessageId>
+  <PluginTypeName>Checkbook.Plugins.LOAs.LOANameSetter, Checkbook_Plugins, Version=1.1.0.0, Culture=neutral, PublicKeyToken=041fde141b612e28</PluginTypeName>
+  <PluginTypeId>23cc4b93-fd0e-455f-8a9f-f4e2835fdc20</PluginTypeId>
+  <PrimaryEntity>book_fundingline</PrimaryEntity>
+  <AsyncAutoDelete>0</AsyncAutoDelete>
+  <Description>Checkbook.Plugins.LOAs.LOANameSetter: Update of book_fundingline</Description>
+  <FilteringAttributes>book_newboc,book_disbursingofficial,book_newdollartype,book_fund,book_mdep,book_pg,book_sag</FilteringAttributes>
+  <ImpersonatingUserIdName>Microsoft Flow CDS Integration Service DoD</ImpersonatingUserIdName>
+  <InvocationSource>1</InvocationSource>
+  <Mode>0</Mode>
+  <Rank>1</Rank>
+  <EventHandlerTypeCode>4602</EventHandlerTypeCode>
+  <Stage>20</Stage>
+  <IsCustomizable>1</IsCustomizable>
+  <IsHidden>0</IsHidden>
+  <SupportedDeployment>0</SupportedDeployment>
+  <IntroducedVersion>1.0</IntroducedVersion>
+  <SdkMessageProcessingStepImages>
+    <SdkMessageProcessingStepImage Name="PreImage">
+      <SdkMessageProcessingStepImageId>{f0cd2c80-3c64-f111-a823-001dd8204df7}</SdkMessageProcessingStepImageId>
+      <Attributes>book_newboc,book_disbursingofficial,book_newdollartype,book_fiscalyear,book_fund,book_mdep,book_name,book_pg,book_sag</Attributes>
+      <EntityAlias>PreImage</EntityAlias>
+      <ImageType>0</ImageType>
+      <MessagePropertyName>Target</MessagePropertyName>
+      <IsCustomizable>1</IsCustomizable>
+    </SdkMessageProcessingStepImage>
+  </SdkMessageProcessingStepImages>
+</SdkMessageProcessingStep>

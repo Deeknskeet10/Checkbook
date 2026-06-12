@@ -23,6 +23,7 @@
     <RolePrivilege name="prvAppendbook_ObligationPeriods" level="Global" />
     <RolePrivilege name="prvAppendbook_PG" level="Global" />
     <RolePrivilege name="prvAppendbook_PriorityBIN" level="Global" />
+    <RolePrivilege name="prvAppendbook_QuantityType" level="Global" />
     <RolePrivilege name="prvAppendbook_Realignments" level="Local" />
     <RolePrivilege name="prvAppendbook_realignmentsreview" level="Global" />
     <RolePrivilege name="prvAppendbook_RequirementDetails" level="Local" />
@@ -68,6 +69,7 @@
     <RolePrivilege name="prvAppendTobook_ObligationPeriods" level="Global" />
     <RolePrivilege name="prvAppendTobook_PG" level="Global" />
     <RolePrivilege name="prvAppendTobook_PriorityBIN" level="Global" />
+    <RolePrivilege name="prvAppendTobook_QuantityType" level="Global" />
     <RolePrivilege name="prvAppendTobook_Realignments" level="Local" />
     <RolePrivilege name="prvAppendTobook_realignmentsreview" level="Global" />
     <RolePrivilege name="prvAppendTobook_RequirementDetails" level="Local" />

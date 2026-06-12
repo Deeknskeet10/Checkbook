@@ -1,0 +1,16 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<WebResource xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <WebResourceId>{c8be84ea-be62-f111-a823-001dd8204df7}</WebResourceId>
+  <Name>book_realignmentFormProgression</Name>
+  <DisplayName>realignmentFormProgression</DisplayName>
+  <Description>Hides sections of the realignment form based on user selection in previous sections.</Description>
+  <LanguageCode>0</LanguageCode>
+  <WebResourceType>3</WebResourceType>
+  <IntroducedVersion>1.11.0.58</IntroducedVersion>
+  <IsEnabledForMobileClient>0</IsEnabledForMobileClient>
+  <IsAvailableForMobileOffline>0</IsAvailableForMobileOffline>
+  <IsCustomizable>1</IsCustomizable>
+  <CanBeDeleted>1</CanBeDeleted>
+  <IsHidden>0</IsHidden>
+  <FileName>/WebResources/book_realignmentFormProgressionC8BE84EA-BE62-F111-A823-001DD8204DF7</FileName>
+</WebResource>

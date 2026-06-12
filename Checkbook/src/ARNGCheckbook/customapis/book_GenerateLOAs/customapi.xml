@@ -1,0 +1,18 @@
+<customapi uniquename="book_GenerateLOAs">
+  <allowedcustomprocessingsteptype>2</allowedcustomprocessingsteptype>
+  <bindingtype>0</bindingtype>
+  <description default="Button action for generating LOAs">
+    <label description="Button action for generating LOAs" languagecode="1033" />
+  </description>
+  <displayname default="Generate LOAs">
+    <label description="Generate LOAs" languagecode="1033" />
+  </displayname>
+  <iscustomizable>1</iscustomizable>
+  <isfunction>0</isfunction>
+  <isprivate>0</isprivate>
+  <name>Generate LOAs</name>
+  <plugintypeid>
+    <plugintypeexportkey>3962f2f5-2dbf-4764-b6e1-30f2aade932d</plugintypeexportkey>
+  </plugintypeid>
+  <workflowsdkstepenabled>0</workflowsdkstepenabled>
+</customapi>

@@ -1,0 +1,12 @@
+<customapirequestparameter uniquename="FiscalYear">
+  <description default="Fund FY option-set value. 0 or omitted = all FYs.">
+    <label description="Fund FY option-set value. 0 or omitted = all FYs." languagecode="1033" />
+  </description>
+  <displayname default="Fiscal Year">
+    <label description="Fiscal Year" languagecode="1033" />
+  </displayname>
+  <iscustomizable>1</iscustomizable>
+  <isoptional>1</isoptional>
+  <name>Fiscal Year</name>
+  <type>7</type>
+</customapirequestparameter>

@@ -1,0 +1,42 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<savedqueries xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <savedquery>
+    <IsCustomizable>1</IsCustomizable>
+    <CanBeDeleted>1</CanBeDeleted>
+    <isquickfindquery>0</isquickfindquery>
+    <isprivate>0</isprivate>
+    <isdefault>0</isdefault>
+    <savedqueryid>{535246d8-0865-f111-a824-001dd8201529}</savedqueryid>
+    <layoutxml>
+      <grid name="resultset" jump="book_name" select="1" icon="1" preview="1">
+        <row name="result" id="book_requirementsid">
+          <cell name="book_name" width="200" />
+          <cell name="book_description" width="300" />
+        </row>
+      </grid>
+    </layoutxml>
+    <querytype>0</querytype>
+    <fetchxml>
+      <fetch version="1.0" output-format="xml-platform" mapping="logical" distinct="true">
+        <entity name="book_requirements">
+          <attribute name="book_name" />
+          <attribute name="book_requirementsid" />
+          <attribute name="book_description" />
+          <order attribute="book_name" descending="false" />
+          <filter type="and">
+            <condition attribute="statecode" operator="eq" value="0" />
+            <condition attribute="book_requirementapproved" operator="eq" value="1" />
+            <condition attribute="book_recertified" operator="eq" value="1" />
+          </filter>
+        </entity>
+      </fetch>
+    </fetchxml>
+    <IntroducedVersion>1.11.0.61</IntroducedVersion>
+    <LocalizedNames>
+      <LocalizedName description="Requirement - Prioritization View" languagecode="1033" />
+    </LocalizedNames>
+    <Descriptions>
+      <Description description="View designed for Prioritization FY27 and beyond" languagecode="1033" />
+    </Descriptions>
+  </savedquery>
+</savedqueries>

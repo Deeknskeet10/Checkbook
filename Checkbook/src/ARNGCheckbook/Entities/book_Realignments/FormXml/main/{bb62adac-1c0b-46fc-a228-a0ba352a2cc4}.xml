@@ -228,7 +228,7 @@
           </row>
         </rows>
       </footer>
-      <DisplayConditions Order="0" FallbackForm="true">
+      <DisplayConditions Order="3" FallbackForm="false">
         <Everyone />
       </DisplayConditions>
     </form>

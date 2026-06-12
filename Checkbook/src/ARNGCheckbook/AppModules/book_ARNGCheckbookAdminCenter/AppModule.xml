@@ -11,8 +11,11 @@
   <NavigationType>0</NavigationType>
   <AppModuleComponents>
     <AppModuleComponent type="1" schemaName="book_item" />
+    <AppModuleComponent type="1" schemaName="book_itemizeddetails" />
     <AppModuleComponent type="1" schemaName="book_prioritization" />
     <AppModuleComponent type="1" schemaName="book_prioritybin" />
+    <AppModuleComponent type="1" schemaName="book_realignments" />
+    <AppModuleComponent type="1" schemaName="book_requirementdetails" />
     <AppModuleComponent type="1" schemaName="book_requirementfunding" />
     <AppModuleComponent type="1" schemaName="book_requirements" />
     <AppModuleComponent type="1" schemaName="book_tdc" />
@@ -31,6 +34,7 @@
     <AppModuleComponent type="60" id="{637a9687-da47-f011-877a-001dd8059413}" />
     <AppModuleComponent type="60" id="{8ae1f95b-cb3b-f011-8c4e-001dd8059413}" />
     <AppModuleComponent type="60" id="{adfec757-5941-f011-b4cc-001dd8059413}" />
+    <AppModuleComponent type="60" id="{cb6e89b0-2464-f111-a824-001dd8204135}" />
     <AppModuleComponent type="60" id="{37250519-aead-4fc1-ae67-35a0af35e4d5}" />
     <AppModuleComponent type="62" schemaName="book_ARNGCheckbookAdminCenter" />
   </AppModuleComponents>

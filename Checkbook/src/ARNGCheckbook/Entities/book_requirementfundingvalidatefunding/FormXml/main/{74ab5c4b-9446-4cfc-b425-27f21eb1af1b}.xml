@@ -24,7 +24,7 @@
                         <labels>
                           <label description="Validated Amount" languagecode="1033" />
                         </labels>
-                        <control id="bpf_book_requirementfunding_book_requirementfundingvalidatefunding:book_validatedamount" classid="{0d2c745a-e5a8-4c8f-ba63-c6d3bb604660}" datafieldname="book_validatedamount" relationship="bpf_book_requirementfunding_book_requirementfundingvalidatefunding" isrequired="true" disabled="false" />
+                        <control id="bpf_book_requirementfunding_book_requirementfundingvalidatefunding:book_newvalidatedamount" classid="{0d2c745a-e5a8-4c8f-ba63-c6d3bb604660}" datafieldname="book_newvalidatedamount" disabled="false" relationship="bpf_book_requirementfunding_book_requirementfundingvalidatefunding" isrequired="true" />
                       </cell>
                     </row>
                     <row>
@@ -32,7 +32,7 @@
                         <labels>
                           <label description="Funded Amount" languagecode="1033" />
                         </labels>
-                        <control id="bpf_book_requirementfunding_book_requirementfundingvalidatefunding:book_fundedamount" classid="{0d2c745a-e5a8-4c8f-ba63-c6d3bb604660}" datafieldname="book_fundedamount" relationship="bpf_book_requirementfunding_book_requirementfundingvalidatefunding" isrequired="true" disabled="false" />
+                        <control id="bpf_book_requirementfunding_book_requirementfundingvalidatefunding:book_newfundedamount" classid="{0d2c745a-e5a8-4c8f-ba63-c6d3bb604660}" datafieldname="book_newfundedamount" disabled="false" relationship="bpf_book_requirementfunding_book_requirementfundingvalidatefunding" isrequired="true" />
                       </cell>
                     </row>
                   </rows>
@@ -58,7 +58,7 @@
                         <labels>
                           <label description="Validate Funding" languagecode="1033" />
                         </labels>
-                        <control id="bpf_book_requirementfunding_book_requirementfundingvalidatefunding:book_fundingvalidated" classid="{67fac785-cd58-4f9f-abb3-4b7ddc6ed5ed}" datafieldname="book_fundingvalidated" relationship="bpf_book_requirementfunding_book_requirementfundingvalidatefunding" isrequired="true" disabled="false" />
+                        <control id="bpf_book_requirementfunding_book_requirementfundingvalidatefunding:book_fundingvalidated" classid="{67fac785-cd58-4f9f-abb3-4b7ddc6ed5ed}" datafieldname="book_fundingvalidated" disabled="false" relationship="bpf_book_requirementfunding_book_requirementfundingvalidatefunding" isrequired="true" />
                       </cell>
                     </row>
                   </rows>

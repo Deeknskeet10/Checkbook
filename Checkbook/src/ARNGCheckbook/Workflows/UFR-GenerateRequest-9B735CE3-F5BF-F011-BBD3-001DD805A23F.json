@@ -15,13 +15,13 @@
       "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
       "contentVersion": "1.0.0.0",
       "parameters": {
-        "$connections": {
-          "defaultValue": {},
-          "type": "Object"
-        },
         "$authentication": {
           "defaultValue": {},
           "type": "SecureObject"
+        },
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
         }
       },
       "triggers": {
@@ -31,11 +31,6 @@
           },
           "type": "OpenApiConnectionWebhook",
           "inputs": {
-            "host": {
-              "connectionName": "shared_commondataserviceforapps",
-              "operationId": "SubscribeWebhookTrigger",
-              "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
-            },
             "parameters": {
               "subscriptionRequest/message": 3,
               "subscriptionRequest/entityname": "book_requirementfunding",
@@ -44,7 +39,11 @@
               "subscriptionRequest/filterexpression": "book_fundingvalidated eq true",
               "subscriptionRequest/runas": 2
             },
-            "authentication": "@parameters('$authentication')"
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
+              "operationId": "SubscribeWebhookTrigger",
+              "connectionName": "shared_commondataserviceforapps"
+            }
           }
         }
       },
@@ -52,22 +51,20 @@
         "Requirement_Related": {
           "actions": {
             "Get_Requirement": {
-              "runAfter": {},
               "metadata": {
                 "operationMetadataId": "f6bba3bc-238e-4b1e-8f80-39c5d38c3a62"
               },
               "type": "OpenApiConnection",
               "inputs": {
-                "host": {
-                  "connectionName": "shared_commondataserviceforapps",
-                  "operationId": "GetItem",
-                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
-                },
                 "parameters": {
                   "entityName": "book_requirementses",
                   "recordId": "@triggerOutputs()?['body/_book_requirement_value']"
                 },
-                "authentication": "@parameters('$authentication')"
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
+                  "operationId": "GetItem",
+                  "connectionName": "shared_commondataserviceforapps"
+                }
               }
             },
             "Grab_HL_UFR": {
@@ -82,33 +79,26 @@
               },
               "type": "OpenApiConnection",
               "inputs": {
-                "host": {
-                  "connectionName": "shared_commondataserviceforapps",
-                  "operationId": "ListRecords",
-                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
-                },
                 "parameters": {
                   "entityName": "book_unfundedrequestses",
                   "$filter": "_book_requirementfunding_value eq @{triggerOutputs()?['body/book_requirementfundingid']} and statecode eq 0 and _book_higherlevelufr_value eq null",
                   "$top": 1
                 },
-                "authentication": "@parameters('$authentication')"
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
+                  "operationId": "ListRecords",
+                  "connectionName": "shared_commondataserviceforapps"
+                }
               }
             },
             "Scope": {
               "actions": {
                 "Create_UFR_for_Requirement": {
-                  "runAfter": {},
                   "metadata": {
                     "operationMetadataId": "0b6cbeb3-bcec-421e-b42a-4257262f24a1"
                   },
                   "type": "OpenApiConnection",
                   "inputs": {
-                    "host": {
-                      "connectionName": "shared_commondataserviceforapps",
-                      "operationId": "CreateRecord",
-                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
-                    },
                     "parameters": {
                       "entityName": "book_unfundedrequestses",
                       "item/book_justification": "@outputs('Get_Requirement')?['body/book_statutoryjustification']",
@@ -123,7 +113,11 @@
                       "item/book_spendplangenerated": false,
                       "item/book_ufrtype": 1
                     },
-                    "authentication": "@parameters('$authentication')"
+                    "host": {
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
+                      "operationId": "CreateRecord",
+                      "connectionName": "shared_commondataserviceforapps"
+                    }
                   }
                 },
                 "Update_Requirement_Funding": {
@@ -137,17 +131,16 @@
                   },
                   "type": "OpenApiConnection",
                   "inputs": {
-                    "host": {
-                      "connectionName": "shared_commondataserviceforapps",
-                      "operationId": "UpdateOnlyRecord",
-                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
-                    },
                     "parameters": {
                       "entityName": "book_requirementfundings",
                       "recordId": "@triggerOutputs()?['body/book_requirementfundingid']",
                       "item/book_ufrgenerated": true
                     },
-                    "authentication": "@parameters('$authentication')"
+                    "host": {
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
+                      "operationId": "UpdateOnlyRecord",
+                      "connectionName": "shared_commondataserviceforapps"
+                    }
                   }
                 }
               },
@@ -171,22 +164,20 @@
         "Prioritization_Related": {
           "actions": {
             "List_Prioritizations": {
-              "runAfter": {},
               "metadata": {
                 "operationMetadataId": "8e552ea9-a91d-426d-a637-67ffd30371c2"
               },
               "type": "OpenApiConnection",
               "inputs": {
-                "host": {
-                  "connectionName": "shared_commondataserviceforapps",
-                  "operationId": "ListRecords",
-                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
-                },
                 "parameters": {
                   "entityName": "book_prioritizations",
-                  "$filter": "_book_requirementfunding_value eq @{triggerOutputs()?['body/book_requirementfundingid']} and book_newunfundedamount gt 10"
+                  "$filter": "_book_requirementfunding_value eq @{triggerOutputs()?['body/book_requirementfundingid']} and book_unfundedamount gt 10"
                 },
-                "authentication": "@parameters('$authentication')"
+                "host": {
+                  "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
+                  "operationId": "ListRecords",
+                  "connectionName": "shared_commondataserviceforapps"
+                }
               },
               "description": "Only create UFRs for Prioritizations that have more than a 10$ UFR"
             },
@@ -194,22 +185,20 @@
               "foreach": "@outputs('List_Prioritizations')?['body/value']",
               "actions": {
                 "Grab_State": {
-                  "runAfter": {},
                   "metadata": {
                     "operationMetadataId": "9f564ff8-988c-4855-86e3-24e0b77df6ba"
                   },
                   "type": "OpenApiConnection",
                   "inputs": {
-                    "host": {
-                      "connectionName": "shared_commondataserviceforapps",
-                      "operationId": "GetItem",
-                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
-                    },
                     "parameters": {
                       "entityName": "book_states",
                       "recordId": "@items('Loop_through_Prioritizations')?['_book_state_value']"
                     },
-                    "authentication": "@parameters('$authentication')"
+                    "host": {
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
+                      "operationId": "GetItem",
+                      "connectionName": "shared_commondataserviceforapps"
+                    }
                   }
                 },
                 "Update_Prioritization": {
@@ -223,17 +212,16 @@
                   },
                   "type": "OpenApiConnection",
                   "inputs": {
-                    "host": {
-                      "connectionName": "shared_commondataserviceforapps",
-                      "operationId": "UpdateOnlyRecord",
-                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
-                    },
                     "parameters": {
                       "entityName": "book_prioritizations",
                       "recordId": "@items('Loop_through_Prioritizations')?['book_prioritizationid']",
                       "item/book_ufrgenerated": true
                     },
-                    "authentication": "@parameters('$authentication')"
+                    "host": {
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
+                      "operationId": "UpdateOnlyRecord",
+                      "connectionName": "shared_commondataserviceforapps"
+                    }
                   }
                 },
                 "Create_new_UFR": {
@@ -247,11 +235,6 @@
                   },
                   "type": "OpenApiConnection",
                   "inputs": {
-                    "host": {
-                      "connectionName": "shared_commondataserviceforapps",
-                      "operationId": "CreateRecord",
-                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
-                    },
                     "parameters": {
                       "entityName": "book_unfundedrequestses",
                       "item/book_HigherLevelUFR@odata.bind": "book_unfundedrequestses(@{first(outputs('Grab_HL_UFR')?['body/value'])?['book_unfundedrequestsid']})",
@@ -266,7 +249,11 @@
                       "item/book_State@odata.bind": "book_states(@{items('Loop_through_Prioritizations')?['_book_state_value']})",
                       "item/book_ufrtype": 0
                     },
-                    "authentication": "@parameters('$authentication')"
+                    "host": {
+                      "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",
+                      "operationId": "CreateRecord",
+                      "connectionName": "shared_commondataserviceforapps"
+                    }
                   }
                 }
               },
@@ -294,7 +281,7 @@
         }
       }
     },
-    "templateName": ""
+    "templateName": null
   },
   "schemaVersion": "1.0.0.0"
 }

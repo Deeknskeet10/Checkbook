@@ -1,0 +1,11 @@
+<customapiresponseproperty uniquename="Skipped">
+  <description default="Skipped">
+    <label description="Skipped" languagecode="1033" />
+  </description>
+  <displayname default="Generate LOAs - Skipped">
+    <label description="Generate LOAs - Skipped" languagecode="1033" />
+  </displayname>
+  <iscustomizable>1</iscustomizable>
+  <name>Generate LOAs - Skipped</name>
+  <type>7</type>
+</customapiresponseproperty>

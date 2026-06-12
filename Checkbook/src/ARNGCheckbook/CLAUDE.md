@@ -7,7 +7,7 @@ This document provides context for AI agents working on the ARNG Checkbook Power
 ## Solution Overview
 
 **Name:** ARNG Checkbook
-**Version:** 1.11.0.40
+**Version:** 1.11.0.64
 **Publisher:** `ARNGCheckbook` — prefix `book`, option-value prefix `74649`
 **Description:** Army National Guard resource management and budget execution tracking system
 

@@ -1,0 +1,28 @@
+<appaction uniquename="book__CertificationActi!c922728a267b4d91aa7aa8d4aa292803!book_ARNGCheckbookAdminCenter!book_requirements!1">
+  <appmoduleid>
+    <uniquename>book_ARNGCheckbookAdminCenter</uniquename>
+  </appmoduleid>
+  <context>1</context>
+  <contextentity>
+    <logicalname>book_requirements</logicalname>
+  </contextentity>
+  <contextvalue>book_requirements</contextvalue>
+  <grouptitle default="Certification Actions">
+    <label description="Certification Actions" languagecode="1033" />
+  </grouptitle>
+  <hidden>0</hidden>
+  <iscustomizable>1</iscustomizable>
+  <isdisabled>0</isdisabled>
+  <isgrouptitlehidden>1</isgrouptitlehidden>
+  <location>1</location>
+  <name>CertificationActi!c922728a267b4d91aa7aa8d4aa292803</name>
+  <onclickeventtype>0</onclickeventtype>
+  <origin>0</origin>
+  <parentappactionid>
+    <uniquename>book__Certification!6edf41ddaafe4a968eba9d1127367d0c!book_ARNGCheckbookAdminCenter!book_requirements!1</uniquename>
+  </parentappactionid>
+  <sequence>10000.0000000000</sequence>
+  <statecode>0</statecode>
+  <statuscode>1</statuscode>
+  <type>3</type>
+</appaction>

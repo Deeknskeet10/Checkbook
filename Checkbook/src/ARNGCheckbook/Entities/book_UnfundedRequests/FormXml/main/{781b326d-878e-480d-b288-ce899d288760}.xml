@@ -62,16 +62,34 @@
                         </labels>
                         <control id="book_justification" classid="{E0DECE4B-6FC8-4A8F-A065-082708572369}" datafieldname="book_justification" disabled="false" />
                       </cell>
-                      <cell id="{71f02cd6-2fa2-4363-8dba-7ab79f19a5a3}" locklevel="0" colspan="1" rowspan="4">
+                      <cell id="{ea864939-4f16-49b8-acbe-1f8da081db42}" locklevel="0" colspan="1" rowspan="1">
                         <labels>
                           <label description="Risk Statement" languagecode="1033" />
                         </labels>
-                        <control id="book_riskstatement" classid="{E0DECE4B-6FC8-4A8F-A065-082708572369}" datafieldname="book_riskstatement" disabled="false" />
+                        <control id="book_newriskstatement" classid="{E0DECE4B-6FC8-4A8F-A065-082708572369}" datafieldname="book_newriskstatement" disabled="false" />
                       </cell>
                     </row>
-                    <row />
-                    <row />
-                    <row />
+                    <row>
+                      <cell locklevel="0" id="{c0c9a0a8-1e94-4c37-afd0-5588763717dc}">
+                        <labels>
+                          <label description="" languagecode="1033" />
+                        </labels>
+                      </cell>
+                    </row>
+                    <row>
+                      <cell locklevel="0" id="{a7e230d8-5453-4b19-9e7c-876e2c9a8083}">
+                        <labels>
+                          <label description="" languagecode="1033" />
+                        </labels>
+                      </cell>
+                    </row>
+                    <row>
+                      <cell locklevel="0" id="{789ef901-3267-46a0-85ca-05e3264ad240}">
+                        <labels>
+                          <label description="" languagecode="1033" />
+                        </labels>
+                      </cell>
+                    </row>
                     <row>
                       <cell locklevel="0" id="{8b7d3421-6825-47bf-bb42-eeddb5ba4a20}">
                         <labels>

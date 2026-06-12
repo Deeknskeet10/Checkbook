@@ -1,0 +1,12 @@
+<customapirequestparameter uniquename="BatchSize">
+  <description default="Number of records per Batch">
+    <label description="Number of records per Batch" languagecode="1033" />
+  </description>
+  <displayname default="BatchSize">
+    <label description="BatchSize" languagecode="1033" />
+  </displayname>
+  <iscustomizable>1</iscustomizable>
+  <isoptional>1</isoptional>
+  <name>BatchSize</name>
+  <type>7</type>
+</customapirequestparameter>

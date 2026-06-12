@@ -1,0 +1,11 @@
+<customapiresponseproperty uniquename="Created">
+  <description default="Creation">
+    <label description="Creation" languagecode="1033" />
+  </description>
+  <displayname default="Generate LOAs - Created">
+    <label description="Generate LOAs - Created" languagecode="1033" />
+  </displayname>
+  <iscustomizable>1</iscustomizable>
+  <name>Generate LOAs - Created</name>
+  <type>7</type>
+</customapiresponseproperty>

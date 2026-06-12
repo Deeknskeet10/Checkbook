@@ -28,7 +28,7 @@ the **C# plugin project**, and the tooling to export/unpack/pack/import.
 
 | Solution | Unpacked to | Publisher | Prefix | Version |
 |----------|-------------|-----------|--------|---------|
-| **ARNGCheckbook** | `src/ARNGCheckbook/` | `ARNGCheckbook` | `book` | 1.11.0.52 |
+| **ARNGCheckbook** | `src/ARNGCheckbook/` | `ARNGCheckbook` | `book` | 1.11.0.64 |
 | **ARNGCheckbookSupplyCodes** | `src/ARNGCheckbookSupplyCodes/` | `ArmySupplyCodes` | `arsc` | 2.8.0.2 |
 
 `ARNGCheckbookSupplyCodes` is a separate solution containing the 11 PCF code
@@ -48,8 +48,8 @@ components (and 3 dashboards) used by the Checkbook app.
 Checkbook/
 ├── CLAUDE.md                       # This file — repo/tooling context
 ├── solutions/                      # Raw exported .zip files
-│   ├── ARNGCheckbook_1_11_0_52.zip  # current
-│   ├── ARNGCheckbook_1_11_0_40.zip  # previous export (retained)
+│   ├── ARNGCheckbook_1_11_0_64.zip  # current
+│   ├── ARNGCheckbook_1_11_0_64.zip  # previous export (retained)
 │   └── ARNGCheckbookSupplyCodes_2_8_0_2.zip
 ├── src/                            # Unpacked solution sources — this is what you edit
 │   ├── ARNGCheckbook/               # Main solution (publisher: book)
@@ -125,7 +125,7 @@ pac auth tokens are isolated to the project (`PAC_CONFIG_PATH=./.pac`).
 ```bash
 # Unpack a freshly exported zip (overwriting existing source)
 dotnet tool run pac -- solution unpack \
-  --zipfile solutions/ARNGCheckbook_1_11_0_52.zip \
+  --zipfile solutions/ARNGCheckbook_1_11_0_64.zip \
   --folder src/ARNGCheckbook --allowDelete true
 
 # Pack source back into an importable zip
@@ -134,7 +134,7 @@ dotnet tool run pac -- solution pack \
   --folder src/ARNGCheckbook
 
 # Check a solution version without unpacking
-unzip -p solutions/ARNGCheckbook_1_11_0_52.zip solution.xml | grep -oP '<Version>[^<]+'
+unzip -p solutions/ARNGCheckbook_1_11_0_64.zip solution.xml | grep -oP '<Version>[^<]+'
 ```
 
 ---

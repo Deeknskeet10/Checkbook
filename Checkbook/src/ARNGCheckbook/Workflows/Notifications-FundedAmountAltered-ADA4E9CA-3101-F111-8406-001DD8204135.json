@@ -44,6 +44,7 @@
               "subscriptionRequest/entityname": "book_prioritization",
               "subscriptionRequest/scope": 4,
               "subscriptionRequest/filteringattributes": "book_newfundedamounttdp",
+              "subscriptionRequest/filterexpression": "book_newfundedamounttdp gt 0",
               "subscriptionRequest/runas": 1,
               "subscriptionRequest/name": "ada4e9ca-3101-f111-8406-001dd8204135"
             },

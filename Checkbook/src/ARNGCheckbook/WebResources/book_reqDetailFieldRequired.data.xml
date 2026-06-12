@@ -1,0 +1,15 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<WebResource xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <WebResourceId>{b2b1e5f1-885e-f111-bec6-001dd8204135}</WebResourceId>
+  <Name>book_reqDetailFieldRequired</Name>
+  <DisplayName>reqDetailFieldRequired</DisplayName>
+  <Description>Makes TDC required IF an Item is selected that is related to TDCs</Description>
+  <WebResourceType>3</WebResourceType>
+  <IntroducedVersion>1.11.0.54</IntroducedVersion>
+  <IsEnabledForMobileClient>0</IsEnabledForMobileClient>
+  <IsAvailableForMobileOffline>0</IsAvailableForMobileOffline>
+  <IsCustomizable>1</IsCustomizable>
+  <CanBeDeleted>1</CanBeDeleted>
+  <IsHidden>0</IsHidden>
+  <FileName>/WebResources/book_reqDetailFieldRequiredB2B1E5F1-885E-F111-BEC6-001DD8204135</FileName>
+</WebResource>

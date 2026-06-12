@@ -1,0 +1,31 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Workflow WorkflowId="{639f08d6-f364-f111-a824-001dd8204135}" Name="Prioritization - Swap Req and RF" Description="For FY2027 and beyond, utilizes Requirement Field on Prioritization; RF for FY2026 and before" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <XamlFileName>/Workflows/Prioritization-SwapReqandRF-639F08D6-F364-F111-A824-001DD8204135.xaml</XamlFileName>
+  <Type>1</Type>
+  <Subprocess>0</Subprocess>
+  <Category>2</Category>
+  <Mode>1</Mode>
+  <Scope>4</Scope>
+  <OnDemand>0</OnDemand>
+  <TriggerOnCreate>0</TriggerOnCreate>
+  <TriggerOnDelete>0</TriggerOnDelete>
+  <AsyncAutodelete>0</AsyncAutodelete>
+  <SyncWorkflowLogOnFailure>0</SyncWorkflowLogOnFailure>
+  <StateCode>1</StateCode>
+  <StatusCode>2</StatusCode>
+  <RunAs>1</RunAs>
+  <IsTransacted>1</IsTransacted>
+  <IntroducedVersion>1.11.0.61</IntroducedVersion>
+  <IsCustomizable>1</IsCustomizable>
+  <BusinessProcessType>0</BusinessProcessType>
+  <IsCustomProcessingStepAllowedForOtherPublishers>1</IsCustomProcessingStepAllowedForOtherPublishers>
+  <ProcessTriggerScope>2</ProcessTriggerScope>
+  <ModernFlowType>0</ModernFlowType>
+  <PrimaryEntity>book_Prioritization</PrimaryEntity>
+  <LocalizedNames>
+    <LocalizedName languagecode="1033" description="Prioritization - Swap Req and RF" />
+  </LocalizedNames>
+  <Descriptions>
+    <Description languagecode="1033" description="For FY2027 and beyond, utilizes Requirement Field on Prioritization; RF for FY2026 and before" />
+  </Descriptions>
+</Workflow>

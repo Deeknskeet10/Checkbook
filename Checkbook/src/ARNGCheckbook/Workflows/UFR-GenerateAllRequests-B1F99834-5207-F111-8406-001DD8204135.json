@@ -73,7 +73,7 @@
                       "inputs": {
                         "parameters": {
                           "entityName": "book_prioritizations",
-                          "$filter": "_book_requirementfunding_value eq @{items('Loop_through_RFs')?['book_requirementfundingid']} and book_newunfundedamount gt 10"
+                          "$filter": "_book_requirementfunding_value eq @{items('Loop_through_RFs')?['book_requirementfundingid']} and book_unfundedamount gt 10"
                         },
                         "host": {
                           "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps",

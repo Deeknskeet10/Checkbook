@@ -1,0 +1,49 @@
+<appaction uniquename="book__Certify!de478876b00f4fe3bcaf60c341b4e1dc!book_ARNGCheckbookAdminCenter!book_requirements!1">
+  <appmoduleid>
+    <uniquename>book_ARNGCheckbookAdminCenter</uniquename>
+  </appmoduleid>
+  <buttonaccessibilitytext default="Certify Selected Records">
+    <label description="Certify Selected Records" languagecode="1033" />
+  </buttonaccessibilitytext>
+  <buttonlabeltext default="Certify">
+    <label description="Certify" languagecode="1033" />
+  </buttonlabeltext>
+  <buttontooltipdescription default="Certify selected records ">
+    <label description="Certify selected records " languagecode="1033" />
+  </buttontooltipdescription>
+  <buttontooltiptitle default="Certify Selected Records">
+    <label description="Certify Selected Records" languagecode="1033" />
+  </buttontooltiptitle>
+  <context>1</context>
+  <contextentity>
+    <logicalname>book_requirements</logicalname>
+  </contextentity>
+  <contextvalue>book_requirements</contextvalue>
+  <fonticon>$clientsvg:Accept</fonticon>
+  <hidden>0</hidden>
+  <iscustomizable>1</iscustomizable>
+  <isdisabled>0</isdisabled>
+  <isgrouptitlehidden>0</isgrouptitlehidden>
+  <location>1</location>
+  <name>Certify!de478876b00f4fe3bcaf60c341b4e1dc</name>
+  <onclickeventjavascriptfunctionname>Recertification.certify</onclickeventjavascriptfunctionname>
+  <onclickeventjavascriptparameters>[{"type":12}]</onclickeventjavascriptparameters>
+  <onclickeventjavascriptwebresourceid>
+    <webresourceid>50d5ebb7-9b9c-4ae0-b215-b4c4fb1d90d1</webresourceid>
+  </onclickeventjavascriptwebresourceid>
+  <onclickeventtype>2</onclickeventtype>
+  <origin>0</origin>
+  <parentappactionid>
+    <uniquename>book__CertificationActi!c922728a267b4d91aa7aa8d4aa292803!book_ARNGCheckbookAdminCenter!book_requirements!1</uniquename>
+  </parentappactionid>
+  <sequence>10000.0000000000</sequence>
+  <statecode>0</statecode>
+  <statuscode>1</statuscode>
+  <type>0</type>
+  <visibilityformulacomponentlibraryid>
+    <name>book_arngcheckbookadmincenterdefaultcommandlibrary_1362b</name>
+  </visibilityformulacomponentlibraryid>
+  <visibilityformulacomponentname>509e5b2581a54b359b2560b2ff71d8e8</visibilityformulacomponentname>
+  <visibilityformulafunctionname>Visible</visibilityformulafunctionname>
+  <visibilitytype>1</visibilitytype>
+</appaction>

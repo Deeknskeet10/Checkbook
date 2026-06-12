@@ -5,7 +5,7 @@
     <IntroducedVersion>1.9.7.0</IntroducedVersion>
     <FormPresentation>1</FormPresentation>
     <FormActivationState>1</FormActivationState>
-    <form>
+    <form headerdensity="HighWithControls">
       <tabs>
         <tab verticallayout="true" id="{d97e868a-e303-4e82-ab74-1780658d9e0c}" IsUserDefined="1">
           <labels>
@@ -20,15 +20,31 @@
                   </labels>
                   <rows>
                     <row>
-                      <cell id="{1d997957-67ec-4ce0-a504-44de59d1fadb}">
+                      <cell id="{233aab89-d021-4209-9cb5-c8f93e10b0df}" locklevel="0" colspan="1" rowspan="1">
                         <labels>
-                          <label description="Name" languagecode="1033" />
+                          <label description="POC" languagecode="1033" />
                         </labels>
-                        <control id="book_name" classid="{4273EDBD-AC1D-40d3-9FB2-095C621B552D}" datafieldname="book_name" />
+                        <control id="book_poc" classid="{270BD3DB-D9AF-4782-9025-509E298DEC0A}" datafieldname="book_poc" disabled="false" />
                       </cell>
                     </row>
                     <row>
-                      <cell id="{bb0e21b3-828a-49bd-ae83-70468c5a54ab}">
+                      <cell id="{6b60ea2e-c5cc-4f28-b8e6-2a9d1ef277b9}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="Requirement" languagecode="1033" />
+                        </labels>
+                        <control id="book_requirement" classid="{270BD3DB-D9AF-4782-9025-509E298DEC0A}" datafieldname="book_requirement" disabled="false" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{c2937a12-1968-405f-8ea4-8744d68b018a}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="Prioritization" languagecode="1033" />
+                        </labels>
+                        <control id="book_prioritization" classid="{270BD3DB-D9AF-4782-9025-509E298DEC0A}" datafieldname="book_prioritization" disabled="false" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{bb0e21b3-828a-49bd-ae83-70468c5a54ab}" visible="false">
                         <labels>
                           <label description="Owner" languagecode="1033" />
                         </labels>
@@ -42,6 +58,51 @@
           </columns>
         </tab>
       </tabs>
+      <header id="{12e1b1e7-7889-4b1c-b351-fc859bad456e}" celllabelposition="Top" columns="111" labelwidth="115" celllabelalignment="Left">
+        <rows>
+          <row>
+            <cell id="{aa7762f1-19cc-478a-b4fd-986997331571}" showlabel="false">
+              <labels>
+                <label description="" languagecode="1033" />
+              </labels>
+            </cell>
+            <cell id="{198665d6-a5e3-4a6b-b07a-3c1a2295869d}" showlabel="false">
+              <labels>
+                <label description="" languagecode="1033" />
+              </labels>
+            </cell>
+            <cell id="{50585ced-39df-4717-a914-0b81528e299f}" showlabel="false">
+              <labels>
+                <label description="" languagecode="1033" />
+              </labels>
+            </cell>
+          </row>
+        </rows>
+      </header>
+      <footer id="{95acc4f1-1864-4ffd-9b78-ebd16da86d49}" celllabelposition="Top" columns="111" labelwidth="115" celllabelalignment="Left">
+        <rows>
+          <row>
+            <cell id="{0df4e752-eb41-482a-a212-499276cc5d26}" showlabel="false">
+              <labels>
+                <label description="" languagecode="1033" />
+              </labels>
+            </cell>
+            <cell id="{9d62e36a-860d-46da-8f0b-8761af1e5fe0}" showlabel="false">
+              <labels>
+                <label description="" languagecode="1033" />
+              </labels>
+            </cell>
+            <cell id="{75943858-9611-443a-bb00-5c83a2f2e39c}" showlabel="false">
+              <labels>
+                <label description="" languagecode="1033" />
+              </labels>
+            </cell>
+          </row>
+        </rows>
+      </footer>
+      <DisplayConditions Order="0" FallbackForm="true">
+        <Everyone />
+      </DisplayConditions>
     </form>
     <IsCustomizable>1</IsCustomizable>
     <CanBeDeleted>1</CanBeDeleted>

@@ -36,10 +36,12 @@
             <filter type="or">
               <condition attribute="book_dollartypefundedprogramname" operator="like" value="B%" />
               <condition attribute="book_dollartypefundedprogramname" operator="like" value="OOC%" />
+              <condition attribute="book_dollartypefundedprogramname" operator="like" value="I%" />
             </filter>
             <filter type="or">
               <condition attribute="book_name" operator="like" value="2060%" />
               <condition attribute="book_name" operator="like" value="2065%" />
+              <condition attribute="book_name" operator="like" value="2020%" />
             </filter>
           </filter>
         </entity>

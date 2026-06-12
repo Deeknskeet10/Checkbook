@@ -40,11 +40,11 @@
                       </cell>
                     </row>
                     <row>
-                      <cell id="{61583361-4785-4c59-afe8-8dbc829dc9cd}" locklevel="0" colspan="1" rowspan="1" labelid="{daa763f9-0640-4355-8495-e955d7704987}">
+                      <cell id="{d0607c0b-e88c-4d1c-9fdf-9dd6f425f685}" locklevel="0" colspan="1" rowspan="1">
                         <labels>
-                          <label description="Centrally Managed" languagecode="1033" />
+                          <label description="MDEP" languagecode="1033" />
                         </labels>
-                        <control id="book_national" classid="{67FAC785-CD58-4F9F-ABB3-4B7DDC6ED5ED}" datafieldname="book_national" disabled="false" />
+                        <control id="book_mdep" classid="{270BD3DB-D9AF-4782-9025-509E298DEC0A}" datafieldname="book_mdep" disabled="false" />
                       </cell>
                       <cell id="{b8977236-b83b-5535-132a-ad80bb8d9317}" showlabel="true" locklevel="0">
                         <labels>
@@ -60,11 +60,11 @@
                       </cell>
                     </row>
                     <row>
-                      <cell id="{8fc69187-05a4-4c31-a692-68ee07c959a8}" locklevel="0" colspan="1" rowspan="1" labelid="{02e121c8-5810-4087-aecb-91955d7c80e5}">
+                      <cell id="{61583361-4785-4c59-afe8-8dbc829dc9cd}" locklevel="0" colspan="1" rowspan="1" labelid="{daa763f9-0640-4355-8495-e955d7704987}">
                         <labels>
-                          <label description="Category" languagecode="1033" />
+                          <label description="Centrally Managed" languagecode="1033" />
                         </labels>
-                        <control id="book_category" classid="{3EF39988-22BB-4F0B-BBBE-64B5A3748AEE}" datafieldname="book_category" disabled="false" />
+                        <control id="book_national" classid="{67FAC785-CD58-4F9F-ABB3-4B7DDC6ED5ED}" datafieldname="book_national" disabled="false" />
                       </cell>
                       <cell id="{b4fc960d-c844-4a18-a706-5b4631bd628c}" locklevel="0" colspan="1" rowspan="1">
                         <labels>
@@ -80,11 +80,11 @@
                       </cell>
                     </row>
                     <row>
-                      <cell id="{3c9c3c06-7bc5-48a5-9f03-9a775522d3bb}" locklevel="0" colspan="1" rowspan="1" labelid="{b55795f9-2fc0-425c-867a-c42ab070f48c}">
+                      <cell id="{8fc69187-05a4-4c31-a692-68ee07c959a8}" locklevel="0" colspan="1" rowspan="1" labelid="{02e121c8-5810-4087-aecb-91955d7c80e5}">
                         <labels>
-                          <label description="POM Status" languagecode="1033" />
+                          <label description="Category" languagecode="1033" />
                         </labels>
-                        <control id="book_pomstatus" classid="{67FAC785-CD58-4F9F-ABB3-4B7DDC6ED5ED}" datafieldname="book_pomstatus" disabled="false" />
+                        <control id="book_category" classid="{3EF39988-22BB-4F0B-BBBE-64B5A3748AEE}" datafieldname="book_category" disabled="false" />
                       </cell>
                       <cell id="{5b8df754-a246-4f5d-89c1-cbc2c4ff65ff}" locklevel="0" colspan="1" rowspan="3" labelid="{ddc95dd8-f000-424f-ab1f-dd627acd8446}">
                         <labels>
@@ -94,11 +94,25 @@
                       </cell>
                     </row>
                     <row>
+                      <cell id="{3c9c3c06-7bc5-48a5-9f03-9a775522d3bb}" locklevel="0" colspan="1" rowspan="1" labelid="{b55795f9-2fc0-425c-867a-c42ab070f48c}">
+                        <labels>
+                          <label description="POM Status" languagecode="1033" />
+                        </labels>
+                        <control id="book_pomstatus" classid="{67FAC785-CD58-4F9F-ABB3-4B7DDC6ED5ED}" datafieldname="book_pomstatus" disabled="false" />
+                      </cell>
+                    </row>
+                    <row>
                       <cell id="{3e2140ad-dc37-456a-9fa0-07b118fdf77f}" locklevel="0" colspan="1" rowspan="1" visible="false" labelid="{334e5f33-2d69-4032-b667-3ea6c1d303ce}">
                         <labels>
                           <label description="Requirement Approved" languagecode="1033" />
                         </labels>
                         <control id="book_requirementapproved" classid="{67FAC785-CD58-4F9F-ABB3-4B7DDC6ED5ED}" datafieldname="book_requirementapproved" disabled="false" />
+                      </cell>
+                      <cell id="{67cb0f5a-8555-460b-b4d0-703ce52578f0}" locklevel="0" colspan="1" rowspan="1" visible="false" labelid="{c20881b1-61c0-42fa-bfa0-386f91e61a9a}">
+                        <labels>
+                          <label description="Approval Status" languagecode="1033" />
+                        </labels>
+                        <control id="book_approvalstatus" classid="{3EF39988-22BB-4F0B-BBBE-64B5A3748AEE}" datafieldname="book_approvalstatus" disabled="false" />
                       </cell>
                     </row>
                     <row>
@@ -108,11 +122,15 @@
                         </labels>
                         <control id="book_rivalidated" classid="{67FAC785-CD58-4F9F-ABB3-4B7DDC6ED5ED}" datafieldname="book_rivalidated" disabled="false" />
                       </cell>
-                      <cell id="{67cb0f5a-8555-460b-b4d0-703ce52578f0}" locklevel="0" colspan="1" rowspan="1" visible="false" labelid="{c20881b1-61c0-42fa-bfa0-386f91e61a9a}">
+                      <cell locklevel="0" id="{8a0012a7-2bd1-4d99-b822-0a73acd207d9}">
                         <labels>
-                          <label description="Approval Status" languagecode="1033" />
+                          <label description="" languagecode="1033" />
                         </labels>
-                        <control id="book_approvalstatus" classid="{3EF39988-22BB-4F0B-BBBE-64B5A3748AEE}" datafieldname="book_approvalstatus" disabled="false" />
+                      </cell>
+                      <cell locklevel="0" id="{f124f89c-7420-45a1-92d9-5c5784221693}">
+                        <labels>
+                          <label description="" languagecode="1033" />
+                        </labels>
                       </cell>
                     </row>
                   </rows>

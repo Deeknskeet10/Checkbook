@@ -13,6 +13,7 @@
           <cell name="book_newfiscalyear" width="103" />
           <cell name="book_lineofaccounting" width="150" />
           <cell name="book_ledgertype" width="111" />
+          <cell name="book_ledgerdirection" width="137" />
           <cell name="book_newamount" width="100" />
           <cell name="book_realignment" width="112" />
           <cell name="book_turnin" width="100" />
@@ -35,6 +36,7 @@
           <attribute name="book_relatedentry" />
           <attribute name="book_newfiscalyear" />
           <attribute name="book_newamount" />
+          <attribute name="book_ledgerdirection" />
         </entity>
       </fetch>
     </fetchxml>

@@ -1,0 +1,11 @@
+<customapiresponseproperty uniquename="Linked">
+  <description default="Linked">
+    <label description="Linked" languagecode="1033" />
+  </description>
+  <displayname default="Generate LOAs - Linked">
+    <label description="Generate LOAs - Linked" languagecode="1033" />
+  </displayname>
+  <iscustomizable>1</iscustomizable>
+  <name>Generate LOAs - Linked</name>
+  <type>7</type>
+</customapiresponseproperty>

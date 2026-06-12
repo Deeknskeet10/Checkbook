@@ -1,0 +1,41 @@
+<appaction uniquename="book__NewGenerateLOAs!38f7b3e497df43c294e8dfde66cd81d8!book_Strawman!book_fundingtrack!1">
+  <appmoduleid>
+    <uniquename>book_Strawman</uniquename>
+  </appmoduleid>
+  <buttonaccessibilitytext default="Generate LOAs from Funding Tracks">
+    <label description="Generate LOAs from Funding Tracks" languagecode="1033" />
+  </buttonaccessibilitytext>
+  <buttonlabeltext default="New Generate LOAs">
+    <label description="New Generate LOAs" languagecode="1033" />
+  </buttonlabeltext>
+  <buttontooltipdescription default="Aggregates Funding Tracks creating new LOAs; if LOA exists, aggregates Resource Amount, updating existing LOA's TDP.">
+    <label description="Aggregates Funding Tracks creating new LOAs; if LOA exists, aggregates Resource Amount, updating existing LOA's TDP." languagecode="1033" />
+  </buttontooltipdescription>
+  <buttontooltiptitle default="Generate LOAs from Funding Tracks">
+    <label description="Generate LOAs from Funding Tracks" languagecode="1033" />
+  </buttontooltiptitle>
+  <context>1</context>
+  <contextentity>
+    <logicalname>book_fundingtrack</logicalname>
+  </contextentity>
+  <contextvalue>book_fundingtrack</contextvalue>
+  <fonticon>BulletListAdd</fonticon>
+  <hidden>0</hidden>
+  <iscustomizable>1</iscustomizable>
+  <isdisabled>0</isdisabled>
+  <isgrouptitlehidden>0</isgrouptitlehidden>
+  <location>1</location>
+  <name>NewGenerateLOAs!38f7b3e497df43c294e8dfde66cd81d8</name>
+  <onclickeventjavascriptfunctionname>LOAGenerator.run</onclickeventjavascriptfunctionname>
+  <onclickeventjavascriptparameters>[{"type":5},{"type":19,"value":0}]</onclickeventjavascriptparameters>
+  <onclickeventjavascriptwebresourceid>
+    <webresourceid>960569f1-df60-f111-a823-001dd8204df7</webresourceid>
+  </onclickeventjavascriptwebresourceid>
+  <onclickeventtype>2</onclickeventtype>
+  <origin>0</origin>
+  <sequence>1000100010.0000000000</sequence>
+  <statecode>0</statecode>
+  <statuscode>1</statuscode>
+  <type>0</type>
+  <visibilitytype>0</visibilitytype>
+</appaction>

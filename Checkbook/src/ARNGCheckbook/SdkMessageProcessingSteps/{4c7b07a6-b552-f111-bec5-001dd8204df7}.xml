@@ -20,7 +20,7 @@
   <SdkMessageProcessingStepImages>
     <SdkMessageProcessingStepImage Name="FundingTrackUpdatePreImage">
       <SdkMessageProcessingStepImageId>{777facba-b552-f111-bec6-001dd8204135}</SdkMessageProcessingStepImageId>
-      <Attributes>book_lineofaccountingloa,book_newresourceamount</Attributes>
+      <Attributes>book_beginningbalancereadonly,book_lineofaccountingloa,book_newresourceamount</Attributes>
       <EntityAlias>PreImage</EntityAlias>
       <ImageType>0</ImageType>
       <MessagePropertyName>Target</MessagePropertyName>

@@ -47,6 +47,29 @@
                       </cell>
                     </row>
                     <row>
+                      <cell id="{2739f766-f66a-471b-9643-108f910c31c6}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="Requirement" languagecode="1033" />
+                        </labels>
+                        <control id="book_requirement" classid="{270BD3DB-D9AF-4782-9025-509E298DEC0A}" datafieldname="book_requirement" disabled="false">
+                          <parameters>
+                            <DefaultViewId>{535246D8-0865-F111-A824-001DD8201529}</DefaultViewId>
+                            <AvailableViewIds>{EF374375-D347-F011-8779-001DD805A23F},{0018223E-4351-4782-BA0E-FAE6D36A06B4},{535246D8-0865-F111-A824-001DD8201529},{788CFE74-02D6-4F33-9D96-B48C5393C8D2},{02B937B5-0323-F011-998A-001DD805B842},{6991387F-E513-F011-9989-001DD8056EC8},{4ED2BB29-0423-F011-998A-001DD8059413},{199C1E22-7321-F011-998A-001DD805A06B},{0BFFE19B-E513-F011-9989-001DD80569B5},{C44E3E72-FD21-F011-998A-001DD805A06B},{C25DE1E5-3D29-4804-9537-78A56C26F059}</AvailableViewIds>
+                            <DisableViewPicker>true</DisableViewPicker>
+                            <DependentAttributeName>book_prioritization.book_mdep</DependentAttributeName>
+                            <DependentAttributeType>book_mdep</DependentAttributeType>
+                            <FilterRelationshipName>book_requirements_MDEP_book_mdep</FilterRelationshipName>
+                          </parameters>
+                        </control>
+                      </cell>
+                      <cell id="{53f1f1e9-8c35-489b-beef-b2a40c65c5c7}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="LIN" languagecode="1033" />
+                        </labels>
+                        <control id="book_lin" classid="{270BD3DB-D9AF-4782-9025-509E298DEC0A}" datafieldname="book_lin" disabled="false" />
+                      </cell>
+                    </row>
+                    <row>
                       <cell id="{5021352e-2579-4394-8fea-910a3fc8c6c2}" locklevel="0" colspan="1" rowspan="1">
                         <labels>
                           <label description="Requirement" languagecode="1033" />
@@ -60,11 +83,11 @@
                           </parameters>
                         </control>
                       </cell>
-                      <cell id="{53f1f1e9-8c35-489b-beef-b2a40c65c5c7}" locklevel="0" colspan="1" rowspan="1">
+                      <cell id="{90c2e8f0-9af7-4e1c-8493-bb26599a158d}" locklevel="0" colspan="1" rowspan="1">
                         <labels>
-                          <label description="LIN" languagecode="1033" />
+                          <label description="Reference Number" languagecode="1033" />
                         </labels>
-                        <control id="book_lin" classid="{270BD3DB-D9AF-4782-9025-509E298DEC0A}" datafieldname="book_lin" disabled="false" />
+                        <control id="book_referencenumber" classid="{4273EDBD-AC1D-40D3-9FB2-095C621B552D}" datafieldname="book_referencenumber" disabled="false" />
                       </cell>
                     </row>
                     <row>
@@ -78,19 +101,6 @@
                             <QuickForms>&lt;QuickFormIds&gt;&lt;QuickFormId entityname="book_requirementfunding"&gt;a008a03e-c1cf-f011-bbd3-001dd8059413&lt;/QuickFormId&gt;&lt;/QuickFormIds&gt;</QuickForms>
                           </parameters>
                         </control>
-                      </cell>
-                      <cell id="{90c2e8f0-9af7-4e1c-8493-bb26599a158d}" locklevel="0" colspan="1" rowspan="1">
-                        <labels>
-                          <label description="Reference Number" languagecode="1033" />
-                        </labels>
-                        <control id="book_referencenumber" classid="{4273EDBD-AC1D-40D3-9FB2-095C621B552D}" datafieldname="book_referencenumber" disabled="false" />
-                      </cell>
-                    </row>
-                    <row>
-                      <cell locklevel="0" id="{0faebf58-eea5-44ab-bdd2-31d91fd37264}">
-                        <labels>
-                          <label description="" languagecode="1033" />
-                        </labels>
                       </cell>
                       <cell id="{71027c75-d58f-4bce-a643-8a25aabd0d39}" locklevel="0" colspan="1" rowspan="1">
                         <labels>
@@ -216,11 +226,11 @@
                       </cell>
                     </row>
                     <row>
-                      <cell id="{b37e6f0c-ccd8-4923-b2c9-95f8a0d40610}" locklevel="0" colspan="1" rowspan="1">
+                      <cell id="{397c1e4c-c781-4c72-811c-1e60c59e20f4}" locklevel="0" colspan="1" rowspan="1" visible="false">
                         <labels>
-                          <label description="Excepted Activity" languagecode="1033" />
+                          <label description="Funding Mode" languagecode="1033" />
                         </labels>
-                        <control id="book_acceptedactivity" classid="{67FAC785-CD58-4F9F-ABB3-4B7DDC6ED5ED}" datafieldname="book_acceptedactivity" disabled="false" />
+                        <control id="book_fundingmode" classid="{3EF39988-22BB-4F0B-BBBE-64B5A3748AEE}" datafieldname="book_fundingmode" disabled="false" />
                       </cell>
                       <cell id="{d7297840-5790-4948-9462-259f86917fd3}" locklevel="0" colspan="1" rowspan="1">
                         <labels>

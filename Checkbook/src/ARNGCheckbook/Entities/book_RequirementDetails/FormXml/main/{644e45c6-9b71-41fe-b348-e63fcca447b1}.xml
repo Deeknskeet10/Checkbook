@@ -56,14 +56,21 @@
                         <labels>
                           <label description="TDC" languagecode="1033" />
                         </labels>
-                        <control id="book_tdc" classid="{270BD3DB-D9AF-4782-9025-509E298DEC0A}" datafieldname="book_tdc" disabled="false" />
+                        <control id="book_tdc" classid="{270BD3DB-D9AF-4782-9025-509E298DEC0A}" datafieldname="book_tdc" disabled="false">
+                          <parameters>
+                            <DependentAttributeName>book_requirementdetails.book_item</DependentAttributeName>
+                            <DependentAttributeType>book_item</DependentAttributeType>
+                            <FilterRelationshipName>book_tdc_Item_book_item</FilterRelationshipName>
+                          </parameters>
+                        </control>
                       </cell>
                     </row>
                     <row>
-                      <cell locklevel="0" id="{54397dfc-14b3-4d97-810b-a53f7896551b}">
+                      <cell id="{33e53cf0-c9bd-4e78-86a5-31143176a51b}" locklevel="0" colspan="1" rowspan="1">
                         <labels>
-                          <label description="" languagecode="1033" />
+                          <label description="MDEP" languagecode="1033" />
                         </labels>
+                        <control id="book_mdep" classid="{270BD3DB-D9AF-4782-9025-509E298DEC0A}" datafieldname="book_mdep" disabled="false" />
                       </cell>
                       <cell locklevel="0" id="{38e868d3-9007-4077-9545-b27c030ac69b}" colspan="1" rowspan="1">
                         <labels>
@@ -129,6 +136,16 @@
       <DisplayConditions Order="0" FallbackForm="true">
         <Everyone />
       </DisplayConditions>
+      <formLibraries>
+        <Library name="book_reqDetailFieldRequired" libraryUniqueId="{71d1b618-ed5b-41d4-a429-5de60b5b2e68}" />
+      </formLibraries>
+      <events>
+        <event name="onchange" application="false" active="false" attribute="book_item">
+          <Handlers>
+            <Handler functionName="onBookItemChange" libraryName="book_reqDetailFieldRequired" handlerUniqueId="{634e489e-872e-4db2-b094-a7d9549eb5e7}" enabled="true" parameters="" passExecutionContext="true" />
+          </Handlers>
+        </event>
+      </events>
     </form>
     <IsCustomizable>1</IsCustomizable>
     <CanBeDeleted>1</CanBeDeleted>

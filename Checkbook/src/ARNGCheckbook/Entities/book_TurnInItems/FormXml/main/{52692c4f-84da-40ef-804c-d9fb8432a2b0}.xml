@@ -61,6 +61,7 @@
                             <DependentAttributeName>book_turninitems.book_requirementfunding</DependentAttributeName>
                             <DependentAttributeType>book_requirementfunding</DependentAttributeType>
                             <FilterRelationshipName>book_prioritization_RequirementFunding_book_requirementfunding</FilterRelationshipName>
+                            <AllowFilterOff>true</AllowFilterOff>
                           </parameters>
                         </control>
                       </cell>

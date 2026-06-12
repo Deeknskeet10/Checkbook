@@ -1,0 +1,49 @@
+<appaction uniquename="book__Decertify!584db4bf568b4bec93e1d5506f943061!book_ARNGCheckbookAdminCenter!book_requirements!1">
+  <appmoduleid>
+    <uniquename>book_ARNGCheckbookAdminCenter</uniquename>
+  </appmoduleid>
+  <buttonaccessibilitytext default="Decertify Selected Records">
+    <label description="Decertify Selected Records" languagecode="1033" />
+  </buttonaccessibilitytext>
+  <buttonlabeltext default="Decertify">
+    <label description="Decertify" languagecode="1033" />
+  </buttonlabeltext>
+  <buttontooltipdescription default="All selected records will be decertified">
+    <label description="All selected records will be decertified" languagecode="1033" />
+  </buttontooltipdescription>
+  <buttontooltiptitle default="Decertify Selected Records">
+    <label description="Decertify Selected Records" languagecode="1033" />
+  </buttontooltiptitle>
+  <context>1</context>
+  <contextentity>
+    <logicalname>book_requirements</logicalname>
+  </contextentity>
+  <contextvalue>book_requirements</contextvalue>
+  <fonticon>Abandon</fonticon>
+  <hidden>0</hidden>
+  <iscustomizable>1</iscustomizable>
+  <isdisabled>0</isdisabled>
+  <isgrouptitlehidden>0</isgrouptitlehidden>
+  <location>1</location>
+  <name>Decertify!584db4bf568b4bec93e1d5506f943061</name>
+  <onclickeventjavascriptfunctionname>Recertification.decertify</onclickeventjavascriptfunctionname>
+  <onclickeventjavascriptparameters>[{"type":12}]</onclickeventjavascriptparameters>
+  <onclickeventjavascriptwebresourceid>
+    <webresourceid>a3dbf0f7-3864-f111-a823-001dd8204df7</webresourceid>
+  </onclickeventjavascriptwebresourceid>
+  <onclickeventtype>2</onclickeventtype>
+  <origin>0</origin>
+  <parentappactionid>
+    <uniquename>book__CertificationActi!c922728a267b4d91aa7aa8d4aa292803!book_ARNGCheckbookAdminCenter!book_requirements!1</uniquename>
+  </parentappactionid>
+  <sequence>20000.0000000000</sequence>
+  <statecode>0</statecode>
+  <statuscode>1</statuscode>
+  <type>0</type>
+  <visibilityformulacomponentlibraryid>
+    <name>book_arngcheckbookadmincenterdefaultcommandlibrary_1362b</name>
+  </visibilityformulacomponentlibraryid>
+  <visibilityformulacomponentname>3d901c04e39240f6bae059973a978ff9</visibilityformulacomponentname>
+  <visibilityformulafunctionname>Visible</visibilityformulafunctionname>
+  <visibilitytype>1</visibilitytype>
+</appaction>

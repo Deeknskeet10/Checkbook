@@ -61,11 +61,11 @@
                       </cell>
                     </row>
                     <row>
-                      <cell id="{156c2f2f-b26b-43c8-a1da-f88e3e45e838}" locklevel="0" colspan="1" rowspan="1">
+                      <cell id="{ac5d306a-2ed1-44e6-b057-3f0e57170a17}" locklevel="0" colspan="1" rowspan="1">
                         <labels>
-                          <label description="Appropriation" languagecode="1033" />
+                          <label description="Fund" languagecode="1033" />
                         </labels>
-                        <control id="book_appropriation" classid="{3EF39988-22BB-4F0B-BBBE-64B5A3748AEE}" datafieldname="book_appropriation" disabled="false" />
+                        <control id="book_fund" classid="{270BD3DB-D9AF-4782-9025-509E298DEC0A}" datafieldname="book_fund" disabled="false" />
                       </cell>
                       <cell id="{185832b7-9378-441a-9ada-9bf9a62a110f}" locklevel="0" colspan="1" rowspan="1">
                         <labels>
@@ -75,13 +75,26 @@
                       </cell>
                     </row>
                     <row>
+                      <cell id="{156c2f2f-b26b-43c8-a1da-f88e3e45e838}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="Appropriation" languagecode="1033" />
+                        </labels>
+                        <control id="book_appropriation" classid="{3EF39988-22BB-4F0B-BBBE-64B5A3748AEE}" datafieldname="book_appropriation" disabled="false" />
+                      </cell>
+                      <cell locklevel="0" id="{17ca3f4f-e635-4d57-bdfb-763776a44057}" showlabel="false">
+                        <labels>
+                          <label description="" languagecode="1033" />
+                        </labels>
+                      </cell>
+                    </row>
+                    <row>
                       <cell id="{3f286cff-331e-4e3a-964a-b6c1c0c5a821}" locklevel="0" colspan="1" rowspan="1">
                         <labels>
                           <label description="MDEP" languagecode="1033" />
                         </labels>
                         <control id="book_mdep" classid="{270BD3DB-D9AF-4782-9025-509E298DEC0A}" datafieldname="book_mdep" disabled="false" />
                       </cell>
-                      <cell locklevel="0" id="{17ca3f4f-e635-4d57-bdfb-763776a44057}" showlabel="false">
+                      <cell locklevel="0" id="{3c12322f-ff60-4f7f-936a-3d726465b15e}">
                         <labels>
                           <label description="" languagecode="1033" />
                         </labels>

@@ -230,7 +230,7 @@
     <RolePrivilege name="prvReadbook_QuantityType" level="Global" />
     <RolePrivilege name="prvReadbook_Realignments" level="Global" />
     <RolePrivilege name="prvReadbook_realignmentsreview" level="Global" />
-    <RolePrivilege name="prvReadbook_RequirementDetails" level="Local" />
+    <RolePrivilege name="prvReadbook_RequirementDetails" level="Global" />
     <RolePrivilege name="prvReadbook_RequirementFunding" level="Global" />
     <RolePrivilege name="prvReadbook_requirementfundingvalidatefunding" level="Global" />
     <RolePrivilege name="prvReadbook_Requirements" level="Local" />

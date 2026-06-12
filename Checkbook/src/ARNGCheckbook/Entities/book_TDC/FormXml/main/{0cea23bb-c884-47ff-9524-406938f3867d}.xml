@@ -26,10 +26,11 @@
                         </labels>
                         <control id="book_name" classid="{4273EDBD-AC1D-40d3-9FB2-095C621B552D}" datafieldname="book_name" />
                       </cell>
-                      <cell locklevel="0" id="{5f2052af-4701-40b0-967e-ad5094ce4268}">
+                      <cell id="{b5178931-a458-4d8d-a8b1-244c33d1821a}" locklevel="0" colspan="1" rowspan="1">
                         <labels>
-                          <label description="" languagecode="1033" />
+                          <label description="Request Type CD" languagecode="1033" />
                         </labels>
+                        <control id="book_requesttypecd" classid="{3EF39988-22BB-4F0B-BBBE-64B5A3748AEE}" datafieldname="book_requesttypecd" disabled="false" />
                       </cell>
                     </row>
                     <row>
@@ -39,10 +40,11 @@
                         </labels>
                         <control id="ownerid" classid="{270BD3DB-D9AF-4782-9025-509E298DEC0A}" datafieldname="ownerid" />
                       </cell>
-                      <cell locklevel="0" id="{7e834407-25f7-4008-95d3-61027bc0e8f9}">
+                      <cell id="{0fca1971-69cd-4b34-bb48-2cf0f4e94460}" locklevel="0" colspan="1" rowspan="1">
                         <labels>
-                          <label description="" languagecode="1033" />
+                          <label description="Category" languagecode="1033" />
                         </labels>
+                        <control id="book_category" classid="{3EF39988-22BB-4F0B-BBBE-64B5A3748AEE}" datafieldname="book_category" disabled="false" />
                       </cell>
                     </row>
                     <row>
@@ -52,10 +54,11 @@
                         </labels>
                         <control id="book_tdcname" classid="{4273EDBD-AC1D-40D3-9FB2-095C621B552D}" datafieldname="book_tdcname" disabled="false" />
                       </cell>
-                      <cell locklevel="0" id="{2f86771c-e50a-49b1-a8ab-b67ac4a2e057}">
+                      <cell id="{b6315fba-336c-4291-8b38-84bd42543c14}" locklevel="0" colspan="1" rowspan="1">
                         <labels>
-                          <label description="" languagecode="1033" />
+                          <label description="Item" languagecode="1033" />
                         </labels>
+                        <control id="book_item" classid="{270BD3DB-D9AF-4782-9025-509E298DEC0A}" datafieldname="book_item" disabled="false" />
                       </cell>
                     </row>
                     <row>
@@ -65,7 +68,7 @@
                         </labels>
                         <control id="book_appropriation" classid="{3EF39988-22BB-4F0B-BBBE-64B5A3748AEE}" datafieldname="book_appropriation" disabled="false" />
                       </cell>
-                      <cell locklevel="0" id="{d49490fa-ff33-4c0e-bf09-322710fb8bc7}">
+                      <cell locklevel="0" id="{1ff5d847-e148-45d4-ae08-23fc6c8e92f5}">
                         <labels>
                           <label description="" languagecode="1033" />
                         </labels>
@@ -92,32 +95,6 @@
                         <control id="book_sag" classid="{270BD3DB-D9AF-4782-9025-509E298DEC0A}" datafieldname="book_sag" disabled="false" />
                       </cell>
                       <cell locklevel="0" id="{cd15393c-dede-4b88-bb8d-449de6d584ab}">
-                        <labels>
-                          <label description="" languagecode="1033" />
-                        </labels>
-                      </cell>
-                    </row>
-                    <row>
-                      <cell id="{0fca1971-69cd-4b34-bb48-2cf0f4e94460}" locklevel="0" colspan="1" rowspan="1">
-                        <labels>
-                          <label description="Category" languagecode="1033" />
-                        </labels>
-                        <control id="book_category" classid="{3EF39988-22BB-4F0B-BBBE-64B5A3748AEE}" datafieldname="book_category" disabled="false" />
-                      </cell>
-                      <cell locklevel="0" id="{c04325e8-e971-487f-9588-ca73b6a89746}">
-                        <labels>
-                          <label description="" languagecode="1033" />
-                        </labels>
-                      </cell>
-                    </row>
-                    <row>
-                      <cell id="{b5178931-a458-4d8d-a8b1-244c33d1821a}" locklevel="0" colspan="1" rowspan="1">
-                        <labels>
-                          <label description="Request Type CD" languagecode="1033" />
-                        </labels>
-                        <control id="book_requesttypecd" classid="{3EF39988-22BB-4F0B-BBBE-64B5A3748AEE}" datafieldname="book_requesttypecd" disabled="false" />
-                      </cell>
-                      <cell locklevel="0" id="{9f8697ca-11b3-4535-a53f-76df85af80a7}">
                         <labels>
                           <label description="" languagecode="1033" />
                         </labels>
@@ -159,11 +136,27 @@
                   <rows>
                     <row />
                     <row>
+                      <cell id="{a589f251-722e-4214-9e1b-b61391024161}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="Fund" languagecode="1033" />
+                        </labels>
+                        <control id="book_fund" classid="{270BD3DB-D9AF-4782-9025-509E298DEC0A}" datafieldname="book_fund" disabled="false" />
+                      </cell>
+                    </row>
+                    <row>
                       <cell id="{d241d6a0-1a50-4214-a80b-bc02a04d8e5b}" locklevel="0" colspan="1" rowspan="1">
                         <labels>
                           <label description="Functional Cost Account" languagecode="1033" />
                         </labels>
                         <control id="book_functionalcostaccount" classid="{4273EDBD-AC1D-40D3-9FB2-095C621B552D}" datafieldname="book_functionalcostaccount" disabled="false" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{e7861ad3-4bca-4b67-a54b-a918ecf53538}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="Functional Area" languagecode="1033" />
+                        </labels>
+                        <control id="book_functionalarea" classid="{4273EDBD-AC1D-40D3-9FB2-095C621B552D}" datafieldname="book_functionalarea" disabled="false" />
                       </cell>
                     </row>
                     <row>

@@ -1,0 +1,11 @@
+<customapiresponseproperty uniquename="Remaining">
+  <description default="How many records are left to process for FT -&gt; LOA creation">
+    <label description="How many records are left to process for FT -&gt; LOA creation" languagecode="1033" />
+  </description>
+  <displayname default="Remaining">
+    <label description="Remaining" languagecode="1033" />
+  </displayname>
+  <iscustomizable>1</iscustomizable>
+  <name>Remaining</name>
+  <type>7</type>
+</customapiresponseproperty>

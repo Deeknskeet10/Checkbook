@@ -20,7 +20,7 @@
                   </labels>
                   <rows>
                     <row>
-                      <cell id="{83b9a3e8-dd98-4848-9f22-2b5b04f513ec}">
+                      <cell id="{83b9a3e8-dd98-4848-9f22-2b5b04f513ec}" visible="false">
                         <labels>
                           <label description="Name" languagecode="1033" />
                         </labels>
@@ -28,7 +28,23 @@
                       </cell>
                     </row>
                     <row>
-                      <cell id="{eb0967ba-9ac6-4458-b9a7-2e18aab5a836}">
+                      <cell id="{9b4e8ee3-da6c-4ac6-969b-89804a70a5f0}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="Category" languagecode="1033" />
+                        </labels>
+                        <control id="book_category" classid="{3EF39988-22BB-4F0B-BBBE-64B5A3748AEE}" datafieldname="book_category" disabled="false" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{4258c557-acf4-4be7-bfa1-bbad68d70cba}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="Quantity Type" languagecode="1033" />
+                        </labels>
+                        <control id="book_quantitytype" classid="{270BD3DB-D9AF-4782-9025-509E298DEC0A}" datafieldname="book_quantitytype" disabled="false" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{eb0967ba-9ac6-4458-b9a7-2e18aab5a836}" visible="false">
                         <labels>
                           <label description="Owner" languagecode="1033" />
                         </labels>
@@ -42,6 +58,9 @@
           </columns>
         </tab>
       </tabs>
+      <DisplayConditions Order="0" FallbackForm="true">
+        <Everyone />
+      </DisplayConditions>
     </form>
     <IsCustomizable>1</IsCustomizable>
     <CanBeDeleted>1</CanBeDeleted>

@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<ImportExportXml version="9.2.26042.173" SolutionPackageVersion="9.2" languagecode="1033" generatedBy="CrmLive" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" OrganizationVersion="9.2.26042.173" OrganizationSchemaType="Standard" CRMServerServiceabilityVersion="9.2.26043.00177">
+<ImportExportXml version="9.2.26044.170" SolutionPackageVersion="9.2" languagecode="1033" generatedBy="CrmLive" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" OrganizationVersion="9.2.26044.170" OrganizationSchemaType="Standard" CRMServerServiceabilityVersion="9.2.26051.00159">
   <SolutionManifest>
     <UniqueName>ARNGCheckbook</UniqueName>
     <LocalizedNames>
@@ -8,7 +8,7 @@
     <Descriptions>
       <Description description="Upgrade of ARNG Checkbook" languagecode="1033" />
     </Descriptions>
-    <Version>1.11.0.52</Version>
+    <Version>1.11.0.64</Version>
     <Managed>0</Managed>
     <Publisher>
       <UniqueName>ARNGCheckbook</UniqueName>
@@ -114,6 +114,7 @@
       <RootComponent type="1" schemaName="book_pg" behavior="0" />
       <RootComponent type="1" schemaName="book_pointofcontact" behavior="0" />
       <RootComponent type="1" schemaName="book_prioritization" behavior="0" />
+      <RootComponent type="1" schemaName="book_prioritizationfunding" behavior="0" />
       <RootComponent type="1" schemaName="book_prioritybin" behavior="0" />
       <RootComponent type="1" schemaName="book_quantitytype" behavior="0" />
       <RootComponent type="1" schemaName="book_realignments" behavior="0" />
@@ -170,7 +171,6 @@
       <RootComponent type="29" id="{45311d89-e805-f111-8406-001dd8204135}" behavior="0" />
       <RootComponent type="29" id="{47f03528-d9b5-f011-bbd3-001dd805a06b}" behavior="0" />
       <RootComponent type="29" id="{4817c809-6550-f011-877a-001dd805a06b}" behavior="0" />
-      <RootComponent type="29" id="{493ecb62-e09a-f011-b4cc-001dd8059413}" behavior="0" />
       <RootComponent type="29" id="{49a6be00-32a9-f011-bbd3-001dd8059413}" behavior="0" />
       <RootComponent type="29" id="{4b49ff03-560a-f011-bae2-001dd805a74b}" behavior="0" />
       <RootComponent type="29" id="{51975441-f218-f111-8341-001dd8204135}" behavior="0" />
@@ -178,11 +178,13 @@
       <RootComponent type="29" id="{561d0cf2-cef6-f011-8406-001dd8201529}" behavior="0" />
       <RootComponent type="29" id="{5d434149-3342-f111-88b4-001dd8204c92}" behavior="0" />
       <RootComponent type="29" id="{62ee8e4c-d0ce-f011-bbd3-001dd805a06b}" behavior="0" />
+      <RootComponent type="29" id="{639f08d6-f364-f111-a824-001dd8204135}" behavior="0" />
       <RootComponent type="29" id="{6647505c-7203-f111-8406-001dd8201529}" behavior="0" />
       <RootComponent type="29" id="{6aa79de9-40df-f011-8544-001dd805a06b}" behavior="0" />
       <RootComponent type="29" id="{6d798e2f-732f-f111-88b3-001dd82060a7}" behavior="0" />
       <RootComponent type="29" id="{6e8cdf56-3942-f111-88b4-001dd8201529}" behavior="0" />
       <RootComponent type="29" id="{6f60e238-15cf-f011-bbd3-001dd805a06b}" behavior="0" />
+      <RootComponent type="29" id="{72b2eaae-605b-f111-bec6-001dd8204135}" behavior="0" />
       <RootComponent type="29" id="{76ec38a5-dd26-f111-8341-001dd8201529}" behavior="0" />
       <RootComponent type="29" id="{7a3c25f9-b4cf-f011-bbd3-001dd805a23f}" behavior="0" />
       <RootComponent type="29" id="{7da37650-63d0-f011-bbd3-001dd805a23f}" behavior="0" />
@@ -251,6 +253,7 @@
       <RootComponent type="61" schemaName="book_codesolidfull" behavior="0" />
       <RootComponent type="61" schemaName="book_fileinvoicedollarsolid" behavior="0" />
       <RootComponent type="61" schemaName="book_fund" behavior="0" />
+      <RootComponent type="61" schemaName="book_generateLOAs" behavior="0" />
       <RootComponent type="61" schemaName="book_genManualDistributions" behavior="0" />
       <RootComponent type="61" schemaName="book_hidePriRealignments" behavior="0" />
       <RootComponent type="61" schemaName="book_hidePriTurnIns" behavior="0" />
@@ -267,6 +270,9 @@
       <RootComponent type="61" schemaName="book_personmilitaryriflesolid" behavior="0" />
       <RootComponent type="61" schemaName="book_plusminussolid" behavior="0" />
       <RootComponent type="61" schemaName="book_populateUserBU" behavior="0" />
+      <RootComponent type="61" schemaName="book_realignmentFormProgression" behavior="0" />
+      <RootComponent type="61" schemaName="book_recertification" behavior="0" />
+      <RootComponent type="61" schemaName="book_reqDetailFieldRequired" behavior="0" />
       <RootComponent type="61" schemaName="book_reqFundLockFields" behavior="0" />
       <RootComponent type="61" schemaName="book_reqFundOnLOAChange" behavior="0" />
       <RootComponent type="61" schemaName="book_requirementFundingValidation" behavior="0" />
@@ -369,6 +375,7 @@
       <RootComponent type="92" id="{14c0c4d9-b752-f111-bec5-001dd8204df7}" behavior="0" />
       <RootComponent type="92" id="{14f5813c-b552-f111-bec6-001dd8204135}" behavior="0" />
       <RootComponent type="92" id="{15d92cbf-2753-f111-bec5-001dd8204df7}" behavior="0" />
+      <RootComponent type="92" id="{295041df-5660-f111-a823-001dd8204df7}" behavior="0" />
       <RootComponent type="92" id="{2ec0842c-b852-f111-bec6-001dd8204135}" behavior="0" />
       <RootComponent type="92" id="{2ed081db-b852-f111-bec6-001dd8204135}" behavior="0" />
       <RootComponent type="92" id="{33776d65-2753-f111-bec5-001dd8204df7}" behavior="0" />
@@ -380,6 +387,8 @@
       <RootComponent type="92" id="{691d0b68-b752-f111-bec5-001dd8204df7}" behavior="0" />
       <RootComponent type="92" id="{6fabe7ec-2753-f111-bec6-001dd8204135}" behavior="0" />
       <RootComponent type="92" id="{7d550a51-2753-f111-bec6-001dd8201529}" behavior="0" />
+      <RootComponent type="92" id="{8052cec1-3b64-f111-a824-001dd8201529}" behavior="0" />
+      <RootComponent type="92" id="{8ae21253-565f-f111-bec6-001dd8201529}" behavior="0" />
       <RootComponent type="92" id="{8e5ef211-b652-f111-bec5-001dd8204df7}" behavior="0" />
       <RootComponent type="92" id="{9a51a2f7-b752-f111-bec5-001dd8204df7}" behavior="0" />
       <RootComponent type="92" id="{b5e99323-b952-f111-bec6-001dd8204135}" behavior="0" />
@@ -388,6 +397,7 @@
       <RootComponent type="92" id="{c6508389-b652-f111-bec5-001dd8204df7}" behavior="0" />
       <RootComponent type="92" id="{d13614f4-b552-f111-bec5-001dd8204df7}" behavior="0" />
       <RootComponent type="92" id="{d341884e-b552-f111-bec6-001dd8204135}" behavior="0" />
+      <RootComponent type="92" id="{db034ca9-5660-f111-a823-001dd8204df7}" behavior="0" />
       <RootComponent type="92" id="{dfb732ab-b852-f111-bec6-001dd8204135}" behavior="0" />
       <RootComponent type="92" id="{e9a097bc-b452-f111-bec5-001dd8204df7}" behavior="0" />
       <RootComponent type="92" id="{f2be9007-b752-f111-bec5-001dd8204df7}" behavior="0" />
@@ -559,14 +569,14 @@
         <Dependent type="60" displayName="Information" parentDisplayName="Generic RVB" id="{a5f05669-53ed-42eb-911a-b7d70f924689}" />
       </MissingDependency>
       <MissingDependency>
-        <Required type="61" schemaName="BusinessManagement.svg" displayName="BusinessManagement.svg" solution="PowerPlatformEnvironmentSettings (2.2.3376.2)">
-          <package appName="PowerPlatformEnvironmentSettingsApp" version="2.2.3376.2">PowerPlatformEnvironmentSettingsApp_Anchor (2.2.3376.2)</package>
+        <Required type="61" schemaName="BusinessManagement.svg" displayName="BusinessManagement.svg" solution="PowerPlatformEnvironmentSettings (2.2.3398.1)">
+          <package appName="PowerPlatformEnvironmentSettingsApp" version="2.2.3398.1">PowerPlatformEnvironmentSettingsApp_Anchor (2.2.3398.1)</package>
         </Required>
         <Dependent type="1" schemaName="book_sag" displayName="SAG" />
       </MissingDependency>
       <MissingDependency>
-        <Required type="61" schemaName="DataManagement.svg" displayName="DataManagement.svg" solution="PowerPlatformEnvironmentSettings (2.2.3376.2)">
-          <package appName="PowerPlatformEnvironmentSettingsApp" version="2.2.3376.2">PowerPlatformEnvironmentSettingsApp_Anchor (2.2.3376.2)</package>
+        <Required type="61" schemaName="DataManagement.svg" displayName="DataManagement.svg" solution="PowerPlatformEnvironmentSettings (2.2.3398.1)">
+          <package appName="PowerPlatformEnvironmentSettingsApp" version="2.2.3398.1">PowerPlatformEnvironmentSettingsApp_Anchor (2.2.3398.1)</package>
         </Required>
         <Dependent type="1" schemaName="book_pg" displayName="PG" />
       </MissingDependency>
@@ -607,20 +617,20 @@
         <Dependent type="80" schemaName="book_Strawman" displayName="ARNG Checkbook - Strawman" />
       </MissingDependency>
       <MissingDependency>
-        <Required type="61" schemaName="msdyncrm_/KnowledgeArticleSubgrid/Hierarchy_16.svg" displayName="msdyncrm_/KnowledgeArticleSubgrid/Hierarchy_16.svg" solution="msdynce_KnowledgeManagementFeatures (9.0.26042.3017)">
-          <package appName="msdynce_KnowledgeManagement" version="9.0.26042.3017">msdynce_KnowledgeManagementAnchor (9.0.26042.3017)</package>
+        <Required type="61" schemaName="msdyncrm_/KnowledgeArticleSubgrid/Hierarchy_16.svg" displayName="msdyncrm_/KnowledgeArticleSubgrid/Hierarchy_16.svg" solution="msdynce_KnowledgeManagementFeatures (9.0.26044.3023)">
+          <package appName="msdynce_KnowledgeManagement" version="9.0.26044.3023">msdynce_KnowledgeManagementAnchor (9.0.26044.3023)</package>
         </Required>
         <Dependent type="1" schemaName="book_prioritization" displayName="Prioritization" />
       </MissingDependency>
       <MissingDependency>
-        <Required type="66" schemaName="MscrmControls.FieldControls.CheckboxControl" displayName="MscrmControls.FieldControls.CheckboxControl" solution="BaseCustomControlsCore (9.0.2604.2009)">
-          <package appName="Base Custom Controls" version="9.0.2604.2009">BaseCustomControlsCore (9.0.2604.2009)</package>
+        <Required type="66" schemaName="MscrmControls.FieldControls.CheckboxControl" displayName="MscrmControls.FieldControls.CheckboxControl" solution="BaseCustomControlsCore (9.0.2604.4004)">
+          <package appName="Base Custom Controls" version="9.0.2604.4004">BaseCustomControlsCore (9.0.2604.4004)</package>
         </Required>
         <Dependent type="60" displayName="Information" parentDisplayName="Funding Event" id="{a4b26f66-797c-4b39-875a-5f8b9646942f}" />
       </MissingDependency>
       <MissingDependency>
-        <Required type="66" schemaName="MscrmControls.OptionSet.OptionSetControl" displayName="MscrmControls.OptionSet.OptionSetControl" solution="CustomControlsCore (9.2.26042.00173)">
-          <package appName="Custom Controls Package" version="9.2.26042.00173">CustomControlsCore (9.2.26042.00173)</package>
+        <Required type="66" schemaName="MscrmControls.OptionSet.OptionSetControl" displayName="MscrmControls.OptionSet.OptionSetControl" solution="CustomControlsCore (9.2.26044.00170)">
+          <package appName="Custom Controls Package" version="9.2.26044.00170">CustomControlsCore (9.2.26044.00170)</package>
         </Required>
         <Dependent type="60" displayName="UFR - State" parentDisplayName="Unfunded Requests" id="{290d4184-6941-f011-b4cc-001dd8059413}" />
       </MissingDependency>
@@ -836,26 +846,26 @@
         <Dependent type="AppSetting" displayName="parentappmoduleid.uniquename=book_ARNGCheckbookLedger,settingdefinitionid.uniquename=HeaderAndNavigationRefresh" id.parentappmoduleid.uniquename="book_ARNGCheckbookLedger" id.settingdefinitionid.uniquename="HeaderAndNavigationRefresh" />
       </MissingDependency>
       <MissingDependency>
-        <Required type="SettingDefinition" displayName="msdyn_TimelineModernization" solution="msdyn_TimelineExtended (9.0.26042.1013)" id.uniquename="msdyn_TimelineModernization">
-          <package appName="msdyn_CustomControlsExtended" version="9.0.26042.1013">msdyn_TimelineExtended (9.0.26042.1013)</package>
+        <Required type="SettingDefinition" displayName="msdyn_TimelineModernization" solution="msdyn_TimelineExtended (9.0.26044.1027)" id.uniquename="msdyn_TimelineModernization">
+          <package appName="msdyn_CustomControlsExtended" version="9.0.26044.1027">msdyn_TimelineExtended (9.0.26044.1027)</package>
         </Required>
         <Dependent type="AppSetting" displayName="parentappmoduleid.uniquename=book_1toNStates,settingdefinitionid.uniquename=msdyn_TimelineModernization" id.parentappmoduleid.uniquename="book_1toNStates" id.settingdefinitionid.uniquename="msdyn_TimelineModernization" />
       </MissingDependency>
       <MissingDependency>
-        <Required type="SettingDefinition" displayName="msdyn_TimelineModernization" solution="msdyn_TimelineExtended (9.0.26042.1013)" id.uniquename="msdyn_TimelineModernization">
-          <package appName="msdyn_CustomControlsExtended" version="9.0.26042.1013">msdyn_TimelineExtended (9.0.26042.1013)</package>
+        <Required type="SettingDefinition" displayName="msdyn_TimelineModernization" solution="msdyn_TimelineExtended (9.0.26044.1027)" id.uniquename="msdyn_TimelineModernization">
+          <package appName="msdyn_CustomControlsExtended" version="9.0.26044.1027">msdyn_TimelineExtended (9.0.26044.1027)</package>
         </Required>
         <Dependent type="AppSetting" displayName="parentappmoduleid.uniquename=book_ARNGCheckbook,settingdefinitionid.uniquename=msdyn_TimelineModernization" id.parentappmoduleid.uniquename="book_ARNGCheckbook" id.settingdefinitionid.uniquename="msdyn_TimelineModernization" />
       </MissingDependency>
       <MissingDependency>
-        <Required type="SettingDefinition" displayName="msdyn_TimelineModernization" solution="msdyn_TimelineExtended (9.0.26042.1013)" id.uniquename="msdyn_TimelineModernization">
-          <package appName="msdyn_CustomControlsExtended" version="9.0.26042.1013">msdyn_TimelineExtended (9.0.26042.1013)</package>
+        <Required type="SettingDefinition" displayName="msdyn_TimelineModernization" solution="msdyn_TimelineExtended (9.0.26044.1027)" id.uniquename="msdyn_TimelineModernization">
+          <package appName="msdyn_CustomControlsExtended" version="9.0.26044.1027">msdyn_TimelineExtended (9.0.26044.1027)</package>
         </Required>
         <Dependent type="AppSetting" displayName="parentappmoduleid.uniquename=book_ARNGCheckbookAdminCenter,settingdefinitionid.uniquename=msdyn_TimelineModernization" id.parentappmoduleid.uniquename="book_ARNGCheckbookAdminCenter" id.settingdefinitionid.uniquename="msdyn_TimelineModernization" />
       </MissingDependency>
       <MissingDependency>
-        <Required type="SettingDefinition" displayName="msdyn_TimelineModernization" solution="msdyn_TimelineExtended (9.0.26042.1013)" id.uniquename="msdyn_TimelineModernization">
-          <package appName="msdyn_CustomControlsExtended" version="9.0.26042.1013">msdyn_TimelineExtended (9.0.26042.1013)</package>
+        <Required type="SettingDefinition" displayName="msdyn_TimelineModernization" solution="msdyn_TimelineExtended (9.0.26044.1027)" id.uniquename="msdyn_TimelineModernization">
+          <package appName="msdyn_CustomControlsExtended" version="9.0.26044.1027">msdyn_TimelineExtended (9.0.26044.1027)</package>
         </Required>
         <Dependent type="AppSetting" displayName="parentappmoduleid.uniquename=book_ARNGCheckbookLedger,settingdefinitionid.uniquename=msdyn_TimelineModernization" id.parentappmoduleid.uniquename="book_ARNGCheckbookLedger" id.settingdefinitionid.uniquename="msdyn_TimelineModernization" />
       </MissingDependency>

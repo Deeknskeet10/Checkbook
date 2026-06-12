@@ -520,17 +520,32 @@
           </row>
         </rows>
       </footer>
-      <DisplayConditions Order="1" FallbackForm="true">
-        <Everyone />
+      <DisplayConditions Order="2" FallbackForm="true">
+        <Role Id="{C1474AE9-3E19-F011-998A-001DD8059413}" />
+        <Role Id="{14EE21C6-2121-F011-998A-001DD805B842}" />
+        <Role Id="{6587D533-1FBC-F011-BBD3-001DD8059413}" />
+        <Role Id="{07E298E4-3C19-F011-998A-001DD8059413}" />
+        <Role Id="{89CF554B-6BF5-F011-8406-001DD8204135}" />
+        <Role Id="{C60574A3-3D19-F011-998A-001DD805A06B}" />
+        <Role Id="{BE3B159B-F446-F011-877A-001DD8059413}" />
+        <Role Id="{9E0CD767-7A2A-F011-8C4E-001DD805B842}" />
+        <Role Id="{B83D1A3A-3E19-F011-998A-001DD8059413}" />
+        <Role Id="{C8B81746-2221-F011-998A-001DD805A06B}" />
+        <Role Id="{68202041-3D19-F011-998A-001DD8059413}" />
+        <Role Id="{68840012-3C19-F011-998A-001DD805A06B}" />
+        <Role Id="{627090ff-40a3-4053-8790-584edc5be201}" />
+        <Role Id="{119f245c-3cc8-4b62-b31c-d1a046ced15d}" />
       </DisplayConditions>
       <controlDescriptions />
       <formLibraries>
         <Library name="book_hidePriRealignments" libraryUniqueId="{816ba311-79f6-4aa9-8405-d1a84dc595a3}" />
+        <Library name="book_realignmentFormProgression" libraryUniqueId="{33506e29-7ffe-47be-adc0-a50c1214a072}" />
       </formLibraries>
       <events>
         <event name="onload" application="false" active="false">
           <Handlers>
             <Handler functionName="manageFieldStatus" libraryName="book_hidePriRealignments" handlerUniqueId="{665b221c-ad64-4240-9d99-403c4d8d59e6}" enabled="true" parameters="" passExecutionContext="true" />
+            <Handler functionName="RealignmentFormProgression.onLoad" libraryName="book_realignmentFormProgression" handlerUniqueId="{af5b878e-c747-4db5-8af3-98578b078790}" enabled="true" parameters="" passExecutionContext="true" />
           </Handlers>
         </event>
       </events>

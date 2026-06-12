@@ -68,6 +68,8 @@
   <EntityRelationship Name="book_prioritization_Requirement_book_requirements" />
   <EntityRelationship Name="book_prioritization_RequirementFunding_book_requirementfunding" />
   <EntityRelationship Name="book_prioritization_State_book_state" />
+  <EntityRelationship Name="book_PrioritizationFunding_book_Prioritization_book_Prioritization" />
+  <EntityRelationship Name="book_PrioritizationFunding_book_RequirementFunding_book_RequirementFunding" />
   <EntityRelationship Name="book_realignments_CreditedMDEP_book_mdep" />
   <EntityRelationship Name="book_realignments_CreditedPrioritization_book_prioritization" />
   <EntityRelationship Name="book_realignments_DebitedMDEP_book_mdep" />
@@ -78,6 +80,7 @@
   <EntityRelationship Name="book_realignments_newDebitedLOA_book_fundingline" />
   <EntityRelationship Name="book_realignments_newDebitedRequirement_book_requirementfunding" />
   <EntityRelationship Name="book_requirementdetails_Item_book_item" />
+  <EntityRelationship Name="book_requirementdetails_MDEP_book_mdep" />
   <EntityRelationship Name="book_requirementdetails_Requirement_book_requirements" />
   <EntityRelationship Name="book_requirementdetails_TDC_book_tdc" />
   <EntityRelationship Name="book_requirementfunding_APE_book_ape" />
@@ -102,6 +105,8 @@
   <EntityRelationship Name="book_spendplan_RequirementFunding_book_requirementfunding" />
   <EntityRelationship Name="book_spendplan_UnfundedRequest_book_unfundedrequests" />
   <EntityRelationship Name="book_spendplan_UnfundedRequestParent_book_unfundedrequests" />
+  <EntityRelationship Name="book_tdc_Fund_book_fund" />
+  <EntityRelationship Name="book_tdc_Item_book_item" />
   <EntityRelationship Name="book_tdc_MDEP_book_mdep" />
   <EntityRelationship Name="book_tdc_SAG_book_sag" />
   <EntityRelationship Name="book_turnin_Fund_book_fund" />
@@ -154,6 +159,7 @@
   <EntityRelationship Name="business_unit_book_pg" />
   <EntityRelationship Name="business_unit_book_pointofcontact" />
   <EntityRelationship Name="business_unit_book_prioritization" />
+  <EntityRelationship Name="business_unit_book_prioritizationfunding" />
   <EntityRelationship Name="business_unit_book_prioritybin" />
   <EntityRelationship Name="business_unit_book_quantitytype" />
   <EntityRelationship Name="business_unit_book_realignments" />
@@ -239,6 +245,8 @@
   <EntityRelationship Name="lk_book_pointofcontact_modifiedby" />
   <EntityRelationship Name="lk_book_prioritization_createdby" />
   <EntityRelationship Name="lk_book_prioritization_modifiedby" />
+  <EntityRelationship Name="lk_book_prioritizationfunding_createdby" />
+  <EntityRelationship Name="lk_book_prioritizationfunding_modifiedby" />
   <EntityRelationship Name="lk_book_prioritybin_createdby" />
   <EntityRelationship Name="lk_book_prioritybin_modifiedby" />
   <EntityRelationship Name="lk_book_quantitytype_createdby" />
@@ -312,6 +320,7 @@
   <EntityRelationship Name="owner_book_pg" />
   <EntityRelationship Name="owner_book_pointofcontact" />
   <EntityRelationship Name="owner_book_prioritization" />
+  <EntityRelationship Name="owner_book_prioritizationfunding" />
   <EntityRelationship Name="owner_book_prioritybin" />
   <EntityRelationship Name="owner_book_quantitytype" />
   <EntityRelationship Name="owner_book_realignments" />
@@ -353,6 +362,7 @@
   <EntityRelationship Name="team_book_pg" />
   <EntityRelationship Name="team_book_pointofcontact" />
   <EntityRelationship Name="team_book_prioritization" />
+  <EntityRelationship Name="team_book_prioritizationfunding" />
   <EntityRelationship Name="team_book_prioritybin" />
   <EntityRelationship Name="team_book_quantitytype" />
   <EntityRelationship Name="team_book_realignments" />
@@ -395,6 +405,7 @@
   <EntityRelationship Name="user_book_pg" />
   <EntityRelationship Name="user_book_pointofcontact" />
   <EntityRelationship Name="user_book_prioritization" />
+  <EntityRelationship Name="user_book_prioritizationfunding" />
   <EntityRelationship Name="user_book_prioritybin" />
   <EntityRelationship Name="user_book_quantitytype" />
   <EntityRelationship Name="user_book_realignments" />

@@ -1,0 +1,31 @@
+<appaction uniquename="book__Certification!6edf41ddaafe4a968eba9d1127367d0c!book_ARNGCheckbookAdminCenter!book_requirements!1">
+  <appmoduleid>
+    <uniquename>book_ARNGCheckbookAdminCenter</uniquename>
+  </appmoduleid>
+  <buttonlabeltext default="Certification">
+    <label description="Certification" languagecode="1033" />
+  </buttonlabeltext>
+  <context>1</context>
+  <contextentity>
+    <logicalname>book_requirements</logicalname>
+  </contextentity>
+  <contextvalue>book_requirements</contextvalue>
+  <hidden>0</hidden>
+  <iscustomizable>1</iscustomizable>
+  <isdisabled>0</isdisabled>
+  <isgrouptitlehidden>0</isgrouptitlehidden>
+  <location>1</location>
+  <name>Certification!6edf41ddaafe4a968eba9d1127367d0c</name>
+  <onclickeventtype>0</onclickeventtype>
+  <origin>0</origin>
+  <sequence>1000100015.0000000000</sequence>
+  <statecode>0</statecode>
+  <statuscode>1</statuscode>
+  <type>1</type>
+  <visibilityformulacomponentlibraryid>
+    <name>book_arngcheckbookadmincenterdefaultcommandlibrary_1362b</name>
+  </visibilityformulacomponentlibraryid>
+  <visibilityformulacomponentname>91c8d0d05014410cb0e3d88b3dc7b3f0</visibilityformulacomponentname>
+  <visibilityformulafunctionname>Visible</visibilityformulafunctionname>
+  <visibilitytype>1</visibilitytype>
+</appaction>

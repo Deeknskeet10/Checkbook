@@ -35,14 +35,6 @@
         <CanReadUnmasked>0</CanReadUnmasked>
       </FieldPermission>
       <FieldPermission>
-        <EntityName>book_requirementfunding</EntityName>
-        <AttributeName>book_fundedamount</AttributeName>
-        <CanRead>4</CanRead>
-        <CanUpdate>4</CanUpdate>
-        <CanCreate>4</CanCreate>
-        <CanReadUnmasked>0</CanReadUnmasked>
-      </FieldPermission>
-      <FieldPermission>
         <EntityName>book_unfundedrequests</EntityName>
         <AttributeName>book_stateaction</AttributeName>
         <CanRead>4</CanRead>
@@ -136,14 +128,6 @@
         <CanRead>4</CanRead>
         <CanUpdate>0</CanUpdate>
         <CanCreate>0</CanCreate>
-        <CanReadUnmasked>0</CanReadUnmasked>
-      </FieldPermission>
-      <FieldPermission>
-        <EntityName>book_requirementfunding</EntityName>
-        <AttributeName>book_validatedamount</AttributeName>
-        <CanRead>4</CanRead>
-        <CanUpdate>4</CanUpdate>
-        <CanCreate>4</CanCreate>
         <CanReadUnmasked>0</CanReadUnmasked>
       </FieldPermission>
       <FieldPermission>
@@ -431,14 +415,6 @@
         <CanReadUnmasked>0</CanReadUnmasked>
       </FieldPermission>
       <FieldPermission>
-        <EntityName>book_requirementfunding</EntityName>
-        <AttributeName>book_validatedamount</AttributeName>
-        <CanRead>4</CanRead>
-        <CanUpdate>4</CanUpdate>
-        <CanCreate>4</CanCreate>
-        <CanReadUnmasked>0</CanReadUnmasked>
-      </FieldPermission>
-      <FieldPermission>
         <EntityName>book_turnin</EntityName>
         <AttributeName>book_beapproved</AttributeName>
         <CanRead>4</CanRead>
@@ -481,14 +457,6 @@
       <FieldPermission>
         <EntityName>book_unfundedrequests</EntityName>
         <AttributeName>book_rwgprioritybin</AttributeName>
-        <CanRead>4</CanRead>
-        <CanUpdate>4</CanUpdate>
-        <CanCreate>4</CanCreate>
-        <CanReadUnmasked>0</CanReadUnmasked>
-      </FieldPermission>
-      <FieldPermission>
-        <EntityName>book_requirementfunding</EntityName>
-        <AttributeName>book_fundedamount</AttributeName>
         <CanRead>4</CanRead>
         <CanUpdate>4</CanUpdate>
         <CanCreate>4</CanCreate>
@@ -556,14 +524,6 @@
       </FieldPermission>
       <FieldPermission>
         <EntityName>book_requirementfunding</EntityName>
-        <AttributeName>book_validatedamount</AttributeName>
-        <CanRead>4</CanRead>
-        <CanUpdate>0</CanUpdate>
-        <CanCreate>0</CanCreate>
-        <CanReadUnmasked>0</CanReadUnmasked>
-      </FieldPermission>
-      <FieldPermission>
-        <EntityName>book_requirementfunding</EntityName>
         <AttributeName>book_lockfunding</AttributeName>
         <CanRead>4</CanRead>
         <CanUpdate>4</CanUpdate>
@@ -613,14 +573,6 @@
       <FieldPermission>
         <EntityName>book_requirements</EntityName>
         <AttributeName>book_rivalidated</AttributeName>
-        <CanRead>4</CanRead>
-        <CanUpdate>0</CanUpdate>
-        <CanCreate>0</CanCreate>
-        <CanReadUnmasked>0</CanReadUnmasked>
-      </FieldPermission>
-      <FieldPermission>
-        <EntityName>book_requirementfunding</EntityName>
-        <AttributeName>book_fundedamount</AttributeName>
         <CanRead>4</CanRead>
         <CanUpdate>0</CanUpdate>
         <CanCreate>0</CanCreate>
@@ -863,14 +815,6 @@
         <CanReadUnmasked>0</CanReadUnmasked>
       </FieldPermission>
       <FieldPermission>
-        <EntityName>book_requirementfunding</EntityName>
-        <AttributeName>book_fundedamount</AttributeName>
-        <CanRead>4</CanRead>
-        <CanUpdate>0</CanUpdate>
-        <CanCreate>0</CanCreate>
-        <CanReadUnmasked>0</CanReadUnmasked>
-      </FieldPermission>
-      <FieldPermission>
         <EntityName>book_unfundedrequests</EntityName>
         <AttributeName>book_outcomenarrative</AttributeName>
         <CanRead>4</CanRead>
@@ -953,14 +897,6 @@
       <FieldPermission>
         <EntityName>book_unfundedrequests</EntityName>
         <AttributeName>book_stateaction</AttributeName>
-        <CanRead>4</CanRead>
-        <CanUpdate>0</CanUpdate>
-        <CanCreate>0</CanCreate>
-        <CanReadUnmasked>0</CanReadUnmasked>
-      </FieldPermission>
-      <FieldPermission>
-        <EntityName>book_requirementfunding</EntityName>
-        <AttributeName>book_validatedamount</AttributeName>
         <CanRead>4</CanRead>
         <CanUpdate>0</CanUpdate>
         <CanCreate>0</CanCreate>
@@ -1163,14 +1099,6 @@
         <CanReadUnmasked>0</CanReadUnmasked>
       </FieldPermission>
       <FieldPermission>
-        <EntityName>book_requirementfunding</EntityName>
-        <AttributeName>book_fundedamount</AttributeName>
-        <CanRead>4</CanRead>
-        <CanUpdate>4</CanUpdate>
-        <CanCreate>4</CanCreate>
-        <CanReadUnmasked>0</CanReadUnmasked>
-      </FieldPermission>
-      <FieldPermission>
         <EntityName>book_unfundedrequests</EntityName>
         <AttributeName>book_rwgidentifiedrisk</AttributeName>
         <CanRead>4</CanRead>
@@ -1216,14 +1144,6 @@
         <CanRead>4</CanRead>
         <CanUpdate>0</CanUpdate>
         <CanCreate>0</CanCreate>
-        <CanReadUnmasked>0</CanReadUnmasked>
-      </FieldPermission>
-      <FieldPermission>
-        <EntityName>book_requirementfunding</EntityName>
-        <AttributeName>book_validatedamount</AttributeName>
-        <CanRead>4</CanRead>
-        <CanUpdate>4</CanUpdate>
-        <CanCreate>4</CanCreate>
         <CanReadUnmasked>0</CanReadUnmasked>
       </FieldPermission>
       <FieldPermission>
@@ -1273,14 +1193,6 @@
       <FieldPermission>
         <EntityName>book_unfundedrequests</EntityName>
         <AttributeName>book_resourcingpriority</AttributeName>
-        <CanRead>4</CanRead>
-        <CanUpdate>0</CanUpdate>
-        <CanCreate>0</CanCreate>
-        <CanReadUnmasked>0</CanReadUnmasked>
-      </FieldPermission>
-      <FieldPermission>
-        <EntityName>book_requirementfunding</EntityName>
-        <AttributeName>book_validatedamount</AttributeName>
         <CanRead>4</CanRead>
         <CanUpdate>0</CanUpdate>
         <CanCreate>0</CanCreate>
@@ -1377,14 +1289,6 @@
       <FieldPermission>
         <EntityName>book_turnin</EntityName>
         <AttributeName>book_beapproved</AttributeName>
-        <CanRead>4</CanRead>
-        <CanUpdate>0</CanUpdate>
-        <CanCreate>0</CanCreate>
-        <CanReadUnmasked>0</CanReadUnmasked>
-      </FieldPermission>
-      <FieldPermission>
-        <EntityName>book_requirementfunding</EntityName>
-        <AttributeName>book_fundedamount</AttributeName>
         <CanRead>4</CanRead>
         <CanUpdate>0</CanUpdate>
         <CanCreate>0</CanCreate>
@@ -1587,14 +1491,6 @@
         <CanReadUnmasked>0</CanReadUnmasked>
       </FieldPermission>
       <FieldPermission>
-        <EntityName>book_requirementfunding</EntityName>
-        <AttributeName>book_validatedamount</AttributeName>
-        <CanRead>4</CanRead>
-        <CanUpdate>0</CanUpdate>
-        <CanCreate>0</CanCreate>
-        <CanReadUnmasked>0</CanReadUnmasked>
-      </FieldPermission>
-      <FieldPermission>
         <EntityName>book_unfundedrequests</EntityName>
         <AttributeName>book_rwgprioritybin</AttributeName>
         <CanRead>4</CanRead>
@@ -1621,14 +1517,6 @@
       <FieldPermission>
         <EntityName>book_fundingtrack</EntityName>
         <AttributeName>book_beginningbalancereadonly</AttributeName>
-        <CanRead>4</CanRead>
-        <CanUpdate>0</CanUpdate>
-        <CanCreate>0</CanCreate>
-        <CanReadUnmasked>0</CanReadUnmasked>
-      </FieldPermission>
-      <FieldPermission>
-        <EntityName>book_requirementfunding</EntityName>
-        <AttributeName>book_fundedamount</AttributeName>
         <CanRead>4</CanRead>
         <CanUpdate>0</CanUpdate>
         <CanCreate>0</CanCreate>
@@ -1831,14 +1719,6 @@
         <CanReadUnmasked>0</CanReadUnmasked>
       </FieldPermission>
       <FieldPermission>
-        <EntityName>book_requirementfunding</EntityName>
-        <AttributeName>book_validatedamount</AttributeName>
-        <CanRead>4</CanRead>
-        <CanUpdate>0</CanUpdate>
-        <CanCreate>0</CanCreate>
-        <CanReadUnmasked>0</CanReadUnmasked>
-      </FieldPermission>
-      <FieldPermission>
         <EntityName>book_unfundedrequests</EntityName>
         <AttributeName>book_fundcenterreview</AttributeName>
         <CanRead>4</CanRead>
@@ -1905,14 +1785,6 @@
       <FieldPermission>
         <EntityName>book_prioritization</EntityName>
         <AttributeName>book_newrequestedamount</AttributeName>
-        <CanRead>4</CanRead>
-        <CanUpdate>0</CanUpdate>
-        <CanCreate>0</CanCreate>
-        <CanReadUnmasked>0</CanReadUnmasked>
-      </FieldPermission>
-      <FieldPermission>
-        <EntityName>book_requirementfunding</EntityName>
-        <AttributeName>book_fundedamount</AttributeName>
         <CanRead>4</CanRead>
         <CanUpdate>0</CanUpdate>
         <CanCreate>0</CanCreate>
@@ -2036,14 +1908,6 @@
       </FieldPermission>
       <FieldPermission>
         <EntityName>book_requirementfunding</EntityName>
-        <AttributeName>book_fundedamount</AttributeName>
-        <CanRead>4</CanRead>
-        <CanUpdate>0</CanUpdate>
-        <CanCreate>0</CanCreate>
-        <CanReadUnmasked>0</CanReadUnmasked>
-      </FieldPermission>
-      <FieldPermission>
-        <EntityName>book_requirementfunding</EntityName>
         <AttributeName>book_newfundedamount</AttributeName>
         <CanRead>4</CanRead>
         <CanUpdate>0</CanUpdate>
@@ -2187,14 +2051,6 @@
         <CanReadUnmasked>0</CanReadUnmasked>
       </FieldPermission>
       <FieldPermission>
-        <EntityName>book_requirementfunding</EntityName>
-        <AttributeName>book_validatedamount</AttributeName>
-        <CanRead>4</CanRead>
-        <CanUpdate>0</CanUpdate>
-        <CanCreate>0</CanCreate>
-        <CanReadUnmasked>0</CanReadUnmasked>
-      </FieldPermission>
-      <FieldPermission>
         <EntityName>book_unfundedrequests</EntityName>
         <AttributeName>book_outcome</AttributeName>
         <CanRead>4</CanRead>
@@ -2289,14 +2145,6 @@
       <FieldPermission>
         <EntityName>book_itemizeddetails</EntityName>
         <AttributeName>book_validatedamount</AttributeName>
-        <CanRead>4</CanRead>
-        <CanUpdate>0</CanUpdate>
-        <CanCreate>0</CanCreate>
-        <CanReadUnmasked>0</CanReadUnmasked>
-      </FieldPermission>
-      <FieldPermission>
-        <EntityName>book_requirementfunding</EntityName>
-        <AttributeName>book_fundedamount</AttributeName>
         <CanRead>4</CanRead>
         <CanUpdate>0</CanUpdate>
         <CanCreate>0</CanCreate>
@@ -2431,14 +2279,6 @@
         <CanReadUnmasked>0</CanReadUnmasked>
       </FieldPermission>
       <FieldPermission>
-        <EntityName>book_requirementfunding</EntityName>
-        <AttributeName>book_validatedamount</AttributeName>
-        <CanRead>4</CanRead>
-        <CanUpdate>0</CanUpdate>
-        <CanCreate>0</CanCreate>
-        <CanReadUnmasked>0</CanReadUnmasked>
-      </FieldPermission>
-      <FieldPermission>
         <EntityName>book_unfundedrequests</EntityName>
         <AttributeName>book_npmrecommendation</AttributeName>
         <CanRead>4</CanRead>
@@ -2491,14 +2331,6 @@
   <FieldSecurityProfile name="ARNG Checkbook - State PMs" description="State PM and their Read/Write column permissions" fieldsecurityprofileid="{875deea0-4063-f011-bec2-001dd805a06b}">
     <FieldPermissions>
       <FieldPermission>
-        <EntityName>book_requirementfunding</EntityName>
-        <AttributeName>book_fundedamount</AttributeName>
-        <CanRead>4</CanRead>
-        <CanUpdate>0</CanUpdate>
-        <CanCreate>0</CanCreate>
-        <CanReadUnmasked>0</CanReadUnmasked>
-      </FieldPermission>
-      <FieldPermission>
         <EntityName>book_unfundedrequests</EntityName>
         <AttributeName>book_npmstaterecommendation</AttributeName>
         <CanRead>4</CanRead>
@@ -2525,14 +2357,6 @@
       <FieldPermission>
         <EntityName>book_realignments</EntityName>
         <AttributeName>book_newstateapproved</AttributeName>
-        <CanRead>4</CanRead>
-        <CanUpdate>0</CanUpdate>
-        <CanCreate>0</CanCreate>
-        <CanReadUnmasked>0</CanReadUnmasked>
-      </FieldPermission>
-      <FieldPermission>
-        <EntityName>book_requirementfunding</EntityName>
-        <AttributeName>book_validatedamount</AttributeName>
         <CanRead>4</CanRead>
         <CanUpdate>0</CanUpdate>
         <CanCreate>0</CanCreate>

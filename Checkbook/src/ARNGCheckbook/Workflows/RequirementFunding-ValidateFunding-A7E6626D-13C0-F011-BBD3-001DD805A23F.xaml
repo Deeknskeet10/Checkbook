@@ -30,7 +30,7 @@
                     <sco:Collection x:TypeArguments="Variable" x:Key="Variables" />
                     <sco:Collection x:TypeArguments="Activity" x:Key="Activities">
                       <Sequence DisplayName="ControlStep5">
-                        <mcwb:Control ClassId="0d2c745a-e5a8-4c8f-ba63-c6d3bb604660" ControlDisplayName="Validated Amount" ControlId="book_validatedamount" DataFieldName="book_validatedamount" IsSystemControl="False" IsUnbound="False" SystemStepType="0">
+                        <mcwb:Control ClassId="c3efe0c3-0ec6-42be-8349-cbd9079dfd8e" ControlDisplayName="Validated Amount" ControlId="book_newvalidatedamount" DataFieldName="book_newvalidatedamount" IsSystemControl="False" IsUnbound="False" SystemStepType="0">
                           <mcwb:Control.Parameters>
                             <InArgument x:TypeArguments="x:String">
                               <Literal x:TypeArguments="x:String" Value="" />
@@ -51,7 +51,7 @@
                     <sco:Collection x:TypeArguments="Variable" x:Key="Variables" />
                     <sco:Collection x:TypeArguments="Activity" x:Key="Activities">
                       <Sequence DisplayName="ControlStep7">
-                        <mcwb:Control ClassId="0d2c745a-e5a8-4c8f-ba63-c6d3bb604660" ControlDisplayName="Funded Amount" ControlId="book_fundedamount" DataFieldName="book_fundedamount" IsSystemControl="False" IsUnbound="False" SystemStepType="0">
+                        <mcwb:Control ClassId="c3efe0c3-0ec6-42be-8349-cbd9079dfd8e" ControlDisplayName="Funded Amount" ControlId="book_newfundedamount" DataFieldName="book_newfundedamount" IsSystemControl="False" IsUnbound="False" SystemStepType="0">
                           <mcwb:Control.Parameters>
                             <InArgument x:TypeArguments="x:String">
                               <Literal x:TypeArguments="x:String" Value="" />

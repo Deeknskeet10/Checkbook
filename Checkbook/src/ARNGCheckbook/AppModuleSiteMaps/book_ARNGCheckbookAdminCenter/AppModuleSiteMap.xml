@@ -43,6 +43,8 @@
         <SubArea Id="NewSubArea_bf7b9b53" Entity="book_quantitytype" Client="All,Outlook,OutlookLaptopClient,OutlookWorkstationClient,Web" AvailableOffline="true" PassParams="false" Sku="All,OnPremise,Live,SPLA" />
         <SubArea Id="subarea_eccecc1a" Entity="book_prioritybin" Client="All,Outlook,OutlookLaptopClient,OutlookWorkstationClient,Web" AvailableOffline="true" PassParams="false" Sku="All,OnPremise,Live,SPLA" />
         <SubArea Id="subarea_1c15879a" Icon="/_imgs/imagestrips/transparent_spacer.gif" Entity="book_item" Client="All,Outlook,OutlookLaptopClient,OutlookWorkstationClient,Web" AvailableOffline="true" PassParams="false" Sku="All,OnPremise,Live,SPLA" />
+        <SubArea Id="subarea_e980fdbf" Icon="/_imgs/imagestrips/transparent_spacer.gif" Entity="book_itemizeddetails" Client="All,Outlook,OutlookLaptopClient,OutlookWorkstationClient,Web" AvailableOffline="true" PassParams="false" Sku="All,OnPremise,Live,SPLA" />
+        <SubArea Id="subarea_365272ba" Icon="/_imgs/imagestrips/transparent_spacer.gif" Entity="book_requirementdetails" Client="All,Outlook,OutlookLaptopClient,OutlookWorkstationClient,Web" AvailableOffline="true" PassParams="false" Sku="All,OnPremise,Live,SPLA" />
       </Group>
     </Area>
     <Area Id="NewArea_c4df18818" ResourceId="SitemapDesigner.NewArea" ShowGroups="false">
@@ -118,6 +120,12 @@
           </Titles>
         </SubArea>
         <SubArea Id="subarea_d1e717cf" Entity="book_tdc" Client="All,Outlook,OutlookLaptopClient,OutlookWorkstationClient,Web" AvailableOffline="true" PassParams="false" Sku="All,OnPremise,Live,SPLA" />
+      </Group>
+      <Group Id="group_c5d9187c" ResourceId="SitemapDesigner.NewGroup" DescriptionResourceId="SitemapDesigner.NewGroup" IntroducedVersion="7.0.0.0" IsProfile="false" ToolTipResourseId="SitemapDesigner.Unknown">
+        <Titles>
+          <Title LCID="1033" Title="Funds Movement" />
+        </Titles>
+        <SubArea Id="subarea_e6ebabf8" Icon="/_imgs/imagestrips/transparent_spacer.gif" Entity="book_realignments" Client="All,Outlook,OutlookLaptopClient,OutlookWorkstationClient,Web" AvailableOffline="true" PassParams="false" Sku="All,OnPremise,Live,SPLA" />
       </Group>
     </Area>
   </SiteMap>

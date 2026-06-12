@@ -1,0 +1,30 @@
+function onBookItemChange(executionContext) {
+    var formContext = executionContext.getFormContext();
+    var bookItem = formContext.getAttribute("book_item").getValue();
+
+    // Clear requirement and value initially
+    formContext.getAttribute("book_tdc").setRequiredLevel("none");
+
+    if (!bookItem) {
+        return; // nothing selected
+    }
+
+    var bookItemId = bookItem[0].id.replace(/[{}]/g, "");
+
+    // Query book_tdc records filtered by the selected book_item
+    Xrm.WebApi.retrieveMultipleRecords("book_tdc", 
+        "?$select=book_tdcid&$filter=_book_item_value eq " + bookItemId
+    ).then(function (result) {
+
+        if (result.entities.length > 0) {
+            // At least one related book_tdc exists → make field required
+            formContext.getAttribute("book_tdc").setRequiredLevel("required");
+        } else {
+            // No related items → field optional
+            formContext.getAttribute("book_tdc").setRequiredLevel("none");
+        }
+
+    }, function (error) {
+        console.log("Error checking book_tdc records:", error);
+    });
+}
