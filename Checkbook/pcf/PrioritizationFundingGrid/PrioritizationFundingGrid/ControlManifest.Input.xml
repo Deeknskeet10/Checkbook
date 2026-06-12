@@ -2,7 +2,7 @@
 <manifest>
   <control namespace="ARNGCheckbook" constructor="PrioritizationFundingGrid" version="0.1.0"
            display-name-key="PrioritizationFundingGrid"
-           description-key="Lists Prioritizations for a Requirement and lets the NPM allocate funding from the Requirement's RFs via book_prioritizationfunding junction rows. Each Prioritization shows its current per-RF allocations inline with editable Funded/Validated amounts and an Add-from-RF dropdown limited to RFs sharing the same Fiscal Year."
+           description-key="Lists Prioritizations for a Requirement and lets the NPM allocate funding from the Requirement RFs via book_prioritizationfunding junction rows. Each Prioritization shows its current per-RF allocations inline with editable Funded/Validated amounts and an Add-from-RF dropdown limited to RFs sharing the same Fiscal Year."
            control-type="virtual" >
     <external-service-usage enabled="false">
     </external-service-usage>
