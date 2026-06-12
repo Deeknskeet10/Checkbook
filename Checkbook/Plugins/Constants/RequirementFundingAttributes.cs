@@ -13,6 +13,7 @@ namespace Checkbook.Plugins.Constants
         public const string LineOfAccounting = "book_lineofaccounting";
         public const string Requirement = "book_requirement";
         public const string FundCenter = "book_fundcenter";
+        public const string FiscalYear = "book_newfiscalyear";
         public const string FundingValidated = "book_newfundingvalidated";
         public const string Withholding = "book_newwithholding";
         public const string StateCode = "statecode";
