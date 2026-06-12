@@ -38,6 +38,7 @@ const ALIAS = {
   fundedAmount: "fundedAmount",
   validatedAmount: "validatedAmount",
   requirement: "requirement",
+  state: "state",
 } as const;
 
 const PRIORITIZATION_ENTITY = "book_prioritization";
@@ -58,6 +59,7 @@ interface PrioRow {
   approvalStatus: string | null;
   fiscalYear: number | null;
   fiscalYearLabel: string | null;
+  stateName: string | null;
   fundingMode: number | null;
   fundingModeLabel: string | null;
   requestedAmount: number | null;
@@ -303,9 +305,16 @@ export const PrioritizationFundingGridApp: React.FC<PrioritizationFundingGridPro
           validatedAmount: toNumber(r.getValue(ALIAS.validatedAmount)),
           requirementId: extractLookupId(reqLookup),
           requirementName: r.getFormattedValue(ALIAS.requirement) ?? null,
+          stateName: r.getFormattedValue(ALIAS.state) ?? null,
         };
       })
+      // Sort by State first (alpha; null states sink), then by State Priority
+      // within a State so #1, #2 … remain grouped.
       .sort((a, b) => {
+        const sa = a.stateName ?? "￿";
+        const sb = b.stateName ?? "￿";
+        const cmp = sa.localeCompare(sb);
+        if (cmp !== 0) return cmp;
         const pa = a.statePriority ?? Number.MAX_SAFE_INTEGER;
         const pb = b.statePriority ?? Number.MAX_SAFE_INTEGER;
         if (pa !== pb) return pa - pb;
@@ -336,12 +345,26 @@ export const PrioritizationFundingGridApp: React.FC<PrioritizationFundingGridPro
     return hit?.label ?? `FY ${value}`;
   };
 
+  // Default to the newest FY so legacy (e.g. FY26) prios don't appear with an
+  // editable Add-from-RF dropdown — those records are on the pre-junction path
+  // and shouldn't be touched here. NPM can flip to "All" or any other FY.
   const [fyFilter, setFyFilter] = React.useState<FYFilter>(FY_FILTER_ALL);
+  const fyDefaultApplied = React.useRef(false);
 
-  // Reset filter if it no longer matches any FY in the set.
   React.useEffect(() => {
-    if (fyFilter === FY_FILTER_ALL) return;
-    if (!fyOptions.some((o) => o.value === fyFilter)) setFyFilter(FY_FILTER_ALL);
+    if (fyOptions.length === 0) return;
+
+    // First time we see options: pick the newest FY as the default.
+    if (!fyDefaultApplied.current) {
+      setFyFilter(fyOptions[0].value);
+      fyDefaultApplied.current = true;
+      return;
+    }
+
+    // Otherwise: if the current filter no longer matches any FY, fall back to All.
+    if (fyFilter !== FY_FILTER_ALL && !fyOptions.some((o) => o.value === fyFilter)) {
+      setFyFilter(FY_FILTER_ALL);
+    }
   }, [fyOptions, fyFilter]);
 
   const visiblePrios = React.useMemo<PrioRow[]>(() => {
@@ -875,7 +898,7 @@ export const PrioritizationFundingGridApp: React.FC<PrioritizationFundingGridPro
             <Text weight="semibold">
               Prioritization Funding ({visiblePrios.length} of {prios.length})
             </Text>
-            {fyOptions.length > 1 && (
+            {fyOptions.length > 0 && (
               <div className={styles.fyFilter}>
                 <Text size={200}>FY</Text>
                 <Combobox
