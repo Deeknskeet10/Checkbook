@@ -6,3 +6,6 @@
 
 # MSBuild Binary and Structured Log
 *.binlog
+
+# devenv shell artifact (canonical manifest is at Checkbook/.config/dotnet-tools.json)
+/dotnet-tools.json

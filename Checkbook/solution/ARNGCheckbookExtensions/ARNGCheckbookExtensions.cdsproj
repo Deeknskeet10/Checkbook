@@ -52,6 +52,7 @@
     <ProjectReference Include="../../pcf/ValidateAndFundGrid/ValidateAndFundGrid.pcfproj" />
     <ProjectReference Include="../../pcf/RequirementDetailsRank/RequirementDetailsRank.pcfproj" />
     <ProjectReference Include="../../pcf/PrioritizationsForRequirement/PrioritizationsForRequirement.pcfproj" />
+    <ProjectReference Include="../../pcf/PrioritizationFundingGrid/PrioritizationFundingGrid.pcfproj" />
   </ItemGroup>
 
   <Import Project="$(MSBuildToolsPath)\Microsoft.Common.targets" />
