@@ -87,11 +87,26 @@ interface RFOption {
 type SaveState = "saving" | "saved" | "error";
 type JunctionField = "fundedAmount" | "validatedAmount";
 
+// Dataverse subgrids default to ~4–25 rows per page. Bump to a comfortable
+// page size so the NPM doesn't see "4 of N" without doing anything; users can
+// still click Load more if the bucket exceeds this.
+const PAGE_SIZE = 100;
+
 const useStyles = makeStyles({
   root: {
     ...shorthands.padding("8px"),
     fontFamily: tokens.fontFamilyBase,
     fontSize: tokens.fontSizeBase200,
+  },
+  prioListScroll: {
+    maxHeight: "70vh",
+    overflowY: "auto",
+    paddingRight: "4px",
+  },
+  loadMoreRow: {
+    display: "flex",
+    justifyContent: "center",
+    ...shorthands.padding("8px", "0"),
   },
   toolbar: {
     display: "flex",
@@ -241,6 +256,22 @@ export const PrioritizationFundingGridApp: React.FC<PrioritizationFundingGridPro
 ) => {
   const { dataset, webAPI, isDisabled } = props;
   const styles = useStyles();
+
+  // Bump the dataset page size once on mount. Without this Dataverse hands us
+  // only the subgrid's default page (often ~4), which surprised users in 0.1.x.
+  // Guard against re-running so the host doesn't keep refetching.
+  const pageSizeApplied = React.useRef(false);
+  React.useEffect(() => {
+    if (pageSizeApplied.current) return;
+    if (dataset.paging && typeof dataset.paging.setPageSize === "function") {
+      try {
+        dataset.paging.setPageSize(PAGE_SIZE);
+        pageSizeApplied.current = true;
+      } catch {
+        // host may throw if setPageSize is called before the first load
+      }
+    }
+  }, [dataset.paging]);
 
   // ---- Materialise the Prios from the dataset ----
   const prios = React.useMemo<PrioRow[]>(() => {
@@ -900,7 +931,20 @@ export const PrioritizationFundingGridApp: React.FC<PrioritizationFundingGridPro
             {fyFilter !== FY_FILTER_ALL ? `in FY ${fyFilter}` : ""}.
           </div>
         ) : (
-          visiblePrios.map((p) => renderPrio(p))
+          <div className={styles.prioListScroll}>
+            {visiblePrios.map((p) => renderPrio(p))}
+            {dataset.paging && dataset.paging.hasNextPage && (
+              <div className={styles.loadMoreRow}>
+                <Button
+                  size="small"
+                  appearance="subtle"
+                  onClick={() => dataset.paging.loadNextPage()}
+                >
+                  Load more Prioritizations
+                </Button>
+              </div>
+            )}
+          </div>
         )}
       </div>
     </FluentProvider>
