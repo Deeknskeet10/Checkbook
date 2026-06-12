@@ -57,6 +57,7 @@ interface PrioRow {
   statePriority: number | null;
   approvalStatus: string | null;
   fiscalYear: number | null;
+  fiscalYearLabel: string | null;
   fundingMode: number | null;
   fundingModeLabel: string | null;
   requestedAmount: number | null;
@@ -248,12 +249,19 @@ export const PrioritizationFundingGridApp: React.FC<PrioritizationFundingGridPro
         const r = dataset.records[id];
         const reqLookup = r.getValue(ALIAS.requirement);
         const fundingModeRaw = r.getValue(ALIAS.fundingMode);
+        const fiscalYearRaw = r.getValue(ALIAS.fiscalYear);
         return {
           id,
           name: (r.getValue(ALIAS.name) as string | null) ?? "(unnamed)",
           statePriority: (r.getValue(ALIAS.statePriority) as number | null) ?? null,
           approvalStatus: r.getFormattedValue(ALIAS.approvalStatus) ?? null,
-          fiscalYear: (r.getValue(ALIAS.fiscalYear) as number | null) ?? null,
+          // book_newfiscalyear is an OptionSet; getValue returns either an
+          // {Value} wrapper or the raw integer depending on host version.
+          fiscalYear:
+            typeof fiscalYearRaw === "object" && fiscalYearRaw !== null
+              ? ((fiscalYearRaw as { Value?: number }).Value ?? null)
+              : toNumber(fiscalYearRaw),
+          fiscalYearLabel: r.getFormattedValue(ALIAS.fiscalYear) ?? null,
           fundingMode:
             typeof fundingModeRaw === "object" && fundingModeRaw !== null
               ? ((fundingModeRaw as { Value?: number }).Value ?? null)
@@ -275,19 +283,35 @@ export const PrioritizationFundingGridApp: React.FC<PrioritizationFundingGridPro
   }, [dataset.sortedRecordIds, dataset.records]);
 
   // ---- FY filter ----
-  const distinctFYs = React.useMemo<number[]>(() => {
-    const set = new Set<number>();
-    for (const p of prios) if (p.fiscalYear != null) set.add(p.fiscalYear);
-    return Array.from(set).sort((a, b) => b - a); // newest first
+  // book_newfiscalyear is a picklist; the option *value* is opaque (e.g.
+  // 100000000) but the formatted *label* is human-friendly ("FY 2027").
+  // Filtering uses value; the UI shows label.
+  const fyOptions = React.useMemo<{ value: number; label: string }[]>(() => {
+    const seen = new Map<number, string>();
+    for (const p of prios) {
+      if (p.fiscalYear == null) continue;
+      if (!seen.has(p.fiscalYear)) {
+        seen.set(p.fiscalYear, p.fiscalYearLabel ?? `FY ${p.fiscalYear}`);
+      }
+    }
+    return Array.from(seen.entries())
+      .map(([value, label]) => ({ value, label }))
+      .sort((a, b) => b.value - a.value); // newest first
   }, [prios]);
+
+  const fyLabelFor = (value: number | null): string => {
+    if (value == null) return "";
+    const hit = fyOptions.find((o) => o.value === value);
+    return hit?.label ?? `FY ${value}`;
+  };
 
   const [fyFilter, setFyFilter] = React.useState<FYFilter>(FY_FILTER_ALL);
 
   // Reset filter if it no longer matches any FY in the set.
   React.useEffect(() => {
     if (fyFilter === FY_FILTER_ALL) return;
-    if (!distinctFYs.includes(fyFilter)) setFyFilter(FY_FILTER_ALL);
-  }, [distinctFYs, fyFilter]);
+    if (!fyOptions.some((o) => o.value === fyFilter)) setFyFilter(FY_FILTER_ALL);
+  }, [fyOptions, fyFilter]);
 
   const visiblePrios = React.useMemo<PrioRow[]>(() => {
     if (fyFilter === FY_FILTER_ALL) return prios;
@@ -628,7 +652,7 @@ export const PrioritizationFundingGridApp: React.FC<PrioritizationFundingGridPro
           <Spinner size="extra-tiny" label="Loading RFs…" labelPosition="after" />
         ) : eligibleRFs.length === 0 ? (
           <Text size={200} className={styles.junctionEmpty}>
-            No additional FY {fy} Requirement Fundings available for this Requirement.
+            No additional {fyLabelFor(fy)} Requirement Fundings available for this Requirement.
           </Text>
         ) : (
           <Combobox
@@ -710,7 +734,7 @@ export const PrioritizationFundingGridApp: React.FC<PrioritizationFundingGridPro
           </Link>
           {prio.fiscalYear != null && (
             <Badge appearance="outline" color="informative">
-              FY {prio.fiscalYear}
+              {prio.fiscalYearLabel ?? `FY ${prio.fiscalYear}`}
             </Badge>
           )}
           {prio.fundingModeLabel && (
@@ -820,13 +844,13 @@ export const PrioritizationFundingGridApp: React.FC<PrioritizationFundingGridPro
             <Text weight="semibold">
               Prioritization Funding ({visiblePrios.length} of {prios.length})
             </Text>
-            {distinctFYs.length > 1 && (
+            {fyOptions.length > 1 && (
               <div className={styles.fyFilter}>
                 <Text size={200}>FY</Text>
                 <Combobox
                   size="small"
                   value={
-                    fyFilter === FY_FILTER_ALL ? "All" : `FY ${fyFilter}`
+                    fyFilter === FY_FILTER_ALL ? "All" : fyLabelFor(fyFilter)
                   }
                   selectedOptions={[
                     fyFilter === FY_FILTER_ALL ? FY_FILTER_ALL : String(fyFilter),
@@ -840,9 +864,9 @@ export const PrioritizationFundingGridApp: React.FC<PrioritizationFundingGridPro
                   <Option value={FY_FILTER_ALL} text="All">
                     All
                   </Option>
-                  {distinctFYs.map((fy) => (
-                    <Option key={fy} value={String(fy)} text={`FY ${fy}`}>
-                      FY {fy}
+                  {fyOptions.map((opt) => (
+                    <Option key={opt.value} value={String(opt.value)} text={opt.label}>
+                      {opt.label}
                     </Option>
                   ))}
                 </Combobox>

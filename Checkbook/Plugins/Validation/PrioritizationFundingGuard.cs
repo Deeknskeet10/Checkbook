@@ -88,8 +88,12 @@ namespace Checkbook.Plugins.Validation
             }
 
             // ---- 2. Same Fiscal Year ----
-            var prioFY = prio.GetAttributeValue<int?>(PrioritizationAttributes.FiscalYear);
-            var rfFY = rf.GetAttributeValue<int?>(RequirementFundingAttributes.FiscalYear);
+            // book_newfiscalyear is a picklist on both entities (goal_fiscalyear
+            // global option set), so read OptionSetValue and compare .Value.
+            var prioFY = prio
+                .GetAttributeValue<OptionSetValue>(PrioritizationAttributes.FiscalYear)?.Value;
+            var rfFY = rf
+                .GetAttributeValue<OptionSetValue>(RequirementFundingAttributes.FiscalYear)?.Value;
 
             if (prioFY == null || rfFY == null || prioFY != rfFY)
             {

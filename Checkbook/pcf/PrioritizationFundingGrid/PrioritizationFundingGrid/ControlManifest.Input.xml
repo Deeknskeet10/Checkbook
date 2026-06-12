@@ -16,7 +16,7 @@
       <property-set name="approvalStatus" display-name-key="Approval Status"
                     of-type="OptionSet" usage="bound" required="false" />
       <property-set name="fiscalYear" display-name-key="Fiscal Year"
-                    of-type="Whole.None" usage="bound" required="false" />
+                    of-type="OptionSet" usage="bound" required="false" />
       <property-set name="fundingMode" display-name-key="Funding Mode"
                     of-type="OptionSet" usage="bound" required="false" />
       <property-set name="requestedAmount" display-name-key="Requested Amount"
