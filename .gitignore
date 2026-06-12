@@ -21,3 +21,6 @@ Thumbs.db
 .vscode/
 *.swp
 *.swo
+
+# Raw solution-export drops (zips get copied into Checkbook/solutions/ for tracking)
+Checkbook/DOD SAFE-*/
