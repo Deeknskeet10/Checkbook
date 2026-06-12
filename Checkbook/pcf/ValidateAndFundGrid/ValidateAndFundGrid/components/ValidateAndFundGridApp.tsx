@@ -194,6 +194,7 @@ export const ValidateAndFundGridApp: React.FC<ValidateAndFundGridProps> = (
   const [error, setError] = React.useState<string | null>(null);
   const [success, setSuccess] = React.useState<string | null>(null);
   const [tdp, setTdp] = React.useState<number | null>(null);
+  const [withhold, setWithhold] = React.useState<number | null>(null);
   const [expanded, setExpanded] = React.useState<Record<string, boolean>>({});
   const [reloadKey, setReloadKey] = React.useState(0);
 
@@ -255,7 +256,9 @@ export const ValidateAndFundGridApp: React.FC<ValidateAndFundGridProps> = (
     };
   }, [initialPrioRows, webAPI, reloadKey]);
 
-  // --- Requirement Funding TDP (the funding pool) -----------------------
+  // --- Requirement Funding TDP + Withhold (the funding pool) ------------
+  // Withhold is the source of truth on the RF (maintained by the plugins);
+  // refetch on reloadKey so it stays in sync after each save.
   React.useEffect(() => {
     if (!requirementFundingId) return;
     const id = stripBraces(requirementFundingId);
@@ -264,14 +267,16 @@ export const ValidateAndFundGridApp: React.FC<ValidateAndFundGridProps> = (
         const rec = await webAPI.retrieveRecord(
           REQUIREMENT_FUNDING_ENTITY,
           id,
-          "?$select=book_newtdp"
+          "?$select=book_newtdp,book_newwithholding"
         );
         setTdp(num(rec.book_newtdp));
+        setWithhold(num(rec.book_newwithholding));
       } catch {
         setTdp(null);
+        setWithhold(null);
       }
     })();
-  }, [requirementFundingId, webAPI]);
+  }, [requirementFundingId, webAPI, reloadKey]);
 
   // --- Derived helpers --------------------------------------------------
   const itemsFor = React.useCallback(
@@ -314,10 +319,9 @@ export const ValidateAndFundGridApp: React.FC<ValidateAndFundGridProps> = (
     return { requested, validated, funded, unfunded };
   }, [prioRows, effective]);
 
-  // Withhold == Available == TDP − Funded. It is maintained as a field on the
-  // Requirement Funding by the plugins; computed here from live edits purely as
-  // an at-a-glance guardrail. The plugins remain the enforcer on save.
-  const available = (tdp ?? 0) - totals.funded;
+  // Withhold is read directly from the RF's stored book_newwithholding (the
+  // plugins are the authoritative computer). overAllocated remains a live
+  // guardrail against the user's pending edits before save.
   const overAllocated = tdp != null && totals.funded > tdp;
 
   // --- Editing ----------------------------------------------------------
@@ -516,8 +520,8 @@ export const ValidateAndFundGridApp: React.FC<ValidateAndFundGridProps> = (
             )}
             {stat(
               "Withhold (Available)",
-              fmtMoney(available),
-              available < 0 ? "bad" : "good"
+              fmtMoney(withhold),
+              withhold != null && withhold < 0 ? "bad" : "good"
             )}
           </div>
         )}
