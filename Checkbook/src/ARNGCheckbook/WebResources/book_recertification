@@ -11,8 +11,9 @@ var Recertification = (function () {
   "use strict";
 
   var FIELD = "book_recertification";
-  // Dataverse caps a single changeset at 1000 ops; leaving headroom for safety.
-  var BATCH_SIZE = 900;
+  // Concurrency cap per wave — Xrm.WebApi.updateRecord fires one request each;
+  // small waves keep us off throttling limits while still finishing ~1600 rows fast.
+  var BATCH_SIZE = 40;
 
   function certify(selectedControl)   { return run(selectedControl, true,  "Certify"); }
   function decertify(selectedControl) { return run(selectedControl, false, "Decertify"); }
@@ -96,59 +97,20 @@ var Recertification = (function () {
   }
 
   function sendBatch(entityName, ids, value) {
-    var changeSet = ids.map(function (id) {
-      var record = { entityType: entityName, id: id };
-      record[FIELD] = value;
-      return {
-        getMetadata: function () {
-          return {
-            boundParameter: null,
-            operationType: 2, // CRUD
-            operationName: "Update",
-            parameterTypes: {}
-          };
-        },
-        entity: record
-      };
+    var data = {};
+    data[FIELD] = value;
+    var fails = [];
+
+    var promises = ids.map(function (id) {
+      return Xrm.WebApi.updateRecord(entityName, id, data).then(
+        function () { /* ok */ },
+        function (err) {
+          fails.push({ id: id, error: (err && err.message) || String(err) });
+        }
+      );
     });
 
-    var request = {
-      changeSets: [changeSet],
-      getMetadata: function () {
-        return {
-          boundParameter: null,
-          operationType: 2,
-          operationName: "$batch",
-          parameterTypes: {}
-        };
-      }
-    };
-
-    return Xrm.WebApi.online.executeMultiple
-      ? Xrm.WebApi.online.executeMultiple([request]).then(parseBatchResponses)
-      : Xrm.WebApi.online.execute(request).then(parseBatchResponse);
-
-    function parseBatchResponses(responses) {
-      // executeMultiple resolves to an array of Responses (one per request).
-      var fails = [];
-      (responses || []).forEach(function (r) {
-        collectFails(r, fails);
-      });
-      return fails;
-    }
-    function parseBatchResponse(response) {
-      var fails = [];
-      collectFails(response, fails);
-      return fails;
-    }
-    function collectFails(response, fails) {
-      if (!response) return;
-      if (response.ok) return;
-      fails.push({
-        id: "(batch)",
-        error: "HTTP " + (response.status || "?") + " " + (response.statusText || "")
-      });
-    }
+    return Promise.all(promises).then(function () { return fails; });
   }
 
   function showResult(selectedControl, verb, total, failures) {
