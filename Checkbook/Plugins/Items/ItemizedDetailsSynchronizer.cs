@@ -100,35 +100,57 @@ namespace Checkbook.Plugins.Items
 
         /// <summary>
         /// A new Prioritization was created — seed its Itemized Details from the
-        /// Requirement Details of the Requirement behind its Requirement Funding.
+        /// Requirement Details of its Requirement.
+        ///
+        /// FY27+ Prios carry the Requirement directly via book_requirement (the
+        /// per-RF link moved to the book_prioritizationfunding junction).
+        /// Legacy Prios still use the direct book_requirementfunding lookup, so
+        /// we fall back to RF→Requirement when book_requirement is empty.
         /// </summary>
         private void HandlePrioritizationCreated(
             IPluginExecutionContext context,
             IOrganizationService service,
             ITracingService tracingService)
         {
-            var prioritization = GetTarget(context);
             var prioritizationId = context.PrimaryEntityId;
 
-            var requirementFunding = prioritization.GetAttributeValue<EntityReference>(
-                PrioritizationAttributes.RequirementFunding);
-            if (requirementFunding == null)
-            {
-                tracingService.Trace("Prioritization has no Requirement Funding; nothing to sync.");
-                return;
-            }
+            // Re-read instead of trusting Target: book_requirement may have been
+            // set by a sync plugin/workflow that ran between Target materialise
+            // and this Post-Op Async stage.
+            var prioritization = service.Retrieve(
+                EntityNames.Prioritization,
+                prioritizationId,
+                new ColumnSet(
+                    PrioritizationAttributes.Requirement,
+                    PrioritizationAttributes.RequirementFunding,
+                    "owningbusinessunit"));
 
-            var rf = service.Retrieve(
-                EntityNames.RequirementFunding,
-                requirementFunding.Id,
-                new ColumnSet(RequirementFundingAttributes.Requirement));
+            var requirement = prioritization.GetAttributeValue<EntityReference>(
+                PrioritizationAttributes.Requirement);
 
-            var requirement = rf.GetAttributeValue<EntityReference>(
-                RequirementFundingAttributes.Requirement);
             if (requirement == null)
             {
-                tracingService.Trace("Requirement Funding has no Requirement; nothing to sync.");
-                return;
+                var requirementFunding = prioritization.GetAttributeValue<EntityReference>(
+                    PrioritizationAttributes.RequirementFunding);
+                if (requirementFunding == null)
+                {
+                    tracingService.Trace(
+                        "Prioritization has neither Requirement nor Requirement Funding; nothing to sync.");
+                    return;
+                }
+
+                var rf = service.Retrieve(
+                    EntityNames.RequirementFunding,
+                    requirementFunding.Id,
+                    new ColumnSet(RequirementFundingAttributes.Requirement));
+
+                requirement = rf.GetAttributeValue<EntityReference>(
+                    RequirementFundingAttributes.Requirement);
+                if (requirement == null)
+                {
+                    tracingService.Trace("Requirement Funding has no Requirement; nothing to sync.");
+                    return;
+                }
             }
 
             var detailIds = GetRequirementDetails(service, requirement.Id);
@@ -142,13 +164,7 @@ namespace Checkbook.Plugins.Items
                 return;
             }
 
-            // The Target on Create may not carry owningbusinessunit (Dataverse sets it
-            // after the input message materialises), so read it back.
-            var owningBu = service.Retrieve(
-                    EntityNames.Prioritization,
-                    prioritizationId,
-                    new ColumnSet("owningbusinessunit"))
-                .GetAttributeValue<EntityReference>("owningbusinessunit");
+            var owningBu = prioritization.GetAttributeValue<EntityReference>("owningbusinessunit");
 
             // The Requirement already itemizes its funding, so this Prioritization
             // adopts Itemized mode. Flip the flag before seeding so the rollup that
@@ -300,16 +316,43 @@ namespace Checkbook.Plugins.Items
         }
 
         /// <summary>
-        /// Returns the ids of every active, Itemized-mode Prioritization whose
-        /// Requirement Funding points at the given Requirement. Direct-mode
-        /// Prioritizations are intentionally excluded so adding a Requirement Detail
-        /// never fans an Itemized Detail onto a manually-funded Prioritization (which
-        /// would let <see cref="PrioritizationItemizedRollup"/> zero its funding).
+        /// Returns the ids of every active, Itemized-mode Prioritization on the
+        /// given Requirement. Direct-mode Prioritizations are intentionally
+        /// excluded so adding a Requirement Detail never fans an Itemized Detail
+        /// onto a manually-funded Prioritization (which would let
+        /// <see cref="PrioritizationItemizedRollup"/> zero its funding).
+        ///
+        /// Matches via the Prio's direct book_requirement lookup (FY27+) OR via
+        /// the legacy book_requirementfunding lookup → RF.Requirement, so both
+        /// shapes of Prio are found.
         /// </summary>
         private static List<Entity> GetPrioritizationsForRequirement(
             IOrganizationService service, Guid requirementId)
         {
-            var query = new QueryExpression(EntityNames.Prioritization)
+            var direct = new QueryExpression(EntityNames.Prioritization)
+            {
+                ColumnSet = new ColumnSet("owningbusinessunit"),
+                Criteria =
+                {
+                    Conditions =
+                    {
+                        new ConditionExpression(
+                            PrioritizationAttributes.StateCode,
+                            ConditionOperator.Equal,
+                            StateCodeValues.Active),
+                        new ConditionExpression(
+                            PrioritizationAttributes.FundingMode,
+                            ConditionOperator.Equal,
+                            FundingModeValues.Itemized),
+                        new ConditionExpression(
+                            PrioritizationAttributes.Requirement,
+                            ConditionOperator.Equal,
+                            requirementId)
+                    }
+                }
+            };
+
+            var viaRf = new QueryExpression(EntityNames.Prioritization)
             {
                 ColumnSet = new ColumnSet("owningbusinessunit"),
                 Criteria =
@@ -328,16 +371,19 @@ namespace Checkbook.Plugins.Items
                 }
             };
 
-            var rfLink = query.AddLink(
+            var rfLink = viaRf.AddLink(
                 EntityNames.RequirementFunding,
-                PrioritizationAttributes.RequirementFunding, // book_requirementfunding on prioritization
-                RequirementFundingAttributes.Id);            // book_requirementfundingid
+                PrioritizationAttributes.RequirementFunding,
+                RequirementFundingAttributes.Id);
             rfLink.LinkCriteria.AddCondition(
                 RequirementFundingAttributes.Requirement,
                 ConditionOperator.Equal,
                 requirementId);
 
-            return service.RetrieveMultiple(query).Entities
+            var combined = service.RetrieveMultiple(direct).Entities
+                .Concat(service.RetrieveMultiple(viaRf).Entities);
+
+            return combined
                 .GroupBy(e => e.Id)
                 .Select(g => g.First())
                 .ToList();
