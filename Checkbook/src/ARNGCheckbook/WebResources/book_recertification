@@ -10,7 +10,7 @@
 var Recertification = (function () {
   "use strict";
 
-  var FIELD = "book_recertification";
+  var FIELD = "book_recertified";
   // Concurrency cap per wave — Xrm.WebApi.updateRecord fires one request each;
   // small waves keep us off throttling limits while still finishing ~1600 rows fast.
   var BATCH_SIZE = 40;
