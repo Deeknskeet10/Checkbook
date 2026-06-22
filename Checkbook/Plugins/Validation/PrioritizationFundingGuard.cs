@@ -3,6 +3,7 @@ using Microsoft.Xrm.Sdk;
 using Microsoft.Xrm.Sdk.Query;
 using Checkbook.Plugins.Base;
 using Checkbook.Plugins.Constants;
+using Checkbook.Plugins.Helpers;
 
 namespace Checkbook.Plugins.Validation
 {
@@ -103,10 +104,31 @@ namespace Checkbook.Plugins.Validation
             }
 
             // ---- 3. Uniqueness of (Prio, RF) ----
-            EnsureUniquePair(service, prioRef.Id, rfRef.Id, context, tracing);
+            JunctionGuard.EnsureUniquePair(
+                service, tracing,
+                EntityNames.PrioritizationFunding,
+                PrioritizationFundingAttributes.Id,
+                PrioritizationFundingAttributes.StateCode,
+                PrioritizationFundingAttributes.Prioritization, prioRef.Id,
+                PrioritizationFundingAttributes.RequirementFunding, rfRef.Id,
+                context,
+                "An active Prioritization Funding already exists for this Prioritization / Requirement Funding pair.");
 
             // ---- 4. RF.TDP cap + LOA remaining ----
-            EnforceTDPCap(service, target, preImage, rfRef.Id, rf, context, tracing);
+            var rfTDP = rf.GetAttributeValue<decimal?>(RequirementFundingAttributes.TDP) ?? 0m;
+            var newFunded = GetEffectiveDecimal(
+                target, preImage, PrioritizationFundingAttributes.FundedAmount);
+            var oldFunded = preImage?.GetAttributeValue<decimal?>(
+                PrioritizationFundingAttributes.FundedAmount) ?? 0m;
+            JunctionGuard.EnforceTDPCap(
+                service, tracing,
+                EntityNames.PrioritizationFunding,
+                PrioritizationFundingAttributes.StateCode,
+                PrioritizationFundingAttributes.RequirementFunding,
+                PrioritizationFundingAttributes.FundedAmount,
+                rfRef.Id, rfTDP,
+                newFunded, oldFunded,
+                context);
 
             // ---- Name autopop (Create only, when caller didn't set one) ----
             if (context.MessageName == "Create" &&
@@ -118,97 +140,6 @@ namespace Checkbook.Plugins.Validation
             }
 
             tracing.Trace("Prioritization Funding guard passed.");
-        }
-
-        private static void EnsureUniquePair(
-            IOrganizationService service,
-            Guid prioId,
-            Guid rfId,
-            IPluginExecutionContext context,
-            ITracingService tracing)
-        {
-            var fetch = $@"
-                <fetch top='1'>
-                    <entity name='{EntityNames.PrioritizationFunding}'>
-                        <attribute name='{PrioritizationFundingAttributes.Id}'/>
-                        <filter type='and'>
-                            <condition attribute='{PrioritizationFundingAttributes.StateCode}' operator='eq' value='0'/>
-                            <condition attribute='{PrioritizationFundingAttributes.Prioritization}' operator='eq' value='{prioId}'/>
-                            <condition attribute='{PrioritizationFundingAttributes.RequirementFunding}' operator='eq' value='{rfId}'/>
-                            {(context.MessageName == "Update"
-                                ? $"<condition attribute='{PrioritizationFundingAttributes.Id}' operator='ne' value='{context.PrimaryEntityId}'/>"
-                                : string.Empty)}
-                        </filter>
-                    </entity>
-                </fetch>";
-
-            var hits = service.RetrieveMultiple(new FetchExpression(fetch));
-            if (hits.Entities.Count > 0)
-            {
-                throw new InvalidPluginExecutionException(
-                    "An active Prioritization Funding already exists for this Prioritization / Requirement Funding pair.");
-            }
-
-            tracing.Trace("Pair uniqueness check passed.");
-        }
-
-        private void EnforceTDPCap(
-            IOrganizationService service,
-            Entity target,
-            Entity preImage,
-            Guid rfId,
-            Entity rf,
-            IPluginExecutionContext context,
-            ITracingService tracing)
-        {
-            var rfTDP = rf.GetAttributeValue<decimal?>(RequirementFundingAttributes.TDP) ?? 0m;
-            tracing.Trace($"RF TDP = {rfTDP}");
-
-            // Sum active junctions on this RF (includes self on Update).
-            var fetch = $@"
-                <fetch aggregate='true'>
-                    <entity name='{EntityNames.PrioritizationFunding}'>
-                        <attribute name='{PrioritizationFundingAttributes.FundedAmount}' alias='total_funded' aggregate='sum'/>
-                        <filter type='and'>
-                            <condition attribute='{PrioritizationFundingAttributes.StateCode}' operator='eq' value='0'/>
-                            <condition attribute='{PrioritizationFundingAttributes.RequirementFunding}' operator='eq' value='{rfId}'/>
-                        </filter>
-                    </entity>
-                </fetch>";
-
-            var result = service.RetrieveMultiple(new FetchExpression(fetch));
-            decimal siblingSum = 0m;
-
-            if (result.Entities.Count > 0)
-            {
-                var f = result.Entities[0].GetAttributeValue<AliasedValue>("total_funded");
-                siblingSum = f != null ? Convert.ToDecimal(f.Value) : 0m;
-            }
-
-            var newFunded = GetEffectiveDecimal(
-                target, preImage, PrioritizationFundingAttributes.FundedAmount);
-            var oldFunded = preImage?.GetAttributeValue<decimal?>(
-                PrioritizationFundingAttributes.FundedAmount) ?? 0m;
-
-            // For Create the aggregate doesn't include self yet (record doesn't exist),
-            // so add newFunded. For Update the aggregate already includes the OLD self
-            // value, so swap old → new by subtracting oldFunded.
-            var proposedTotal = context.MessageName == "Create"
-                ? siblingSum + newFunded
-                : siblingSum - oldFunded + newFunded;
-
-            tracing.Trace(
-                $"Sibling sum={siblingSum}, oldFunded={oldFunded}, newFunded={newFunded}, " +
-                $"proposed={proposedTotal}");
-
-            if (proposedTotal > rfTDP)
-            {
-                throw new InvalidPluginExecutionException(
-                    $"This change would exceed the Requirement Funding's TDP cap. " +
-                    $"RF TDP = {rfTDP:N2}, Proposed junction total = {proposedTotal:N2}.");
-            }
-
-            tracing.Trace("TDP cap check passed.");
         }
     }
 }

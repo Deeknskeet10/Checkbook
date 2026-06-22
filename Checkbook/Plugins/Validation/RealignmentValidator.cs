@@ -3,6 +3,7 @@ using Microsoft.Xrm.Sdk;
 using Microsoft.Xrm.Sdk.Query;
 using Checkbook.Plugins.Base;
 using Checkbook.Plugins.Constants;
+using Checkbook.Plugins.Helpers;
 
 namespace Checkbook.Plugins.Validation
 {
@@ -24,23 +25,17 @@ namespace Checkbook.Plugins.Validation
 
             var sameFundSAG = GetEffectiveBool(target, preImage, RealignmentsAttributes.SameFundandSAG);
 
-            // Updated: State Approved is now an OptionSetValue
-            int? statePre = preImage?.GetAttributeValue<OptionSetValue>("book_newstateapproved")?.Value;
-            int? statePost = target.Contains("book_newstateapproved") 
-                ? target.GetAttributeValue<OptionSetValue>("book_newstateapproved")?.Value 
+            // State Approved is an OptionSetValue; read the effective post-update
+            // value to decide whether Case 2 already passed State Approval.
+            int? statePre = preImage?.GetAttributeValue<OptionSetValue>(
+                RealignmentsAttributes.StateApproved)?.Value;
+            int? statePost = target.Contains(RealignmentsAttributes.StateApproved)
+                ? target.GetAttributeValue<OptionSetValue>(RealignmentsAttributes.StateApproved)?.Value
                 : statePre;
-
-            // Determine if it is currently approved for Case 2 validation
             bool isStateApproved = statePost == RealignmentBEDecisionValues.Approved;
 
-            // BE Decision 
             var beDecision = GetEffectiveOptionSetValue(target, preImage, RealignmentsAttributes.BEDecision);
             var beDecisionValue = beDecision?.Value;
-
-            int? bePre = preImage?.GetAttributeValue<OptionSetValue>(RealignmentsAttributes.BEDecision)?.Value;
-            int? bePost = target.Contains(RealignmentsAttributes.BEDecision) 
-                ? target.GetAttributeValue<OptionSetValue>(RealignmentsAttributes.BEDecision)?.Value 
-                : bePre;
 
             // Retrieve prioritizations
             var debitPrior = GetEffectiveEntityReference(target, preImage, RealignmentsAttributes.DebitedPrioritization);
@@ -55,18 +50,11 @@ namespace Checkbook.Plugins.Validation
             /* ============================================================
                Two‑Approval Trigger Logic (State + BE Decision)
                ============================================================ */
-            
-            // 1. Determine whether an approval setpoint changed
-            // Using the explicit Approved constant for better reliability
-            bool stateApprovalChangedToApproved =
-                statePre != RealignmentBEDecisionValues.Approved &&
-                statePost == RealignmentBEDecisionValues.Approved &&
-                target.Contains("book_newstateapproved");
 
-            bool beDecisionChangedToApproved =
-                bePre != RealignmentBEDecisionValues.Approved &&
-                bePost == RealignmentBEDecisionValues.Approved &&
-                target.Contains(RealignmentsAttributes.BEDecision);
+            bool stateApprovalChangedToApproved = ApprovalTransitionDetector.DetectOptionSetTransition(
+                target, preImage, RealignmentsAttributes.StateApproved, RealignmentBEDecisionValues.Approved);
+            bool beDecisionChangedToApproved = ApprovalTransitionDetector.DetectOptionSetTransition(
+                target, preImage, RealignmentsAttributes.BEDecision, RealignmentBEDecisionValues.Approved);
 
             // 2. If NEITHER approval changed, skip validation entirely
             

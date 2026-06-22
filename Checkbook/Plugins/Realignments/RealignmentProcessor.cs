@@ -55,37 +55,15 @@ namespace Checkbook.Plugins.Realignments
             // APPROVAL & DENIAL TRANSITION LOGIC (Choice-Based)
             // =============================================================
 
-            // 1. Capture State Decision Transition
-            int? preStateDec = preImage?.GetAttributeValue<OptionSetValue>("book_newstateapproved")?.Value;
-            int? newStateDec = target.Contains("book_newstateapproved")
-                ? target.GetAttributeValue<OptionSetValue>("book_newstateapproved")?.Value ?? preStateDec
-                : preStateDec;
+            bool stateApprovedTransition = ApprovalTransitionDetector.DetectOptionSetTransition(
+                target, preImage, RealignmentsAttributes.StateApproved, RealignmentBEDecisionValues.Approved);
+            bool stateDeniedTransition = ApprovalTransitionDetector.DetectOptionSetTransition(
+                target, preImage, RealignmentsAttributes.StateApproved, RealignmentBEDecisionValues.Denied);
 
-            bool stateApprovedTransition =
-                preStateDec != RealignmentBEDecisionValues.Approved &&
-                newStateDec == RealignmentBEDecisionValues.Approved &&
-                target.Contains("book_newstateapproved");
-
-            bool stateDeniedTransition =
-                preStateDec != RealignmentBEDecisionValues.Denied &&
-                newStateDec == RealignmentBEDecisionValues.Denied &&
-                target.Contains("book_newstateapproved");
-
-            // 2. Capture BE Decision Transition (Existing)
-            int? preBEDec = preImage?.GetAttributeValue<OptionSetValue>(RealignmentsAttributes.BEDecision)?.Value;
-            int? newBEDec = target.Contains(RealignmentsAttributes.BEDecision)
-                ? target.GetAttributeValue<OptionSetValue>(RealignmentsAttributes.BEDecision)?.Value ?? preBEDec
-                : preBEDec;
-
-            bool beApprovedTransition =
-                preBEDec != RealignmentBEDecisionValues.Approved &&
-                newBEDec == RealignmentBEDecisionValues.Approved &&
-                target.Contains(RealignmentsAttributes.BEDecision);
-
-            bool beDeniedTransition =
-                preBEDec != RealignmentBEDecisionValues.Denied &&
-                newBEDec == RealignmentBEDecisionValues.Denied &&
-                target.Contains(RealignmentsAttributes.BEDecision);
+            bool beApprovedTransition = ApprovalTransitionDetector.DetectOptionSetTransition(
+                target, preImage, RealignmentsAttributes.BEDecision, RealignmentBEDecisionValues.Approved);
+            bool beDeniedTransition = ApprovalTransitionDetector.DetectOptionSetTransition(
+                target, preImage, RealignmentsAttributes.BEDecision, RealignmentBEDecisionValues.Denied);
 
             // ---- Denial → Immediate deactivation ----
             if (stateDeniedTransition || beDeniedTransition)
@@ -127,7 +105,7 @@ namespace Checkbook.Plugins.Realignments
             if (debitLOA != null && creditLOA != null && debitLOA.Id != creditLOA.Id)
             {
                 tracing.Trace("LOAs differ — creating ledger debit/credit entries first (Ledger-First).");
-                LedgerCreator.CreateLedgerEntries(
+                LedgerCreator.CreateRealignmentPair(
                     service,
                     tracing,
                     debitLOA,
@@ -253,7 +231,7 @@ namespace Checkbook.Plugins.Realignments
             decimal tdp = rf.GetAttributeValue<decimal?>(RequirementFundingAttributes.TDP) ?? 0m;
             decimal withhold = rf.GetAttributeValue<decimal?>(RequirementFundingAttributes.Withholding) ?? 0m;
 
-            bool hasChildren = RFHasChildren(service, debitRFRef.Id);
+            bool hasChildren = RequirementFundingHelpers.HasActiveChildren(service, debitRFRef.Id);
 
             decimal remaining = amount;
 
@@ -313,18 +291,6 @@ namespace Checkbook.Plugins.Realignments
             service.Update(upd);
 
             tracing.Trace($"RF Credit: TDP increased by {amount:N2} on RF {creditRFRef.Id}.");
-        }
-
-        private bool RFHasChildren(IOrganizationService service, Guid rfId)
-        {
-            var query = new QueryExpression(EntityNames.Prioritization)
-            {
-                ColumnSet = new ColumnSet(false)
-            };
-            query.Criteria.AddCondition(PrioritizationAttributes.RequirementFunding, ConditionOperator.Equal, rfId);
-            query.Criteria.AddCondition(PrioritizationAttributes.StateCode, ConditionOperator.Equal, 0);
-
-            return service.RetrieveMultiple(query).Entities.Count > 0;
         }
 
         private void FinalizeRealignment(IOrganizationService service, ITracingService tracing, Guid id)

@@ -119,7 +119,7 @@ namespace Checkbook.Plugins.Realignments
                 throw new InvalidPluginExecutionException("Credited Requirement Funding is required for an RF→RF realignment.");
 
             // Does the debited RF have child Prioritizations?
-            bool hasChildren = RequirementFundingHasChildren(service, debitedReqRef);
+            bool hasChildren = RequirementFundingHelpers.HasActiveChildren(service, debitedReqRef.Id);
             tracing.Trace($"RF→RF: Debited RF {debitedReqRef.Id} has children? {hasChildren}");
 
             // Retrieve FundedAmount + Withholding
@@ -303,19 +303,5 @@ namespace Checkbook.Plugins.Realignments
             tracing.Trace($"{side} chain consistency validated.");
         }
 
-        // Helper: does an RF have any child Prioritizations (Active)?
-        private bool RequirementFundingHasChildren(IOrganizationService service, EntityReference reqRef)
-        {
-            var qe = new QueryExpression(EntityNames.Prioritization)
-            {
-                ColumnSet = new ColumnSet(false),
-                Criteria = new FilterExpression(LogicalOperator.And)
-            };
-            qe.Criteria.AddCondition(PrioritizationAttributes.RequirementFunding, ConditionOperator.Equal, reqRef.Id);
-            qe.Criteria.AddCondition(PrioritizationAttributes.StateCode, ConditionOperator.Equal, StateCodeValues.Active);
-
-            var children = service.RetrieveMultiple(qe).Entities;
-            return children != null && children.Count > 0;
-        }
     }
 }

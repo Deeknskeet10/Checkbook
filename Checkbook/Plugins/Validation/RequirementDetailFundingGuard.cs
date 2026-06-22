@@ -3,6 +3,7 @@ using Microsoft.Xrm.Sdk;
 using Microsoft.Xrm.Sdk.Query;
 using Checkbook.Plugins.Base;
 using Checkbook.Plugins.Constants;
+using Checkbook.Plugins.Helpers;
 
 namespace Checkbook.Plugins.Validation
 {
@@ -122,10 +123,31 @@ namespace Checkbook.Plugins.Validation
             }
 
             // ---- 3. Uniqueness of (RD, RF) ----
-            EnsureUniquePair(service, rdRef.Id, rfRef.Id, context, tracing);
+            JunctionGuard.EnsureUniquePair(
+                service, tracing,
+                EntityNames.RequirementDetailFunding,
+                RequirementDetailFundingAttributes.Id,
+                RequirementDetailFundingAttributes.StateCode,
+                RequirementDetailFundingAttributes.RequirementDetail, rdRef.Id,
+                RequirementDetailFundingAttributes.RequirementFunding, rfRef.Id,
+                context,
+                "An active Requirement Detail Funding already exists for this Requirement Detail / Requirement Funding pair.");
 
             // ---- 4. RF.TDP cap ----
-            EnforceTDPCap(service, target, preImage, rfRef.Id, rf, context, tracing);
+            var rfTDP = rf.GetAttributeValue<decimal?>(RequirementFundingAttributes.TDP) ?? 0m;
+            var newFunded = GetEffectiveDecimal(
+                target, preImage, RequirementDetailFundingAttributes.FundedAmount);
+            var oldFunded = preImage?.GetAttributeValue<decimal?>(
+                RequirementDetailFundingAttributes.FundedAmount) ?? 0m;
+            JunctionGuard.EnforceTDPCap(
+                service, tracing,
+                EntityNames.RequirementDetailFunding,
+                RequirementDetailFundingAttributes.StateCode,
+                RequirementDetailFundingAttributes.RequirementFunding,
+                RequirementDetailFundingAttributes.FundedAmount,
+                rfRef.Id, rfTDP,
+                newFunded, oldFunded,
+                context);
 
             // ---- Name autopop (Create only, when caller didn't set one) ----
             if (context.MessageName == "Create" &&
@@ -138,93 +160,6 @@ namespace Checkbook.Plugins.Validation
             }
 
             tracing.Trace("Requirement Detail Funding guard passed.");
-        }
-
-        private static void EnsureUniquePair(
-            IOrganizationService service,
-            Guid rdId,
-            Guid rfId,
-            IPluginExecutionContext context,
-            ITracingService tracing)
-        {
-            var fetch = $@"
-                <fetch top='1'>
-                    <entity name='{EntityNames.RequirementDetailFunding}'>
-                        <attribute name='{RequirementDetailFundingAttributes.Id}'/>
-                        <filter type='and'>
-                            <condition attribute='{RequirementDetailFundingAttributes.StateCode}' operator='eq' value='0'/>
-                            <condition attribute='{RequirementDetailFundingAttributes.RequirementDetail}' operator='eq' value='{rdId}'/>
-                            <condition attribute='{RequirementDetailFundingAttributes.RequirementFunding}' operator='eq' value='{rfId}'/>
-                            {(context.MessageName == "Update"
-                                ? $"<condition attribute='{RequirementDetailFundingAttributes.Id}' operator='ne' value='{context.PrimaryEntityId}'/>"
-                                : string.Empty)}
-                        </filter>
-                    </entity>
-                </fetch>";
-
-            var hits = service.RetrieveMultiple(new FetchExpression(fetch));
-            if (hits.Entities.Count > 0)
-            {
-                throw new InvalidPluginExecutionException(
-                    "An active Requirement Detail Funding already exists for this Requirement Detail / Requirement Funding pair.");
-            }
-
-            tracing.Trace("Pair uniqueness check passed.");
-        }
-
-        private void EnforceTDPCap(
-            IOrganizationService service,
-            Entity target,
-            Entity preImage,
-            Guid rfId,
-            Entity rf,
-            IPluginExecutionContext context,
-            ITracingService tracing)
-        {
-            var rfTDP = rf.GetAttributeValue<decimal?>(RequirementFundingAttributes.TDP) ?? 0m;
-            tracing.Trace($"RF TDP = {rfTDP}");
-
-            var fetch = $@"
-                <fetch aggregate='true'>
-                    <entity name='{EntityNames.RequirementDetailFunding}'>
-                        <attribute name='{RequirementDetailFundingAttributes.FundedAmount}' alias='total_funded' aggregate='sum'/>
-                        <filter type='and'>
-                            <condition attribute='{RequirementDetailFundingAttributes.StateCode}' operator='eq' value='0'/>
-                            <condition attribute='{RequirementDetailFundingAttributes.RequirementFunding}' operator='eq' value='{rfId}'/>
-                        </filter>
-                    </entity>
-                </fetch>";
-
-            var result = service.RetrieveMultiple(new FetchExpression(fetch));
-            decimal siblingSum = 0m;
-
-            if (result.Entities.Count > 0)
-            {
-                var f = result.Entities[0].GetAttributeValue<AliasedValue>("total_funded");
-                siblingSum = f != null ? Convert.ToDecimal(f.Value) : 0m;
-            }
-
-            var newFunded = GetEffectiveDecimal(
-                target, preImage, RequirementDetailFundingAttributes.FundedAmount);
-            var oldFunded = preImage?.GetAttributeValue<decimal?>(
-                RequirementDetailFundingAttributes.FundedAmount) ?? 0m;
-
-            var proposedTotal = context.MessageName == "Create"
-                ? siblingSum + newFunded
-                : siblingSum - oldFunded + newFunded;
-
-            tracing.Trace(
-                $"Sibling sum={siblingSum}, oldFunded={oldFunded}, newFunded={newFunded}, " +
-                $"proposed={proposedTotal}");
-
-            if (proposedTotal > rfTDP)
-            {
-                throw new InvalidPluginExecutionException(
-                    $"This change would exceed the Requirement Funding's TDP cap. " +
-                    $"RF TDP = {rfTDP:N2}, Proposed junction total = {proposedTotal:N2}.");
-            }
-
-            tracing.Trace("TDP cap check passed.");
         }
 
         // -----------------------------------------------------------------

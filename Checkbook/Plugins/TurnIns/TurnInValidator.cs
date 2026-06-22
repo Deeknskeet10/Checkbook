@@ -42,20 +42,10 @@ namespace Checkbook.Plugins.TurnIns
             var preImage = TryGetPreImage(context);
 
             // ---- Approval-transition detection ----
-            bool preStateApproved = preImage?.GetAttributeValue<bool?>(TurninAttributes.StateApproved) ?? false;
-            bool newStateApproved = target.Contains(TurninAttributes.StateApproved)
-                ? target.GetAttributeValue<bool?>(TurninAttributes.StateApproved) ?? preStateApproved
-                : preStateApproved;
-
-            bool preBeApproved = preImage?.GetAttributeValue<bool?>(TurninAttributes.BEApproved) ?? false;
-            bool newBeApproved = target.Contains(TurninAttributes.BEApproved)
-                ? target.GetAttributeValue<bool?>(TurninAttributes.BEApproved) ?? preBeApproved
-                : preBeApproved;
-
-            bool stateApprovalTransition = !preStateApproved && newStateApproved
-                                           && target.Contains(TurninAttributes.StateApproved);
-            bool beApprovalTransition = !preBeApproved && newBeApproved
-                                        && target.Contains(TurninAttributes.BEApproved);
+            bool stateApprovalTransition = ApprovalTransitionDetector.DetectBoolTransition(
+                target, preImage, TurninAttributes.StateApproved);
+            bool beApprovalTransition = ApprovalTransitionDetector.DetectBoolTransition(
+                target, preImage, TurninAttributes.BEApproved);
 
             if (!stateApprovalTransition && !beApprovalTransition)
             {
@@ -67,25 +57,18 @@ namespace Checkbook.Plugins.TurnIns
                 $"TurnInValidator: approval transition detected " +
                 $"(stateTx={stateApprovalTransition}, beTx={beApprovalTransition})");
 
+            // Recompute the effective post-update value of both flags — needed for
+            // the approval-routing check at the end of this method.
+            bool newStateApproved = (preImage?.GetAttributeValue<bool?>(TurninAttributes.StateApproved) ?? false)
+                || stateApprovalTransition;
+            bool newBeApproved = (preImage?.GetAttributeValue<bool?>(TurninAttributes.BEApproved) ?? false)
+                || beApprovalTransition;
+
             // ---- Idempotency: have we already created ledgers for this Turn-In? ----
             // Per design choice (Q2 = option C), existence of ledger rows linked back to
             // this Turn-In is the idempotency signal. End users can edit booleans through
             // various data paths (incl. Excel) — ledger existence is the durable side effect.
-            var existingLedgers = service.RetrieveMultiple(new QueryExpression(EntityNames.Ledger)
-            {
-                ColumnSet = new ColumnSet(false),
-                TopCount = 1,
-                Criteria = new FilterExpression(LogicalOperator.And)
-                {
-                    Conditions =
-                    {
-                        new ConditionExpression(LedgerAttributes.TurnIn, ConditionOperator.Equal, context.PrimaryEntityId),
-                        new ConditionExpression(LedgerAttributes.StateCode, ConditionOperator.Equal, StateCodeValues.Active),
-                    }
-                }
-            });
-
-            if (existingLedgers.Entities.Count > 0)
+            if (TurnInIdempotency.HasExistingLedger(service, context.PrimaryEntityId))
             {
                 throw new InvalidPluginExecutionException(
                     "This Turn-In has already been processed — ledger entries exist against it. " +

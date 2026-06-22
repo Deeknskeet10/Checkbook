@@ -47,20 +47,10 @@ namespace Checkbook.Plugins.TurnIns
             var preImage = TryGetPreImage(context);
 
             // ---- Approval-transition detection (same logic as the validator) ----
-            bool preStateApproved = preImage?.GetAttributeValue<bool?>(TurninAttributes.StateApproved) ?? false;
-            bool newStateApproved = target.Contains(TurninAttributes.StateApproved)
-                ? target.GetAttributeValue<bool?>(TurninAttributes.StateApproved) ?? preStateApproved
-                : preStateApproved;
-
-            bool preBeApproved = preImage?.GetAttributeValue<bool?>(TurninAttributes.BEApproved) ?? false;
-            bool newBeApproved = target.Contains(TurninAttributes.BEApproved)
-                ? target.GetAttributeValue<bool?>(TurninAttributes.BEApproved) ?? preBeApproved
-                : preBeApproved;
-
-            bool stateApprovalTransition = !preStateApproved && newStateApproved
-                                           && target.Contains(TurninAttributes.StateApproved);
-            bool beApprovalTransition = !preBeApproved && newBeApproved
-                                        && target.Contains(TurninAttributes.BEApproved);
+            bool stateApprovalTransition = ApprovalTransitionDetector.DetectBoolTransition(
+                target, preImage, TurninAttributes.StateApproved);
+            bool beApprovalTransition = ApprovalTransitionDetector.DetectBoolTransition(
+                target, preImage, TurninAttributes.BEApproved);
 
             if (!stateApprovalTransition && !beApprovalTransition)
             {
@@ -71,20 +61,7 @@ namespace Checkbook.Plugins.TurnIns
             // ---- Idempotency: bail if any ledgers already exist for this Turn-In ----
             // Defense-in-depth — the validator should have caught this pre-op, but if
             // the validator step ever gets disabled this guard still prevents duplicates.
-            var existingLedgers = service.RetrieveMultiple(new QueryExpression(EntityNames.Ledger)
-            {
-                ColumnSet = new ColumnSet(false),
-                TopCount = 1,
-                Criteria = new FilterExpression(LogicalOperator.And)
-                {
-                    Conditions =
-                    {
-                        new ConditionExpression(LedgerAttributes.TurnIn, ConditionOperator.Equal, context.PrimaryEntityId),
-                        new ConditionExpression(LedgerAttributes.StateCode, ConditionOperator.Equal, StateCodeValues.Active),
-                    }
-                }
-            });
-            if (existingLedgers.Entities.Count > 0)
+            if (TurnInIdempotency.HasExistingLedger(service, context.PrimaryEntityId))
             {
                 tracing.Trace(
                     "Ledger entries already exist for this Turn-In — orchestrator declines to re-process. " +
@@ -114,7 +91,9 @@ namespace Checkbook.Plugins.TurnIns
 
             // ---- 1. Ledger entries ----
             tracing.Trace("Creating ledger entries...");
-            TurnInLedgerCreator.CreateLedgerEntries(service, tracing, turnInId, loaResolution);
+            LedgerCreator.CreateTurnInEntries(
+                service, tracing, turnInId,
+                loaResolution.DebitLOAs, loaResolution.CreditLOAs);
 
             // ---- 2. Distributions — AFP + Allotment (debit at state FC, credit at A18) ----
             // Sized from book_afpamount / book_allotmentamount on the Turn-In header

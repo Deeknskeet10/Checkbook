@@ -2,6 +2,7 @@ using System;
 using Microsoft.Xrm.Sdk;
 using Checkbook.Plugins.Base;
 using Checkbook.Plugins.Constants;
+using Checkbook.Plugins.Helpers;
 
 namespace Checkbook.Plugins.TurnIns
 {
@@ -37,12 +38,9 @@ namespace Checkbook.Plugins.TurnIns
 
             // Only act on State Approval flipping true → false. BE Approval transitions
             // don't deactivate on their own.
-            bool preStateApproved = preImage.GetAttributeValue<bool?>(TurninAttributes.StateApproved) ?? false;
-            bool newStateApproved = target.Contains(TurninAttributes.StateApproved)
-                ? target.GetAttributeValue<bool?>(TurninAttributes.StateApproved) ?? preStateApproved
-                : preStateApproved;
-
-            if (!(preStateApproved && !newStateApproved && target.Contains(TurninAttributes.StateApproved)))
+            bool denialTransition = ApprovalTransitionDetector.DetectBoolTransition(
+                target, preImage, TurninAttributes.StateApproved, from: true, to: false);
+            if (!denialTransition)
             {
                 tracing.Trace("TurnInDeactivator: no State Approval denial transition; skipping.");
                 return;

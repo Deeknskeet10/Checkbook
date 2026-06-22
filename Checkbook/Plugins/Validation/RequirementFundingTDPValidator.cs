@@ -80,7 +80,7 @@ namespace Checkbook.Plugins.Validation
             bool fundedChanged = target.Contains(RequirementFundingAttributes.FundedAmount);
 
             // Determine if this RF has children
-            bool hasChildren = RequirementFundingHasChildren(service, context.PrimaryEntityId);
+            bool hasChildren = RequirementFundingHelpers.HasActiveChildren(service, context.PrimaryEntityId);
             tracingService.Trace($"RF Has Children: {hasChildren}");
 
             /* 
@@ -149,22 +149,6 @@ namespace Checkbook.Plugins.Validation
             }
 
             return false;
-        }
-        // Same helper logic used in your realignment plugin
-        private bool RequirementFundingHasChildren(IOrganizationService service, Guid rfId)
-        {
-            var qe = new QueryExpression(EntityNames.Prioritization)
-            {
-                ColumnSet = new ColumnSet(false),
-                Criteria = new FilterExpression(LogicalOperator.And)
-            };
-
-            qe.Criteria.AddCondition(PrioritizationAttributes.RequirementFunding, ConditionOperator.Equal, rfId);
-            qe.Criteria.AddCondition(PrioritizationAttributes.StateCode, ConditionOperator.Equal, StateCodeValues.Active);
-
-            var result = service.RetrieveMultiple(qe);
-
-            return result.Entities != null && result.Entities.Count > 0;
         }
     }
 }
