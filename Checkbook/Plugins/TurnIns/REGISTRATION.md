@@ -1,9 +1,14 @@
-# Turn-In Plugins — Environment Variable
+# Turn-In Plugins — Environment Variable & FY27 Credit-LOA Rules
 
-The Turn-In approval pipeline is already registered (assembly steps for
-`TurnInValidator`, `TurnInApprovalPlugin`, `TurnInDeactivator`). The change
-below is the only Dataverse-side configuration needed for the FY27 credit-LOA
-resolution rules.
+Deep-dive doc for the `book_TurnInCreditOPR` env var that the Turn-In
+approval pipeline reads via `TurnInLOAResolver` for FY27+ records.
+
+> **Canonical step registrations for the four Turn-In plugins**
+> (`TurnInAmountCalculator`, `TurnInValidator`, `TurnInApprovalPlugin`,
+> `TurnInDeactivator`) **live in
+> [`../PLUGIN-REGISTRATION.md`](../PLUGIN-REGISTRATION.md) under the
+> `## TurnIns` section.** This file only covers the FY27 credit-LOA
+> resolution rules and the env var that drives them.
 
 ## `book_TurnInCreditOPR`
 

@@ -1,8 +1,13 @@
-# LOA Generation — Plugin Registration
+# LOA Generation — Plugin Notes
 
-Cheat sheet for registering the FY27 LOA-generation plugins in the Plugin
-Registration Tool. All three live in `Checkbook_Plugins.dll`, namespace
-`Checkbook.Plugins.LOAs`.
+Deep-dive doc for the FY27 LOA-generation plugins (namespace
+`Checkbook.Plugins.LOAs`).
+
+> **Canonical step registrations live in
+> [`../PLUGIN-REGISTRATION.md`](../PLUGIN-REGISTRATION.md) under the
+> `## LOAs` section.** This file covers the *prerequisites* (alternate key,
+> Custom API definition), step-ordering contract with
+> `FundingTrackTDPRecalculator`, and the smoke-test sequence.
 
 Replaces (deactivate, don't delete):
 - Cloud flow **`FundingTrack-GenerateLOAs`**
@@ -32,54 +37,16 @@ Replaces (deactivate, don't delete):
      | `Linked`  | Integer |
      | `Skipped` | Integer |
 
-## Plugin steps
+## Step-ordering contract
 
-### 1. `LOAGenerator` — Custom API handler
-
-| Setting | Value |
-|---|---|
-| Message | `book_GenerateLOAs` |
-| Primary Entity | _(none — unbound)_ |
-| Event Pipeline | PostOperation (40) |
-| Execution Mode | Synchronous |
-| Deployment | Server |
-| Run in user's context | Calling User |
-| Images | — |
-
-> Dataverse wires the handler automatically once the Custom API's
-> "Plugin Type" field points at `Checkbook.Plugins.LOAs.LOAGenerator`. No
-> separate step registration is required.
-
-### 2. `LOANameSetter` — LOA name + FY on create
-
-| Setting | Value |
-|---|---|
-| Message | `Create` |
-| Primary Entity | `book_fundingline` |
-| Event Pipeline | **PreOperation (20)** |
-| Execution Mode | Synchronous |
-| Deployment | Server |
-| Filtering Attributes | _(none — runs on every create)_ |
-| Images | — |
-
-### 3. `FundingTrackLOASynchronizer` — relink on grain change
-
-| Setting | Value |
-|---|---|
-| Message | `Update` |
-| Primary Entity | `book_fundingtrack` |
-| Event Pipeline | **PreOperation (20)** |
-| Execution Mode | Synchronous |
-| Deployment | Server |
-| Filtering Attributes | `book_disbursingofficial, book_fund, book_boc, book_dollartype, book_pg, book_sag, book_mdep` |
-| PreImage Name | `PreImage` |
-| PreImage Attributes | `book_disbursingofficial, book_fund, book_boc, book_dollartype, book_pg, book_sag, book_mdep, book_ape, book_lineofaccountingloa, owningbusinessunit` |
-
-Step ordering: this synchronizer is **PreOp**; the existing
+`FundingTrackLOASynchronizer` is **PreOp**; the existing
 `FundingTrackTDPRecalculator` is **PostOp**. They run in the same pipeline
 at the same depth, so the recalculator sees both the pre-image's old LOA
-and the synchronizer's new LOA on the target — and rolls up both. Don't
-add a `Depth > 1` skip to the synchronizer for the same reason.
+and the synchronizer's new LOA on the target — and rolls up both. **Don't
+add a `Depth > 1` skip to the synchronizer for the same reason.**
+
+The full step rows are in
+[`../PLUGIN-REGISTRATION.md`](../PLUGIN-REGISTRATION.md).
 
 ## Leave alone — existing TDP roll-up
 

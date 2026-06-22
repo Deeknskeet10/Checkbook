@@ -1,8 +1,13 @@
-# Generate Distributions — Plugin Registration
+# Generate Distributions — Plugin Notes
 
-Cheat sheet for registering the FY27 Distribution-generation plugin in the
-Plugin Registration Tool. Lives in `Checkbook_Plugins.dll`, namespace
-`Checkbook.Plugins.Distributions`.
+Deep-dive doc for the FY27 Distribution-generation plugin (namespace
+`Checkbook.Plugins.Distributions`).
+
+> **Canonical step registration lives in
+> [`../PLUGIN-REGISTRATION.md`](../PLUGIN-REGISTRATION.md) under the
+> `## Distributions` section.** This file covers the *prerequisites* (env
+> var, Custom API definition), the algorithm by phase, failure modes, and
+> the smoke-test sequence.
 
 Replaces (deactivate, don't delete):
 - Cloud flow **`Distribution-GenerateAFPDistributions`**
@@ -36,24 +41,14 @@ Replaces (deactivate, don't delete):
      | `TurnInsCreated` | Integer |
      | `Skipped`        | Integer |
 
-## Plugin step
+## Execution mode
 
-| Setting | Value |
-|---|---|
-| Message | `book_GenerateDistributions` |
-| Primary Entity | _(none — unbound)_ |
-| Event Pipeline | PostOperation (40) |
-| Execution Mode | **Asynchronous** |
-| Deployment | Server |
-| Run in user's context | Calling User |
-| Images | — |
+The Custom API's "Plugin Type" field auto-wires the handler — no separate
+`SdkMessageProcessingStep` registration is required beyond setting that field.
 
-> The Custom API's "Plugin Type" field auto-wires the handler. No separate
-> SdkMessageProcessingStep registration is required beyond setting that field.
-
-Async mode runs the heavy lifting in a System Job — the PowerApps caller gets
-an immediate ack instead of blocking on the 2-minute sync limit. Surface the
-async system job's terminal status back to the user (poll or push).
+**Run Async.** The PowerApps caller gets an immediate ack instead of blocking
+on the 2-minute sync limit. Surface the async system job's terminal status
+back to the user (poll or push).
 
 ## What the plugin does
 
