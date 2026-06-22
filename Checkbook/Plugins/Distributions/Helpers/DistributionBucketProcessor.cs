@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Xrm.Sdk;
 using Microsoft.Xrm.Sdk.Query;
@@ -53,12 +54,13 @@ namespace Checkbook.Plugins.Distributions.Helpers
             EntityReference fundingEvent,
             int fundingType,
             Guid holdingFundCenterId,
-            EntityReference owningBu)
+            EntityReference owningBu,
+            IDictionary<string, FundingPercentageHelper.FundingResolution> pctCache = null)
         {
             var result = new BucketResult();
 
             var resolution = FundingPercentageHelper.Resolve(
-                service, tracing, bucket.FundId, bucket.PgId, fundingType, DateTime.UtcNow.Date);
+                service, tracing, bucket.FundId, bucket.PgId, fundingType, DateTime.UtcNow.Date, pctCache);
             if (resolution == null || resolution.FundingEvent.Id != fundingEvent.Id)
             {
                 tracing.Trace(

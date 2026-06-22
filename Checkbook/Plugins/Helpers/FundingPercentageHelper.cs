@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Xrm.Sdk;
 using Microsoft.Xrm.Sdk.Query;
@@ -36,6 +37,10 @@ namespace Checkbook.Plugins.Helpers
         /// Throws if multiple active matches are found — that means the non-overlap
         /// invariant has been violated and Generate Distributions can no longer
         /// produce deterministic output.
+        ///
+        /// Pass a per-execution <paramref name="cache"/> to memoize across calls
+        /// in the same plugin run (e.g. GenerateDistributions iterates many
+        /// buckets that re-resolve identical Fund/PG/type tuples).
         /// </summary>
         public static FundingResolution Resolve(
             IOrganizationService service,
@@ -43,13 +48,27 @@ namespace Checkbook.Plugins.Helpers
             Guid fundId,
             Guid pgSagId,
             int fundingType,
-            DateTime asOf)
+            DateTime asOf,
+            IDictionary<string, FundingResolution> cache = null)
         {
             if (service == null) throw new ArgumentNullException(nameof(service));
             if (fundId == Guid.Empty) throw new ArgumentException("fundId is empty.", nameof(fundId));
             if (pgSagId == Guid.Empty) throw new ArgumentException("pgSagId is empty.", nameof(pgSagId));
 
             var asOfDate = asOf.Date;
+
+            string cacheKey = null;
+            if (cache != null)
+            {
+                cacheKey = $"{fundId:N}|{pgSagId:N}|{fundingType}|{asOfDate:yyyyMMdd}";
+                if (cache.TryGetValue(cacheKey, out var hit))
+                {
+                    tracing?.Trace(
+                        $"FundingPercentageHelper: cache hit for {cacheKey} → " +
+                        $"event={hit?.FundingEvent?.Id} pct={hit?.Percentage}.");
+                    return hit;
+                }
+            }
 
             var query = new QueryExpression(EntityNames.FundingDetails)
             {
@@ -92,6 +111,7 @@ namespace Checkbook.Plugins.Helpers
                 tracing?.Trace(
                     $"FundingPercentageHelper: no active type={fundingType} event for " +
                     $"Fund={fundId}, PG/SAG={pgSagId} as of {asOfDate:yyyy-MM-dd}.");
+                if (cacheKey != null) cache[cacheKey] = null;
                 return null;
             }
             if (rows.Count > 1)
@@ -111,7 +131,9 @@ namespace Checkbook.Plugins.Helpers
                 $"FundingPercentageHelper: type={fundingType} Fund={fundId} PG/SAG={pgSagId} " +
                 $"asOf={asOfDate:yyyy-MM-dd} → event={feRef?.Id} pct={pct}.");
 
-            return new FundingResolution(feRef, pct);
+            var resolution = new FundingResolution(feRef, pct);
+            if (cacheKey != null) cache[cacheKey] = resolution;
+            return resolution;
         }
     }
 }

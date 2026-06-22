@@ -78,6 +78,18 @@ namespace Checkbook.Plugins.LOAs.Helpers
                 return null;
             }
 
+            // Pull every grain-lookup's display name in a single ExecuteMultiple
+            // round trip — was up to 6 sequential Retrieves per FT, dominating
+            // LOAGenerator's runtime on environments with many unlinked FTs.
+            var nameMap = ResolveNamesBatch(
+                service, tracing,
+                new[] { opr, boc, dollarType, pg, sag, mdep });
+
+            string NameOf(EntityReference reference) =>
+                reference == null
+                    ? null
+                    : (nameMap.TryGetValue(reference.Id, out var n) ? n : null);
+
             LOAGrain grain;
             try
             {
@@ -95,13 +107,13 @@ namespace Checkbook.Plugins.LOAs.Helpers
                     FiscalYear    = fy,
                     NameParts = new LOANameParts
                     {
-                        OPRName        = ResolveName(service, opr,        tracing),
+                        OPRName        = NameOf(opr),
                         FundName       = fundName,
-                        BOCName        = ResolveName(service, boc,        tracing),
-                        DollarTypeName = ResolveName(service, dollarType, tracing),
-                        PGName         = ResolveName(service, pg,         tracing),
-                        SAGName        = ResolveName(service, sag,        tracing),
-                        MDEPName       = ResolveName(service, mdep,       tracing),
+                        BOCName        = NameOf(boc),
+                        DollarTypeName = NameOf(dollarType),
+                        PGName         = NameOf(pg),
+                        SAGName        = NameOf(sag),
+                        MDEPName       = NameOf(mdep),
                         Appropriation  = appnOs.Value,
                     },
                 };
@@ -306,27 +318,61 @@ namespace Checkbook.Plugins.LOAs.Helpers
                 && related.Entities.Count > 0;
         }
 
-        private static string ResolveName(
+        /// <summary>
+        /// Resolves <c>book_name</c> for every non-null reference in
+        /// <paramref name="references"/> in a single <see cref="ExecuteMultipleRequest"/>.
+        /// References whose <c>.Name</c> is already populated by the caller skip
+        /// the round trip entirely. Returns a per-Guid map of resolved names;
+        /// references missing from the map (failed retrieves) resolve to null
+        /// at the call site.
+        /// </summary>
+        private static System.Collections.Generic.Dictionary<Guid, string> ResolveNamesBatch(
             IOrganizationService service,
-            EntityReference reference,
-            ITracingService tracing)
+            ITracingService tracing,
+            System.Collections.Generic.IEnumerable<EntityReference> references)
         {
-            if (reference == null) return null;
-
-            // EntityReference.Name is populated by some SDK paths; trust it when present.
-            if (!string.IsNullOrWhiteSpace(reference.Name))
-                return reference.Name;
-
-            try
+            var nameMap = new System.Collections.Generic.Dictionary<Guid, string>();
+            var batched = new System.Collections.Generic.List<EntityReference>();
+            var batch = new ExecuteMultipleRequest
             {
-                var record = service.Retrieve(reference.LogicalName, reference.Id, new ColumnSet("book_name"));
-                return record.GetAttributeValue<string>("book_name");
-            }
-            catch (Exception ex)
+                Settings = new ExecuteMultipleSettings { ContinueOnError = true, ReturnResponses = true },
+                Requests = new OrganizationRequestCollection(),
+            };
+
+            foreach (var reference in references)
             {
-                tracing.Trace($"ResolveName({reference.LogicalName}, {reference.Id}) failed: {ex.Message}");
-                return null;
+                if (reference == null) continue;
+                if (nameMap.ContainsKey(reference.Id)) continue;
+                if (!string.IsNullOrWhiteSpace(reference.Name))
+                {
+                    nameMap[reference.Id] = reference.Name;
+                    continue;
+                }
+                batch.Requests.Add(new RetrieveRequest
+                {
+                    Target = reference,
+                    ColumnSet = new ColumnSet("book_name"),
+                });
+                batched.Add(reference);
             }
+
+            if (batch.Requests.Count == 0) return nameMap;
+
+            var response = (ExecuteMultipleResponse)service.Execute(batch);
+            for (int i = 0; i < response.Responses.Count; i++)
+            {
+                var item = response.Responses[i];
+                var reference = batched[i];
+                if (item.Fault != null)
+                {
+                    tracing.Trace(
+                        $"ResolveName({reference.LogicalName}, {reference.Id}) failed: {item.Fault.Message}");
+                    continue;
+                }
+                var retrieved = ((RetrieveResponse)item.Response).Entity;
+                nameMap[reference.Id] = retrieved.GetAttributeValue<string>("book_name");
+            }
+            return nameMap;
         }
     }
 }

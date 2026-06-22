@@ -4,6 +4,7 @@ using Microsoft.Xrm.Sdk;
 using Microsoft.Xrm.Sdk.Query;
 using Checkbook.Plugins.Base;
 using Checkbook.Plugins.Constants;
+using Checkbook.Plugins.Helpers;
 
 namespace Checkbook.Plugins.Items
 {
@@ -109,40 +110,35 @@ namespace Checkbook.Plugins.Items
                 return;
             }
 
-            var query = new QueryExpression(EntityNames.ItemizedDetails)
-            {
-                ColumnSet = new ColumnSet(
-                    ItemizedDetailsAttributes.RequestedAmount,
-                    ItemizedDetailsAttributes.ValidatedAmount,
-                    ItemizedDetailsAttributes.FundedAmount),
-                Criteria =
-                {
-                    Conditions =
-                    {
-                        new ConditionExpression(
-                            ItemizedDetailsAttributes.Prioritization,
-                            ConditionOperator.Equal,
-                            prioritizationId),
-                        new ConditionExpression(
-                            ItemizedDetailsAttributes.StateCode,
-                            ConditionOperator.Equal,
-                            StateCodeValues.Active)
-                    }
-                }
-            };
-
-            var itemizedDetails = service.RetrieveMultiple(query).Entities;
+            // Server-side aggregate — one round trip, returns the three sums.
+            // An Itemized-mode Prio with zero children gets all three set to 0.
+            var fetch = $@"
+                <fetch aggregate='true'>
+                    <entity name='{EntityNames.ItemizedDetails}'>
+                        <attribute name='{ItemizedDetailsAttributes.RequestedAmount}' alias='requested' aggregate='sum'/>
+                        <attribute name='{ItemizedDetailsAttributes.ValidatedAmount}' alias='validated' aggregate='sum'/>
+                        <attribute name='{ItemizedDetailsAttributes.FundedAmount}'    alias='funded'    aggregate='sum'/>
+                        <filter type='and'>
+                            <condition attribute='{ItemizedDetailsAttributes.Prioritization}' operator='eq' value='{prioritizationId}'/>
+                            <condition attribute='{ItemizedDetailsAttributes.StateCode}' operator='eq' value='{StateCodeValues.Active}'/>
+                        </filter>
+                    </entity>
+                </fetch>";
 
             decimal requested = 0m, validated = 0m, funded = 0m;
-            foreach (var record in itemizedDetails)
+            var rows = service.RetrieveMultiple(new FetchExpression(fetch)).Entities;
+            if (rows.Count > 0)
             {
-                requested += record.GetAttributeValue<decimal>(ItemizedDetailsAttributes.RequestedAmount);
-                validated += record.GetAttributeValue<decimal>(ItemizedDetailsAttributes.ValidatedAmount);
-                funded += record.GetAttributeValue<decimal>(ItemizedDetailsAttributes.FundedAmount);
+                requested = NumericHelper.ToDecimal(
+                    rows[0].GetAttributeValue<AliasedValue>("requested")?.Value, 0m);
+                validated = NumericHelper.ToDecimal(
+                    rows[0].GetAttributeValue<AliasedValue>("validated")?.Value, 0m);
+                funded = NumericHelper.ToDecimal(
+                    rows[0].GetAttributeValue<AliasedValue>("funded")?.Value, 0m);
             }
 
             tracingService.Trace(
-                $"Prioritization {prioritizationId}: {itemizedDetails.Count} Itemized Detail(s) — " +
+                $"Prioritization {prioritizationId}: " +
                 $"Requested={requested}, Validated={validated}, Funded={funded}.");
 
             var update = new Entity(EntityNames.Prioritization, prioritizationId)

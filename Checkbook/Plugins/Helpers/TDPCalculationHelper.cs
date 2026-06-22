@@ -385,8 +385,6 @@ namespace Checkbook.Plugins.Helpers
 
                 tracingService.Trace($"Batch recalculating TDP for {idsToProcess.Count} LOAs");
 
-                cache.PreloadLOAInfo(service, idsToProcess);
-
                 foreach (var loaId in idsToProcess)
                 {
                     tracingService.Trace($"Processing LOA: {loaId}");
@@ -419,51 +417,37 @@ namespace Checkbook.Plugins.Helpers
 
                 tracingService.Trace("Batch recalculation complete");
             }
-                // Returns the net ledger impact for an LOA: sum(Credited) - sum(Debited).
+        /// <summary>
+        /// Returns the net ledger impact for an LOA: sum(Credited) - sum(Debited).
+        /// Single FetchXml aggregate grouped by direction — one row per direction.
+        /// </summary>
         public static decimal GetLedgerNetAmount(IOrganizationService service, Guid loaId)
         {
-            // Sum of credits (ledgerdirection = Credited)
-            var creditsFetch = $@"
+            var fetch = $@"
                 <fetch aggregate='true'>
                 <entity name='{EntityNames.Ledger}'>
-                    <attribute name='{LedgerAttributes.Amount}' alias='credits' aggregate='sum' />
+                    <attribute name='{LedgerAttributes.Amount}' alias='amount' aggregate='sum' />
+                    <attribute name='{LedgerAttributes.LedgerDirection}' alias='direction' groupby='true' />
                     <filter type='and'>
                     <condition attribute='{LedgerAttributes.LineOfAccounting}' operator='eq' value='{loaId}' />
-                    <condition attribute='{LedgerAttributes.LedgerDirection}' operator='eq' value='{LedgerDirectionValues.Credited}' />
                     <condition attribute='{LedgerAttributes.StateCode}' operator='eq' value='{StateCodeValues.Active}' />
                     </filter>
                 </entity>
                 </fetch>";
 
-            var creditsResult = service.RetrieveMultiple(new FetchExpression(creditsFetch));
-            var creditAliased = creditsResult.Entities.Count > 0
-                ? creditsResult.Entities[0].GetAttributeValue<AliasedValue>("credits")
-                : null;
-            var credits = 0m;
-            if (creditAliased?.Value is decimal cDec) credits = cDec;
-            else if (creditAliased?.Value is double cDbl) credits = Convert.ToDecimal(cDbl);
+            decimal credits = 0m, debits = 0m;
+            foreach (var row in service.RetrieveMultiple(new FetchExpression(fetch)).Entities)
+            {
+                var amountAliased = row.GetAttributeValue<AliasedValue>("amount");
+                var directionAliased = row.GetAttributeValue<AliasedValue>("direction");
+                if (amountAliased == null || directionAliased == null) continue;
 
-            // Sum of debits (ledgerdirection = Debited)
-            var debitsFetch = $@"
-                <fetch aggregate='true'>
-                <entity name='{EntityNames.Ledger}'>
-                    <attribute name='{LedgerAttributes.Amount}' alias='debits' aggregate='sum' />
-                    <filter type='and'>
-                    <condition attribute='{LedgerAttributes.LineOfAccounting}' operator='eq' value='{loaId}' />
-                    <condition attribute='{LedgerAttributes.LedgerDirection}' operator='eq' value='{LedgerDirectionValues.Debited}' />
-                    <condition attribute='{LedgerAttributes.StateCode}' operator='eq' value='{StateCodeValues.Active}' />
-                    </filter>
-                </entity>
-                </fetch>";
+                decimal amount = NumericHelper.ToDecimal(amountAliased.Value, 0m);
+                var direction = (directionAliased.Value as OptionSetValue)?.Value;
 
-            var debitsResult = service.RetrieveMultiple(new FetchExpression(debitsFetch));
-            var debitAliased = debitsResult.Entities.Count > 0
-                ? debitsResult.Entities[0].GetAttributeValue<AliasedValue>("debits")
-                : null;
-            var debits = 0m;
-            if (debitAliased?.Value is decimal dDec) debits = dDec;
-            else if (debitAliased?.Value is double dDbl) debits = Convert.ToDecimal(dDbl);
-
+                if (direction == LedgerDirectionValues.Credited) credits = amount;
+                else if (direction == LedgerDirectionValues.Debited) debits = amount;
+            }
             return credits - debits;
         }
     }

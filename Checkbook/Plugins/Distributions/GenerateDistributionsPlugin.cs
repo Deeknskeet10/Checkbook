@@ -86,6 +86,9 @@ namespace Checkbook.Plugins.Distributions
             // Per-invocation FundCenter metadata cache. Cannot be an instance field —
             // the platform reuses plugin instances across executions.
             var fcCache = new Dictionary<Guid, FundCenterMeta>();
+            // Per-invocation FundingPercentage memo (same reasoning). Many buckets
+            // share (Fund, PG, type) tuples; without this each bucket re-resolves.
+            var pctCache = new Dictionary<string, FundingPercentageHelper.FundingResolution>();
 
             foreach (var fundingEvent in fundingEvents)
             {
@@ -100,7 +103,7 @@ namespace Checkbook.Plugins.Distributions
                     var fcMeta = GetFundCenterMeta(service, fcCache, bucket.FundCenterId);
                     var r = DistributionBucketProcessor.Process(
                         service, tracing, bucket, fundingEventRef, fundingType,
-                        holdingFundCenterId, fcMeta?.OwningBusinessUnit);
+                        holdingFundCenterId, fcMeta?.OwningBusinessUnit, pctCache);
                     totalCreated += r.DistributionsCreated;
                     totalTurnIns += r.TurnInsCreated;
                     totalSkipped += r.Skipped;
@@ -112,7 +115,7 @@ namespace Checkbook.Plugins.Distributions
                     var fcMeta = GetFundCenterMeta(service, fcCache, bucket.FundCenterId);
                     var r = DistributionBucketProcessor.Process(
                         service, tracing, bucket, fundingEventRef, fundingType,
-                        holdingFundCenterId, fcMeta?.OwningBusinessUnit);
+                        holdingFundCenterId, fcMeta?.OwningBusinessUnit, pctCache);
                     totalCreated += r.DistributionsCreated;
                     totalTurnIns += r.TurnInsCreated;
                     totalSkipped += r.Skipped;

@@ -97,10 +97,15 @@ namespace Checkbook.Plugins.Items
 
             var owningBu = prioritization.GetAttributeValue<EntityReference>("owningbusinessunit");
 
+            // Single bulk fetch of every Itemized Detail already on this Prio,
+            // then diff against detailIds in memory — was a top=1 RetrieveMultiple
+            // per Requirement Detail.
+            var existingRdIds = GetExistingItemizedDetailRdIds(service, prioritizationId);
+
             var added = 0;
             foreach (var detailId in detailIds)
             {
-                if (ItemizedDetailExists(service, prioritizationId, detailId))
+                if (existingRdIds.Contains(detailId))
                     continue;
 
                 CreateItemizedDetail(service, prioritizationId, detailId, owningBu);
@@ -112,6 +117,31 @@ namespace Checkbook.Plugins.Items
                 : $"Added {added} Itemized Detail(s); {detailIds.Count - added} already present.";
             WriteOutputs(context, added, message);
             tracing.Trace(message);
+        }
+
+        private static HashSet<Guid> GetExistingItemizedDetailRdIds(
+            IOrganizationService service, Guid prioritizationId)
+        {
+            var query = new QueryExpression(EntityNames.ItemizedDetails)
+            {
+                ColumnSet = new ColumnSet(ItemizedDetailsAttributes.RequirementItem),
+                Criteria = new FilterExpression(LogicalOperator.And)
+                {
+                    Conditions =
+                    {
+                        new ConditionExpression(
+                            ItemizedDetailsAttributes.Prioritization,
+                            ConditionOperator.Equal, prioritizationId),
+                    },
+                },
+            };
+            var ids = new HashSet<Guid>();
+            foreach (var e in service.RetrieveMultiple(query).Entities)
+            {
+                var rd = e.GetAttributeValue<EntityReference>(ItemizedDetailsAttributes.RequirementItem);
+                if (rd != null) ids.Add(rd.Id);
+            }
+            return ids;
         }
 
         private static Guid GetRequirementIdFromRequirementFunding(
@@ -151,32 +181,6 @@ namespace Checkbook.Plugins.Items
             foreach (var e in service.RetrieveMultiple(query).Entities)
                 ids.Add(e.Id);
             return ids;
-        }
-
-        private static bool ItemizedDetailExists(
-            IOrganizationService service, Guid prioritizationId, Guid requirementDetailId)
-        {
-            var query = new QueryExpression(EntityNames.ItemizedDetails)
-            {
-                ColumnSet = new ColumnSet(false),
-                TopCount = 1,
-                Criteria =
-                {
-                    Conditions =
-                    {
-                        new ConditionExpression(
-                            ItemizedDetailsAttributes.Prioritization,
-                            ConditionOperator.Equal,
-                            prioritizationId),
-                        new ConditionExpression(
-                            ItemizedDetailsAttributes.RequirementItem,
-                            ConditionOperator.Equal,
-                            requirementDetailId)
-                    }
-                }
-            };
-
-            return service.RetrieveMultiple(query).Entities.Count > 0;
         }
 
         private static void CreateItemizedDetail(

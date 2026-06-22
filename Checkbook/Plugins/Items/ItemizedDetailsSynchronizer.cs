@@ -80,10 +80,15 @@ namespace Checkbook.Plugins.Items
             tracingService.Trace(
                 $"Found {prioritizations.Count} Itemized Prioritization(s) for Requirement {requirement.Id}.");
 
+            // Single fetch of every Itemized Detail already pointing at this RD,
+            // then diff against the Prio list in memory — was a top=1 RetrieveMultiple
+            // per Prioritization.
+            var existingPrioIds = GetExistingItemizedDetailPrioIds(service, detailId);
+
             var created = 0;
             foreach (var p in prioritizations)
             {
-                if (ItemizedDetailExists(service, p.Id, detailId))
+                if (existingPrioIds.Contains(p.Id))
                 {
                     tracingService.Trace(
                         $"Itemized Detail already exists for Prioritization {p.Id}; skipping.");
@@ -96,6 +101,31 @@ namespace Checkbook.Plugins.Items
             }
 
             tracingService.Trace($"Created {created} Itemized Detail(s).");
+        }
+
+        private static HashSet<Guid> GetExistingItemizedDetailPrioIds(
+            IOrganizationService service, Guid requirementDetailId)
+        {
+            var query = new QueryExpression(EntityNames.ItemizedDetails)
+            {
+                ColumnSet = new ColumnSet(ItemizedDetailsAttributes.Prioritization),
+                Criteria = new FilterExpression(LogicalOperator.And)
+                {
+                    Conditions =
+                    {
+                        new ConditionExpression(
+                            ItemizedDetailsAttributes.RequirementItem,
+                            ConditionOperator.Equal, requirementDetailId),
+                    },
+                },
+            };
+            var ids = new HashSet<Guid>();
+            foreach (var e in service.RetrieveMultiple(query).Entities)
+            {
+                var prio = e.GetAttributeValue<EntityReference>(ItemizedDetailsAttributes.Prioritization);
+                if (prio != null) ids.Add(prio.Id);
+            }
+            return ids;
         }
 
         /// <summary>
@@ -329,64 +359,28 @@ namespace Checkbook.Plugins.Items
         private static List<Entity> GetPrioritizationsForRequirement(
             IOrganizationService service, Guid requirementId)
         {
-            var direct = new QueryExpression(EntityNames.Prioritization)
-            {
-                ColumnSet = new ColumnSet("owningbusinessunit"),
-                Criteria =
-                {
-                    Conditions =
-                    {
-                        new ConditionExpression(
-                            PrioritizationAttributes.StateCode,
-                            ConditionOperator.Equal,
-                            StateCodeValues.Active),
-                        new ConditionExpression(
-                            PrioritizationAttributes.FundingMode,
-                            ConditionOperator.Equal,
-                            FundingModeValues.Itemized),
-                        new ConditionExpression(
-                            PrioritizationAttributes.Requirement,
-                            ConditionOperator.Equal,
-                            requirementId)
-                    }
-                }
-            };
+            // Single distinct FetchXml with outer-joined RF and an OR over the
+            // direct Requirement lookup (FY27+) and the via-RF Requirement
+            // (legacy) — was two RetrieveMultiples + in-memory union + dedup.
+            var fetch = $@"
+                <fetch distinct='true'>
+                    <entity name='{EntityNames.Prioritization}'>
+                        <attribute name='{PrioritizationAttributes.Id}'/>
+                        <attribute name='owningbusinessunit'/>
+                        <filter type='and'>
+                            <condition attribute='{PrioritizationAttributes.StateCode}' operator='eq' value='{StateCodeValues.Active}'/>
+                            <condition attribute='{PrioritizationAttributes.FundingMode}' operator='eq' value='{FundingModeValues.Itemized}'/>
+                            <filter type='or'>
+                                <condition attribute='{PrioritizationAttributes.Requirement}' operator='eq' value='{requirementId}'/>
+                                <condition entityname='rf' attribute='{RequirementFundingAttributes.Requirement}' operator='eq' value='{requirementId}'/>
+                            </filter>
+                        </filter>
+                        <link-entity name='{EntityNames.RequirementFunding}' from='{RequirementFundingAttributes.Id}'
+                                     to='{PrioritizationAttributes.RequirementFunding}' alias='rf' link-type='outer'/>
+                    </entity>
+                </fetch>";
 
-            var viaRf = new QueryExpression(EntityNames.Prioritization)
-            {
-                ColumnSet = new ColumnSet("owningbusinessunit"),
-                Criteria =
-                {
-                    Conditions =
-                    {
-                        new ConditionExpression(
-                            PrioritizationAttributes.StateCode,
-                            ConditionOperator.Equal,
-                            StateCodeValues.Active),
-                        new ConditionExpression(
-                            PrioritizationAttributes.FundingMode,
-                            ConditionOperator.Equal,
-                            FundingModeValues.Itemized)
-                    }
-                }
-            };
-
-            var rfLink = viaRf.AddLink(
-                EntityNames.RequirementFunding,
-                PrioritizationAttributes.RequirementFunding,
-                RequirementFundingAttributes.Id);
-            rfLink.LinkCriteria.AddCondition(
-                RequirementFundingAttributes.Requirement,
-                ConditionOperator.Equal,
-                requirementId);
-
-            var combined = service.RetrieveMultiple(direct).Entities
-                .Concat(service.RetrieveMultiple(viaRf).Entities);
-
-            return combined
-                .GroupBy(e => e.Id)
-                .Select(g => g.First())
-                .ToList();
+            return service.RetrieveMultiple(new FetchExpression(fetch)).Entities.ToList();
         }
 
         /// <summary>
@@ -454,36 +448,6 @@ namespace Checkbook.Plugins.Items
             return service.RetrieveMultiple(query).Entities
                 .Select(e => e.Id)
                 .ToList();
-        }
-
-        /// <summary>
-        /// Returns true if an Itemized Detail already links this Prioritization to this
-        /// Requirement Detail — guards against duplicates.
-        /// </summary>
-        private static bool ItemizedDetailExists(
-            IOrganizationService service, Guid prioritizationId, Guid requirementDetailId)
-        {
-            var query = new QueryExpression(EntityNames.ItemizedDetails)
-            {
-                ColumnSet = new ColumnSet(false),
-                TopCount = 1,
-                Criteria =
-                {
-                    Conditions =
-                    {
-                        new ConditionExpression(
-                            ItemizedDetailsAttributes.Prioritization,
-                            ConditionOperator.Equal,
-                            prioritizationId),
-                        new ConditionExpression(
-                            ItemizedDetailsAttributes.RequirementItem,
-                            ConditionOperator.Equal,
-                            requirementDetailId)
-                    }
-                }
-            };
-
-            return service.RetrieveMultiple(query).Entities.Count > 0;
         }
 
         /// <summary>
