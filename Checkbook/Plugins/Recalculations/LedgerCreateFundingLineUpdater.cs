@@ -1,44 +1,15 @@
-using System;
-using System.Collections.Generic;
-using Microsoft.Xrm.Sdk;
-using Microsoft.Xrm.Sdk.Query;
-using Checkbook.Plugins.Base;
 using Checkbook.Plugins.Constants;
-using Checkbook.Plugins.Helpers;
 
 namespace Checkbook.Plugins.Recalculations
 {
-    public class LedgerCreateFundingLineUpdater : PluginBase
+    /// <summary>
+    /// On Ledger Create, recalculates the LOA's TDP / Remaining to reflect
+    /// the new debit or credit entry.
+    /// </summary>
+    public sealed class LedgerCreateFundingLineUpdater : LOATouchPropagator
     {
-        protected override void ExecutePlugin(
-            IPluginExecutionContext context,
-            IOrganizationService service,
-            ITracingService tracing)
-        {
-            if (context.PrimaryEntityName != EntityNames.Ledger ||
-                context.MessageName != "Create" ||
-                context.Stage != 40)
-            {
-                return;
-            }
-
-            // Prevent recursion
-            if (context.Depth > 1)
-                return;
-
-            var ledger = GetTarget(context);
-
-            if (!ledger.Contains(LedgerAttributes.LineOfAccounting))
-            {
-                tracing.Trace("Ledger has no Funding Line reference.");
-                return;
-            }
-
-            var fundingLineId = ledger.GetAttributeValue<EntityReference>(
-                LedgerAttributes.LineOfAccounting).Id;
-
-            TDPCalculationHelper.RecalculateLOATDP(service, fundingLineId, tracing);
-            tracing.Trace("LOA TDP recalculated due to new Ledger creation.");
-        }
+        protected override string EntityName => EntityNames.Ledger;
+        protected override string LoaAttribute => LedgerAttributes.LineOfAccounting;
+        protected override bool HandlesMessage(string message) => message == "Create";
     }
 }
