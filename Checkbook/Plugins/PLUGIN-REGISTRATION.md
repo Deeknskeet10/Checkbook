@@ -9,7 +9,7 @@ This file is the source of truth for **what steps should exist** in any env
 running these plugins. When you finish a registration session, walk the
 verification checklist at the bottom and confirm every row is present.
 
-The assembly currently ships **28 plugin classes**, grouped under
+The assembly currently ships **29 plugin classes**, grouped under
 `Checkbook.Plugins.<folder>`. Three folders also have their own deep-dive docs
 covering prerequisites, Custom APIs, and smoke tests:
 [`LOAs/REGISTRATION.md`](LOAs/REGISTRATION.md),
@@ -42,7 +42,7 @@ If `Checkbook_Plugins.dll` has never been registered in this env:
 2. **Register → Register New Assembly**.
 3. Browse to `Plugins/bin/Release/net462/Checkbook_Plugins.dll`.
 4. Step 2 — **Specify the location**: **Database** (default).
-5. Step 2 — **Select the plugins** to register: leave all **28** checked.
+5. Step 2 — **Select the plugins** to register: leave all **29** checked.
 6. Click **Register Selected Plugins**.
 
 For subsequent code changes, use **Update Assembly** on the existing
@@ -425,6 +425,20 @@ debit or credit entry.
 |---|---------|----------------|-----------------|------|----------------------|-------|
 | 1 | Create  | `book_ledger`  | Post-Operation  | Sync | *(none)*             | Recalcs the LOA referenced on the new Ledger row. |
 
+### `Checkbook.Plugins.Recalculations.FundingLineTDPRemainingUpdater`
+
+Defense-in-depth guard that rejects any direct edit of `book_newtdp` on an
+LOA. LOA TDP is strictly derived from `Σ FundingTrack.ResourceAmount + Ledger
+net` and maintained by the LOA-touch propagators above; a manual edit would
+silently drift until the next propagator run reset it. The form should also
+lock `book_newtdp` read-only and field-level security should restrict the
+column's write privilege — this plugin is the last line of defense against
+WebAPI / Excel / admin edits.
+
+| # | Message | Primary entity      | Stage           | Mode | Filtering attributes | Notes |
+|---|---------|---------------------|-----------------|------|----------------------|-------|
+| 1 | Update  | `book_fundingline`  | Post-Operation  | Sync | `book_newtdp`        | Throws `InvalidPluginExecutionException` if `book_newtdp` is in the target payload — rolls back the Update transaction. |
+
 ### `Checkbook.Plugins.Recalculations.RequirementFundingTDPRemainingUpdater`
 
 When RF TDP / LOA changes (or the RF is created/deleted), recalculates the
@@ -603,6 +617,8 @@ to sort the right pane by **Message** then by **Primary Entity**.
   - [ ] Create / Update / Delete of `book_fundingtrack` — Post-Op Sync; Update + Delete have PreImage
 - [ ] `Checkbook.Plugins.Recalculations.LedgerCreateFundingLineUpdater`
   - [ ] Create of `book_ledger` — Post-Op Sync
+- [ ] `Checkbook.Plugins.Recalculations.FundingLineTDPRemainingUpdater`
+  - [ ] Update of `book_fundingline` — Post-Op Sync, filter `book_newtdp`
 - [ ] `Checkbook.Plugins.Recalculations.RequirementFundingTDPRemainingUpdater`
   - [ ] Create / Update / Delete of `book_requirementfunding` — Post-Op Sync; Delete has PreImage
 
