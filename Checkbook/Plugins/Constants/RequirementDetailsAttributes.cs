@@ -14,5 +14,11 @@ namespace Checkbook.Plugins.Constants
         public const string QuantityType = "book_quantitytype";
         public const string TDC = "book_tdc";
         public const string StateCode = "statecode";
+
+        // Direct funding fields — populated only when the parent Requirement
+        // has NO Prioritization (the no-Prio path). These are sum-of-junction
+        // roll-ups maintained by RequirementDetailFundingRollup.
+        public const string ValidatedAmount = "book_validatedamount"; // decimal
+        public const string FundedAmount = "book_fundedamount";       // decimal
     }
 }
