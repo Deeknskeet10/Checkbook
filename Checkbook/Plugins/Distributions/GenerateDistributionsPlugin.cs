@@ -18,13 +18,17 @@ namespace Checkbook.Plugins.Distributions
     /// <list type="number">
     ///   <item>Deactivate every active <c>book_distributions</c> whose
     ///         <c>book_newenteredintogfebs = "No"</c>.</item>
-    ///   <item>Aggregate active non-national Prioritizations into
-    ///         (parent_fc, state, PG, fund, FY) buckets and reconcile each bucket
-    ///         against existing credit Distributions — create a debit/credit pair
-    ///         for shortfalls, or a Turn-In for overages.</item>
-    ///   <item>Same reconciliation for BE-approved Requirements (types TARC + ARNGExternal,
-    ///         or national State-type), grouped on (fundcenter, PG, fund, FY); the bucket
-    ///         FC is resolved as parent-or-self relative to the holding FC.</item>
+    ///   <item>Aggregate active Prioritizations into (dest_fc, state, PG, fund, FY)
+    ///         buckets and reconcile each bucket against existing credit Distributions
+    ///         — create a debit/credit pair for shortfalls, or a Turn-In for overages.
+    ///         The destination FC is the Prio's own FC when the Requirement is
+    ///         centrally managed (book_national = 1; the FC is the Requirement's FC
+    ///         via the <c>PrioritizationFundCenterBackfill</c> plugin) and the Prio's
+    ///         parent FC otherwise.</item>
+    ///   <item>Same reconciliation for BE-approved Requirements that have no
+    ///         Prioritizations (types TARC + ARNGExternal, or national State-type),
+    ///         grouped on (fundcenter, PG, fund, FY); the bucket FC is resolved as
+    ///         parent-or-self relative to the holding FC.</item>
     /// </list>
     ///
     /// Input parameters:
@@ -193,8 +197,12 @@ namespace Checkbook.Plugins.Distributions
         }
 
         // -----------------------------------------------------------------
-        // Phase 2 aggregation: active non-national Prioritizations with funded TDP > 0,
-        // grouped by (parent_fc, state, PG, fund, FY).
+        // Phase 2 aggregation: active Prioritizations with funded TDP > 0,
+        // grouped by (prio_fc, parent_fc, req_national, state, PG, fund, FY).
+        // Destination FC is the Prioritization's own FC when the Requirement is
+        // centrally managed (book_national = 1) — the centrally identified FC
+        // is backfilled onto the Prio by PrioritizationFundCenterBackfill. For
+        // non-centrally-managed Prios, destination FC is the Prio's parent FC.
         // -----------------------------------------------------------------
         private static IEnumerable<DistributionBucket> QueryPrioritizationBuckets(
             IOrganizationService service, ITracingService tracing)
@@ -208,6 +216,7 @@ namespace Checkbook.Plugins.Distributions
       <condition attribute='book_newfundedamounttdp' operator='gt' value='0' />
     </filter>
     <link-entity name='book_fundcenter' from='book_fundcenterid' to='book_fundcenter' link-type='inner' alias='fundcenter'>
+      <attribute name='book_fundcenterid'     alias='prio_fc_id'           groupby='true' />
       <attribute name='book_parentfundcenter' alias='parent_fundcenter_id' groupby='true' />
     </link-entity>
     <link-entity name='book_state' from='book_stateid' to='book_state' link-type='inner' alias='state'>
@@ -215,9 +224,7 @@ namespace Checkbook.Plugins.Distributions
     </link-entity>
     <link-entity name='book_requirementfunding' from='book_requirementfundingid' to='book_requirementfunding' link-type='inner' alias='req_funding'>
       <link-entity name='book_requirements' from='book_requirementsid' to='book_requirement' link-type='inner' alias='requirement'>
-        <filter type='and'>
-          <condition attribute='book_national' operator='eq' value='0' />
-        </filter>
+        <attribute name='book_national' alias='req_national' groupby='true' />
       </link-entity>
       <link-entity name='book_fundingline' from='book_fundinglineid' to='book_lineofaccounting' link-type='inner' alias='loa'>
         <link-entity name='book_pg' from='book_pgid' to='book_pg' link-type='inner' alias='pg'>
@@ -236,20 +243,25 @@ namespace Checkbook.Plugins.Distributions
             tracing.Trace($"Phase 2: {rows.Count} Prioritization bucket(s).");
             foreach (var row in rows)
             {
-                // Skip rows with a null parent FC — those Prioritizations have no
-                // destination to credit (their FC is itself a root). The legacy flow
-                // would silently no-op when Get_FC returned null; mirror that here.
+                var prioFcId   = GetAliasedGuid(row, "prio_fc_id");
                 var parentFcId = GetAliasedGuid(row, "parent_fundcenter_id");
                 var fundId     = GetAliasedGuid(row, "fund_id");
                 var pgId       = GetAliasedGuid(row, "pg_id");
-                if (parentFcId == Guid.Empty || fundId == Guid.Empty || pgId == Guid.Empty)
+                var isNational = GetAliasedBool(row, "req_national");
+
+                // Centrally managed → use the Prio's own FC (= Req.FC via backfill).
+                // Otherwise → use the parent FC. Skip rows that can't resolve a
+                // destination (e.g. non-centrally-managed Prio whose FC has no parent,
+                // mirroring the legacy "Get_FC returned null → no-op" behavior).
+                var destFcId = isNational ? prioFcId : parentFcId;
+                if (destFcId == Guid.Empty || fundId == Guid.Empty || pgId == Guid.Empty)
                     continue;
 
                 yield return new DistributionBucket
                 {
                     FundId        = fundId,
                     PgId          = pgId,
-                    FundCenterId  = parentFcId,
+                    FundCenterId  = destFcId,
                     FiscalYear    = GetAliasedOption(row, "fy"),
                     TotalFunding  = GetAliasedDecimal(row, "total_funding"),
                 };
@@ -257,10 +269,16 @@ namespace Checkbook.Plugins.Distributions
         }
 
         // -----------------------------------------------------------------
-        // Phase 3 aggregation: BE-approved Requirements grouped by
-        // (fundcenter_id, PG, fund, FY). Bucket FC is resolved per-row from
-        // the original FC + its parent, applying the "parent ∈ {holding, null} → self"
-        // rule that lived in the flow's "Determine_correct_FC" compose.
+        // Phase 3 aggregation: BE-approved Requirements that have no
+        // Prioritizations, grouped by (fundcenter_id, PG, fund, FY). Bucket FC
+        // is resolved per-row from the original FC + its parent, applying the
+        // "parent ∈ {holding, null} → self" rule that lived in the flow's
+        // "Determine_correct_FC" compose. Today the qualifying types are TARC
+        // (1) and ARNG External (4) — both centrally managed without Prios.
+        // Centrally managed Reqs that DO have Prios (State+national=1, PEC FY26
+        // centrally, DOMOPs) flow through Phase 2 instead; the outer-join
+        // null-check on book_prioritization guards against stray Prios under a
+        // type meant to be Prio-less so we never double-count.
         // -----------------------------------------------------------------
         private static IEnumerable<DistributionBucket> QueryRequirementBuckets(
             IOrganizationService service, ITracingService tracing,
@@ -272,6 +290,7 @@ namespace Checkbook.Plugins.Distributions
     <attribute name='book_newfundedamount' alias='total_funding' aggregate='sum' />
     <filter type='and'>
       <condition attribute='book_newfundedamount' operator='gt' value='0' />
+      <condition entityname='prio_chk' attribute='book_prioritizationid' operator='null' />
     </filter>
     <link-entity name='book_requirements' from='book_requirementsid' to='book_requirement' link-type='inner' alias='reqs'>
       <filter type='and'>
@@ -280,10 +299,6 @@ namespace Checkbook.Plugins.Distributions
         <filter type='or'>
           <condition attribute='book_type' operator='eq' value='1' />
           <condition attribute='book_type' operator='eq' value='4' />
-          <filter type='and'>
-            <condition attribute='book_national' operator='eq' value='1' />
-            <condition attribute='book_type'     operator='eq' value='0' />
-          </filter>
         </filter>
       </filter>
       <link-entity name='book_fundcenter' from='book_fundcenterid' to='book_fundcenter' link-type='inner' alias='fundcenter'>
@@ -298,6 +313,11 @@ namespace Checkbook.Plugins.Distributions
         <attribute name='book_fundid'      alias='fund_id' groupby='true' />
         <attribute name='book_fiscalyear'  alias='fy'      groupby='true' />
       </link-entity>
+    </link-entity>
+    <link-entity name='book_prioritization' from='book_requirementfunding' to='book_requirementfundingid' link-type='outer' alias='prio_chk'>
+      <filter type='and'>
+        <condition attribute='statecode' operator='eq' value='0' />
+      </filter>
     </link-entity>
   </entity>
 </fetch>";
@@ -395,6 +415,14 @@ namespace Checkbook.Plugins.Distributions
             if (!e.Contains(alias)) return 0m;
             var raw = (e[alias] as AliasedValue)?.Value;
             return NumericHelper.ToDecimal(raw, 0m);
+        }
+
+        private static bool GetAliasedBool(Entity e, string alias)
+        {
+            if (!e.Contains(alias)) return false;
+            var raw = (e[alias] as AliasedValue)?.Value;
+            if (raw is bool b) return b;
+            return false;
         }
 
         private static void WriteOutputs(IPluginExecutionContext context,

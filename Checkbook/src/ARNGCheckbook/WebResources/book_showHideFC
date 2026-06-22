@@ -1,25 +1,35 @@
 function showHideFields(executionContext) {
     var formContext = executionContext.getFormContext();
-    var fieldToCheck = formContext.getAttribute("book_requirementfunding").getValue();
-    var fieldToToggle = formContext.getControl("book_fundcenter");
+    var rfAttr = formContext.getAttribute("book_requirementfunding");
+    var fcAttr = formContext.getAttribute("book_fundcenter");
+    var fcCtrl = formContext.getControl("book_fundcenter");
+    if (!rfAttr || !fcAttr || !fcCtrl) return;
 
-    if (fieldToCheck != null) {
-        Xrm.WebApi.retrieveRecord("book_requirementfunding", fieldToCheck[0].id.replace(/[{}]/g, ''),"?$expand=book_Requirement($select=book_national)").then(
-            function success(result) {
-                var isNational = result.book_Requirement?.book_national;
-                console.log(isNational);
-                
-                if (isNational === true) {
-                    formContext.getAttribute("book_fundcenter").setRequiredLevel("none");
-                    fieldToToggle.setVisible(false);
-                } else {
-                    formContext.getAttribute("book_fundcenter").setRequiredLevel("required");
-                    fieldToToggle.setVisible(true);
-                }
-            },
-            function (error) {
-                console.log(error.message);
-            }
-        );
-    }    
+    var rf = rfAttr.getValue();
+    if (!rf) {
+        // No RF chosen → revert to user-editable, default required.
+        fcCtrl.setVisible(true);
+        fcCtrl.setDisabled(false);
+        fcAttr.setRequiredLevel("required");
+        return;
+    }
+
+    Xrm.WebApi.retrieveRecord(
+        "book_requirementfunding",
+        rf[0].id.replace(/[{}]/g, ''),
+        "?$expand=book_Requirement($select=book_national)"
+    ).then(
+        function success(result) {
+            var isNational = result.book_Requirement && result.book_Requirement.book_national === true;
+            // Centrally managed → FC is authoritatively backfilled from the
+            // Requirement by PrioritizationFundCenterBackfill. Keep visible so
+            // the user can see where the money is going, but lock it.
+            fcCtrl.setVisible(true);
+            fcCtrl.setDisabled(isNational);
+            fcAttr.setRequiredLevel(isNational ? "none" : "required");
+        },
+        function (error) {
+            console.log("showHideFC retrieve failed: " + error.message);
+        }
+    );
 }
