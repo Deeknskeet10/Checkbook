@@ -10,8 +10,15 @@ Book.Prioritization = (function () {
     var STATE              = "book_state";
     var STATE_PRIORITY     = "book_statepriority";
     var FISCAL_YEAR        = "book_newfiscalyear";
+    var APPROVAL_STATUS    = "book_approvalstatus";
 
-    var FUNDING_MODE_ITEMIZED = 1;
+    var FUNDING_MODE_ITEMIZED       = 1;
+    var APPROVAL_STATUS_STATE_INPUT = 0;
+
+    var DOCS_REMINDER_ID = "docsReminder";
+    var DOCS_REMINDER_MESSAGE =
+        "Upload supporting Documentation and Analysis substantiating Resource " +
+        "Request in the timeline prior to submission to the NPM.";
 
     function setControlsVisible(formContext, names, visible) {
         names.forEach(function (name) {
@@ -171,6 +178,22 @@ Book.Prioritization = (function () {
         });
     }
 
+    // ----- Documentation reminder banner -----
+    // Show on create, and on open whenever the Prio is still in State Input.
+    // User can dismiss with the X — it just won't reappear until next load.
+
+    function applyDocsReminderBanner(formContext) {
+        var formType = formContext.ui.getFormType();
+        var status = formContext.getAttribute(APPROVAL_STATUS).getValue();
+        var show = formType === 1 || status === APPROVAL_STATUS_STATE_INPUT;
+
+        if (show) {
+            formContext.ui.setFormNotification(DOCS_REMINDER_MESSAGE, "INFO", DOCS_REMINDER_ID);
+        } else {
+            formContext.ui.clearFormNotification(DOCS_REMINDER_ID);
+        }
+    }
+
     // ----- Unique state-priority enforcement -----
 
     async function verifyUniquePriority(executionContext) {
@@ -226,6 +249,7 @@ Book.Prioritization = (function () {
             populateStateFromBU(formContext);
             applyFundCenterLock(formContext);
             applyItemizedVisibilityOnLoad(formContext);
+            applyDocsReminderBanner(formContext);
         },
 
         onRequirementFundingChange: function (executionContext) {
