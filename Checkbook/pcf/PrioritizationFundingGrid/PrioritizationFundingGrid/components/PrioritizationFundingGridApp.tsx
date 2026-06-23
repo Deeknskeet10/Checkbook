@@ -8,10 +8,20 @@ import {
   Badge,
   Button,
   Combobox,
+  Dialog,
+  DialogActions,
+  DialogBody,
+  DialogContent,
+  DialogSurface,
+  DialogTitle,
+  DialogTrigger,
   Input,
+  MessageBar,
+  MessageBarBody,
   Option,
   Spinner,
   Text,
+  Textarea,
   Tooltip,
   Link,
 } from "@fluentui/react-components";
@@ -44,6 +54,19 @@ const ALIAS = {
 const PRIORITIZATION_ENTITY = "book_prioritization";
 const PRIORITIZATION_FUNDING_ENTITY = "book_prioritizationfunding";
 const REQUIREMENT_FUNDING_ENTITY = "book_requirementfunding";
+const ITEMIZED_DETAILS_ENTITY = "book_itemizeddetails";
+
+/** Prioritization decimal fields. */
+const PRIO_VALIDATED = "book_validatedamount";
+// V&F historically wrote PRIO_FUNDED as book_newfundedamounttdp; FY27 plugin
+// rollup writes both. Keep the V&F field for compatibility with mid-cycle Reqs.
+const PRIO_FUNDED = "book_newfundedamounttdp";
+/** Itemized Details decimal fields. */
+const ITEM_VALIDATED = "book_validatedamount";
+const ITEM_FUNDED = "book_fundedamount";
+const ITEM_NPM_COMMENT = "book_npmcomment";
+
+const FV = "@OData.Community.Display.V1.FormattedValue";
 
 // book_fundingmode option values
 const FUNDING_MODE_DIRECT = 0;
@@ -62,11 +85,21 @@ interface PrioRow {
   stateName: string | null;
   fundingMode: number | null;
   fundingModeLabel: string | null;
-  requestedAmount: number | null;
-  fundedAmount: number | null;
-  validatedAmount: number | null;
+  requestedAmount: number;
+  fundedAmount: number;
+  validatedAmount: number;
   requirementId: string | null;
   requirementName: string | null;
+}
+
+interface ItemRow {
+  id: string;
+  prioritizationId: string;
+  label: string;
+  requested: number;
+  validated: number;
+  funded: number;
+  npmComment: string;
 }
 
 interface JunctionRow {
@@ -75,6 +108,7 @@ interface JunctionRow {
   prioritizationId: string;
   rfId: string;
   rfName: string;
+  rfFiscalYear: number | null;
   fundedAmount: number;
   validatedAmount: number;
 }
@@ -84,140 +118,225 @@ interface RFOption {
   name: string;
   tdp: number | null;
   fiscalYear: number | null;
+  fiscalYearLabel: string | null;
 }
 
-type SaveState = "saving" | "saved" | "error";
 type JunctionField = "fundedAmount" | "validatedAmount";
 
-// Dataverse subgrids default to ~4–25 rows per page. Bump to a comfortable
-// page size so the NPM doesn't see "4 of N" without doing anything; users can
-// still click Load more if the bucket exceeds this.
+// Dataverse subgrids default to ~4–25 rows per page. Bump so the NPM doesn't
+// see a tiny default page before scrolling — users can still click Load more.
 const PAGE_SIZE = 100;
 
 const useStyles = makeStyles({
   root: {
-    ...shorthands.padding("8px"),
+    ...shorthands.padding("12px"),
     fontFamily: tokens.fontFamilyBase,
     fontSize: tokens.fontSizeBase200,
-  },
-  prioListScroll: {
-    maxHeight: "70vh",
-    overflowY: "auto",
-    paddingRight: "4px",
-  },
-  loadMoreRow: {
-    display: "flex",
-    justifyContent: "center",
-    ...shorthands.padding("8px", "0"),
+    backgroundColor: tokens.colorNeutralBackground1,
   },
   toolbar: {
     display: "flex",
     alignItems: "center",
-    justifyContent: "space-between",
     flexWrap: "wrap",
-    rowGap: "8px",
     columnGap: "12px",
-    ...shorthands.padding("4px", "2px", "12px", "2px"),
+    rowGap: "8px",
+    marginBottom: "10px",
   },
   toolbarLeft: {
     display: "flex",
     alignItems: "center",
     columnGap: "12px",
     flexWrap: "wrap",
+    flexGrow: 1,
   },
   fyFilter: {
     display: "flex",
     alignItems: "center",
     columnGap: "6px",
   },
-  prioCard: {
+  statStrip: {
+    display: "flex",
+    flexWrap: "wrap",
+    columnGap: "8px",
+    rowGap: "8px",
+    marginBottom: "10px",
+  },
+  stat: {
+    flexGrow: 1,
+    minWidth: "140px",
+    ...shorthands.padding("8px", "12px"),
     border: `1px solid ${tokens.colorNeutralStroke2}`,
     borderRadius: tokens.borderRadiusMedium,
-    marginBottom: "10px",
-    backgroundColor: tokens.colorNeutralBackground1,
+    backgroundColor: tokens.colorNeutralBackground2,
   },
-  prioHeader: {
+  statLabel: {
+    color: tokens.colorNeutralForeground3,
+    fontSize: tokens.fontSizeBase100,
+    textTransform: "uppercase",
+    letterSpacing: "0.5px",
+  },
+  statValue: {
+    fontWeight: tokens.fontWeightSemibold,
+    fontSize: tokens.fontSizeBase400,
+    fontVariantNumeric: "tabular-nums",
+  },
+  statGood: {
+    backgroundColor: tokens.colorPaletteGreenBackground2,
+    ...shorthands.borderColor(tokens.colorPaletteGreenBorder1),
+  },
+  statBad: {
+    backgroundColor: tokens.colorPaletteRedBackground2,
+    ...shorthands.borderColor(tokens.colorPaletteRedBorder1),
+  },
+  tableScroll: {
+    border: `1px solid ${tokens.colorNeutralStroke2}`,
+    borderRadius: tokens.borderRadiusMedium,
+    maxHeight: "min(75vh, 900px)",
+    overflowY: "auto",
+    overflowX: "auto",
+  },
+  table: {
+    width: "100%",
+    minWidth: "820px",
+    borderCollapse: "separate",
+    borderSpacing: 0,
+    fontSize: tokens.fontSizeBase200,
+  },
+  stickyTh: {
+    textAlign: "left",
+    ...shorthands.padding("8px", "12px"),
+    fontWeight: tokens.fontWeightSemibold,
+    fontSize: tokens.fontSizeBase100,
+    position: "sticky",
+    top: 0,
+    zIndex: 2,
+    backgroundColor: tokens.colorNeutralBackground3,
+    borderBottom: `1px solid ${tokens.colorNeutralStroke2}`,
+  },
+  stickyThNum: {
+    textAlign: "right",
+  },
+  td: {
+    ...shorthands.padding("8px", "12px"),
+    verticalAlign: "middle",
+    borderTop: `1px solid ${tokens.colorNeutralStroke2}`,
+  },
+  tdNum: {
+    textAlign: "right",
+    fontVariantNumeric: "tabular-nums",
+  },
+  tdRedNum: {
+    color: tokens.colorPaletteRedForeground1,
+  },
+  tdGreenNum: {
+    color: tokens.colorPaletteGreenForeground1,
+  },
+  prioCell: {
     display: "flex",
     alignItems: "center",
-    columnGap: "12px",
-    rowGap: "4px",
-    flexWrap: "wrap",
-    ...shorthands.padding("10px", "12px"),
-    backgroundColor: tokens.colorNeutralBackground2,
-    borderTopLeftRadius: tokens.borderRadiusMedium,
-    borderTopRightRadius: tokens.borderRadiusMedium,
+    columnGap: "8px",
   },
   prioName: {
     fontWeight: tokens.fontWeightSemibold,
-    fontSize: tokens.fontSizeBase300,
-    flexGrow: 1,
-    minWidth: "180px",
   },
-  prioMeta: {
+  prioSub: {
     color: tokens.colorNeutralForeground3,
-    fontSize: tokens.fontSizeBase200,
+    fontSize: tokens.fontSizeBase100,
   },
-  prioMetaStrong: {
-    color: tokens.colorNeutralForeground1,
-    fontVariantNumeric: "tabular-nums",
+  amountInput: {
+    width: "130px",
+    marginLeft: "auto",
+    marginRight: "auto",
   },
-  priorityBadge: {
-    fontVariantNumeric: "tabular-nums",
+  itemsHeaderRow: {
+    backgroundColor: tokens.colorNeutralBackground2,
   },
-  junctionList: {
-    ...shorthands.padding("8px", "12px", "12px", "12px"),
+  itemsTable: {
+    width: "100%",
+    borderCollapse: "collapse",
+  },
+  itemsTh: {
+    textAlign: "left",
+    ...shorthands.padding("6px", "12px", "6px", "28px"),
+    color: tokens.colorNeutralForeground3,
+    fontSize: tokens.fontSizeBase100,
+    fontWeight: tokens.fontWeightSemibold,
+  },
+  itemsThNum: {
+    textAlign: "right",
+  },
+  itemsTd: {
+    ...shorthands.padding("6px", "12px", "6px", "28px"),
+    borderTop: `1px solid ${tokens.colorNeutralStroke2}`,
+  },
+  rowActions: {
+    display: "flex",
+    alignItems: "center",
+    columnGap: "4px",
+    justifyContent: "flex-end",
+  },
+  stickyFootTd: {
+    ...shorthands.padding("8px", "12px"),
+    position: "sticky",
+    bottom: 0,
+    zIndex: 2,
+    backgroundColor: tokens.colorNeutralBackground3,
+    fontWeight: tokens.fontWeightBold,
+    borderTop: `2px solid ${tokens.colorNeutralStroke2}`,
+  },
+  empty: {
+    ...shorthands.padding("16px"),
+    color: tokens.colorNeutralForeground3,
+  },
+  dialogSurface: {
+    minWidth: "min(720px, 95vw)",
+  },
+  drawerJunctionList: {
     display: "flex",
     flexDirection: "column",
-    rowGap: "4px",
+    rowGap: "6px",
+    marginTop: "8px",
   },
-  junctionEmpty: {
-    color: tokens.colorNeutralForeground3,
-    fontStyle: "italic",
-    ...shorthands.padding("4px", "0"),
-  },
-  junctionRow: {
+  drawerJunctionHead: {
     display: "grid",
-    gridTemplateColumns: "minmax(180px, 1.5fr) minmax(140px, 1fr) minmax(140px, 1fr) auto auto",
-    alignItems: "center",
+    gridTemplateColumns: "minmax(180px, 1.5fr) 140px 140px 40px",
     columnGap: "10px",
-    ...shorthands.padding("4px", "0"),
-  },
-  junctionHead: {
     color: tokens.colorNeutralForeground3,
-    fontSize: tokens.fontSizeBase200,
+    fontSize: tokens.fontSizeBase100,
     fontWeight: tokens.fontWeightSemibold,
     borderBottom: `1px solid ${tokens.colorNeutralStroke2}`,
     paddingBottom: "4px",
-    marginBottom: "2px",
   },
-  rfCell: {
-    overflow: "hidden",
-    textOverflow: "ellipsis",
-    whiteSpace: "nowrap",
+  drawerJunctionRow: {
+    display: "grid",
+    gridTemplateColumns: "minmax(180px, 1.5fr) 140px 140px 40px",
+    columnGap: "10px",
+    alignItems: "center",
   },
-  amountInput: {
-    width: "140px",
+  drawerJunctionEmpty: {
+    color: tokens.colorNeutralForeground3,
+    fontStyle: "italic",
+    ...shorthands.padding("8px", "0"),
   },
-  amountCell: {
-    fontVariantNumeric: "tabular-nums",
-  },
-  status: {
-    marginLeft: "6px",
-    fontSize: tokens.fontSizeBase200,
-  },
-  statusError: { color: tokens.colorPaletteRedForeground1 },
-  statusSaved: { color: tokens.colorPaletteGreenForeground1 },
-  addRow: {
+  drawerAddRow: {
     display: "flex",
     alignItems: "center",
     columnGap: "8px",
     marginTop: "8px",
     flexWrap: "wrap",
   },
-  addCombo: { minWidth: "260px" },
-  empty: {
-    ...shorthands.padding("16px"),
-    color: tokens.colorNeutralForeground3,
+  drawerSummaryRow: {
+    display: "flex",
+    columnGap: "12px",
+    marginTop: "12px",
+    paddingTop: "8px",
+    borderTop: `1px solid ${tokens.colorNeutralStroke2}`,
+  },
+  drawerSummaryStat: {
+    flexGrow: 1,
+  },
+  drawerErrorBar: {
+    marginTop: "8px",
   },
 });
 
@@ -235,14 +354,90 @@ function toNumber(value: unknown): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
+function num(value: unknown): number {
+  const n = Number(value);
+  return Number.isFinite(n) ? n : 0;
+}
+
 function formatCurrency(value: number | null): string {
   if (value === null) return "—";
-  return value.toLocaleString(undefined, {
+  return value.toLocaleString("en-US", {
     style: "currency",
     currency: "USD",
+    minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   });
 }
+
+const parseMoney = (s: string): number => {
+  if (s == null) return 0;
+  const n = parseFloat(String(s).replace(/[^0-9.-]/g, ""));
+  return isNaN(n) ? 0 : n;
+};
+
+const sanitizeMoneyText = (s: string): string => {
+  let out = (s ?? "").replace(/[^0-9.-]/g, "");
+  const neg = out.startsWith("-");
+  out = (neg ? "-" : "") + out.replace(/-/g, "");
+  const dot = out.indexOf(".");
+  if (dot !== -1) {
+    out =
+      out.slice(0, dot + 1) +
+      out.slice(dot + 1).replace(/\./g, "").slice(0, 2);
+  }
+  return out;
+};
+
+/**
+ * Currency input that preserves the literal text the user is typing — partial
+ * decimals like "100." or "100.5" en route to "100.50" survive until blur.
+ * Re-formats to two decimal places on blur.
+ */
+const MoneyInput: React.FC<{
+  value: number;
+  onChange: (n: number) => void;
+  disabled?: boolean;
+  className?: string;
+}> = ({ value, onChange, disabled, className }) => {
+  const [text, setText] = React.useState<string>(() =>
+    value === 0 ? "" : value.toFixed(2)
+  );
+  const lastEmittedRef = React.useRef<number>(value);
+  React.useEffect(() => {
+    if (value !== lastEmittedRef.current) {
+      setText(value === 0 ? "" : value.toFixed(2));
+      lastEmittedRef.current = value;
+    }
+  }, [value]);
+
+  return (
+    <Input
+      appearance="outline"
+      disabled={disabled}
+      className={className}
+      value={text}
+      onChange={(_e, d) => {
+        const cleaned = sanitizeMoneyText(d.value);
+        setText(cleaned);
+        const parsed = parseMoney(cleaned);
+        lastEmittedRef.current = parsed;
+        onChange(parsed);
+      }}
+      onBlur={() => {
+        const parsed = parseMoney(text);
+        const formatted = text.trim() === "" ? "" : parsed.toFixed(2);
+        setText(formatted);
+        if (parsed !== lastEmittedRef.current) {
+          lastEmittedRef.current = parsed;
+          onChange(parsed);
+        }
+      }}
+      input={{
+        style: { textAlign: "right", fontVariantNumeric: "tabular-nums" },
+      }}
+    />
+  );
+};
 
 function approvalColor(label: string | null): "danger" | "warning" | "success" | "informative" | "brand" {
   const t = (label ?? "").toLowerCase();
@@ -256,12 +451,11 @@ function approvalColor(label: string | null): "danger" | "warning" | "success" |
 export const PrioritizationFundingGridApp: React.FC<PrioritizationFundingGridProps> = (
   props
 ) => {
-  const { dataset, webAPI, isDisabled } = props;
+  const { dataset, webAPI, navigation, isDisabled } = props;
   const styles = useStyles();
 
-  // Bump the dataset page size once on mount. Without this Dataverse hands us
-  // only the subgrid's default page (often ~4), which surprised users in 0.1.x.
-  // Guard against re-running so the host doesn't keep refetching.
+  // Bump the dataset page size once. Without this Dataverse hands us only the
+  // subgrid's default page (often ~4), which surprised users in 0.1.x.
   const pageSizeApplied = React.useRef(false);
   React.useEffect(() => {
     if (pageSizeApplied.current) return;
@@ -276,7 +470,7 @@ export const PrioritizationFundingGridApp: React.FC<PrioritizationFundingGridPro
   }, [dataset.paging]);
 
   // ---- Materialise the Prios from the dataset ----
-  const prios = React.useMemo<PrioRow[]>(() => {
+  const initialPrioRows = React.useMemo<PrioRow[]>(() => {
     return dataset.sortedRecordIds
       .map((id) => {
         const r = dataset.records[id];
@@ -288,8 +482,6 @@ export const PrioritizationFundingGridApp: React.FC<PrioritizationFundingGridPro
           name: (r.getValue(ALIAS.name) as string | null) ?? "(unnamed)",
           statePriority: (r.getValue(ALIAS.statePriority) as number | null) ?? null,
           approvalStatus: r.getFormattedValue(ALIAS.approvalStatus) ?? null,
-          // book_newfiscalyear is an OptionSet; getValue returns either an
-          // {Value} wrapper or the raw integer depending on host version.
           fiscalYear:
             typeof fiscalYearRaw === "object" && fiscalYearRaw !== null
               ? ((fiscalYearRaw as { Value?: number }).Value ?? null)
@@ -300,16 +492,15 @@ export const PrioritizationFundingGridApp: React.FC<PrioritizationFundingGridPro
               ? ((fundingModeRaw as { Value?: number }).Value ?? null)
               : toNumber(fundingModeRaw),
           fundingModeLabel: r.getFormattedValue(ALIAS.fundingMode) ?? null,
-          requestedAmount: toNumber(r.getValue(ALIAS.requestedAmount)),
-          fundedAmount: toNumber(r.getValue(ALIAS.fundedAmount)),
-          validatedAmount: toNumber(r.getValue(ALIAS.validatedAmount)),
+          requestedAmount: num(r.getValue(ALIAS.requestedAmount)),
+          fundedAmount: num(r.getValue(ALIAS.fundedAmount)),
+          validatedAmount: num(r.getValue(ALIAS.validatedAmount)),
           requirementId: extractLookupId(reqLookup),
           requirementName: r.getFormattedValue(ALIAS.requirement) ?? null,
           stateName: r.getFormattedValue(ALIAS.state) ?? null,
         };
       })
-      // Sort by State first (alpha; null states sink), then by State Priority
-      // within a State so #1, #2 … remain grouped.
+      // Sort by State first (alpha; null states sink), then State Priority.
       .sort((a, b) => {
         const sa = a.stateName ?? "￿";
         const sb = b.stateName ?? "￿";
@@ -322,13 +513,10 @@ export const PrioritizationFundingGridApp: React.FC<PrioritizationFundingGridPro
       });
   }, [dataset.sortedRecordIds, dataset.records]);
 
-  // ---- FY filter ----
-  // book_newfiscalyear is a picklist; the option *value* is opaque (e.g.
-  // 100000000) but the formatted *label* is human-friendly ("FY 2027").
-  // Filtering uses value; the UI shows label.
+  // ---- FY filter (over the Prios — same UX as 0.1.x) ----
   const fyOptions = React.useMemo<{ value: number; label: string }[]>(() => {
     const seen = new Map<number, string>();
-    for (const p of prios) {
+    for (const p of initialPrioRows) {
       if (p.fiscalYear == null) continue;
       if (!seen.has(p.fiscalYear)) {
         seen.set(p.fiscalYear, p.fiscalYearLabel ?? `FY ${p.fiscalYear}`);
@@ -336,8 +524,8 @@ export const PrioritizationFundingGridApp: React.FC<PrioritizationFundingGridPro
     }
     return Array.from(seen.entries())
       .map(([value, label]) => ({ value, label }))
-      .sort((a, b) => b.value - a.value); // newest first
-  }, [prios]);
+      .sort((a, b) => b.value - a.value);
+  }, [initialPrioRows]);
 
   const fyLabelFor = (value: number | null): string => {
     if (value == null) return "";
@@ -345,34 +533,98 @@ export const PrioritizationFundingGridApp: React.FC<PrioritizationFundingGridPro
     return hit?.label ?? `FY ${value}`;
   };
 
-  // Default to the newest FY so legacy (e.g. FY26) prios don't appear with an
-  // editable Add-from-RF dropdown — those records are on the pre-junction path
-  // and shouldn't be touched here. NPM can flip to "All" or any other FY.
   const [fyFilter, setFyFilter] = React.useState<FYFilter>(FY_FILTER_ALL);
   const fyDefaultApplied = React.useRef(false);
 
   React.useEffect(() => {
     if (fyOptions.length === 0) return;
-
-    // First time we see options: pick the newest FY as the default.
     if (!fyDefaultApplied.current) {
       setFyFilter(fyOptions[0].value);
       fyDefaultApplied.current = true;
       return;
     }
-
-    // Otherwise: if the current filter no longer matches any FY, fall back to All.
     if (fyFilter !== FY_FILTER_ALL && !fyOptions.some((o) => o.value === fyFilter)) {
       setFyFilter(FY_FILTER_ALL);
     }
   }, [fyOptions, fyFilter]);
 
   const visiblePrios = React.useMemo<PrioRow[]>(() => {
-    if (fyFilter === FY_FILTER_ALL) return prios;
-    return prios.filter((p) => p.fiscalYear === fyFilter);
-  }, [prios, fyFilter]);
+    if (fyFilter === FY_FILTER_ALL) return initialPrioRows;
+    return initialPrioRows.filter((p) => p.fiscalYear === fyFilter);
+  }, [initialPrioRows, fyFilter]);
 
-  // ---- Junction rows per Prio (fetched on prio set change) ----
+  // ---- Editable V&F state (batch Edit/Save mode for the main grid) ----
+  const [prioRows, setPrioRows] = React.useState<PrioRow[]>(initialPrioRows);
+  const [baselinePrio, setBaselinePrio] = React.useState<PrioRow[]>(initialPrioRows);
+  const [itemRows, setItemRows] = React.useState<ItemRow[]>([]);
+  const [baselineItems, setBaselineItems] = React.useState<ItemRow[]>([]);
+  const [editMode, setEditMode] = React.useState(false);
+  const [saving, setSaving] = React.useState(false);
+  const [vfError, setVfError] = React.useState<string | null>(null);
+  const [vfSuccess, setVfSuccess] = React.useState<string | null>(null);
+  const [loadingItems, setLoadingItems] = React.useState(true);
+  const [expandedItems, setExpandedItems] = React.useState<Record<string, boolean>>({});
+  const [reloadKey, setReloadKey] = React.useState(0);
+
+  React.useEffect(() => {
+    setPrioRows(initialPrioRows);
+    setBaselinePrio(initialPrioRows);
+  }, [initialPrioRows]);
+
+  // ---- Itemized Details fetch (one query across all visible Prios) ----
+  React.useEffect(() => {
+    let cancelled = false;
+    const ids = initialPrioRows.map((r) => r.id);
+    if (ids.length === 0) {
+      setItemRows([]);
+      setBaselineItems([]);
+      setLoadingItems(false);
+      return;
+    }
+    setLoadingItems(true);
+    const filter = ids
+      .map((id) => `_book_prioritization_value eq ${id}`)
+      .join(" or ");
+    const options =
+      "?$select=_book_prioritization_value,_book_requirementitem_value," +
+      `book_requestedamount,${ITEM_VALIDATED},${ITEM_FUNDED},${ITEM_NPM_COMMENT}` +
+      `&$filter=(${filter})`;
+
+    void (async () => {
+      try {
+        const res = await webAPI.retrieveMultipleRecords(
+          ITEMIZED_DETAILS_ENTITY,
+          options
+        );
+        if (cancelled) return;
+        const rows: ItemRow[] = res.entities.map((e) => ({
+          id: e.book_itemizeddetailsid as string,
+          prioritizationId: ((e._book_prioritization_value as string) ?? "")
+            .replace(/[{}]/g, "")
+            .toLowerCase(),
+          label:
+            (e[`_book_requirementitem_value${FV}`] as string) ||
+            "(unnamed line item)",
+          requested: num(e.book_requestedamount),
+          validated: num(e[ITEM_VALIDATED]),
+          funded: num(e[ITEM_FUNDED]),
+          npmComment: (e[ITEM_NPM_COMMENT] as string) ?? "",
+        }));
+        setItemRows(rows);
+        setBaselineItems(rows);
+      } catch {
+        if (!cancelled) setVfError("Could not load Itemized Details.");
+      } finally {
+        if (!cancelled) setLoadingItems(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [initialPrioRows, webAPI, reloadKey]);
+
+  // ---- Junction rows per Prio (for the per-Prio "Allocate to RFs" dialog) ----
   const [junctions, setJunctions] = React.useState<Record<string, JunctionRow[]>>({});
   const [junctionsLoading, setJunctionsLoading] = React.useState<boolean>(false);
   const [junctionsError, setJunctionsError] = React.useState<string | null>(null);
@@ -392,7 +644,7 @@ export const PrioritizationFundingGridApp: React.FC<PrioritizationFundingGridPro
       const select =
         "?$select=book_name,book_fundedamount,book_validatedamount," +
         "_book_prioritization_value,_book_requirementfunding_value" +
-        "&$expand=book_RequirementFunding($select=book_name)" +
+        "&$expand=book_RequirementFunding($select=book_name,book_newfiscalyear)" +
         `&$filter=statecode eq 0 and (${orClause})`;
 
       webAPI
@@ -407,17 +659,18 @@ export const PrioritizationFundingGridApp: React.FC<PrioritizationFundingGridPro
             const rfId = ((e._book_requirementfunding_value as string) ?? "")
               .replace(/[{}]/g, "")
               .toLowerCase();
-            const rfName =
-              (e.book_RequirementFunding as { book_name?: string } | undefined)
-                ?.book_name ?? "(RF)";
+            const rf = e.book_RequirementFunding as
+              | { book_name?: string; book_newfiscalyear?: number }
+              | undefined;
             const row: JunctionRow = {
               id: e.book_prioritizationfundingid as string,
               name: (e.book_name as string) ?? "",
               prioritizationId: prioId,
               rfId,
-              rfName,
-              fundedAmount: toNumber(e.book_fundedamount) ?? 0,
-              validatedAmount: toNumber(e.book_validatedamount) ?? 0,
+              rfName: rf?.book_name ?? "(RF)",
+              rfFiscalYear: rf?.book_newfiscalyear ?? null,
+              fundedAmount: num(e.book_fundedamount),
+              validatedAmount: num(e.book_validatedamount),
             };
             if (!byPrio[prioId]) byPrio[prioId] = [];
             byPrio[prioId].push(row);
@@ -439,473 +692,590 @@ export const PrioritizationFundingGridApp: React.FC<PrioritizationFundingGridPro
     [webAPI]
   );
 
-  // Re-fetch when the visible Prio set changes.
-  const prioIdsKey = prios.map((p) => p.id).join("|");
+  const prioIdsKey = initialPrioRows.map((p) => p.id).join("|");
   React.useEffect(() => {
-    reloadJunctions(prios.map((p) => p.id));
+    reloadJunctions(initialPrioRows.map((p) => p.id));
   }, [prioIdsKey, reloadJunctions]);
 
-  // ---- Eligible RFs per FY (cached) ----
-  // Parent Requirement is shared across all rows in the subgrid; pick the
-  // first row's value.
+  // ---- Eligible RFs for the parent Requirement (drives Add-from-RF + TDP) ----
   const parentRequirementId = React.useMemo<string | null>(() => {
-    for (const p of prios) if (p.requirementId) return p.requirementId;
+    for (const p of initialPrioRows) if (p.requirementId) return p.requirementId;
     return null;
-  }, [prios]);
+  }, [initialPrioRows]);
 
-  const [rfsByFY, setRfsByFY] = React.useState<Record<number, RFOption[]>>({});
-  const [rfsLoadingFY, setRfsLoadingFY] = React.useState<Record<number, boolean>>({});
+  const [rfs, setRfs] = React.useState<RFOption[] | null>(null);
+  const [rfsLoading, setRfsLoading] = React.useState<boolean>(false);
 
-  const ensureRFsForFY = React.useCallback(
-    (fy: number): void => {
-      if (!parentRequirementId) return;
-      if (rfsByFY[fy] || rfsLoadingFY[fy]) return;
-      setRfsLoadingFY((prev) => ({ ...prev, [fy]: true }));
+  const ensureRFs = React.useCallback((): void => {
+    if (!parentRequirementId) return;
+    if (rfs !== null || rfsLoading) return;
+    setRfsLoading(true);
 
-      const select =
-        "?$select=book_name,book_newtdp,book_newfiscalyear" +
-        `&$filter=_book_requirement_value eq ${parentRequirementId}` +
-        ` and book_newfiscalyear eq ${fy}` +
-        " and statecode eq 0";
+    const select =
+      "?$select=book_name,book_newtdp,book_newfiscalyear,book_newwithholding" +
+      `&$filter=_book_requirement_value eq ${parentRequirementId}` +
+      " and statecode eq 0";
 
-      webAPI
-        .retrieveMultipleRecords(REQUIREMENT_FUNDING_ENTITY, select)
-        .then((res) => {
-          const options: RFOption[] = res.entities.map((e) => ({
-            id: e.book_requirementfundingid as string,
-            name: (e.book_name as string) ?? "(RF)",
-            tdp: toNumber(e.book_newtdp),
-            fiscalYear: (e.book_newfiscalyear as number | null) ?? null,
-          }));
-          options.sort((a, b) => a.name.localeCompare(b.name));
-          setRfsByFY((prev) => ({ ...prev, [fy]: options }));
-          setRfsLoadingFY((prev) => ({ ...prev, [fy]: false }));
-          return;
-        })
-        .catch(() => {
-          setRfsLoadingFY((prev) => ({ ...prev, [fy]: false }));
-        });
-    },
-    [parentRequirementId, rfsByFY, rfsLoadingFY, webAPI]
+    webAPI
+      .retrieveMultipleRecords(REQUIREMENT_FUNDING_ENTITY, select)
+      .then((res) => {
+        const options: RFOption[] = res.entities.map((e) => ({
+          id: e.book_requirementfundingid as string,
+          name: (e.book_name as string) ?? "(RF)",
+          tdp: toNumber(e.book_newtdp),
+          fiscalYear: (e.book_newfiscalyear as number | null) ?? null,
+          fiscalYearLabel:
+            (e[`book_newfiscalyear${FV}`] as string) ?? null,
+        }));
+        options.sort((a, b) => a.name.localeCompare(b.name));
+        setRfs(options);
+        setRfsLoading(false);
+        return;
+      })
+      .catch(() => {
+        setRfs([]);
+        setRfsLoading(false);
+      });
+  }, [parentRequirementId, rfs, rfsLoading, webAPI]);
+
+  React.useEffect(() => {
+    ensureRFs();
+  }, [ensureRFs]);
+
+  // Total TDP across the Requirement's RFs (FY-filter-aware).
+  const totalTDP = React.useMemo(() => {
+    if (rfs == null) return null;
+    const pool = rfs.filter((rf) =>
+      fyFilter === FY_FILTER_ALL ? true : rf.fiscalYear === fyFilter
+    );
+    return pool.reduce((s, rf) => s + (rf.tdp ?? 0), 0);
+  }, [rfs, fyFilter]);
+
+  // ---- V&F helpers (derived totals from Items when present) ----
+  const itemsFor = React.useCallback(
+    (prioId: string) => itemRows.filter((i) => i.prioritizationId === prioId),
+    [itemRows]
+  );
+  const hasItemized = React.useCallback(
+    (prioId: string) => itemsFor(prioId).length > 0,
+    [itemsFor]
   );
 
-  // ---- Pending edits + save state on junction inputs ----
-  const [edits, setEdits] = React.useState<
-    Record<string, Partial<Record<JunctionField, string>>>
-  >({});
-  const [saveState, setSaveState] = React.useState<Record<string, SaveState>>({});
+  const effective = React.useCallback(
+    (prio: PrioRow): { validated: number; funded: number; derived: boolean } => {
+      const items = itemsFor(prio.id);
+      if (items.length > 0) {
+        return {
+          validated: items.reduce((s, i) => s + i.validated, 0),
+          funded: items.reduce((s, i) => s + i.funded, 0),
+          derived: true,
+        };
+      }
+      return { validated: prio.validatedAmount, funded: prio.fundedAmount, derived: false };
+    },
+    [itemsFor]
+  );
 
-  const onCellChange = (id: string, field: JunctionField, value: string): void => {
-    setEdits((prev) => ({ ...prev, [id]: { ...prev[id], [field]: value } }));
+  const totals = React.useMemo(() => {
+    let requested = 0,
+      validated = 0,
+      funded = 0,
+      unfunded = 0;
+    for (const p of visiblePrios) {
+      const eff = effective(p);
+      requested += p.requestedAmount;
+      validated += eff.validated;
+      funded += eff.funded;
+      unfunded += Math.max(p.requestedAmount - eff.funded, 0);
+    }
+    return { requested, validated, funded, unfunded };
+  }, [visiblePrios, effective]);
+
+  const overAllocated = totalTDP != null && totals.funded > totalTDP;
+  const withholdAvailable =
+    totalTDP != null ? totalTDP - totals.funded : null;
+
+  // ---- V&F editing ----
+  const updatePrioMoney = (
+    id: string,
+    field: "validatedAmount" | "fundedAmount",
+    value: number
+  ): void => {
+    setPrioRows((prev) =>
+      prev.map((r) => (r.id === id ? { ...r, [field]: value } : r))
+    );
   };
 
-  const commitCell = (row: JunctionRow, field: JunctionField): void => {
-    const pending = edits[row.id]?.[field];
-    if (pending === undefined) return;
-    const newValue = toNumber(pending) ?? 0;
-    const original = row[field];
-    if (newValue === original) {
-      // Clear the edit; nothing to save.
-      setEdits((prev) => {
-        const copy = { ...prev[row.id] };
-        delete copy[field];
+  const updateItemMoney = (
+    id: string,
+    field: "validated" | "funded",
+    value: number
+  ): void => {
+    setItemRows((prev) =>
+      prev.map((r) => (r.id === id ? { ...r, [field]: value } : r))
+    );
+  };
+
+  const updateItemComment = (id: string, raw: string): void => {
+    setItemRows((prev) =>
+      prev.map((r) => (r.id === id ? { ...r, npmComment: raw } : r))
+    );
+  };
+
+  const onCancel = (): void => {
+    setPrioRows(baselinePrio);
+    setItemRows(baselineItems);
+    setEditMode(false);
+    setVfError(null);
+    setVfSuccess(null);
+  };
+
+  const onSave = async (): Promise<void> => {
+    setVfError(null);
+    setVfSuccess(null);
+    setSaving(true);
+    try {
+      // Direct Prios (no Itemized Details) that changed.
+      const prioBase = new Map(baselinePrio.map((r) => [r.id, r]));
+      for (const r of prioRows) {
+        if (hasItemized(r.id)) continue;
+        const base = prioBase.get(r.id);
+        if (
+          base &&
+          base.validatedAmount === r.validatedAmount &&
+          base.fundedAmount === r.fundedAmount
+        )
+          continue;
+        await webAPI.updateRecord(PRIORITIZATION_ENTITY, r.id, {
+          [PRIO_VALIDATED]: r.validatedAmount,
+          [PRIO_FUNDED]: r.fundedAmount,
+        });
+      }
+
+      // Itemized Details that changed.
+      const itemBase = new Map(baselineItems.map((r) => [r.id, r]));
+      for (const it of itemRows) {
+        const base = itemBase.get(it.id);
+        if (
+          base &&
+          base.validated === it.validated &&
+          base.funded === it.funded &&
+          base.npmComment === it.npmComment
+        )
+          continue;
+        await webAPI.updateRecord(ITEMIZED_DETAILS_ENTITY, it.id, {
+          [ITEM_VALIDATED]: it.validated,
+          [ITEM_FUNDED]: it.funded,
+          [ITEM_NPM_COMMENT]: it.npmComment.trim() === "" ? null : it.npmComment,
+        });
+      }
+
+      setVfSuccess("Validation & funding saved.");
+      setEditMode(false);
+      dataset.refresh();
+      setReloadKey((k) => k + 1);
+    } catch (e) {
+      const msg = (e as { message?: string })?.message;
+      setVfError(msg ?? "Save failed. Please try again or contact support.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const toggleExpandItems = (id: string): void =>
+    setExpandedItems((prev) => ({ ...prev, [id]: !prev[id] }));
+
+  // ---- Allocate-to-RFs dialog ----
+  const [allocPrioId, setAllocPrioId] = React.useState<string | null>(null);
+  const [allocAddOpen, setAllocAddOpen] = React.useState<boolean>(false);
+  const [allocAddRFId, setAllocAddRFId] = React.useState<string>("");
+  const [allocBusy, setAllocBusy] = React.useState<boolean>(false);
+  const [allocError, setAllocError] = React.useState<string | null>(null);
+  // Pending in-dialog edits keyed by junction id.
+  const [allocEdits, setAllocEdits] = React.useState<
+    Record<string, Partial<Record<JunctionField, number>>>
+  >({});
+
+  const allocPrio = React.useMemo<PrioRow | null>(() => {
+    if (!allocPrioId) return null;
+    return initialPrioRows.find((p) => p.id === allocPrioId) ?? null;
+  }, [allocPrioId, initialPrioRows]);
+
+  const openAllocate = (prio: PrioRow): void => {
+    setAllocPrioId(prio.id);
+    setAllocAddOpen(false);
+    setAllocAddRFId("");
+    setAllocBusy(false);
+    setAllocError(null);
+    setAllocEdits({});
+    ensureRFs();
+  };
+
+  const closeAllocate = (): void => {
+    setAllocPrioId(null);
+    setAllocAddOpen(false);
+    setAllocAddRFId("");
+    setAllocBusy(false);
+    setAllocError(null);
+    setAllocEdits({});
+  };
+
+  const allocJunctionValue = (row: JunctionRow, field: JunctionField): number => {
+    const pending = allocEdits[row.id]?.[field];
+    return pending ?? row[field];
+  };
+
+  const setAllocJunctionValue = (
+    id: string,
+    field: JunctionField,
+    value: number
+  ): void => {
+    setAllocEdits((prev) => ({
+      ...prev,
+      [id]: { ...prev[id], [field]: value },
+    }));
+  };
+
+  const saveAllocations = async (): Promise<void> => {
+    if (!allocPrioId) return;
+    const list = junctions[allocPrioId] ?? [];
+    setAllocBusy(true);
+    setAllocError(null);
+    try {
+      for (const j of list) {
+        const e = allocEdits[j.id];
+        if (!e) continue;
+        const newFunded = e.fundedAmount ?? j.fundedAmount;
+        const newValidated = e.validatedAmount ?? j.validatedAmount;
+        if (newFunded === j.fundedAmount && newValidated === j.validatedAmount)
+          continue;
+        await webAPI.updateRecord(PRIORITIZATION_FUNDING_ENTITY, j.id, {
+          book_fundedamount: newFunded,
+          book_validatedamount: newValidated,
+        });
+      }
+      setAllocEdits({});
+      reloadJunctions(initialPrioRows.map((p) => p.id));
+      dataset.refresh();
+      setReloadKey((k) => k + 1);
+    } catch (e) {
+      const msg = (e as { message?: string })?.message;
+      setAllocError(msg ?? "Could not save allocations.");
+    } finally {
+      setAllocBusy(false);
+    }
+  };
+
+  const addJunction = async (): Promise<void> => {
+    if (!allocPrioId || !allocAddRFId) return;
+    setAllocBusy(true);
+    setAllocError(null);
+    try {
+      const payload = {
+        [`book_Prioritization@odata.bind`]: `/${PRIORITIZATION_ENTITY}s(${allocPrioId})`,
+        [`book_RequirementFunding@odata.bind`]: `/${REQUIREMENT_FUNDING_ENTITY}s(${allocAddRFId})`,
+        book_fundedamount: 0,
+        book_validatedamount: 0,
+      };
+      await webAPI.createRecord(PRIORITIZATION_FUNDING_ENTITY, payload);
+      setAllocAddOpen(false);
+      setAllocAddRFId("");
+      reloadJunctions(initialPrioRows.map((p) => p.id));
+      dataset.refresh();
+    } catch (e) {
+      const msg = (e as { message?: string })?.message;
+      setAllocError(msg ?? "Could not add RF allocation.");
+    } finally {
+      setAllocBusy(false);
+    }
+  };
+
+  const deleteJunction = async (row: JunctionRow): Promise<void> => {
+    setAllocBusy(true);
+    setAllocError(null);
+    try {
+      await webAPI.deleteRecord(PRIORITIZATION_FUNDING_ENTITY, row.id);
+      setAllocEdits((prev) => {
         const next = { ...prev };
-        if (Object.keys(copy).length === 0) delete next[row.id];
-        else next[row.id] = copy;
+        delete next[row.id];
         return next;
       });
-      return;
+      reloadJunctions(initialPrioRows.map((p) => p.id));
+      dataset.refresh();
+    } catch (e) {
+      const msg = (e as { message?: string })?.message;
+      setAllocError(msg ?? "Could not delete RF allocation.");
+    } finally {
+      setAllocBusy(false);
     }
-
-    const logicalField =
-      field === "fundedAmount" ? "book_fundedamount" : "book_validatedamount";
-
-    setSaveState((prev) => ({ ...prev, [row.id]: "saving" }));
-    webAPI
-      .updateRecord(PRIORITIZATION_FUNDING_ENTITY, row.id, {
-        [logicalField]: newValue,
-      })
-      .then(() => {
-        setSaveState((prev) => ({ ...prev, [row.id]: "saved" }));
-        // Patch the local junction state so totals reflect immediately.
-        setJunctions((prev) => {
-          const list = prev[row.prioritizationId];
-          if (!list) return prev;
-          return {
-            ...prev,
-            [row.prioritizationId]: list.map((j) =>
-              j.id === row.id ? { ...j, [field]: newValue } : j
-            ),
-          };
-        });
-        // Clear the pending edit so the value isn't shown twice.
-        setEdits((prev) => {
-          const copy = { ...prev[row.id] };
-          delete copy[field];
-          const next = { ...prev };
-          if (Object.keys(copy).length === 0) delete next[row.id];
-          else next[row.id] = copy;
-          return next;
-        });
-        window.setTimeout(() => {
-          setSaveState((prev) => {
-            const next = { ...prev };
-            if (next[row.id] === "saved") delete next[row.id];
-            return next;
-          });
-        }, 2500);
-        // Refresh dataset so the Prio's funded total picks up the rollup.
-        dataset.refresh();
-        return;
-      })
-      .catch(() => {
-        setSaveState((prev) => ({ ...prev, [row.id]: "error" }));
-      });
-  };
-
-  // ---- Add junction ----
-  const [addOpenFor, setAddOpenFor] = React.useState<string | null>(null);
-  const [addRFFor, setAddRFFor] = React.useState<Record<string, string>>({});
-  const [adding, setAdding] = React.useState<Record<string, boolean>>({});
-
-  const createJunction = (prio: PrioRow): void => {
-    const rfId = addRFFor[prio.id];
-    if (!rfId) return;
-    setAdding((prev) => ({ ...prev, [prio.id]: true }));
-
-    const payload = {
-      [`book_Prioritization@odata.bind`]: `/${PRIORITIZATION_ENTITY}s(${prio.id})`,
-      [`book_RequirementFunding@odata.bind`]: `/${REQUIREMENT_FUNDING_ENTITY}s(${rfId})`,
-      book_fundedamount: 0,
-      book_validatedamount: 0,
-    };
-
-    webAPI
-      .createRecord(PRIORITIZATION_FUNDING_ENTITY, payload)
-      .then(() => {
-        setAddOpenFor(null);
-        setAddRFFor((prev) => {
-          const next = { ...prev };
-          delete next[prio.id];
-          return next;
-        });
-        setAdding((prev) => ({ ...prev, [prio.id]: false }));
-        reloadJunctions(prios.map((p) => p.id));
-        dataset.refresh();
-        return;
-      })
-      .catch((err: unknown) => {
-        setAdding((prev) => ({ ...prev, [prio.id]: false }));
-        setJunctionsError(
-          err instanceof Error
-            ? err.message
-            : "Failed to add Prioritization Funding."
-        );
-      });
-  };
-
-  // ---- Delete junction ----
-  const deleteJunction = (row: JunctionRow): void => {
-    setSaveState((prev) => ({ ...prev, [row.id]: "saving" }));
-    webAPI
-      .deleteRecord(PRIORITIZATION_FUNDING_ENTITY, row.id)
-      .then(() => {
-        setJunctions((prev) => {
-          const list = prev[row.prioritizationId];
-          if (!list) return prev;
-          return {
-            ...prev,
-            [row.prioritizationId]: list.filter((j) => j.id !== row.id),
-          };
-        });
-        setSaveState((prev) => {
-          const next = { ...prev };
-          delete next[row.id];
-          return next;
-        });
-        dataset.refresh();
-        return;
-      })
-      .catch(() => {
-        setSaveState((prev) => ({ ...prev, [row.id]: "error" }));
-      });
   };
 
   // ---- Render helpers ----
-  const renderStatus = (id: string): React.ReactNode => {
-    const s = saveState[id];
-    if (!s) return null;
-    if (s === "saving") return <Spinner size="extra-tiny" className={styles.status} />;
-    if (s === "saved")
-      return <span className={`${styles.status} ${styles.statusSaved}`}>Saved</span>;
-    return (
-      <Tooltip content="Save failed — re-check the value" relationship="label">
-        <span className={`${styles.status} ${styles.statusError}`}>Error</span>
-      </Tooltip>
-    );
-  };
-
-  const displayValue = (row: JunctionRow, field: JunctionField): string => {
-    const pending = edits[row.id]?.[field];
-    if (pending !== undefined) return pending;
-    return String(row[field] ?? 0);
-  };
-
-  const renderJunctionInput = (row: JunctionRow, field: JunctionField): React.ReactNode => (
-    <Input
-      type="number"
-      appearance="filled-lighter"
-      className={styles.amountInput}
-      disabled={isDisabled}
-      value={displayValue(row, field)}
-      onChange={(_e, data) => onCellChange(row.id, field, data.value)}
-      onBlur={() => commitCell(row, field)}
-      input={{ style: { textAlign: "right", fontVariantNumeric: "tabular-nums" } }}
-    />
+  const renderStat = (
+    label: string,
+    value: string,
+    tone: "neutral" | "good" | "bad" = "neutral"
+  ): React.ReactElement => (
+    <div
+      className={`${styles.stat} ${
+        tone === "good" ? styles.statGood : tone === "bad" ? styles.statBad : ""
+      }`}
+    >
+      <div className={styles.statLabel}>{label}</div>
+      <div className={styles.statValue}>{value}</div>
+    </div>
   );
 
-  const renderAddRow = (prio: PrioRow): React.ReactNode => {
-    if (prio.fiscalYear == null) {
-      return (
-        <div className={styles.addRow}>
-          <Text size={200} className={styles.junctionEmpty}>
-            Prioritization has no Fiscal Year — set one before adding RF allocations.
-          </Text>
-        </div>
-      );
-    }
-    const fy = prio.fiscalYear;
-    const allRFs = rfsByFY[fy] ?? [];
-    const usedIds = new Set((junctions[prio.id] ?? []).map((j) => j.rfId));
+  const renderAllocDialog = (): React.ReactNode => {
+    if (!allocPrio) return null;
+    const list = junctions[allocPrio.id] ?? [];
+    const allRFs = rfs ?? [];
+    const usedIds = new Set(list.map((j) => j.rfId));
     const eligibleRFs = allRFs.filter((rf) => !usedIds.has(rf.id));
-    const selectedId = addRFFor[prio.id] ?? "";
-    const selectedName = eligibleRFs.find((rf) => rf.id === selectedId)?.name ?? "";
-
-    const isOpen = addOpenFor === prio.id;
-    if (!isOpen) {
-      return (
-        <div className={styles.addRow}>
-          <Button
-            appearance="subtle"
-            size="small"
-            disabled={isDisabled}
-            onClick={() => {
-              setAddOpenFor(prio.id);
-              ensureRFsForFY(fy);
-            }}
-          >
-            + Add from RF
-          </Button>
-        </div>
-      );
-    }
-
-    return (
-      <div className={styles.addRow}>
-        {rfsLoadingFY[fy] ? (
-          <Spinner size="extra-tiny" label="Loading RFs…" labelPosition="after" />
-        ) : eligibleRFs.length === 0 ? (
-          <Text size={200} className={styles.junctionEmpty}>
-            No additional {fyLabelFor(fy)} Requirement Fundings available for this Requirement.
-          </Text>
-        ) : (
-          <Combobox
-            className={styles.addCombo}
-            size="small"
-            placeholder={`Select an FY ${fy} Requirement Funding`}
-            value={selectedName}
-            selectedOptions={selectedId ? [selectedId] : []}
-            onOptionSelect={(_e, data) =>
-              setAddRFFor((prev) => ({ ...prev, [prio.id]: data.optionValue ?? "" }))
-            }
-            disabled={isDisabled}
-          >
-            {eligibleRFs.map((rf) => (
-              <Option key={rf.id} value={rf.id} text={rf.name}>
-                {rf.name}
-                {rf.tdp != null ? ` — TDP ${formatCurrency(rf.tdp)}` : ""}
-              </Option>
-            ))}
-          </Combobox>
-        )}
-        <Button
-          appearance="primary"
-          size="small"
-          disabled={isDisabled || !selectedId || adding[prio.id]}
-          onClick={() => createJunction(prio)}
-        >
-          {adding[prio.id] ? "Adding…" : "Add"}
-        </Button>
-        <Button
-          appearance="subtle"
-          size="small"
-          onClick={() => {
-            setAddOpenFor(null);
-            setAddRFFor((prev) => {
-              const next = { ...prev };
-              delete next[prio.id];
-              return next;
-            });
-          }}
-        >
-          Cancel
-        </Button>
-      </div>
+    const eff = effective(allocPrio);
+    const allocFundedSum = list.reduce(
+      (s, j) => s + allocJunctionValue(j, "fundedAmount"),
+      0
     );
-  };
-
-  const renderPrio = (prio: PrioRow): React.ReactNode => {
-    const list = junctions[prio.id] ?? [];
-    const fundedSum = list.reduce((s, j) => s + (j.fundedAmount || 0), 0);
-    const validatedSum = list.reduce((s, j) => s + (j.validatedAmount || 0), 0);
-    const isItemized = prio.fundingMode === FUNDING_MODE_ITEMIZED;
+    const allocValidatedSum = list.reduce(
+      (s, j) => s + allocJunctionValue(j, "validatedAmount"),
+      0
+    );
+    const fundedDelta = allocFundedSum - eff.funded;
+    const dirty = Object.keys(allocEdits).length > 0;
 
     return (
-      <div key={prio.id} className={styles.prioCard}>
-        <div className={styles.prioHeader}>
-          {prio.statePriority != null && (
-            <Badge
-              appearance="filled"
-              color="informative"
-              shape="rounded"
-              className={styles.priorityBadge}
-            >
-              #{prio.statePriority}
-            </Badge>
-          )}
-          <Link
-            as="button"
-            className={styles.prioName}
-            onClick={() =>
-              void props.navigation.openForm({
-                entityName: PRIORITIZATION_ENTITY,
-                entityId: prio.id,
-                openInNewWindow: false,
-              })
-            }
-          >
-            {prio.name}
-          </Link>
-          {prio.fiscalYear != null && (
-            <Badge appearance="outline" color="informative">
-              {prio.fiscalYearLabel ?? `FY ${prio.fiscalYear}`}
-            </Badge>
-          )}
-          {prio.fundingModeLabel && (
-            <Badge
-              appearance="tint"
-              color={isItemized ? "warning" : "informative"}
-            >
-              {prio.fundingModeLabel}
-            </Badge>
-          )}
-          {prio.approvalStatus && (
-            <Badge appearance="tint" color={approvalColor(prio.approvalStatus)}>
-              {prio.approvalStatus}
-            </Badge>
-          )}
-          <span className={styles.prioMeta}>
-            Requested{" "}
-            <span className={styles.prioMetaStrong}>
-              {formatCurrency(prio.requestedAmount)}
-            </span>{" "}
-            · Funded{" "}
-            <span className={styles.prioMetaStrong}>
-              {formatCurrency(prio.fundedAmount)}
-            </span>{" "}
-            · Validated{" "}
-            <span className={styles.prioMetaStrong}>
-              {formatCurrency(prio.validatedAmount)}
-            </span>
-          </span>
-        </div>
-        <div className={styles.junctionList}>
-          {list.length === 0 ? (
-            <div className={styles.junctionEmpty}>
-              No Requirement Funding allocations yet.
-            </div>
-          ) : (
-            <>
-              <div className={`${styles.junctionRow} ${styles.junctionHead}`}>
-                <div>Requirement Funding</div>
-                <div>Funded</div>
-                <div>Validated</div>
-                <div />
-                <div />
+      <Dialog
+        open
+        onOpenChange={(_e, data) => {
+          if (!data.open) closeAllocate();
+        }}
+        modalType="modal"
+      >
+        <DialogSurface className={styles.dialogSurface}>
+          <DialogBody>
+            <DialogTitle>
+              Allocate to RFs — {allocPrio.name}
+            </DialogTitle>
+            <DialogContent>
+              <Text size={200}>
+                Split the Prioritization&apos;s Funded total across one or more
+                Requirement Fundings. The plugin rolls each row up into the RF
+                Funded / Validated.
+              </Text>
+
+              <div className={styles.drawerJunctionList}>
+                {list.length === 0 ? (
+                  <div className={styles.drawerJunctionEmpty}>
+                    No RF allocations yet — use Add from RF below.
+                  </div>
+                ) : (
+                  <>
+                    <div className={styles.drawerJunctionHead}>
+                      <div>Requirement Funding</div>
+                      <div style={{ textAlign: "right" }}>Funded</div>
+                      <div style={{ textAlign: "right" }}>Validated</div>
+                      <div />
+                    </div>
+                    {list.map((j) => (
+                      <div key={j.id} className={styles.drawerJunctionRow}>
+                        <div>
+                          <Link
+                            as="button"
+                            onClick={() =>
+                              void navigation.openForm({
+                                entityName: REQUIREMENT_FUNDING_ENTITY,
+                                entityId: j.rfId,
+                                openInNewWindow: false,
+                              })
+                            }
+                          >
+                            {j.rfName}
+                          </Link>
+                          {j.rfFiscalYear != null && (
+                            <>
+                              {" "}
+                              <Badge appearance="outline" color="informative">
+                                {fyLabelFor(j.rfFiscalYear)}
+                              </Badge>
+                            </>
+                          )}
+                        </div>
+                        <MoneyInput
+                          value={allocJunctionValue(j, "fundedAmount")}
+                          disabled={isDisabled || allocBusy}
+                          onChange={(n) =>
+                            setAllocJunctionValue(j.id, "fundedAmount", n)
+                          }
+                        />
+                        <MoneyInput
+                          value={allocJunctionValue(j, "validatedAmount")}
+                          disabled={isDisabled || allocBusy}
+                          onChange={(n) =>
+                            setAllocJunctionValue(j.id, "validatedAmount", n)
+                          }
+                        />
+                        <Tooltip content="Remove allocation" relationship="label">
+                          <Button
+                            appearance="subtle"
+                            size="small"
+                            disabled={isDisabled || allocBusy}
+                            onClick={() => void deleteJunction(j)}
+                            aria-label="Remove allocation"
+                          >
+                            ✕
+                          </Button>
+                        </Tooltip>
+                      </div>
+                    ))}
+                  </>
+                )}
               </div>
-              {list.map((j) => (
-                <div key={j.id} className={styles.junctionRow}>
-                  <div className={styles.rfCell}>
-                    <Link
-                      as="button"
-                      onClick={() =>
-                        void props.navigation.openForm({
-                          entityName: REQUIREMENT_FUNDING_ENTITY,
-                          entityId: j.rfId,
-                          openInNewWindow: false,
-                        })
+
+              {/* Add from RF */}
+              <div className={styles.drawerAddRow}>
+                {!allocAddOpen ? (
+                  <Button
+                    appearance="subtle"
+                    size="small"
+                    disabled={isDisabled || allocBusy}
+                    onClick={() => {
+                      setAllocAddOpen(true);
+                      ensureRFs();
+                    }}
+                  >
+                    + Add from RF
+                  </Button>
+                ) : rfsLoading ? (
+                  <Spinner size="extra-tiny" label="Loading RFs…" labelPosition="after" />
+                ) : eligibleRFs.length === 0 ? (
+                  <Text size={200} className={styles.drawerJunctionEmpty}>
+                    No additional Requirement Fundings available for this Requirement.
+                  </Text>
+                ) : (
+                  <>
+                    <Combobox
+                      size="small"
+                      placeholder="Select a Requirement Funding"
+                      value={
+                        eligibleRFs.find((rf) => rf.id === allocAddRFId)?.name ?? ""
                       }
+                      selectedOptions={allocAddRFId ? [allocAddRFId] : []}
+                      onOptionSelect={(_e, data) =>
+                        setAllocAddRFId(data.optionValue ?? "")
+                      }
+                      disabled={isDisabled || allocBusy}
                     >
-                      {j.rfName}
-                    </Link>
-                  </div>
-                  <div>{renderJunctionInput(j, "fundedAmount")}</div>
-                  <div>{renderJunctionInput(j, "validatedAmount")}</div>
-                  <div>{renderStatus(j.id)}</div>
-                  <div>
-                    <Tooltip content="Remove allocation" relationship="label">
-                      <Button
-                        appearance="subtle"
-                        size="small"
-                        disabled={isDisabled}
-                        onClick={() => deleteJunction(j)}
-                        aria-label="Remove allocation"
-                      >
-                        ✕
-                      </Button>
-                    </Tooltip>
-                  </div>
-                </div>
-              ))}
-              <div className={`${styles.junctionRow}`} style={{ marginTop: 4 }}>
-                <div className={styles.prioMeta} style={{ textAlign: "right" }}>
-                  Totals
-                </div>
-                <div className={styles.amountCell}>{formatCurrency(fundedSum)}</div>
-                <div className={styles.amountCell}>{formatCurrency(validatedSum)}</div>
-                <div />
-                <div />
+                      {eligibleRFs.map((rf) => (
+                        <Option key={rf.id} value={rf.id} text={rf.name}>
+                          {rf.name}
+                          {rf.fiscalYearLabel ? ` — ${rf.fiscalYearLabel}` : ""}
+                          {rf.tdp != null ? ` — TDP ${formatCurrency(rf.tdp)}` : ""}
+                        </Option>
+                      ))}
+                    </Combobox>
+                    <Button
+                      appearance="primary"
+                      size="small"
+                      disabled={isDisabled || allocBusy || !allocAddRFId}
+                      onClick={() => void addJunction()}
+                    >
+                      {allocBusy ? "Adding…" : "Add"}
+                    </Button>
+                    <Button
+                      appearance="subtle"
+                      size="small"
+                      onClick={() => {
+                        setAllocAddOpen(false);
+                        setAllocAddRFId("");
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                  </>
+                )}
               </div>
-            </>
-          )}
-          {renderAddRow(prio)}
-          {isItemized && (
-            <Text size={200} className={styles.junctionEmpty}>
-              Itemized mode: the Prioritization Funded total is driven by Itemized
-              Details. Junctions are the per-RF distribution and do not roll up.
-            </Text>
-          )}
-        </div>
-      </div>
+
+              {allocError && (
+                <MessageBar intent="error" className={styles.drawerErrorBar}>
+                  <MessageBarBody>{allocError}</MessageBarBody>
+                </MessageBar>
+              )}
+
+              {/* Sum vs Prio total */}
+              <div className={styles.drawerSummaryRow}>
+                <div className={styles.drawerSummaryStat}>
+                  {renderStat(
+                    "Prio Funded (target)",
+                    formatCurrency(eff.funded)
+                  )}
+                </div>
+                <div className={styles.drawerSummaryStat}>
+                  {renderStat(
+                    "Sum of Allocations",
+                    formatCurrency(allocFundedSum),
+                    Math.abs(fundedDelta) < 0.005
+                      ? "good"
+                      : "bad"
+                  )}
+                </div>
+                <div className={styles.drawerSummaryStat}>
+                  {renderStat(
+                    "Validated Sum",
+                    formatCurrency(allocValidatedSum)
+                  )}
+                </div>
+              </div>
+              {Math.abs(fundedDelta) >= 0.005 && (
+                <MessageBar intent="warning" className={styles.drawerErrorBar}>
+                  <MessageBarBody>
+                    Allocation sum {formatCurrency(allocFundedSum)} differs
+                    from Prio Funded {formatCurrency(eff.funded)} by{" "}
+                    {formatCurrency(Math.abs(fundedDelta))}. Either adjust this
+                    distribution, the items, or the Prio total.
+                  </MessageBarBody>
+                </MessageBar>
+              )}
+            </DialogContent>
+            <DialogActions>
+              <DialogTrigger disableButtonEnhancement>
+                <Button appearance="secondary" disabled={allocBusy}>
+                  Close
+                </Button>
+              </DialogTrigger>
+              <Button
+                appearance="primary"
+                disabled={isDisabled || allocBusy || !dirty}
+                onClick={() => void saveAllocations()}
+              >
+                {allocBusy ? <Spinner size="extra-tiny" /> : "Save Allocations"}
+              </Button>
+            </DialogActions>
+          </DialogBody>
+        </DialogSurface>
+      </Dialog>
     );
   };
 
   return (
     <FluentProvider theme={webLightTheme}>
       <div className={styles.root}>
+        {/* Toolbar */}
         <div className={styles.toolbar}>
           <div className={styles.toolbarLeft}>
-            <Text weight="semibold">
-              Prioritization Funding ({visiblePrios.length} of {prios.length})
+            <Text weight="semibold" size={400}>
+              Validate &amp; Fund
             </Text>
+            <Badge appearance="outline" color="informative">
+              {visiblePrios.length} of {initialPrioRows.length}{" "}
+              prioritization{initialPrioRows.length === 1 ? "" : "s"}
+            </Badge>
             {fyOptions.length > 0 && (
               <div className={styles.fyFilter}>
                 <Text size={200}>FY</Text>
                 <Combobox
                   size="small"
-                  value={
-                    fyFilter === FY_FILTER_ALL ? "All" : fyLabelFor(fyFilter)
-                  }
+                  value={fyFilter === FY_FILTER_ALL ? "All" : fyLabelFor(fyFilter)}
                   selectedOptions={[
                     fyFilter === FY_FILTER_ALL ? FY_FILTER_ALL : String(fyFilter),
                   ]}
@@ -927,48 +1297,377 @@ export const PrioritizationFundingGridApp: React.FC<PrioritizationFundingGridPro
               </div>
             )}
           </div>
+          {!editMode ? (
+            <Button
+              appearance="primary"
+              disabled={isDisabled || saving || initialPrioRows.length === 0}
+              onClick={() => setEditMode(true)}
+            >
+              Edit
+            </Button>
+          ) : (
+            <>
+              <Button onClick={onCancel} disabled={saving}>
+                Cancel
+              </Button>
+              <Button
+                appearance="primary"
+                onClick={() => void onSave()}
+                disabled={saving}
+              >
+                {saving ? <Spinner size="extra-tiny" /> : "Save"}
+              </Button>
+            </>
+          )}
           <Button
             size="small"
             appearance="subtle"
             disabled={dataset.loading || junctionsLoading}
             onClick={() => {
               dataset.refresh();
-              reloadJunctions(prios.map((p) => p.id));
+              reloadJunctions(initialPrioRows.map((p) => p.id));
+              setReloadKey((k) => k + 1);
             }}
           >
             Refresh
           </Button>
         </div>
 
-        {junctionsError && (
-          <div className={`${styles.empty} ${styles.statusError}`}>
-            {junctionsError}
+        {/* TDP guardrail strip (aggregated across all RFs of this Requirement) */}
+        {totalTDP != null && (
+          <div className={styles.statStrip}>
+            {renderStat(
+              `Total TDP${fyFilter === FY_FILTER_ALL ? "" : ` (${fyLabelFor(fyFilter)})`}`,
+              formatCurrency(totalTDP)
+            )}
+            {renderStat(
+              "Currently Funded",
+              formatCurrency(totals.funded),
+              overAllocated ? "bad" : "neutral"
+            )}
+            {renderStat(
+              "Withhold (Available)",
+              formatCurrency(withholdAvailable),
+              withholdAvailable != null && withholdAvailable < 0 ? "bad" : "good"
+            )}
           </div>
+        )}
+
+        {overAllocated && totalTDP != null && (
+          <MessageBar intent="warning" style={{ marginBottom: 10 }}>
+            <MessageBarBody>
+              <strong>Over-allocated:</strong> Funded total (
+              {formatCurrency(totals.funded)}) exceeds Total TDP (
+              {formatCurrency(totalTDP)}) by{" "}
+              {formatCurrency(totals.funded - totalTDP)} — the funding plugins
+              will reject this on save.
+            </MessageBarBody>
+          </MessageBar>
+        )}
+        {vfError && (
+          <MessageBar intent="error" style={{ marginBottom: 10 }}>
+            <MessageBarBody>{vfError}</MessageBarBody>
+          </MessageBar>
+        )}
+        {vfSuccess && (
+          <MessageBar intent="success" style={{ marginBottom: 10 }}>
+            <MessageBarBody>{vfSuccess}</MessageBarBody>
+          </MessageBar>
+        )}
+        {junctionsError && (
+          <MessageBar intent="error" style={{ marginBottom: 10 }}>
+            <MessageBarBody>{junctionsError}</MessageBarBody>
+          </MessageBar>
         )}
 
         {dataset.loading ? (
           <Spinner label="Loading Prioritizations…" />
         ) : visiblePrios.length === 0 ? (
           <div className={styles.empty}>
-            No Prioritizations for this Requirement{" "}
-            {fyFilter !== FY_FILTER_ALL ? `in FY ${fyFilter}` : ""}.
+            No Prioritizations for this Requirement
+            {fyFilter !== FY_FILTER_ALL ? ` in ${fyLabelFor(fyFilter)}` : ""}.
           </div>
         ) : (
-          <div className={styles.prioListScroll}>
-            {visiblePrios.map((p) => renderPrio(p))}
-            {dataset.paging && dataset.paging.hasNextPage && (
-              <div className={styles.loadMoreRow}>
-                <Button
-                  size="small"
-                  appearance="subtle"
-                  onClick={() => dataset.paging.loadNextPage()}
-                >
-                  Load more Prioritizations
-                </Button>
-              </div>
-            )}
+          <div className={styles.tableScroll}>
+            <table className={styles.table}>
+              <thead>
+                <tr>
+                  <th className={styles.stickyTh}>Prioritization</th>
+                  <th className={`${styles.stickyTh} ${styles.stickyThNum}`}>Requested</th>
+                  <th className={`${styles.stickyTh} ${styles.stickyThNum}`}>Validated</th>
+                  <th className={`${styles.stickyTh} ${styles.stickyThNum}`}>Funded</th>
+                  <th className={`${styles.stickyTh} ${styles.stickyThNum}`}>Unfunded</th>
+                  <th className={styles.stickyTh}>Allocations</th>
+                </tr>
+              </thead>
+              <tbody>
+                {visiblePrios.map((vp) => {
+                  // Use editable copy from prioRows for V/F so edit mode reflects.
+                  const editable =
+                    prioRows.find((r) => r.id === vp.id) ?? vp;
+                  const eff = effective(editable);
+                  const items = itemsFor(editable.id);
+                  const isItemized = eff.derived;
+                  const isOpen = !!expandedItems[editable.id];
+                  const unfunded = Math.max(
+                    editable.requestedAmount - eff.funded,
+                    0
+                  );
+                  const jList = junctions[editable.id] ?? [];
+                  const allocSum = jList.reduce(
+                    (s, j) => s + j.fundedAmount,
+                    0
+                  );
+                  const allocDelta = allocSum - eff.funded;
+                  const allocBalanced = Math.abs(allocDelta) < 0.005;
+                  return (
+                    <React.Fragment key={editable.id}>
+                      <tr>
+                        <td className={styles.td}>
+                          <div className={styles.prioCell}>
+                            {isItemized && (
+                              <Button
+                                size="small"
+                                appearance="subtle"
+                                onClick={() => toggleExpandItems(editable.id)}
+                              >
+                                {isOpen ? "▾" : "▸"}
+                              </Button>
+                            )}
+                            <div>
+                              <Link
+                                as="button"
+                                className={styles.prioName}
+                                onClick={() =>
+                                  void navigation.openForm({
+                                    entityName: PRIORITIZATION_ENTITY,
+                                    entityId: editable.id,
+                                    openInNewWindow: false,
+                                  })
+                                }
+                              >
+                                {editable.stateName ?? editable.name}
+                              </Link>
+                              <div className={styles.prioSub}>
+                                {editable.statePriority != null && (
+                                  <>Priority #{editable.statePriority}</>
+                                )}
+                                {editable.statePriority != null && isItemized && " · "}
+                                {isItemized && `${items.length} itemized`}
+                                {editable.fundingModeLabel && (
+                                  <>
+                                    {" · "}
+                                    {editable.fundingModeLabel}
+                                  </>
+                                )}
+                                {editable.approvalStatus && (
+                                  <>
+                                    {" · "}
+                                    <Badge
+                                      appearance="tint"
+                                      color={approvalColor(editable.approvalStatus)}
+                                    >
+                                      {editable.approvalStatus}
+                                    </Badge>
+                                  </>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className={`${styles.td} ${styles.tdNum}`}>
+                          {formatCurrency(editable.requestedAmount)}
+                        </td>
+                        <td className={`${styles.td} ${styles.tdNum}`}>
+                          {editMode && !isItemized ? (
+                            <MoneyInput
+                              className={styles.amountInput}
+                              value={editable.validatedAmount}
+                              onChange={(n) =>
+                                updatePrioMoney(editable.id, "validatedAmount", n)
+                              }
+                            />
+                          ) : (
+                            formatCurrency(eff.validated)
+                          )}
+                        </td>
+                        <td className={`${styles.td} ${styles.tdNum}`}>
+                          {editMode && !isItemized ? (
+                            <MoneyInput
+                              className={styles.amountInput}
+                              value={editable.fundedAmount}
+                              onChange={(n) =>
+                                updatePrioMoney(editable.id, "fundedAmount", n)
+                              }
+                            />
+                          ) : (
+                            formatCurrency(eff.funded)
+                          )}
+                        </td>
+                        <td
+                          className={`${styles.td} ${styles.tdNum} ${
+                            unfunded > 0 ? styles.tdRedNum : styles.tdGreenNum
+                          }`}
+                        >
+                          {formatCurrency(unfunded)}
+                        </td>
+                        <td className={styles.td}>
+                          <div className={styles.rowActions}>
+                            {jList.length > 0 ? (
+                              <Tooltip
+                                content={
+                                  allocBalanced
+                                    ? `${jList.length} RF · ${formatCurrency(allocSum)}`
+                                    : `Unbalanced: allocations ${formatCurrency(allocSum)} vs Prio Funded ${formatCurrency(eff.funded)}`
+                                }
+                                relationship="label"
+                              >
+                                <Badge
+                                  appearance="tint"
+                                  color={allocBalanced ? "success" : "warning"}
+                                >
+                                  {jList.length} RF
+                                </Badge>
+                              </Tooltip>
+                            ) : (
+                              <Badge appearance="outline" color="subtle">
+                                0 RF
+                              </Badge>
+                            )}
+                            <Button
+                              size="small"
+                              appearance="subtle"
+                              disabled={isDisabled || editMode}
+                              onClick={() => openAllocate(editable)}
+                            >
+                              Allocate to RFs
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+
+                      {isItemized && isOpen && (
+                        <tr className={styles.itemsHeaderRow}>
+                          <td colSpan={6} style={{ padding: 0 }}>
+                            <table className={styles.itemsTable}>
+                              <thead>
+                                <tr>
+                                  <th className={styles.itemsTh}>Requirement Item</th>
+                                  <th className={`${styles.itemsTh} ${styles.itemsThNum}`}>Requested</th>
+                                  <th className={`${styles.itemsTh} ${styles.itemsThNum}`}>Validated</th>
+                                  <th className={`${styles.itemsTh} ${styles.itemsThNum}`}>Funded</th>
+                                  <th className={styles.itemsTh}>NPM Comment</th>
+                                  <th className={styles.itemsTh} />
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {items.map((it) => (
+                                  <tr key={it.id}>
+                                    <td className={styles.itemsTd}>{it.label}</td>
+                                    <td className={`${styles.itemsTd} ${styles.tdNum}`}>
+                                      {formatCurrency(it.requested)}
+                                    </td>
+                                    <td className={`${styles.itemsTd} ${styles.tdNum}`}>
+                                      {editMode ? (
+                                        <MoneyInput
+                                          className={styles.amountInput}
+                                          value={it.validated}
+                                          onChange={(n) =>
+                                            updateItemMoney(it.id, "validated", n)
+                                          }
+                                        />
+                                      ) : (
+                                        formatCurrency(it.validated)
+                                      )}
+                                    </td>
+                                    <td className={`${styles.itemsTd} ${styles.tdNum}`}>
+                                      {editMode ? (
+                                        <MoneyInput
+                                          className={styles.amountInput}
+                                          value={it.funded}
+                                          onChange={(n) =>
+                                            updateItemMoney(it.id, "funded", n)
+                                          }
+                                        />
+                                      ) : (
+                                        formatCurrency(it.funded)
+                                      )}
+                                    </td>
+                                    <td className={styles.itemsTd}>
+                                      {editMode ? (
+                                        <Textarea
+                                          appearance="outline"
+                                          resize="vertical"
+                                          value={it.npmComment}
+                                          onChange={(_e, d) =>
+                                            updateItemComment(it.id, d.value)
+                                          }
+                                        />
+                                      ) : (
+                                        it.npmComment
+                                      )}
+                                    </td>
+                                    <td className={styles.itemsTd} />
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </td>
+                        </tr>
+                      )}
+                    </React.Fragment>
+                  );
+                })}
+              </tbody>
+              <tfoot>
+                <tr>
+                  <td className={styles.stickyFootTd}>Total</td>
+                  <td className={`${styles.stickyFootTd} ${styles.tdNum}`}>
+                    {formatCurrency(totals.requested)}
+                  </td>
+                  <td className={`${styles.stickyFootTd} ${styles.tdNum}`}>
+                    {formatCurrency(totals.validated)}
+                  </td>
+                  <td
+                    className={`${styles.stickyFootTd} ${styles.tdNum} ${
+                      overAllocated ? styles.tdRedNum : ""
+                    }`}
+                  >
+                    {formatCurrency(totals.funded)}
+                  </td>
+                  <td
+                    className={`${styles.stickyFootTd} ${styles.tdNum} ${
+                      totals.unfunded > 0 ? styles.tdRedNum : styles.tdGreenNum
+                    }`}
+                  >
+                    {formatCurrency(totals.unfunded)}
+                  </td>
+                  <td className={styles.stickyFootTd} />
+                </tr>
+              </tfoot>
+            </table>
           </div>
         )}
+
+        {loadingItems && (
+          <div style={{ marginTop: 8 }}>
+            <Spinner size="tiny" label="Loading Itemized Details…" />
+          </div>
+        )}
+
+        {dataset.paging && dataset.paging.hasNextPage && (
+          <div style={{ textAlign: "center", marginTop: 8 }}>
+            <Button
+              size="small"
+              appearance="subtle"
+              onClick={() => dataset.paging.loadNextPage()}
+            >
+              Load more Prioritizations
+            </Button>
+          </div>
+        )}
+
+        {renderAllocDialog()}
       </div>
     </FluentProvider>
   );
