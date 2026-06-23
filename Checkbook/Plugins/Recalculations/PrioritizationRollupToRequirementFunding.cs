@@ -1,4 +1,5 @@
 using Microsoft.Xrm.Sdk;
+using Microsoft.Xrm.Sdk.Query;
 using Checkbook.Plugins.Base;
 using Checkbook.Plugins.Constants;
 using Checkbook.Plugins.Helpers;
@@ -55,6 +56,20 @@ namespace Checkbook.Plugins.Recalculations
             var parentRF = target.GetAttributeValue<EntityReference>(
                 PrioritizationAttributes.RequirementFunding
             ) ?? preImage?.GetAttributeValue<EntityReference>(PrioritizationAttributes.RequirementFunding);
+
+            // Defensive fallback: if neither Target nor PreImage carried the RF
+            // (e.g. PreImage registration dropped), retrieve it from the row.
+            // The Delete branch can't fall back — the row is already gone.
+            if (parentRF == null && context.MessageName != "Delete" && target.Id != System.Guid.Empty)
+            {
+                tracing.Trace("Parent RF missing from Target/PreImage; retrieving from Prio row.");
+                var fetched = service.Retrieve(
+                    EntityNames.Prioritization,
+                    target.Id,
+                    new ColumnSet(PrioritizationAttributes.RequirementFunding));
+                parentRF = fetched?.GetAttributeValue<EntityReference>(
+                    PrioritizationAttributes.RequirementFunding);
+            }
 
             if (parentRF == null)
             {
