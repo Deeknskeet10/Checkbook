@@ -53,6 +53,14 @@ const REQUIREMENT_FUNDING_SET = "book_requirementfundings";
 const FY_FILTER_ALL = "all" as const;
 type FYFilter = number | typeof FY_FILTER_ALL;
 
+/**
+ * Fiscal Year per the federal calendar: Oct–Sept, named for the ending year.
+ * Oct 2025 → "FY 2026", Sep 2026 → "FY 2026", Oct 2026 → "FY 2027".
+ */
+function currentFiscalYear(now: Date = new Date()): number {
+  return now.getMonth() >= 9 ? now.getFullYear() + 1 : now.getFullYear();
+}
+
 interface RDRow {
   id: string;
   name: string;
@@ -451,7 +459,12 @@ export const RequirementDetailFundingGridApp: React.FC<RequirementDetailFundingG
     if (fyOptions.length === 0) return;
 
     if (!fyDefaultApplied.current) {
-      setFyFilter(fyOptions[0].value);
+      // Prefer the option whose label matches the current calendar FY ("FY
+      // 2026" today). Fall back to the newest option when the current FY
+      // isn't represented in the RFs on this Requirement.
+      const cur = currentFiscalYear();
+      const match = fyOptions.find((o) => o.label.includes(String(cur)));
+      setFyFilter(match ? match.value : fyOptions[0].value);
       fyDefaultApplied.current = true;
       return;
     }
