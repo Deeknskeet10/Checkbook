@@ -30,9 +30,31 @@ Book.Prioritization = (function () {
     function stripBraces(id) { return id.replace(/[{}]/g, ""); }
 
     // ----- Requested Amount / Quantity visibility -----
-    // Hide on Itemized Prios so users don't type values the post-create
-    // plugin will clear. Itemized-ness is derived from the parent Requirement
-    // having any Requirement Details.
+    // Itemized-ness is derived from the parent Requirement having any
+    // Requirement Details.
+    //
+    // Itemized Prio:
+    //   - Requested Amount stays visible but read-only — PrioritizationItemizedRollup
+    //     writes the sum of the children into it.
+    //   - Quantity isn't rolled up by the plugin, so hide it rather than show a
+    //     misleading empty/0. book_quantities is RequiredLevel=required at the
+    //     table level, so we must drop the required level in lockstep with
+    //     hiding — otherwise the platform's save-time required-field check fails
+    //     and auto-unhides the field.
+    // Direct Prio:
+    //   - Requested Amount visible and editable; Quantity visible and required.
+
+    function setItemizedFieldsHidden(formContext, itemized) {
+        var reqCtrl = formContext.getControl(REQUESTED_AMOUNT);
+        if (reqCtrl) {
+            reqCtrl.setVisible(true);
+            reqCtrl.setDisabled(itemized);
+        }
+        var qtyCtrl = formContext.getControl(QUANTITY);
+        if (qtyCtrl) qtyCtrl.setVisible(!itemized);
+        var qtyAttr = formContext.getAttribute(QUANTITY);
+        if (qtyAttr) qtyAttr.setRequiredLevel(itemized ? "none" : "required");
+    }
 
     function hasRequirementDetails(requirementId) {
         return Xrm.WebApi.retrieveMultipleRecords(
@@ -46,22 +68,22 @@ Book.Prioritization = (function () {
     function applyItemizedVisibilityFromRequirement(formContext) {
         var lookup = formContext.getAttribute(REQUIREMENT).getValue();
         if (!lookup || !lookup[0]) {
-            setControlsVisible(formContext, [REQUESTED_AMOUNT, QUANTITY], false);
+            setItemizedFieldsHidden(formContext, true);
             return;
         }
         hasRequirementDetails(lookup[0].id).then(
-            function (hasRDs) { setControlsVisible(formContext, [REQUESTED_AMOUNT, QUANTITY], !hasRDs); },
-            function ()        { setControlsVisible(formContext, [REQUESTED_AMOUNT, QUANTITY], false); }
+            function (hasRDs) { setItemizedFieldsHidden(formContext, hasRDs); },
+            function ()        { setItemizedFieldsHidden(formContext, true); }
         );
     }
 
     function applyItemizedVisibilityOnLoad(formContext) {
         if (formContext.ui.getFormType() === 2) {
             var mode = formContext.getAttribute(FUNDING_MODE).getValue();
-            setControlsVisible(formContext, [REQUESTED_AMOUNT, QUANTITY], mode !== FUNDING_MODE_ITEMIZED);
+            setItemizedFieldsHidden(formContext, mode === FUNDING_MODE_ITEMIZED);
             return;
         }
-        setControlsVisible(formContext, [REQUESTED_AMOUNT, QUANTITY], false);
+        setItemizedFieldsHidden(formContext, true);
         applyItemizedVisibilityFromRequirement(formContext);
     }
 
