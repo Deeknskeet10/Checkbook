@@ -272,6 +272,20 @@ Book.Prioritization = (function () {
             applyFundCenterLock(formContext);
             applyItemizedVisibilityOnLoad(formContext);
             applyDocsReminderBanner(formContext);
+
+            // After an in-place save, the platform refreshes the form to Update mode
+            // and discards our JS-set visibility/disabled/required overrides. The
+            // "Lock Funding Fields for Itemized" business rule then evaluates against
+            // FundingMode — which is still empty because ItemizedDetailsSynchronizer
+            // is Async and hasn't run yet — and unlocks the fields. Re-apply on
+            // PostSave; our check reads Requirement → Requirement Details, which is
+            // stable regardless of plugin timing.
+            if (formContext.data && formContext.data.entity &&
+                typeof formContext.data.entity.addOnPostSave === "function") {
+                formContext.data.entity.addOnPostSave(function () {
+                    applyItemizedVisibilityFromRequirement(formContext);
+                });
+            }
         },
 
         onRequirementFundingChange: function (executionContext) {
