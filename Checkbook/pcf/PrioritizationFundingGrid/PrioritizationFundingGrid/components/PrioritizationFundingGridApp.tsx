@@ -29,12 +29,39 @@ type DataSet = ComponentFramework.PropertyTypes.DataSet;
 type WebApi = ComponentFramework.WebApi;
 type Navigation = ComponentFramework.Navigation;
 
+export interface PrioRow {
+  id: string;
+  name: string;
+  statePriority: number | null;
+  approvalStatus: string | null;
+  fiscalYear: number | null;
+  fiscalYearLabel: string | null;
+  stateName: string | null;
+  fundingMode: number | null;
+  fundingModeLabel: string | null;
+  requestedAmount: number;
+  fundedAmount: number;
+  validatedAmount: number;
+  requirementId: string | null;
+  requirementName: string | null;
+}
+
 export interface PrioritizationFundingGridProps {
-  dataset: DataSet;
+  dataset?: DataSet;
   webAPI: WebApi;
   navigation: Navigation;
   isDisabled: boolean;
   width: number;
+  /** Container override: pass pre-fetched Prio rows instead of relying on the dataset binding. */
+  prioRowsOverride?: PrioRow[];
+  /** Container override: lock the FY filter to this value (and hide the internal picker). */
+  fyFilterOverride?: number | "all";
+  /** Container override: hide the toolbar's FY picker without locking the value. */
+  hideFyPicker?: boolean;
+  /** Container override: hide the section title in the toolbar. */
+  hideTitle?: boolean;
+  /** Called after a successful save or refresh, in addition to dataset.refresh(). */
+  onAfterSave?: () => void;
 }
 
 /** Property-set aliases declared in ControlManifest.Input.xml. */
@@ -81,23 +108,6 @@ type FYFilter = number | typeof FY_FILTER_ALL;
  */
 function currentFiscalYear(now: Date = new Date()): number {
   return now.getMonth() >= 9 ? now.getFullYear() + 1 : now.getFullYear();
-}
-
-interface PrioRow {
-  id: string;
-  name: string;
-  statePriority: number | null;
-  approvalStatus: string | null;
-  fiscalYear: number | null;
-  fiscalYearLabel: string | null;
-  stateName: string | null;
-  fundingMode: number | null;
-  fundingModeLabel: string | null;
-  requestedAmount: number;
-  fundedAmount: number;
-  validatedAmount: number;
-  requirementId: string | null;
-  requirementName: string | null;
 }
 
 interface ItemRow {
@@ -459,7 +469,17 @@ function approvalColor(label: string | null): "danger" | "warning" | "success" |
 export const PrioritizationFundingGridApp: React.FC<PrioritizationFundingGridProps> = (
   props
 ) => {
-  const { dataset, webAPI, navigation, isDisabled } = props;
+  const {
+    dataset,
+    webAPI,
+    navigation,
+    isDisabled,
+    prioRowsOverride,
+    fyFilterOverride,
+    hideFyPicker,
+    hideTitle,
+    onAfterSave,
+  } = props;
   const styles = useStyles();
 
   // Bump the dataset page size once. Without this Dataverse hands us only the
@@ -467,7 +487,7 @@ export const PrioritizationFundingGridApp: React.FC<PrioritizationFundingGridPro
   const pageSizeApplied = React.useRef(false);
   React.useEffect(() => {
     if (pageSizeApplied.current) return;
-    if (dataset.paging && typeof dataset.paging.setPageSize === "function") {
+    if (dataset?.paging && typeof dataset.paging.setPageSize === "function") {
       try {
         dataset.paging.setPageSize(PAGE_SIZE);
         pageSizeApplied.current = true;
@@ -475,10 +495,28 @@ export const PrioritizationFundingGridApp: React.FC<PrioritizationFundingGridPro
         // host may throw if setPageSize is called before the first load
       }
     }
-  }, [dataset.paging]);
+  }, [dataset?.paging]);
 
-  // ---- Materialise the Prios from the dataset ----
+  // ---- Materialise the Prios from the dataset (or the container override) ----
+  const overrideKey = prioRowsOverride?.map((p) => p.id).join("|") ?? "";
+  const refresh = React.useCallback(() => {
+    if (dataset) dataset.refresh();
+    onAfterSave?.();
+  }, [dataset, onAfterSave]);
   const initialPrioRows = React.useMemo<PrioRow[]>(() => {
+    if (prioRowsOverride) {
+      return [...prioRowsOverride].sort((a, b) => {
+        const sa = a.stateName ?? "￿";
+        const sb = b.stateName ?? "￿";
+        const cmp = sa.localeCompare(sb);
+        if (cmp !== 0) return cmp;
+        const pa = a.statePriority ?? Number.MAX_SAFE_INTEGER;
+        const pb = b.statePriority ?? Number.MAX_SAFE_INTEGER;
+        if (pa !== pb) return pa - pb;
+        return a.name.localeCompare(b.name);
+      });
+    }
+    if (!dataset) return [];
     return dataset.sortedRecordIds
       .map((id) => {
         const r = dataset.records[id];
@@ -519,7 +557,7 @@ export const PrioritizationFundingGridApp: React.FC<PrioritizationFundingGridPro
         if (pa !== pb) return pa - pb;
         return a.name.localeCompare(b.name);
       });
-  }, [dataset.sortedRecordIds, dataset.records]);
+  }, [dataset?.sortedRecordIds, dataset?.records, overrideKey]);
 
   // ---- FY filter (over the Prios — same UX as 0.1.x) ----
   const fyOptions = React.useMemo<{ value: number; label: string }[]>(() => {
@@ -541,10 +579,13 @@ export const PrioritizationFundingGridApp: React.FC<PrioritizationFundingGridPro
     return hit?.label ?? `FY ${value}`;
   };
 
-  const [fyFilter, setFyFilter] = React.useState<FYFilter>(FY_FILTER_ALL);
+  const [internalFyFilter, setFyFilter] = React.useState<FYFilter>(FY_FILTER_ALL);
+  const fyFilter: FYFilter = fyFilterOverride ?? internalFyFilter;
+  const fyControlledByContainer = fyFilterOverride !== undefined;
   const fyDefaultApplied = React.useRef(false);
 
   React.useEffect(() => {
+    if (fyControlledByContainer) return;
     if (fyOptions.length === 0) return;
     if (!fyDefaultApplied.current) {
       // Prefer the option whose label corresponds to the current calendar FY
@@ -556,10 +597,10 @@ export const PrioritizationFundingGridApp: React.FC<PrioritizationFundingGridPro
       fyDefaultApplied.current = true;
       return;
     }
-    if (fyFilter !== FY_FILTER_ALL && !fyOptions.some((o) => o.value === fyFilter)) {
+    if (internalFyFilter !== FY_FILTER_ALL && !fyOptions.some((o) => o.value === internalFyFilter)) {
       setFyFilter(FY_FILTER_ALL);
     }
-  }, [fyOptions, fyFilter]);
+  }, [fyOptions, internalFyFilter, fyControlledByContainer]);
 
   const visiblePrios = React.useMemo<PrioRow[]>(() => {
     if (fyFilter === FY_FILTER_ALL) return initialPrioRows;
@@ -601,6 +642,7 @@ export const PrioritizationFundingGridApp: React.FC<PrioritizationFundingGridPro
     const options =
       "?$select=_book_prioritization_value,_book_requirementitem_value," +
       `book_requestedamount,${ITEM_VALIDATED},${ITEM_FUNDED},${ITEM_NPM_COMMENT}` +
+      "&$expand=book_RequirementItem($select=_book_item_value)" +
       `&$filter=(${filter})`;
 
     void (async () => {
@@ -610,19 +652,27 @@ export const PrioritizationFundingGridApp: React.FC<PrioritizationFundingGridPro
           options
         );
         if (cancelled) return;
-        const rows: ItemRow[] = res.entities.map((e) => ({
+        const rows: ItemRow[] = res.entities.map((e) => {
+          const rd = e.book_RequirementItem as
+            | Record<string, unknown>
+            | undefined;
+          const itemName =
+            (rd?.[`_book_item_value${FV}`] as string | undefined) ?? null;
+          return {
           id: e.book_itemizeddetailsid as string,
           prioritizationId: ((e._book_prioritization_value as string) ?? "")
             .replace(/[{}]/g, "")
             .toLowerCase(),
           label:
-            (e[`_book_requirementitem_value${FV}`] as string) ||
+            itemName ??
+            (e[`_book_requirementitem_value${FV}`] as string | undefined) ??
             "(unnamed line item)",
           requested: num(e.book_requestedamount),
           validated: num(e[ITEM_VALIDATED]),
           funded: num(e[ITEM_FUNDED]),
           npmComment: (e[ITEM_NPM_COMMENT] as string) ?? "",
-        }));
+          };
+        });
         setItemRows(rows);
         setBaselineItems(rows);
       } catch {
@@ -885,7 +935,7 @@ export const PrioritizationFundingGridApp: React.FC<PrioritizationFundingGridPro
 
       setVfSuccess("Validation & funding saved.");
       setEditMode(false);
-      dataset.refresh();
+      refresh();
       setReloadKey((k) => k + 1);
     } catch (e) {
       const msg = (e as { message?: string })?.message;
@@ -969,7 +1019,7 @@ export const PrioritizationFundingGridApp: React.FC<PrioritizationFundingGridPro
       }
       setAllocEdits({});
       reloadJunctions(initialPrioRows.map((p) => p.id));
-      dataset.refresh();
+      refresh();
       setReloadKey((k) => k + 1);
     } catch (e) {
       const msg = (e as { message?: string })?.message;
@@ -994,7 +1044,7 @@ export const PrioritizationFundingGridApp: React.FC<PrioritizationFundingGridPro
       setAllocAddOpen(false);
       setAllocAddRFId("");
       reloadJunctions(initialPrioRows.map((p) => p.id));
-      dataset.refresh();
+      refresh();
     } catch (e) {
       const msg = (e as { message?: string })?.message;
       setAllocError(msg ?? "Could not add RF allocation.");
@@ -1014,7 +1064,7 @@ export const PrioritizationFundingGridApp: React.FC<PrioritizationFundingGridPro
         return next;
       });
       reloadJunctions(initialPrioRows.map((p) => p.id));
-      dataset.refresh();
+      refresh();
     } catch (e) {
       const msg = (e as { message?: string })?.message;
       setAllocError(msg ?? "Could not delete RF allocation.");
@@ -1276,14 +1326,16 @@ export const PrioritizationFundingGridApp: React.FC<PrioritizationFundingGridPro
         {/* Toolbar */}
         <div className={styles.toolbar}>
           <div className={styles.toolbarLeft}>
-            <Text weight="semibold" size={400}>
-              Validate &amp; Fund
-            </Text>
+            {!hideTitle && (
+              <Text weight="semibold" size={400}>
+                Validate &amp; Fund
+              </Text>
+            )}
             <Badge appearance="outline" color="informative">
               {visiblePrios.length} of {initialPrioRows.length}{" "}
               prioritization{initialPrioRows.length === 1 ? "" : "s"}
             </Badge>
-            {fyOptions.length > 0 && (
+            {fyOptions.length > 0 && !hideFyPicker && !fyControlledByContainer && (
               <div className={styles.fyFilter}>
                 <Text size={200}>FY</Text>
                 <Combobox
@@ -1335,9 +1387,9 @@ export const PrioritizationFundingGridApp: React.FC<PrioritizationFundingGridPro
           <Button
             size="small"
             appearance="subtle"
-            disabled={dataset.loading || junctionsLoading}
+            disabled={(dataset?.loading ?? false) || junctionsLoading}
             onClick={() => {
-              dataset.refresh();
+              refresh();
               reloadJunctions(initialPrioRows.map((p) => p.id));
               setReloadKey((k) => k + 1);
             }}
@@ -1393,7 +1445,7 @@ export const PrioritizationFundingGridApp: React.FC<PrioritizationFundingGridPro
           </MessageBar>
         )}
 
-        {dataset.loading ? (
+        {dataset?.loading ? (
           <Spinner label="Loading Prioritizations…" />
         ) : visiblePrios.length === 0 ? (
           <div className={styles.empty}>
@@ -1668,7 +1720,7 @@ export const PrioritizationFundingGridApp: React.FC<PrioritizationFundingGridPro
           </div>
         )}
 
-        {dataset.paging && dataset.paging.hasNextPage && (
+        {dataset?.paging && dataset.paging.hasNextPage && (
           <div style={{ textAlign: "center", marginTop: 8 }}>
             <Button
               size="small"

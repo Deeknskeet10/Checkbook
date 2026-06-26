@@ -9,14 +9,7 @@ import {
   MessageBarBody,
 } from "@fluentui/react-components";
 
-export interface RequirementDetailsRankProps {
-  dataset: ComponentFramework.PropertyTypes.DataSet;
-  webAPI: ComponentFramework.WebApi;
-  navigation: ComponentFramework.Navigation;
-  parentRequirementId?: string;
-}
-
-interface Row {
+export interface RequirementDetailsRankRow {
   id: string;
   name: string;
   priorityOrder: number | null;
@@ -24,6 +17,18 @@ interface Row {
   itemLabel: string | null;
   tdcLabel: string | null;
 }
+
+export interface RequirementDetailsRankProps {
+  dataset?: ComponentFramework.PropertyTypes.DataSet;
+  webAPI: ComponentFramework.WebApi;
+  navigation: ComponentFramework.Navigation;
+  parentRequirementId?: string;
+  initialRowsOverride?: RequirementDetailsRankRow[];
+  onRefresh?: () => void;
+  hideHeader?: boolean;
+}
+
+type Row = RequirementDetailsRankRow;
 
 interface ItemInherited {
   category: string | null;
@@ -38,9 +43,28 @@ const FV = "@OData.Community.Display.V1.FormattedValue";
 const stripBraces = (id: string): string => id.replace(/[{}]/g, "").toLowerCase();
 
 export const RequirementDetailsRankApp: React.FC<RequirementDetailsRankProps> = (props) => {
-  const { dataset, webAPI, navigation, parentRequirementId } = props;
+  const {
+    dataset,
+    webAPI,
+    navigation,
+    parentRequirementId,
+    initialRowsOverride,
+    onRefresh,
+    hideHeader,
+  } = props;
+
+  const datasetKey = dataset?.sortedRecordIds.join("|") ?? "";
+  const overrideKey = initialRowsOverride?.map((r) => r.id).join("|") ?? "";
 
   const initial: Row[] = React.useMemo(() => {
+    if (initialRowsOverride) {
+      return [...initialRowsOverride].sort((a, b) => {
+        const pa = a.priorityOrder ?? Number.MAX_SAFE_INTEGER;
+        const pb = b.priorityOrder ?? Number.MAX_SAFE_INTEGER;
+        return pa - pb;
+      });
+    }
+    if (!dataset) return [];
     return dataset.sortedRecordIds
       .map((id) => dataset.records[id])
       .map((r) => {
@@ -60,7 +84,7 @@ export const RequirementDetailsRankApp: React.FC<RequirementDetailsRankProps> = 
         const pb = b.priorityOrder ?? Number.MAX_SAFE_INTEGER;
         return pa - pb;
       });
-  }, [dataset.sortedRecordIds.join("|")]);
+  }, [datasetKey, overrideKey]);
 
   const [rows, setRows] = React.useState<Row[]>(initial);
   const [dragId, setDragId] = React.useState<string | null>(null);
@@ -183,7 +207,8 @@ export const RequirementDetailsRankApp: React.FC<RequirementDetailsRankProps> = 
       setErr(ex?.message ?? "Reorder save failed");
     } finally {
       setSavingIds(new Set());
-      dataset.refresh();
+      if (dataset) dataset.refresh();
+      onRefresh?.();
     }
   };
 
@@ -197,18 +222,20 @@ export const RequirementDetailsRankApp: React.FC<RequirementDetailsRankProps> = 
         className="arsc-reqdetails-rank"
         style={{ padding: 12, fontFamily: "Segoe UI, sans-serif", fontSize: 13, background: "#FFFFFF" }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12, flexWrap: "wrap" }}>
-          <span style={{ fontSize: 15, fontWeight: 600 }}>Requirement Details</span>
-          <Badge appearance="outline" color="informative" size="medium">
-            {rows.length} {rows.length === 1 ? "detail" : "details"}
-          </Badge>
-          {parentPriority != null && (
-            <Badge appearance="tint" color="brand">
-              Parent priority: {parentPriority}
+        {!hideHeader && (
+          <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12, flexWrap: "wrap" }}>
+            <span style={{ fontSize: 15, fontWeight: 600 }}>Requirement Details</span>
+            <Badge appearance="outline" color="informative" size="medium">
+              {rows.length} {rows.length === 1 ? "detail" : "details"}
             </Badge>
-          )}
-          <span style={{ color: "#605E5C", fontSize: 12 }}>· Drag a card to reorder</span>
-        </div>
+            {parentPriority != null && (
+              <Badge appearance="tint" color="brand">
+                Parent priority: {parentPriority}
+              </Badge>
+            )}
+            <span style={{ color: "#605E5C", fontSize: 12 }}>· Drag a card to reorder</span>
+          </div>
+        )}
 
         {err && (
           <MessageBar intent="error" style={{ marginBottom: 12 }}>

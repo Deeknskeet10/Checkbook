@@ -19,12 +19,36 @@ type DataSet = ComponentFramework.PropertyTypes.DataSet;
 type WebApi = ComponentFramework.WebApi;
 type Navigation = ComponentFramework.Navigation;
 
+export interface RDRow {
+  id: string;
+  name: string;
+  itemId: string | null;
+  itemName: string | null;
+  mdepName: string | null;
+  tdcName: string | null;
+  priorityOrder: number | null;
+  fundedAmount: number | null;
+  validatedAmount: number | null;
+  requirementId: string | null;
+  requirementName: string | null;
+}
+
 export interface RequirementDetailFundingGridProps {
-  dataset: DataSet;
+  dataset?: DataSet;
   webAPI: WebApi;
   navigation: Navigation;
   isDisabled: boolean;
   width: number;
+  /** Container override: pass pre-fetched RDs instead of relying on the dataset binding. */
+  rdRowsOverride?: RDRow[];
+  /** Container override: lock the RF FY filter to this value (and hide the internal picker). */
+  fyFilterOverride?: number | "all";
+  /** Container override: hide the toolbar's FY picker without locking the value. */
+  hideFyPicker?: boolean;
+  /** Container override: hide the section title in the toolbar. */
+  hideTitle?: boolean;
+  /** Called after a successful save or refresh, in addition to dataset.refresh(). */
+  onAfterSave?: () => void;
 }
 
 /** Property-set aliases declared in ControlManifest.Input.xml. */
@@ -59,20 +83,6 @@ type FYFilter = number | typeof FY_FILTER_ALL;
  */
 function currentFiscalYear(now: Date = new Date()): number {
   return now.getMonth() >= 9 ? now.getFullYear() + 1 : now.getFullYear();
-}
-
-interface RDRow {
-  id: string;
-  name: string;
-  itemId: string | null;
-  itemName: string | null;
-  mdepName: string | null;
-  tdcName: string | null;
-  priorityOrder: number | null;
-  fundedAmount: number | null;
-  validatedAmount: number | null;
-  requirementId: string | null;
-  requirementName: string | null;
 }
 
 interface JunctionRow {
@@ -256,15 +266,28 @@ function formatCurrency(value: number | null): string {
 export const RequirementDetailFundingGridApp: React.FC<RequirementDetailFundingGridProps> = (
   props
 ) => {
-  const { dataset, webAPI, isDisabled } = props;
+  const {
+    dataset,
+    webAPI,
+    isDisabled,
+    rdRowsOverride,
+    fyFilterOverride,
+    hideFyPicker,
+    hideTitle,
+    onAfterSave,
+  } = props;
   const styles = useStyles();
+  const refresh = React.useCallback(() => {
+    if (dataset) dataset.refresh();
+    onAfterSave?.();
+  }, [dataset, onAfterSave]);
 
   // Bump the dataset page size once on mount. Without this Dataverse hands us
   // only the subgrid's default page (often ~4) — mirrors PrioritizationFundingGrid.
   const pageSizeApplied = React.useRef(false);
   React.useEffect(() => {
     if (pageSizeApplied.current) return;
-    if (dataset.paging && typeof dataset.paging.setPageSize === "function") {
+    if (dataset?.paging && typeof dataset.paging.setPageSize === "function") {
       try {
         dataset.paging.setPageSize(PAGE_SIZE);
         pageSizeApplied.current = true;
@@ -272,10 +295,20 @@ export const RequirementDetailFundingGridApp: React.FC<RequirementDetailFundingG
         // host may throw if setPageSize is called before the first load
       }
     }
-  }, [dataset.paging]);
+  }, [dataset?.paging]);
 
-  // ---- Materialise the RDs from the dataset ----
+  // ---- Materialise the RDs from the dataset (or the container override) ----
+  const overrideKey = rdRowsOverride?.map((r) => r.id).join("|") ?? "";
   const rds = React.useMemo<RDRow[]>(() => {
+    if (rdRowsOverride) {
+      return [...rdRowsOverride].sort((a, b) => {
+        const pa = a.priorityOrder ?? Number.MAX_SAFE_INTEGER;
+        const pb = b.priorityOrder ?? Number.MAX_SAFE_INTEGER;
+        if (pa !== pb) return pa - pb;
+        return a.name.localeCompare(b.name);
+      });
+    }
+    if (!dataset) return [];
     return dataset.sortedRecordIds
       .map((id) => {
         const r = dataset.records[id];
@@ -303,7 +336,7 @@ export const RequirementDetailFundingGridApp: React.FC<RequirementDetailFundingG
         if (pa !== pb) return pa - pb;
         return a.name.localeCompare(b.name);
       });
-  }, [dataset.sortedRecordIds, dataset.records]);
+  }, [dataset?.sortedRecordIds, dataset?.records, overrideKey]);
 
   // ---- Junction rows per RD (fetched on RD set change) ----
   const [junctions, setJunctions] = React.useState<Record<string, JunctionRow[]>>({});
@@ -452,10 +485,13 @@ export const RequirementDetailFundingGridApp: React.FC<RequirementDetailFundingG
   };
 
   // Default to the newest FY so legacy RFs don't clutter the picker by default.
-  const [fyFilter, setFyFilter] = React.useState<FYFilter>(FY_FILTER_ALL);
+  const [internalFyFilter, setFyFilter] = React.useState<FYFilter>(FY_FILTER_ALL);
+  const fyFilter: FYFilter = fyFilterOverride ?? internalFyFilter;
+  const fyControlledByContainer = fyFilterOverride !== undefined;
   const fyDefaultApplied = React.useRef(false);
 
   React.useEffect(() => {
+    if (fyControlledByContainer) return;
     if (fyOptions.length === 0) return;
 
     if (!fyDefaultApplied.current) {
@@ -469,10 +505,10 @@ export const RequirementDetailFundingGridApp: React.FC<RequirementDetailFundingG
       return;
     }
 
-    if (fyFilter !== FY_FILTER_ALL && !fyOptions.some((o) => o.value === fyFilter)) {
+    if (internalFyFilter !== FY_FILTER_ALL && !fyOptions.some((o) => o.value === internalFyFilter)) {
       setFyFilter(FY_FILTER_ALL);
     }
-  }, [fyOptions, fyFilter]);
+  }, [fyOptions, internalFyFilter, fyControlledByContainer]);
 
   // ---- Pending edits + save state on junction inputs ----
   const [edits, setEdits] = React.useState<
@@ -536,7 +572,7 @@ export const RequirementDetailFundingGridApp: React.FC<RequirementDetailFundingG
             return next;
           });
         }, 2500);
-        dataset.refresh();
+        refresh();
         return;
       })
       .catch(() => {
@@ -572,7 +608,7 @@ export const RequirementDetailFundingGridApp: React.FC<RequirementDetailFundingG
         });
         setAdding((prev) => ({ ...prev, [rd.id]: false }));
         reloadJunctions(rds.map((r) => r.id));
-        dataset.refresh();
+        refresh();
         return;
       })
       .catch((err: unknown) => {
@@ -604,7 +640,7 @@ export const RequirementDetailFundingGridApp: React.FC<RequirementDetailFundingG
           delete next[row.id];
           return next;
         });
-        dataset.refresh();
+        refresh();
         return;
       })
       .catch(() => {
@@ -869,10 +905,12 @@ export const RequirementDetailFundingGridApp: React.FC<RequirementDetailFundingG
       <div className={styles.root}>
         <div className={styles.toolbar}>
           <div className={styles.toolbarLeft}>
-            <Text weight="semibold">
-              Requirement Detail Funding ({rds.length})
-            </Text>
-            {fyOptions.length > 0 && (
+            {!hideTitle && (
+              <Text weight="semibold">
+                Requirement Detail Funding ({rds.length})
+              </Text>
+            )}
+            {fyOptions.length > 0 && !hideFyPicker && !fyControlledByContainer && (
               <div className={styles.fyFilter}>
                 <Text size={200}>RF FY</Text>
                 <Combobox
@@ -904,9 +942,9 @@ export const RequirementDetailFundingGridApp: React.FC<RequirementDetailFundingG
           <Button
             size="small"
             appearance="subtle"
-            disabled={dataset.loading || junctionsLoading}
+            disabled={(dataset?.loading ?? false) || junctionsLoading}
             onClick={() => {
-              dataset.refresh();
+              refresh();
               reloadJunctions(rds.map((r) => r.id));
             }}
           >
@@ -920,7 +958,7 @@ export const RequirementDetailFundingGridApp: React.FC<RequirementDetailFundingG
           </div>
         )}
 
-        {dataset.loading ? (
+        {dataset?.loading ? (
           <Spinner label="Loading Requirement Details…" />
         ) : rds.length === 0 ? (
           <div className={styles.empty}>
@@ -929,7 +967,7 @@ export const RequirementDetailFundingGridApp: React.FC<RequirementDetailFundingG
         ) : (
           <div className={styles.rdListScroll}>
             {rds.map((r) => renderRD(r))}
-            {dataset.paging && dataset.paging.hasNextPage && (
+            {dataset?.paging && dataset.paging.hasNextPage && (
               <div className={styles.loadMoreRow}>
                 <Button
                   size="small"
