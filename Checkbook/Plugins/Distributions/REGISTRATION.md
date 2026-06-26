@@ -96,11 +96,12 @@ the response token is empty.
 
 - Output counters (`Deactivated`, `Created`, `TurnInsCreated`, `Skipped`) are
   **per-invocation**, not cumulative — the JS caller sums them across passes.
-- Bucket FetchXML queries carry explicit `<order>` clauses on the groupby
-  aliases so the cursor's bucket index stays stable across passes.
-- Bucket processing is roughly idempotent (re-running an already-balanced
-  bucket creates no new rows), so a mid-bucket interruption that re-runs that
-  bucket on resume is safe.
+- Bucket processing is idempotent (re-running an already-balanced bucket
+  creates no new rows: target ≤ existing → no new pair; open Turn-In already
+  exists → no new Turn-In). The cursor's bucket index is best-effort — if
+  aggregate row order shifts between invocations, a re-pass may re-process a
+  few buckets or miss a few; missed buckets get picked up on the next full
+  button press.
 
 ## Open Turn-In definition
 

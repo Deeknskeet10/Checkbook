@@ -375,10 +375,6 @@ namespace Checkbook.Plugins.Distributions
         </link-entity>
       </link-entity>
     </link-entity>
-    <order alias='prio_fc_id' />
-    <order alias='fund_id' />
-    <order alias='pg_id' />
-    <order alias='fy' />
   </entity>
 </fetch>";
 
@@ -473,10 +469,6 @@ namespace Checkbook.Plugins.Distributions
         <condition attribute='statecode' operator='eq' value='0' />
       </filter>
     </link-entity>
-    <order alias='fundcenter_id' />
-    <order alias='fund_id' />
-    <order alias='pg_id' />
-    <order alias='fy' />
   </entity>
 </fetch>";
 
