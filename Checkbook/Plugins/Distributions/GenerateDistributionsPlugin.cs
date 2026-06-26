@@ -104,7 +104,16 @@ namespace Checkbook.Plugins.Distributions
 
             // ---- Phase 1 (skip if resuming past it) --------------------------
             if (cursor == null || cursor.Phase <= 1)
-                deactivated = DeactivateUnactionedDistributions(service, tracing);
+            {
+                deactivated = DeactivateUnactionedDistributions(
+                    service, tracing, stopwatch, TimeBudget, out var phase1Complete);
+                if (!phase1Complete)
+                {
+                    tracing.Trace("Phase 1 incomplete — returning continuation (phase=1).");
+                    WriteOutputs(context, deactivated, 0, 0, 0, new Cursor { Phase = 1 });
+                    return;
+                }
+            }
 
             // ---- Resolve Funding Events (re-resolved each invocation) --------
             var fundingEvents = ResolveActiveFundingEvents(service, tracing, fundingTypeFilter);
@@ -207,10 +216,18 @@ namespace Checkbook.Plugins.Distributions
 
         // -----------------------------------------------------------------
         // Phase 1: deactivate every active Distribution flagged not-entered-into-GFEBS.
-        // Batches each 500-row page into a single ExecuteMultipleRequest.
+        // Batches each 100-row page into a single ExecuteMultipleRequest. Cascading
+        // plugins/workflows on book_distributions can make each deactivation slow,
+        // so we check the time budget between pages and bail with a Phase 1 cursor
+        // if needed — on resume the query re-runs (its filter excludes already-
+        // inactive rows, so the work is idempotent and just picks up where we left off).
         // -----------------------------------------------------------------
-        private static int DeactivateUnactionedDistributions(IOrganizationService service, ITracingService tracing)
+        private static int DeactivateUnactionedDistributions(
+            IOrganizationService service, ITracingService tracing,
+            Stopwatch stopwatch, TimeSpan budget, out bool complete)
         {
+            tracing.Trace("Phase 1: starting deactivation sweep.");
+
             var query = new QueryExpression(EntityNames.Distributions)
             {
                 ColumnSet = new ColumnSet(DistributionsAttributes.Id),
@@ -222,14 +239,19 @@ namespace Checkbook.Plugins.Distributions
                         new ConditionExpression(DistributionsAttributes.StateCode,        ConditionOperator.Equal, StateCodeValues.Active),
                     },
                 },
-                PageInfo = new PagingInfo { Count = 500, PageNumber = 1, ReturnTotalRecordCount = false },
+                // Smaller pages = more chances to check the time budget. Each
+                // statecode update can fan out to cascading plugins, so 100 is a
+                // reasonable bound for a 2-min sandbox.
+                PageInfo = new PagingInfo { Count = 100, PageNumber = 1, ReturnTotalRecordCount = false },
                 NoLock = true,
             };
 
             var count = 0;
+            var pageNum = 0;
             while (true)
             {
                 var page = service.RetrieveMultiple(query);
+                pageNum++;
                 if (page.Entities.Count > 0)
                 {
                     var req = new ExecuteMultipleRequest
@@ -245,15 +267,30 @@ namespace Checkbook.Plugins.Distributions
                     }
                     service.Execute(req);
                     count += page.Entities.Count;
+                    tracing.Trace(
+                        $"Phase 1: page {pageNum} deactivated {page.Entities.Count} rows " +
+                        $"(running total {count}; elapsed {(int)stopwatch.Elapsed.TotalSeconds}s).");
                 }
 
-                if (!page.MoreRecords) break;
+                if (!page.MoreRecords)
+                {
+                    tracing.Trace($"Phase 1: complete — deactivated {count} unactioned Distribution(s).");
+                    complete = true;
+                    return count;
+                }
+
+                if (stopwatch.Elapsed > budget)
+                {
+                    tracing.Trace(
+                        $"Phase 1: time budget reached after page {pageNum} " +
+                        $"({count} deactivated so far) — will resume on next invocation.");
+                    complete = false;
+                    return count;
+                }
+
                 query.PageInfo.PageNumber++;
                 query.PageInfo.PagingCookie = page.PagingCookie;
             }
-
-            tracing.Trace($"Phase 1: deactivated {count} unactioned Distribution(s).");
-            return count;
         }
 
         // -----------------------------------------------------------------
@@ -515,15 +552,19 @@ namespace Checkbook.Plugins.Distributions
 
         // -----------------------------------------------------------------
         // Continuation cursor — tiny key=value text, no escaping needed since
-        // values are int / Guid only.
+        // values are int / Guid only. Three states:
+        //   phase=1                        → Phase 1 incomplete, resume the sweep
+        //   phase=2;fe=<guid>;idx=<n>      → mid-Phase-2 of FE <guid>, bucket <n>
+        //   phase=3;fe=<guid>;idx=<n>      → mid-Phase-3 of FE <guid>, bucket <n>
         // -----------------------------------------------------------------
         private sealed class Cursor
         {
-            public int Phase;            // 2 or 3 (phase 1 has no resume — always run if not skipped)
+            public int Phase;
             public Guid FundingEventId;
             public int BucketIdx;
 
-            public string Serialize() => $"phase={Phase};fe={FundingEventId};idx={BucketIdx}";
+            public string Serialize() =>
+                Phase == 1 ? "phase=1" : $"phase={Phase};fe={FundingEventId};idx={BucketIdx}";
 
             public static Cursor Parse(string s)
             {
@@ -546,7 +587,9 @@ namespace Checkbook.Plugins.Distributions
                             break;
                     }
                 }
-                return c.Phase >= 2 && c.FundingEventId != Guid.Empty ? c : null;
+                if (c.Phase == 1) return c;
+                if (c.Phase >= 2 && c.FundingEventId != Guid.Empty) return c;
+                return null;
             }
         }
 

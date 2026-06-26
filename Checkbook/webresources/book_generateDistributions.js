@@ -155,12 +155,14 @@ var DistributionGenerator = (function () {
   }
 
   function showProgress(passes, totals) {
+    // showProgressIndicator renders a single text run — \n is not honored,
+    // so collapse the counters onto one line with separators.
     Xrm.Utility.showProgressIndicator(
-      "Generating Distributions — pass " + (passes + 1) + "\n\n" +
-      "Deactivated: " + totals.Deactivated + "\n" +
-      "Created (debits + credits): " + totals.Created + "\n" +
-      "Turn-Ins created: " + totals.TurnInsCreated + "\n" +
-      "Skipped (no FundingDetails): " + totals.Skipped
+      "Generating Distributions (pass " + (passes + 1) + ")  •  " +
+      "Deactivated " + totals.Deactivated + "  •  " +
+      "Created " + totals.Created + "  •  " +
+      "Turn-Ins " + totals.TurnInsCreated + "  •  " +
+      "Skipped " + totals.Skipped
     );
   }
 
