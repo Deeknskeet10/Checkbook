@@ -9,11 +9,15 @@
 //      • 0 → AFP only      (skips the prompt)
 //      • 1 → Allotment only
 //      • 2 → Both          (omit FundingType in the request payload)
+//   3. FiscalYear Integer (optional)
+//      • Pass nothing / 0 → no FY filter (process all FYs)
+//      • Otherwise → option-set value on book_fund.book_fiscalyear (e.g. FY26).
 //
-// The Custom API step is registered Async (see Plugins/Distributions/REGISTRATION.md),
-// so the Web API call returns once the system job is enqueued — well before
-// the plugin actually finishes. We surface a "started" alert with guidance to
-// refresh in ~30–60s. The progress indicator only covers the enqueue round-trip.
+// The Custom API step MUST be registered Sync — the loop reads ContinuationToken
+// from each response to decide whether to call again. Async runs don't return a
+// body to the JS caller. Each plugin invocation self-budgets to ~105s of the
+// 120s sandbox ceiling and returns a token when more work remains; the loop
+// keeps calling until the token comes back empty.
 var DistributionGenerator = (function () {
   "use strict";
 
@@ -21,17 +25,23 @@ var DistributionGenerator = (function () {
   var FUNDING_TYPE_ALLOTMENT = 1;
   var FUNDING_TYPE_BOTH = 2;
 
-  function run(primaryControl, fundingTypeOptionValue) {
+  // Safety cap on continuation loop iterations. With ~105s budget per call,
+  // 60 passes ≈ 100 minutes of cumulative server work — far past any real
+  // workload. If we hit this, something is wrong (infinite loop, bad data).
+  var MAX_PASSES = 60;
+
+  function run(primaryControl, fundingTypeOptionValue, fiscalYearOptionValue) {
+    var fiscalYear = normalizeFiscalYear(fiscalYearOptionValue);
     var preset = normalizePreset(fundingTypeOptionValue);
     if (preset !== null) {
-      confirmAndExecute(primaryControl, preset.value, preset.label);
+      confirmAndExecute(primaryControl, preset.value, preset.label, fiscalYear);
       return;
     }
 
     promptForFundingType().then(
       function (choice) {
         if (!choice) return;
-        confirmAndExecute(primaryControl, choice.value, choice.label);
+        confirmAndExecute(primaryControl, choice.value, choice.label, fiscalYear);
       },
       handleError
     );
@@ -43,6 +53,11 @@ var DistributionGenerator = (function () {
     if (raw === FUNDING_TYPE_ALLOTMENT) return { value: FUNDING_TYPE_ALLOTMENT, label: "Allotment only" };
     if (raw === FUNDING_TYPE_BOTH) return { value: FUNDING_TYPE_BOTH, label: "Both AFP and Allotment" };
     return null;
+  }
+
+  function normalizeFiscalYear(raw) {
+    if (typeof raw !== "number" || raw <= 0) return null;
+    return raw;
   }
 
   // Resolves to { value, label } or null on cancel/invalid.
@@ -71,37 +86,66 @@ var DistributionGenerator = (function () {
     });
   }
 
-  function confirmAndExecute(primaryControl, fundingType, fundingTypeLabel) {
+  function confirmAndExecute(primaryControl, fundingType, fundingTypeLabel, fiscalYear) {
+    var fyLabel = fiscalYear ? "FY=" + fiscalYear : "all FYs";
     Xrm.Navigation.openConfirmDialog(
       {
         title: "Generate Distributions",
         text:
-          "Generate Distributions for " + fundingTypeLabel + "?\n\n" +
+          "Generate Distributions for " + fundingTypeLabel + " (" + fyLabel + ")?\n\n" +
           "This will:\n" +
           "  • Deactivate active Distributions not yet entered into GFEBS.\n" +
           "  • Create debit/credit Distribution pairs to reach the target funded amount.\n" +
           "  • Create overage Turn-Ins where existing credits exceed the target " +
           "(unless an open Turn-In already exists for that bucket).\n\n" +
-          "The job runs asynchronously — typically completes in under a minute."
+          "The job runs in passes of up to ~2 minutes each. Leave the window " +
+          "open until you see the completion dialog."
       },
-      { height: 320, width: 520 }
+      { height: 360, width: 540 }
     ).then(function (result) {
       if (!result || !result.confirmed) return;
-      execute(primaryControl, fundingType);
+      execute(primaryControl, fundingType, fiscalYear);
     });
   }
 
-  function execute(primaryControl, fundingType) {
-    Xrm.Utility.showProgressIndicator("Starting Distribution generation…");
+  // Pump the Custom API in a continuation loop. Each call returns a
+  // ContinuationToken; loop until it comes back empty.
+  function execute(primaryControl, fundingType, fiscalYear) {
+    var totals = { Deactivated: 0, Created: 0, TurnInsCreated: 0, Skipped: 0 };
+    var passes = 0;
+    showProgress(passes, totals);
 
-    Xrm.WebApi.online.execute(buildRequest(fundingType)).then(
-      function (response) {
+    function pumpOnce(token) {
+      return Xrm.WebApi.online.execute(buildRequest(fundingType, fiscalYear, token))
+        .then(function (response) {
+          if (!response.ok && response.status !== 204) {
+            return Promise.reject(new Error("Custom API returned HTTP " + response.status));
+          }
+          return response.status === 204 ? {} : response.json();
+        })
+        .then(function (body) {
+          totals.Deactivated    += body.Deactivated    || 0;
+          totals.Created        += body.Created        || 0;
+          totals.TurnInsCreated += body.TurnInsCreated || 0;
+          totals.Skipped        += body.Skipped        || 0;
+          passes++;
+          showProgress(passes, totals);
+
+          var nextToken = body.ContinuationToken || "";
+          if (!nextToken) return; // done
+          if (passes >= MAX_PASSES) {
+            return Promise.reject(new Error(
+              "Stopped after " + passes + " passes (safety cap). Last token: " + nextToken
+            ));
+          }
+          return pumpOnce(nextToken);
+        });
+    }
+
+    pumpOnce("").then(
+      function () {
         Xrm.Utility.closeProgressIndicator();
-        if (!response.ok && response.status !== 204) {
-          handleError(new Error("Custom API returned HTTP " + response.status));
-          return;
-        }
-        showStarted(primaryControl);
+        showCompleted(primaryControl, totals, passes);
       },
       function (error) {
         Xrm.Utility.closeProgressIndicator();
@@ -110,16 +154,36 @@ var DistributionGenerator = (function () {
     );
   }
 
+  function showProgress(passes, totals) {
+    Xrm.Utility.showProgressIndicator(
+      "Generating Distributions — pass " + (passes + 1) + "\n\n" +
+      "Deactivated: " + totals.Deactivated + "\n" +
+      "Created (debits + credits): " + totals.Created + "\n" +
+      "Turn-Ins created: " + totals.TurnInsCreated + "\n" +
+      "Skipped (no FundingDetails): " + totals.Skipped
+    );
+  }
+
   // FundingType = 2 → omit the param so the plugin processes both.
-  function buildRequest(fundingType) {
+  // fiscalYear null/0 → omit FY (all FYs).
+  // token empty → omit ContinuationToken (fresh start).
+  function buildRequest(fundingType, fiscalYear, continuationToken) {
     var includeFundingType =
       fundingType === FUNDING_TYPE_AFP || fundingType === FUNDING_TYPE_ALLOTMENT;
+    var includeFy = !!fiscalYear;
+    var includeToken = !!continuationToken;
 
     var req = {
       getMetadata: function () {
         var parameterTypes = {};
         if (includeFundingType) {
           parameterTypes.FundingType = { typeName: "Edm.Int32", structuralProperty: 1 };
+        }
+        if (includeFy) {
+          parameterTypes.FiscalYear = { typeName: "Edm.Int32", structuralProperty: 1 };
+        }
+        if (includeToken) {
+          parameterTypes.ContinuationToken = { typeName: "Edm.String", structuralProperty: 1 };
         }
         return {
           boundParameter: null,
@@ -130,22 +194,21 @@ var DistributionGenerator = (function () {
       }
     };
 
-    if (includeFundingType) {
-      req.FundingType = fundingType;
-    }
+    if (includeFundingType) req.FundingType = fundingType;
+    if (includeFy)          req.FiscalYear  = fiscalYear;
+    if (includeToken)       req.ContinuationToken = continuationToken;
 
     return req;
   }
 
-  function showStarted(primaryControl) {
+  function showCompleted(primaryControl, totals, passes) {
     Xrm.Navigation.openAlertDialog({
       text:
-        "Distribution generation started.\n\n" +
-        "The system job runs asynchronously and typically completes within a " +
-        "minute. Refresh this view (or the Distribution / Turn-In grids) " +
-        "shortly to see the new records.\n\n" +
-        "If results don't appear after a couple of minutes, check System Jobs " +
-        "for a failed book_GenerateDistributions run."
+        "Distribution generation complete (" + passes + " pass" + (passes === 1 ? "" : "es") + ").\n\n" +
+        "Deactivated: " + totals.Deactivated + "\n" +
+        "Created (debits + credits): " + totals.Created + "\n" +
+        "Turn-Ins created: " + totals.TurnInsCreated + "\n" +
+        "Skipped (no FundingDetails): " + totals.Skipped
     }).then(function () {
       if (primaryControl && typeof primaryControl.refresh === "function") {
         primaryControl.refresh();
@@ -157,7 +220,7 @@ var DistributionGenerator = (function () {
     Xrm.Utility.closeProgressIndicator();
     var message = (error && (error.message || error.toString())) || "Unknown error.";
     Xrm.Navigation.openErrorDialog({
-      message: "Distribution generation failed to start.",
+      message: "Distribution generation failed.",
       details: message
     });
   }

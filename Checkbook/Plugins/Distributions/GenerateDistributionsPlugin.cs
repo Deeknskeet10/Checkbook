@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using Microsoft.Xrm.Sdk;
+using Microsoft.Xrm.Sdk.Messages;
 using Microsoft.Xrm.Sdk.Query;
 using Checkbook.Plugins.Base;
 using Checkbook.Plugins.Constants;
@@ -32,19 +34,33 @@ namespace Checkbook.Plugins.Distributions
     /// </list>
     ///
     /// Input parameters:
-    ///   <c>FundingType</c> (int, optional) — 0 = AFP only, 1 = Allotment only,
-    ///                                        0 omitted = both.
+    ///   <c>FundingType</c>        (int, optional)    — 0 = AFP only, 1 = Allotment only, omitted = both.
+    ///   <c>FiscalYear</c>         (int, optional)    — option-set value on book_fund.book_fiscalyear;
+    ///                                                  filters Phase 2 + 3 buckets. Omitted = all FYs.
+    ///   <c>ContinuationToken</c>  (string, optional) — opaque resume marker returned by a prior call.
+    ///                                                  Empty/missing = fresh start.
     ///
     /// Output parameters:
-    ///   <c>Deactivated</c>      (int) — Phase 1 distributions set inactive.
-    ///   <c>Created</c>          (int) — Distribution rows created in Phases 2 + 3 (pairs counted as 2).
-    ///   <c>TurnInsCreated</c>   (int) — Overage Turn-Ins created in Phases 2 + 3.
-    ///   <c>Skipped</c>          (int) — Buckets skipped (missing FundingDetails percentage, etc).
+    ///   <c>Deactivated</c>        (int) — Phase 1 distributions set inactive in THIS invocation.
+    ///   <c>Created</c>            (int) — Distribution rows created in Phases 2 + 3 (pairs counted as 2).
+    ///   <c>TurnInsCreated</c>     (int) — Overage Turn-Ins created in Phases 2 + 3.
+    ///   <c>Skipped</c>            (int) — Buckets skipped (missing FundingDetails percentage, etc).
+    ///   <c>ContinuationToken</c>  (string) — empty = done; non-empty = caller should re-invoke
+    ///                                        passing this back as input ContinuationToken.
+    ///
+    /// Time budget: the plugin tracks a wall-clock budget below the 2-minute sandbox
+    /// ceiling. When the budget is exceeded between buckets, processing halts and a
+    /// continuation token is returned. Per-invocation output counters are NOT cumulative
+    /// across calls — the caller sums them.
     /// </summary>
     public class GenerateDistributionsPlugin : PluginBase
     {
         private const string MessageName = "book_GenerateDistributions";
         private const string HoldingFundCenterEnvVar = "book_DistributionHoldingFundCenter";
+
+        // Plugin sandbox hard kill is 120s. Bail at ~105s so we have time to
+        // serialize the continuation token and write outputs.
+        private static readonly TimeSpan TimeBudget = TimeSpan.FromSeconds(105);
 
         protected override void ExecutePlugin(
             IPluginExecutionContext context,
@@ -58,30 +74,65 @@ namespace Checkbook.Plugins.Distributions
             }
 
             int? fundingTypeFilter = null;
-            if (context.InputParameters.TryGetValue("FundingType", out var raw) && raw is int ft)
+            if (context.InputParameters.TryGetValue("FundingType", out var rawType) && rawType is int ft)
                 fundingTypeFilter = ft;
 
-            tracing.Trace($"GenerateDistributions starting (FundingType filter = " +
-                          $"{(fundingTypeFilter.HasValue ? fundingTypeFilter.Value.ToString() : "both")}).");
+            int? fiscalYearFilter = null;
+            if (context.InputParameters.TryGetValue("FiscalYear", out var rawFy) && rawFy is int fy && fy > 0)
+                fiscalYearFilter = fy;
+
+            string tokenIn = null;
+            if (context.InputParameters.TryGetValue("ContinuationToken", out var rawTok) && rawTok is string s)
+                tokenIn = s;
+            var cursor = Cursor.Parse(tokenIn);
+
+            tracing.Trace(
+                $"GenerateDistributions starting (FundingType={(fundingTypeFilter.HasValue ? fundingTypeFilter.Value.ToString() : "both")}, " +
+                $"FiscalYear={(fiscalYearFilter.HasValue ? fiscalYearFilter.Value.ToString() : "all")}, " +
+                $"resume={(cursor != null ? cursor.Serialize() : "(fresh)")}).");
 
             var holdingFundCenterId = EnvironmentVariableHelper.GetGuid(service, HoldingFundCenterEnvVar);
             tracing.Trace($"Holding Fund Center (env var {HoldingFundCenterEnvVar}) = {holdingFundCenterId}.");
 
-            // ---- Phase 1 -----------------------------------------------------
-            var deactivated = DeactivateUnactionedDistributions(service, tracing);
+            var stopwatch = Stopwatch.StartNew();
 
-            // ---- Resolve which Funding Events to process ---------------------
+            var deactivated = 0;
+            var totalCreated = 0;
+            var totalTurnIns = 0;
+            var totalSkipped = 0;
+            Cursor outCursor = null;
+
+            // ---- Phase 1 (skip if resuming past it) --------------------------
+            if (cursor == null || cursor.Phase <= 1)
+                deactivated = DeactivateUnactionedDistributions(service, tracing);
+
+            // ---- Resolve Funding Events (re-resolved each invocation) --------
             var fundingEvents = ResolveActiveFundingEvents(service, tracing, fundingTypeFilter);
             if (fundingEvents.Count == 0)
             {
                 tracing.Trace("No active Funding Events match the filter — Phases 2 + 3 skipped.");
-                WriteOutputs(context, deactivated, 0, 0, 0);
+                WriteOutputs(context, deactivated, 0, 0, 0, null);
                 return;
             }
 
-            var totalCreated  = 0;
-            var totalTurnIns  = 0;
-            var totalSkipped  = 0;
+            // Determine starting (fe-index, phase, bucket-idx) from the cursor.
+            var startFeIdx   = 0;
+            var startPhase   = 2;
+            var startBucket  = 0;
+            if (cursor != null && cursor.Phase >= 2)
+            {
+                var idx = fundingEvents.FindIndex(e => e.Id == cursor.FundingEventId);
+                if (idx >= 0)
+                {
+                    startFeIdx  = idx;
+                    startPhase  = cursor.Phase;
+                    startBucket = cursor.BucketIdx;
+                }
+                else
+                {
+                    tracing.Trace($"Cursor FE {cursor.FundingEventId} no longer active — restarting at FE 0 / Phase 2.");
+                }
+            }
 
             // Per-invocation FundCenter metadata cache. Cannot be an instance field —
             // the platform reuses plugin instances across executions.
@@ -90,43 +141,73 @@ namespace Checkbook.Plugins.Distributions
             // share (Fund, PG, type) tuples; without this each bucket re-resolves.
             var pctCache = new Dictionary<string, FundingPercentageHelper.FundingResolution>();
 
-            foreach (var fundingEvent in fundingEvents)
+            for (var feIdx = startFeIdx; feIdx < fundingEvents.Count; feIdx++)
             {
+                var fundingEvent = fundingEvents[feIdx];
                 var fundingType = fundingEvent.GetAttributeValue<OptionSetValue>(FundingEventAttributes.FundingType)?.Value ?? -1;
-                tracing.Trace($"Processing FundingEvent {fundingEvent.Id} (type = {fundingType}).");
-
                 var fundingEventRef = fundingEvent.ToEntityReference();
+                tracing.Trace($"Processing FundingEvent {fundingEvent.Id} (type = {fundingType}, idx = {feIdx}).");
 
                 // ---- Phase 2 — Prioritizations -------------------------------
-                foreach (var bucket in QueryPrioritizationBuckets(service, tracing))
+                if (startPhase <= 2)
                 {
-                    var fcMeta = GetFundCenterMeta(service, fcCache, bucket.FundCenterId);
-                    var r = DistributionBucketProcessor.Process(
-                        service, tracing, bucket, fundingEventRef, fundingType,
-                        holdingFundCenterId, fcMeta?.OwningBusinessUnit, pctCache);
-                    totalCreated += r.DistributionsCreated;
-                    totalTurnIns += r.TurnInsCreated;
-                    totalSkipped += r.Skipped;
+                    var phase2Buckets = QueryPrioritizationBuckets(service, tracing, fiscalYearFilter);
+                    var bucketStart = (feIdx == startFeIdx && startPhase == 2) ? startBucket : 0;
+                    for (var i = bucketStart; i < phase2Buckets.Count; i++)
+                    {
+                        if (stopwatch.Elapsed > TimeBudget)
+                        {
+                            outCursor = new Cursor { Phase = 2, FundingEventId = fundingEvent.Id, BucketIdx = i };
+                            tracing.Trace($"Time budget reached at FE {fundingEvent.Id} Phase 2 bucket {i} — returning continuation.");
+                            WriteOutputs(context, deactivated, totalCreated, totalTurnIns, totalSkipped, outCursor);
+                            return;
+                        }
+                        var bucket = phase2Buckets[i];
+                        var fcMeta = GetFundCenterMeta(service, fcCache, bucket.FundCenterId);
+                        var r = DistributionBucketProcessor.Process(
+                            service, tracing, bucket, fundingEventRef, fundingType,
+                            holdingFundCenterId, fcMeta?.OwningBusinessUnit, pctCache);
+                        totalCreated += r.DistributionsCreated;
+                        totalTurnIns += r.TurnInsCreated;
+                        totalSkipped += r.Skipped;
+                    }
                 }
 
                 // ---- Phase 3 — Requirements ----------------------------------
-                foreach (var bucket in QueryRequirementBuckets(service, tracing, holdingFundCenterId, fcCache))
                 {
-                    var fcMeta = GetFundCenterMeta(service, fcCache, bucket.FundCenterId);
-                    var r = DistributionBucketProcessor.Process(
-                        service, tracing, bucket, fundingEventRef, fundingType,
-                        holdingFundCenterId, fcMeta?.OwningBusinessUnit, pctCache);
-                    totalCreated += r.DistributionsCreated;
-                    totalTurnIns += r.TurnInsCreated;
-                    totalSkipped += r.Skipped;
+                    var phase3Buckets = QueryRequirementBuckets(service, tracing, holdingFundCenterId, fcCache, fiscalYearFilter);
+                    var bucketStart = (feIdx == startFeIdx && startPhase == 3) ? startBucket : 0;
+                    for (var i = bucketStart; i < phase3Buckets.Count; i++)
+                    {
+                        if (stopwatch.Elapsed > TimeBudget)
+                        {
+                            outCursor = new Cursor { Phase = 3, FundingEventId = fundingEvent.Id, BucketIdx = i };
+                            tracing.Trace($"Time budget reached at FE {fundingEvent.Id} Phase 3 bucket {i} — returning continuation.");
+                            WriteOutputs(context, deactivated, totalCreated, totalTurnIns, totalSkipped, outCursor);
+                            return;
+                        }
+                        var bucket = phase3Buckets[i];
+                        var fcMeta = GetFundCenterMeta(service, fcCache, bucket.FundCenterId);
+                        var r = DistributionBucketProcessor.Process(
+                            service, tracing, bucket, fundingEventRef, fundingType,
+                            holdingFundCenterId, fcMeta?.OwningBusinessUnit, pctCache);
+                        totalCreated += r.DistributionsCreated;
+                        totalTurnIns += r.TurnInsCreated;
+                        totalSkipped += r.Skipped;
+                    }
                 }
+
+                // Once we've finished an FE, subsequent ones start from Phase 2 / bucket 0.
+                startPhase = 2;
+                startBucket = 0;
             }
 
-            WriteOutputs(context, deactivated, totalCreated, totalTurnIns, totalSkipped);
+            WriteOutputs(context, deactivated, totalCreated, totalTurnIns, totalSkipped, null);
         }
 
         // -----------------------------------------------------------------
         // Phase 1: deactivate every active Distribution flagged not-entered-into-GFEBS.
+        // Batches each 500-row page into a single ExecuteMultipleRequest.
         // -----------------------------------------------------------------
         private static int DeactivateUnactionedDistributions(IOrganizationService service, ITracingService tracing)
         {
@@ -149,12 +230,21 @@ namespace Checkbook.Plugins.Distributions
             while (true)
             {
                 var page = service.RetrieveMultiple(query);
-                foreach (var d in page.Entities)
+                if (page.Entities.Count > 0)
                 {
-                    var update = new Entity(EntityNames.Distributions, d.Id);
-                    update[DistributionsAttributes.StateCode] = new OptionSetValue(StateCodeValues.Inactive);
-                    service.Update(update);
-                    count++;
+                    var req = new ExecuteMultipleRequest
+                    {
+                        Settings = new ExecuteMultipleSettings { ContinueOnError = false, ReturnResponses = false },
+                        Requests = new OrganizationRequestCollection(),
+                    };
+                    foreach (var d in page.Entities)
+                    {
+                        var update = new Entity(EntityNames.Distributions, d.Id);
+                        update[DistributionsAttributes.StateCode] = new OptionSetValue(StateCodeValues.Inactive);
+                        req.Requests.Add(new UpdateRequest { Target = update });
+                    }
+                    service.Execute(req);
+                    count += page.Entities.Count;
                 }
 
                 if (!page.MoreRecords) break;
@@ -193,6 +283,9 @@ namespace Checkbook.Plugins.Distributions
                 Criteria = criteria,
                 NoLock = true,
             };
+            // Deterministic order so cursor index has a chance of staying stable,
+            // though we resume by FE Guid anyway.
+            query.AddOrder(FundingEventAttributes.Id, OrderType.Ascending);
 
             var events = service.RetrieveMultiple(query).Entities.ToList();
             tracing.Trace($"Resolved {events.Count} active Funding Event(s).");
@@ -206,11 +299,16 @@ namespace Checkbook.Plugins.Distributions
         // centrally managed (book_national = 1) — the centrally identified FC
         // is backfilled onto the Prio by PrioritizationFundCenterBackfill. For
         // non-centrally-managed Prios, destination FC is the Prio's parent FC.
+        // FY filter (optional) constrains to a single book_fund.book_fiscalyear.
         // -----------------------------------------------------------------
-        private static IEnumerable<DistributionBucket> QueryPrioritizationBuckets(
-            IOrganizationService service, ITracingService tracing)
+        private static List<DistributionBucket> QueryPrioritizationBuckets(
+            IOrganizationService service, ITracingService tracing, int? fiscalYearFilter)
         {
-            const string fetchXml = @"
+            var fyCondition = fiscalYearFilter.HasValue
+                ? $"<condition attribute='book_fiscalyear' operator='eq' value='{fiscalYearFilter.Value}' />"
+                : string.Empty;
+
+            var fetchXml = $@"
 <fetch aggregate='true' no-lock='true'>
   <entity name='book_prioritization'>
     <attribute name='book_newfundedamounttdp' alias='total_funding' aggregate='sum' />
@@ -234,16 +332,24 @@ namespace Checkbook.Plugins.Distributions
           <attribute name='book_pgid' alias='pg_id' groupby='true' />
         </link-entity>
         <link-entity name='book_fund' from='book_fundid' to='book_fund' link-type='inner' alias='fund'>
+          <filter type='and'>{fyCondition}</filter>
           <attribute name='book_fundid'     alias='fund_id' groupby='true' />
           <attribute name='book_fiscalyear' alias='fy'      groupby='true' />
         </link-entity>
       </link-entity>
     </link-entity>
+    <order alias='prio_fc_id' />
+    <order alias='fund_id' />
+    <order alias='pg_id' />
+    <order alias='fy' />
   </entity>
 </fetch>";
 
             var rows = service.RetrieveMultiple(new FetchExpression(fetchXml)).Entities;
-            tracing.Trace($"Phase 2: {rows.Count} Prioritization bucket(s).");
+            tracing.Trace($"Phase 2: {rows.Count} Prioritization bucket(s)" +
+                          (fiscalYearFilter.HasValue ? $" (FY={fiscalYearFilter.Value})." : "."));
+
+            var buckets = new List<DistributionBucket>(rows.Count);
             foreach (var row in rows)
             {
                 var prioFcId   = GetAliasedGuid(row, "prio_fc_id");
@@ -260,15 +366,16 @@ namespace Checkbook.Plugins.Distributions
                 if (destFcId == Guid.Empty || fundId == Guid.Empty || pgId == Guid.Empty)
                     continue;
 
-                yield return new DistributionBucket
+                buckets.Add(new DistributionBucket
                 {
                     FundId        = fundId,
                     PgId          = pgId,
                     FundCenterId  = destFcId,
                     FiscalYear    = GetAliasedOption(row, "fy"),
                     TotalFunding  = GetAliasedDecimal(row, "total_funding"),
-                };
+                });
             }
+            return buckets;
         }
 
         // -----------------------------------------------------------------
@@ -282,12 +389,18 @@ namespace Checkbook.Plugins.Distributions
         // centrally, DOMOPs) flow through Phase 2 instead; the outer-join
         // null-check on book_prioritization guards against stray Prios under a
         // type meant to be Prio-less so we never double-count.
+        // FY filter (optional) constrains to a single book_fund.book_fiscalyear.
         // -----------------------------------------------------------------
-        private static IEnumerable<DistributionBucket> QueryRequirementBuckets(
+        private static List<DistributionBucket> QueryRequirementBuckets(
             IOrganizationService service, ITracingService tracing,
-            Guid holdingFundCenterId, Dictionary<Guid, FundCenterMeta> fcCache)
+            Guid holdingFundCenterId, Dictionary<Guid, FundCenterMeta> fcCache,
+            int? fiscalYearFilter)
         {
-            const string fetchXml = @"
+            var fyCondition = fiscalYearFilter.HasValue
+                ? $"<condition attribute='book_fiscalyear' operator='eq' value='{fiscalYearFilter.Value}' />"
+                : string.Empty;
+
+            var fetchXml = $@"
 <fetch aggregate='true' no-lock='true'>
   <entity name='book_requirementfunding'>
     <attribute name='book_newfundedamount' alias='total_funding' aggregate='sum' />
@@ -313,6 +426,7 @@ namespace Checkbook.Plugins.Distributions
         <attribute name='book_pgid' alias='pg_id' groupby='true' />
       </link-entity>
       <link-entity name='book_fund' from='book_fundid' to='book_fund' link-type='inner' alias='fund'>
+        <filter type='and'>{fyCondition}</filter>
         <attribute name='book_fundid'      alias='fund_id' groupby='true' />
         <attribute name='book_fiscalyear'  alias='fy'      groupby='true' />
       </link-entity>
@@ -322,11 +436,18 @@ namespace Checkbook.Plugins.Distributions
         <condition attribute='statecode' operator='eq' value='0' />
       </filter>
     </link-entity>
+    <order alias='fundcenter_id' />
+    <order alias='fund_id' />
+    <order alias='pg_id' />
+    <order alias='fy' />
   </entity>
 </fetch>";
 
             var rows = service.RetrieveMultiple(new FetchExpression(fetchXml)).Entities;
-            tracing.Trace($"Phase 3: {rows.Count} Requirement-Funding bucket(s).");
+            tracing.Trace($"Phase 3: {rows.Count} Requirement-Funding bucket(s)" +
+                          (fiscalYearFilter.HasValue ? $" (FY={fiscalYearFilter.Value})." : "."));
+
+            var buckets = new List<DistributionBucket>(rows.Count);
             foreach (var row in rows)
             {
                 var fcId   = GetAliasedGuid(row, "fundcenter_id");
@@ -342,15 +463,16 @@ namespace Checkbook.Plugins.Distributions
                     ? fcId
                     : fcMeta.ParentFundCenterId.Value;
 
-                yield return new DistributionBucket
+                buckets.Add(new DistributionBucket
                 {
                     FundId        = fundId,
                     PgId          = pgId,
                     FundCenterId  = destFc,
                     FiscalYear    = GetAliasedOption(row, "fy"),
                     TotalFunding  = GetAliasedDecimal(row, "total_funding"),
-                };
+                });
             }
+            return buckets;
         }
 
         // -----------------------------------------------------------------
@@ -392,6 +514,43 @@ namespace Checkbook.Plugins.Distributions
         }
 
         // -----------------------------------------------------------------
+        // Continuation cursor — tiny key=value text, no escaping needed since
+        // values are int / Guid only.
+        // -----------------------------------------------------------------
+        private sealed class Cursor
+        {
+            public int Phase;            // 2 or 3 (phase 1 has no resume — always run if not skipped)
+            public Guid FundingEventId;
+            public int BucketIdx;
+
+            public string Serialize() => $"phase={Phase};fe={FundingEventId};idx={BucketIdx}";
+
+            public static Cursor Parse(string s)
+            {
+                if (string.IsNullOrWhiteSpace(s)) return null;
+                var c = new Cursor();
+                foreach (var part in s.Split(';'))
+                {
+                    var kv = part.Split(new[] { '=' }, 2);
+                    if (kv.Length != 2) continue;
+                    switch (kv[0].Trim())
+                    {
+                        case "phase":
+                            if (int.TryParse(kv[1], out var p)) c.Phase = p;
+                            break;
+                        case "fe":
+                            if (Guid.TryParse(kv[1], out var g)) c.FundingEventId = g;
+                            break;
+                        case "idx":
+                            if (int.TryParse(kv[1], out var i)) c.BucketIdx = i;
+                            break;
+                    }
+                }
+                return c.Phase >= 2 && c.FundingEventId != Guid.Empty ? c : null;
+            }
+        }
+
+        // -----------------------------------------------------------------
         // AliasedValue extraction helpers — FetchXML aggregates always wrap
         // grouped/aggregated attributes in AliasedValue.
         // -----------------------------------------------------------------
@@ -429,12 +588,13 @@ namespace Checkbook.Plugins.Distributions
         }
 
         private static void WriteOutputs(IPluginExecutionContext context,
-            int deactivated, int created, int turnIns, int skipped)
+            int deactivated, int created, int turnIns, int skipped, Cursor cursor)
         {
-            context.OutputParameters["Deactivated"]    = deactivated;
-            context.OutputParameters["Created"]        = created;
-            context.OutputParameters["TurnInsCreated"] = turnIns;
-            context.OutputParameters["Skipped"]        = skipped;
+            context.OutputParameters["Deactivated"]       = deactivated;
+            context.OutputParameters["Created"]           = created;
+            context.OutputParameters["TurnInsCreated"]    = turnIns;
+            context.OutputParameters["Skipped"]           = skipped;
+            context.OutputParameters["ContinuationToken"] = cursor != null ? cursor.Serialize() : string.Empty;
         }
     }
 }
