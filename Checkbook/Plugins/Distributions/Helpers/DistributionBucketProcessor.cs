@@ -330,7 +330,8 @@ namespace Checkbook.Plugins.Distributions.Helpers
         {
             var turnIn = new Entity(EntityNames.Turnin);
             turnIn[TurninAttributes.Amount]     = 0m; // no TDP change
-            turnIn[TurninAttributes.FiscalYear] = bucket.FiscalYear;
+            // book_fiscalyear is a picklist (goal_fiscalyear option set) — write as OptionSetValue, not raw int.
+            turnIn[TurninAttributes.FiscalYear] = new OptionSetValue(bucket.FiscalYear);
             turnIn[TurninAttributes.Fund]       = new EntityReference(EntityNames.Fund, bucket.FundId);
             turnIn[TurninAttributes.FundCenter] = new EntityReference(EntityNames.FundCenter, bucket.FundCenterId);
             turnIn[TurninAttributes.PG]         = new EntityReference(EntityNames.PG, bucket.PgId);
