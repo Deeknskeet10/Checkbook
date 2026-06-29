@@ -1,17 +1,16 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <manifest>
-  <control namespace="ARNGCheckbook" constructor="RequirementFundingTab" version="0.1.1"
+  <control namespace="ARNGCheckbook" constructor="RequirementFundingTab" version="0.2.0"
            display-name-key="RequirementFundingTab"
-           description-key="Composite Funding tab for a Requirement. Sticky FY picker drives a Requirement Details (rank) section, a read-only Requirement Fundings list, a Funding by Prioritizations grid, and a Funding by Requirement Details grid. Sections show/hide based on whether the Requirement has Prioritizations and/or Requirement Details. Bind to any text field on book_requirements (e.g. book_name) — the bound value is ignored."
+           description-key="Composite Funding tab for a Requirement. Sticky FY picker drives a Requirement Details (rank) section, a read-only Requirement Fundings list, a Funding by Prioritizations grid, and a Funding by Requirement Details grid. Sections show/hide based on whether the Requirement has Prioritizations and/or Requirement Details. Host on a subgrid in a one-column tab; the dataset rows are ignored — the control reads the parent Requirement ID from page context and drives everything via WebAPI."
            control-type="virtual" >
     <external-service-usage enabled="false">
     </external-service-usage>
-    <!-- Field PCF bound to any text field on book_requirements (e.g. book_name). The
-         bound value is ignored — the control reads the parent Requirement ID from
-         page context and drives everything via WebAPI. -->
-    <property name="hostField" display-name-key="Host Field"
-              description-key="Bound text field on book_requirements (value is ignored)."
-              of-type="SingleLine.Text" usage="bound" required="true" />
+    <!-- Dataset host. The dataset rows are ignored; the control reads the parent
+         Requirement ID from page context. Bind to any view (cheapest: a view that
+         returns 0 rows). Place the subgrid in a one-column section in its own tab. -->
+    <data-set name="records" display-name-key="Records"
+              description-key="Host dataset (rows are ignored). Bind to any view on any table." />
     <resources>
       <code path="index.ts" order="1"/>
       <css path="css/RequirementFundingTab.css" order="1" />

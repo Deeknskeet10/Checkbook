@@ -16,12 +16,16 @@ export class RequirementFundingTab
     this.context = context;
     const ctxAny = context.mode as unknown as {
       contextInfo?: { entityId?: string; entityTypeName?: string };
+      allocatedHeight?: number;
+      allocatedWidth?: number;
     };
     return React.createElement(RequirementFundingTabApp, {
       webAPI: context.webAPI,
       navigation: (context as unknown as { navigation: ComponentFramework.Navigation }).navigation,
       parentRequirementId: ctxAny.contextInfo?.entityId ?? null,
       isDisabled: context.mode.isControlDisabled,
+      allocatedHeight: ctxAny.allocatedHeight,
+      allocatedWidth: ctxAny.allocatedWidth,
     });
   }
 

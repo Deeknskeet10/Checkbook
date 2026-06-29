@@ -26,6 +26,8 @@ export interface RequirementFundingTabAppProps {
   navigation: ComponentFramework.Navigation;
   parentRequirementId: string | null;
   isDisabled: boolean;
+  allocatedHeight?: number;
+  allocatedWidth?: number;
 }
 
 const FY_FILTER_ALL = "all" as const;
@@ -78,7 +80,27 @@ interface RFRow {
 export const RequirementFundingTabApp: React.FC<RequirementFundingTabAppProps> = (
   props
 ) => {
-  const { webAPI, navigation, parentRequirementId, isDisabled } = props;
+  const {
+    webAPI,
+    navigation,
+    parentRequirementId,
+    isDisabled,
+    allocatedHeight,
+    allocatedWidth,
+  } = props;
+
+  // Subgrid PCF: allocatedHeight is the assigned pixel height, or -1 when the
+  // host hasn't decided yet (initial render). Treat -1/undefined as "fill".
+  const rootStyle: React.CSSProperties = {
+    height:
+      typeof allocatedHeight === "number" && allocatedHeight > 0
+        ? `${allocatedHeight}px`
+        : "100%",
+    width:
+      typeof allocatedWidth === "number" && allocatedWidth > 0
+        ? `${allocatedWidth}px`
+        : "100%",
+  };
 
   const [prios, setPrios] = React.useState<PrioRow[]>([]);
   const [rds, setRds] = React.useState<RDRow[]>([]);
@@ -260,7 +282,7 @@ export const RequirementFundingTabApp: React.FC<RequirementFundingTabAppProps> =
   if (!parentRequirementId) {
     return (
       <FluentProvider theme={webLightTheme}>
-        <div className="book-rft-root">
+        <div className="book-rft-root" style={rootStyle}>
           <div className="book-rft-empty">
             Save the Requirement to view its funding.
           </div>
@@ -271,7 +293,7 @@ export const RequirementFundingTabApp: React.FC<RequirementFundingTabAppProps> =
 
   return (
     <FluentProvider theme={webLightTheme}>
-      <div className="book-rft-root">
+      <div className="book-rft-root" style={rootStyle}>
         <div className="book-rft-toolbar">
           <Text weight="semibold" size={400}>
             Funding
