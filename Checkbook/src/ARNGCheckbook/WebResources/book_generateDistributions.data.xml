@@ -1,0 +1,15 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<WebResource xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <WebResourceId>{8f548d60-7866-f111-a824-001dd8204df7}</WebResourceId>
+  <Name>book_generateDistributions</Name>
+  <DisplayName>generateDistributions</DisplayName>
+  <Description>Generates Distributions upon click - runs custom API</Description>
+  <WebResourceType>3</WebResourceType>
+  <IntroducedVersion>1.11.0.64</IntroducedVersion>
+  <IsEnabledForMobileClient>0</IsEnabledForMobileClient>
+  <IsAvailableForMobileOffline>0</IsAvailableForMobileOffline>
+  <IsCustomizable>1</IsCustomizable>
+  <CanBeDeleted>1</CanBeDeleted>
+  <IsHidden>0</IsHidden>
+  <FileName>/WebResources/book_generateDistributions8F548D60-7866-F111-A824-001DD8204DF7</FileName>
+</WebResource>

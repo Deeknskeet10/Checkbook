@@ -1,0 +1,41 @@
+<appaction uniquename="book__NewGenerateDistri!98020c7a64334dcb913ab9a5697c101c!book_ARNGCheckbookLedger!book_distributions!1">
+  <appmoduleid>
+    <uniquename>book_ARNGCheckbookLedger</uniquename>
+  </appmoduleid>
+  <buttonaccessibilitytext default="Generates Distributions">
+    <label description="Generates Distributions" languagecode="1033" />
+  </buttonaccessibilitytext>
+  <buttonlabeltext default="New Generate Distributions">
+    <label description="New Generate Distributions" languagecode="1033" />
+  </buttonlabeltext>
+  <buttontooltipdescription default="Runs a custom API plugin to generate Distributions">
+    <label description="Runs a custom API plugin to generate Distributions" languagecode="1033" />
+  </buttontooltipdescription>
+  <buttontooltiptitle default="Generates Distributions">
+    <label description="Generates Distributions" languagecode="1033" />
+  </buttontooltiptitle>
+  <context>1</context>
+  <contextentity>
+    <logicalname>book_distributions</logicalname>
+  </contextentity>
+  <contextvalue>book_distributions</contextvalue>
+  <fonticon>CreateInvoice</fonticon>
+  <hidden>0</hidden>
+  <iscustomizable>1</iscustomizable>
+  <isdisabled>0</isdisabled>
+  <isgrouptitlehidden>0</isgrouptitlehidden>
+  <location>1</location>
+  <name>NewGenerateDistri!98020c7a64334dcb913ab9a5697c101c</name>
+  <onclickeventjavascriptfunctionname>DistributionGenerator.run</onclickeventjavascriptfunctionname>
+  <onclickeventjavascriptparameters>[{"type":5}]</onclickeventjavascriptparameters>
+  <onclickeventjavascriptwebresourceid>
+    <webresourceid>8f548d60-7866-f111-a824-001dd8204df7</webresourceid>
+  </onclickeventjavascriptwebresourceid>
+  <onclickeventtype>2</onclickeventtype>
+  <origin>0</origin>
+  <sequence>1000100010.0000000000</sequence>
+  <statecode>0</statecode>
+  <statuscode>1</statuscode>
+  <type>0</type>
+  <visibilitytype>0</visibilitytype>
+</appaction>

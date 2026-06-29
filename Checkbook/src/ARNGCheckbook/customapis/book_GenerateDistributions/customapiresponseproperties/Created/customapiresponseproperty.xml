@@ -1,0 +1,11 @@
+<customapiresponseproperty uniquename="Created">
+  <description default="Generate Distributions - Created">
+    <label description="Generate Distributions - Created" languagecode="1033" />
+  </description>
+  <displayname default="Generate Distributions - Created">
+    <label description="Generate Distributions - Created" languagecode="1033" />
+  </displayname>
+  <iscustomizable>1</iscustomizable>
+  <name>Generate Distributions - Created</name>
+  <type>7</type>
+</customapiresponseproperty>

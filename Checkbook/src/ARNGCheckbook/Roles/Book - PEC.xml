@@ -12,6 +12,7 @@
     <RolePrivilege name="prvAppendbook_Fund" level="Global" />
     <RolePrivilege name="prvAppendbook_FundCenter" level="Global" />
     <RolePrivilege name="prvAppendbook_FundingLine" level="Local" />
+    <RolePrivilege name="prvAppendbook_GFEBSOBSDOC" level="Local" />
     <RolePrivilege name="prvAppendbook_ItemizedDetails" level="Local" />
     <RolePrivilege name="prvAppendbook_LIN" level="Global" />
     <RolePrivilege name="prvAppendbook_MDEP" level="Global" />
@@ -53,6 +54,7 @@
     <RolePrivilege name="prvAppendTobook_Fund" level="Global" />
     <RolePrivilege name="prvAppendTobook_FundCenter" level="Global" />
     <RolePrivilege name="prvAppendTobook_FundingLine" level="Local" />
+    <RolePrivilege name="prvAppendTobook_GFEBSOBSDOC" level="Local" />
     <RolePrivilege name="prvAppendTobook_ItemizedDetails" level="Global" />
     <RolePrivilege name="prvAppendTobook_LIN" level="Global" />
     <RolePrivilege name="prvAppendTobook_MDEP" level="Global" />
@@ -95,6 +97,7 @@
     <RolePrivilege name="prvAppendWorkflowSession" level="Basic" />
     <RolePrivilege name="prvApproveRejectEmailAddress" level="Local" />
     <RolePrivilege name="prvAssignAsyncOperation" level="Deep" />
+    <RolePrivilege name="prvAssignbook_GFEBSOBSDOC" level="Local" />
     <RolePrivilege name="prvAssignbook_ItemizedDetails" level="Local" />
     <RolePrivilege name="prvAssignbook_ObligationAuthority" level="Local" />
     <RolePrivilege name="prvAssignbook_Realignments" level="Local" />
@@ -115,6 +118,7 @@
     <RolePrivilege name="prvCreatebook_arngcheckbookoprapprovalworkflow" level="Global" />
     <RolePrivilege name="prvCreatebook_arngcheckbookufr" level="Global" />
     <RolePrivilege name="prvCreatebook_arngcheckbookufrvalidation" level="Global" />
+    <RolePrivilege name="prvCreatebook_GFEBSOBSDOC" level="Local" />
     <RolePrivilege name="prvCreatebook_ItemizedDetails" level="Local" />
     <RolePrivilege name="prvCreatebook_ObligationAuthority" level="Local" />
     <RolePrivilege name="prvCreatebook_Prioritization" level="Local" />
@@ -191,6 +195,7 @@
     <RolePrivilege name="prvReadbook_FundingEvent" level="Global" />
     <RolePrivilege name="prvReadbook_FundingLine" level="Deep" />
     <RolePrivilege name="prvReadbook_FundingTrack" level="Global" />
+    <RolePrivilege name="prvReadbook_GFEBSOBSDOC" level="Local" />
     <RolePrivilege name="prvReadbook_Item" level="Global" />
     <RolePrivilege name="prvReadbook_ItemizedDetails" level="Local" />
     <RolePrivilege name="prvReadbook_Ledger" level="Global" />
@@ -276,6 +281,7 @@
     <RolePrivilege name="prvReadWorkflowSession" level="Global" />
     <RolePrivilege name="prvSearchAvailability" level="Global" />
     <RolePrivilege name="prvSendAppNotification" level="Global" />
+    <RolePrivilege name="prvSharebook_GFEBSOBSDOC" level="Local" />
     <RolePrivilege name="prvSharebook_ItemizedDetails" level="Local" />
     <RolePrivilege name="prvSharebook_ObligationAuthority" level="Local" />
     <RolePrivilege name="prvSharebook_Realignments" level="Local" />
@@ -296,6 +302,7 @@
     <RolePrivilege name="prvWritebook_arngcheckbookoprapprovalworkflow" level="Global" />
     <RolePrivilege name="prvWritebook_arngcheckbookufr" level="Global" />
     <RolePrivilege name="prvWritebook_arngcheckbookufrvalidation" level="Global" />
+    <RolePrivilege name="prvWritebook_GFEBSOBSDOC" level="Local" />
     <RolePrivilege name="prvWritebook_ItemizedDetails" level="Local" />
     <RolePrivilege name="prvWritebook_ObligationAuthority" level="Local" />
     <RolePrivilege name="prvWritebook_Prioritization" level="Local" />

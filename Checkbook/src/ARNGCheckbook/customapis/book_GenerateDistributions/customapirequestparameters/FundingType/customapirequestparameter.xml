@@ -1,0 +1,12 @@
+<customapirequestparameter uniquename="FundingType">
+  <description default="Funding Type">
+    <label description="Funding Type" languagecode="1033" />
+  </description>
+  <displayname default="Funding Type">
+    <label description="Funding Type" languagecode="1033" />
+  </displayname>
+  <iscustomizable>1</iscustomizable>
+  <isoptional>1</isoptional>
+  <name>FundingType</name>
+  <type>7</type>
+</customapirequestparameter>

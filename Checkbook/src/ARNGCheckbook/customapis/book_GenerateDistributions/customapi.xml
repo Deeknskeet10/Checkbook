@@ -1,0 +1,18 @@
+<customapi uniquename="book_GenerateDistributions">
+  <allowedcustomprocessingsteptype>2</allowedcustomprocessingsteptype>
+  <bindingtype>0</bindingtype>
+  <description default="Generates Distributions">
+    <label description="Generates Distributions" languagecode="1033" />
+  </description>
+  <displayname default="Generate Distributions">
+    <label description="Generate Distributions" languagecode="1033" />
+  </displayname>
+  <iscustomizable>1</iscustomizable>
+  <isfunction>0</isfunction>
+  <isprivate>0</isprivate>
+  <name>Generate Distributions</name>
+  <plugintypeid>
+    <plugintypeexportkey>ea917e45-df5f-4383-8518-f92de86feb2d</plugintypeexportkey>
+  </plugintypeid>
+  <workflowsdkstepenabled>0</workflowsdkstepenabled>
+</customapi>

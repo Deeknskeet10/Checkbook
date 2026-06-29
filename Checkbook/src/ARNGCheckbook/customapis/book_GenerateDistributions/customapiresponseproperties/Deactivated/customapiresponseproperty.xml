@@ -1,0 +1,11 @@
+<customapiresponseproperty uniquename="Deactivated">
+  <description default="Generate Distributions - Deactivate">
+    <label description="Generate Distributions - Deactivate" languagecode="1033" />
+  </description>
+  <displayname default="Generate Distributions - Deactivate">
+    <label description="Generate Distributions - Deactivate" languagecode="1033" />
+  </displayname>
+  <iscustomizable>1</iscustomizable>
+  <name>Generate Distributions - Deactivate</name>
+  <type>7</type>
+</customapiresponseproperty>

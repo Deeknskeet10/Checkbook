@@ -27,6 +27,10 @@
             <condition attribute="statecode" operator="eq" value="0" />
             <condition attribute="book_requirementapproved" operator="eq" value="1" />
             <condition attribute="book_recertified" operator="eq" value="1" />
+            <condition attribute="book_type" operator="in">
+              <value>5</value>
+              <value>0</value>
+            </condition>
           </filter>
         </entity>
       </fetch>

@@ -59,14 +59,6 @@
                   </labels>
                   <rows>
                     <row />
-                    <row>
-                      <cell id="{c8a25703-6ee4-4c0d-9c42-52bdd6abb10b}" locklevel="0" colspan="1" rowspan="1">
-                        <labels>
-                          <label description="Prioritization" languagecode="1033" />
-                        </labels>
-                        <control id="book_prioritization" classid="{270BD3DB-D9AF-4782-9025-509E298DEC0A}" datafieldname="book_prioritization" disabled="false" />
-                      </cell>
-                    </row>
                   </rows>
                 </section>
               </sections>

@@ -491,7 +491,7 @@
           <ValidForCreateApi>1</ValidForCreateApi>
           <IsCustomField>1</IsCustomField>
           <IsAuditEnabled>1</IsAuditEnabled>
-          <IsSecured>0</IsSecured>
+          <IsSecured>1</IsSecured>
           <IntroducedVersion>1.11.0.28</IntroducedVersion>
           <IsCustomizable>1</IsCustomizable>
           <IsRenameable>1</IsRenameable>
@@ -1168,7 +1168,7 @@
           <ValidForCreateApi>1</ValidForCreateApi>
           <IsCustomField>1</IsCustomField>
           <IsAuditEnabled>1</IsAuditEnabled>
-          <IsSecured>0</IsSecured>
+          <IsSecured>1</IsSecured>
           <IntroducedVersion>1.11.0.28</IntroducedVersion>
           <IsCustomizable>1</IsCustomizable>
           <IsRenameable>1</IsRenameable>
@@ -2077,6 +2077,18 @@
           </EntityKeyAttributes>
           <displaynames>
             <displayname description="uniquePri" languagecode="1033" />
+          </displaynames>
+        </EntityKey>
+        <EntityKey>
+          <Name>book_uniquePrioritizationName</Name>
+          <LogicalName>book_uniqueprioritizationname</LogicalName>
+          <IntroducedVersion>1.11.0.66</IntroducedVersion>
+          <IsCustomizable>0</IsCustomizable>
+          <EntityKeyAttributes>
+            <AttributeName>book_name</AttributeName>
+          </EntityKeyAttributes>
+          <displaynames>
+            <displayname description="uniquePrioritizationName" languagecode="1033" />
           </displaynames>
         </EntityKey>
       </EntityKeys>

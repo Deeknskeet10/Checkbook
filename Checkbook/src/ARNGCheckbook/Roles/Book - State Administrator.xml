@@ -63,6 +63,7 @@
     <RolePrivilege name="prvAppendbook_Fund" level="Global" />
     <RolePrivilege name="prvAppendbook_FundCenter" level="Global" />
     <RolePrivilege name="prvAppendbook_FundingLine" level="Global" />
+    <RolePrivilege name="prvAppendbook_GFEBSOBSDOC" level="Deep" />
     <RolePrivilege name="prvAppendbook_ItemizedDetails" level="Deep" />
     <RolePrivilege name="prvAppendbook_LIN" level="Global" />
     <RolePrivilege name="prvAppendbook_LOEFocusArea" level="Global" />
@@ -253,6 +254,7 @@
     <RolePrivilege name="prvAppendmsdyn_FormMapping" level="Global" />
     <RolePrivilege name="prvAppendmsdyn_function" level="Global" />
     <RolePrivilege name="prvAppendmsdyn_helppage" level="Global" />
+    <RolePrivilege name="prvAppendmsdyn_historicalcaseharvestrunlog" level="Global" />
     <RolePrivilege name="prvAppendmsdyn_InsightsStoreVirtualEntity" level="Global" />
     <RolePrivilege name="prvAppendmsdyn_integratedsearchprovider" level="Global" />
     <RolePrivilege name="prvAppendmsdyn_kalanguagesetting" level="Global" />
@@ -492,6 +494,7 @@
     <RolePrivilege name="prvAppendTobook_Fund" level="Global" />
     <RolePrivilege name="prvAppendTobook_FundCenter" level="Global" />
     <RolePrivilege name="prvAppendTobook_FundingLine" level="Global" />
+    <RolePrivilege name="prvAppendTobook_GFEBSOBSDOC" level="Deep" />
     <RolePrivilege name="prvAppendTobook_ItemizedDetails" level="Deep" />
     <RolePrivilege name="prvAppendTobook_LIN" level="Global" />
     <RolePrivilege name="prvAppendTobook_LOEFocusArea" level="Global" />
@@ -684,6 +687,7 @@
     <RolePrivilege name="prvAppendTomsdyn_FormMapping" level="Global" />
     <RolePrivilege name="prvAppendTomsdyn_function" level="Global" />
     <RolePrivilege name="prvAppendTomsdyn_helppage" level="Global" />
+    <RolePrivilege name="prvAppendTomsdyn_historicalcaseharvestrunlog" level="Global" />
     <RolePrivilege name="prvAppendTomsdyn_InsightsStoreVirtualEntity" level="Global" />
     <RolePrivilege name="prvAppendTomsdyn_integratedsearchprovider" level="Global" />
     <RolePrivilege name="prvAppendTomsdyn_kalanguagesetting" level="Global" />
@@ -932,6 +936,7 @@
     <RolePrivilege name="prvAssignArchiveCleanupInfo" level="Global" />
     <RolePrivilege name="prvAssignArchiveCleanupOperation" level="Global" />
     <RolePrivilege name="prvAssignAsyncOperation" level="Global" />
+    <RolePrivilege name="prvAssignbook_GFEBSOBSDOC" level="Deep" />
     <RolePrivilege name="prvAssignbook_ItemizedDetails" level="Deep" />
     <RolePrivilege name="prvAssignbook_ObligationAuthority" level="Deep" />
     <RolePrivilege name="prvAssignbook_Prioritization" level="Deep" />
@@ -1056,6 +1061,7 @@
     <RolePrivilege name="prvAssignmsdyn_flow_flowapproval" level="Global" />
     <RolePrivilege name="prvAssignmsdyn_FormMapping" level="Global" />
     <RolePrivilege name="prvAssignmsdyn_function" level="Global" />
+    <RolePrivilege name="prvAssignmsdyn_historicalcaseharvestrunlog" level="Global" />
     <RolePrivilege name="prvAssignmsdyn_integratedsearchprovider" level="Global" />
     <RolePrivilege name="prvAssignmsdyn_kalanguagesetting" level="Global" />
     <RolePrivilege name="prvAssignmsdyn_kmfederatedsearchconfig" level="Global" />
@@ -1209,6 +1215,7 @@
     <RolePrivilege name="prvCreatebook_arngcheckbookoprapprovalworkflow" level="Global" />
     <RolePrivilege name="prvCreatebook_arngcheckbookufr" level="Global" />
     <RolePrivilege name="prvCreatebook_arngcheckbookufrvalidation" level="Global" />
+    <RolePrivilege name="prvCreatebook_GFEBSOBSDOC" level="Deep" />
     <RolePrivilege name="prvCreatebook_ItemizedDetails" level="Deep" />
     <RolePrivilege name="prvCreatebook_ObligationAuthority" level="Deep" />
     <RolePrivilege name="prvCreatebook_Prioritization" level="Deep" />
@@ -1392,6 +1399,7 @@
     <RolePrivilege name="prvCreatemsdyn_FormMapping" level="Global" />
     <RolePrivilege name="prvCreatemsdyn_function" level="Global" />
     <RolePrivilege name="prvCreatemsdyn_helppage" level="Global" />
+    <RolePrivilege name="prvCreatemsdyn_historicalcaseharvestrunlog" level="Global" />
     <RolePrivilege name="prvCreatemsdyn_InsightsStoreVirtualEntity" level="Global" />
     <RolePrivilege name="prvCreatemsdyn_integratedsearchprovider" level="Global" />
     <RolePrivilege name="prvCreatemsdyn_kalanguagesetting" level="Global" />
@@ -1655,6 +1663,7 @@
     <RolePrivilege name="prvDeleteAttributeMap" level="Global" />
     <RolePrivilege name="prvDeleteAuthorizationServer" level="Global" />
     <RolePrivilege name="prvDeletebackgroundoperation" level="Global" />
+    <RolePrivilege name="prvDeletebook_GFEBSOBSDOC" level="Deep" />
     <RolePrivilege name="prvDeletebook_Realignments" level="Deep" />
     <RolePrivilege name="prvDeletebook_SpendPlan" level="Deep" />
     <RolePrivilege name="prvDeletebook_Turnin" level="Deep" />
@@ -1825,6 +1834,7 @@
     <RolePrivilege name="prvDeletemsdyn_FormMapping" level="Global" />
     <RolePrivilege name="prvDeletemsdyn_function" level="Global" />
     <RolePrivilege name="prvDeletemsdyn_helppage" level="Global" />
+    <RolePrivilege name="prvDeletemsdyn_historicalcaseharvestrunlog" level="Global" />
     <RolePrivilege name="prvDeletemsdyn_InsightsStoreVirtualEntity" level="Global" />
     <RolePrivilege name="prvDeletemsdyn_integratedsearchprovider" level="Global" />
     <RolePrivilege name="prvDeletemsdyn_kalanguagesetting" level="Global" />
@@ -2120,6 +2130,7 @@
     <RolePrivilege name="prvReadbook_FundingEvent" level="Global" />
     <RolePrivilege name="prvReadbook_FundingLine" level="Global" />
     <RolePrivilege name="prvReadbook_FundingTrack" level="Global" />
+    <RolePrivilege name="prvReadbook_GFEBSOBSDOC" level="Deep" />
     <RolePrivilege name="prvReadbook_Item" level="Global" />
     <RolePrivilege name="prvReadbook_ItemizedDetails" level="Deep" />
     <RolePrivilege name="prvReadbook_Ledger" level="Global" />
@@ -2328,6 +2339,7 @@
     <RolePrivilege name="prvReadmsdyn_flow_flowapproval" level="Global" />
     <RolePrivilege name="prvReadmsdyn_function" level="Global" />
     <RolePrivilege name="prvReadmsdyn_helppage" level="Global" />
+    <RolePrivilege name="prvReadmsdyn_historicalcaseharvestrunlog" level="Global" />
     <RolePrivilege name="prvReadmsdyn_InsightsStoreVirtualEntity" level="Global" />
     <RolePrivilege name="prvReadmsdyn_integratedsearchprovider" level="Global" />
     <RolePrivilege name="prvReadmsdyn_kalanguagesetting" level="Global" />
@@ -2592,6 +2604,7 @@
     <RolePrivilege name="prvShareArchiveCleanupInfo" level="Global" />
     <RolePrivilege name="prvShareArchiveCleanupOperation" level="Global" />
     <RolePrivilege name="prvShareAsyncOperation" level="Global" />
+    <RolePrivilege name="prvSharebook_GFEBSOBSDOC" level="Deep" />
     <RolePrivilege name="prvSharebook_ItemizedDetails" level="Deep" />
     <RolePrivilege name="prvSharebook_ObligationAuthority" level="Deep" />
     <RolePrivilege name="prvSharebook_Prioritization" level="Global" />
@@ -2713,6 +2726,7 @@
     <RolePrivilege name="prvSharemsdyn_flow_flowapproval" level="Global" />
     <RolePrivilege name="prvSharemsdyn_FormMapping" level="Global" />
     <RolePrivilege name="prvSharemsdyn_function" level="Global" />
+    <RolePrivilege name="prvSharemsdyn_historicalcaseharvestrunlog" level="Global" />
     <RolePrivilege name="prvSharemsdyn_integratedsearchprovider" level="Global" />
     <RolePrivilege name="prvSharemsdyn_kalanguagesetting" level="Global" />
     <RolePrivilege name="prvSharemsdyn_kmfederatedsearchconfig" level="Global" />
@@ -2860,6 +2874,7 @@
     <RolePrivilege name="prvWriteAzureServiceConnection" level="Global" />
     <RolePrivilege name="prvWritebackgroundoperation" level="Global" />
     <RolePrivilege name="prvWritebook_arngcheckbookufr" level="Global" />
+    <RolePrivilege name="prvWritebook_GFEBSOBSDOC" level="Deep" />
     <RolePrivilege name="prvWritebook_ItemizedDetails" level="Deep" />
     <RolePrivilege name="prvWritebook_ObligationAuthority" level="Deep" />
     <RolePrivilege name="prvWritebook_Prioritization" level="Deep" />
@@ -3043,6 +3058,7 @@
     <RolePrivilege name="prvWritemsdyn_FormMapping" level="Global" />
     <RolePrivilege name="prvWritemsdyn_function" level="Global" />
     <RolePrivilege name="prvWritemsdyn_helppage" level="Global" />
+    <RolePrivilege name="prvWritemsdyn_historicalcaseharvestrunlog" level="Global" />
     <RolePrivilege name="prvWritemsdyn_InsightsStoreVirtualEntity" level="Global" />
     <RolePrivilege name="prvWritemsdyn_integratedsearchprovider" level="Global" />
     <RolePrivilege name="prvWritemsdyn_kalanguagesetting" level="Global" />

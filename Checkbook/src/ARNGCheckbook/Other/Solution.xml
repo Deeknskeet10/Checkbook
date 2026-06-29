@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<ImportExportXml version="9.2.26044.170" SolutionPackageVersion="9.2" languagecode="1033" generatedBy="CrmLive" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" OrganizationVersion="9.2.26044.170" OrganizationSchemaType="Standard" CRMServerServiceabilityVersion="9.2.26051.00159">
+<ImportExportXml version="9.2.26052.164" SolutionPackageVersion="9.2" languagecode="1033" generatedBy="CrmLive" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" OrganizationVersion="9.2.26052.164" OrganizationSchemaType="Standard" CRMServerServiceabilityVersion="9.2.26052.00164">
   <SolutionManifest>
     <UniqueName>ARNGCheckbook</UniqueName>
     <LocalizedNames>
@@ -8,7 +8,7 @@
     <Descriptions>
       <Description description="Upgrade of ARNG Checkbook" languagecode="1033" />
     </Descriptions>
-    <Version>1.11.0.64</Version>
+    <Version>1.11.0.68</Version>
     <Managed>0</Managed>
     <Publisher>
       <UniqueName>ARNGCheckbook</UniqueName>
@@ -100,6 +100,7 @@
       <RootComponent type="1" schemaName="book_fundingevent" behavior="0" />
       <RootComponent type="1" schemaName="book_fundingline" behavior="0" />
       <RootComponent type="1" schemaName="book_fundingtrack" behavior="0" />
+      <RootComponent type="1" schemaName="book_gfebsobsdoc" behavior="0" />
       <RootComponent type="1" schemaName="book_item" behavior="0" />
       <RootComponent type="1" schemaName="book_itemizeddetails" behavior="0" />
       <RootComponent type="1" schemaName="book_ledger" behavior="0" />
@@ -119,6 +120,7 @@
       <RootComponent type="1" schemaName="book_quantitytype" behavior="0" />
       <RootComponent type="1" schemaName="book_realignments" behavior="0" />
       <RootComponent type="1" schemaName="book_realignmentsreview" behavior="0" />
+      <RootComponent type="1" schemaName="book_requirementdetailfunding" behavior="0" />
       <RootComponent type="1" schemaName="book_requirementdetails" behavior="0" />
       <RootComponent type="1" schemaName="book_requirementfunding" behavior="0" />
       <RootComponent type="1" schemaName="book_requirementfundingvalidatefunding" behavior="0" />
@@ -218,6 +220,7 @@
       <RootComponent type="29" id="{d4dadda2-cf85-4cf6-acc1-82b84158a05f}" behavior="0" />
       <RootComponent type="29" id="{dfa5e343-ed60-f011-bec2-001dd8059413}" behavior="0" />
       <RootComponent type="29" id="{e01f6c9a-8df0-f011-8407-001dd805b06e}" behavior="0" />
+      <RootComponent type="29" id="{e10facce-8869-f111-a824-001dd8204135}" behavior="0" />
       <RootComponent type="29" id="{e7a9b2e5-d846-f011-877a-001dd805a06b}" behavior="0" />
       <RootComponent type="29" id="{ec442d15-901b-f011-998a-001dd805a06b}" behavior="0" />
       <RootComponent type="29" id="{f1255be1-ddbf-f011-bbd3-001dd805a06b}" behavior="0" />
@@ -253,6 +256,7 @@
       <RootComponent type="61" schemaName="book_codesolidfull" behavior="0" />
       <RootComponent type="61" schemaName="book_fileinvoicedollarsolid" behavior="0" />
       <RootComponent type="61" schemaName="book_fund" behavior="0" />
+      <RootComponent type="61" schemaName="book_generateDistributions" behavior="0" />
       <RootComponent type="61" schemaName="book_generateLOAs" behavior="0" />
       <RootComponent type="61" schemaName="book_genManualDistributions" behavior="0" />
       <RootComponent type="61" schemaName="book_hidePriRealignments" behavior="0" />
@@ -270,12 +274,14 @@
       <RootComponent type="61" schemaName="book_personmilitaryriflesolid" behavior="0" />
       <RootComponent type="61" schemaName="book_plusminussolid" behavior="0" />
       <RootComponent type="61" schemaName="book_populateUserBU" behavior="0" />
+      <RootComponent type="61" schemaName="book_Prioritizations" behavior="0" />
       <RootComponent type="61" schemaName="book_realignmentFormProgression" behavior="0" />
       <RootComponent type="61" schemaName="book_recertification" behavior="0" />
       <RootComponent type="61" schemaName="book_reqDetailFieldRequired" behavior="0" />
       <RootComponent type="61" schemaName="book_reqFundLockFields" behavior="0" />
       <RootComponent type="61" schemaName="book_reqFundOnLOAChange" behavior="0" />
       <RootComponent type="61" schemaName="book_requirementFundingValidation" behavior="0" />
+      <RootComponent type="61" schemaName="book_Requirements" behavior="0" />
       <RootComponent type="61" schemaName="book_resetStateUFR" behavior="0" />
       <RootComponent type="61" schemaName="book_rightleftsolidfull" behavior="0" />
       <RootComponent type="61" schemaName="book_rotateleftsolidfull" behavior="0" />
@@ -311,7 +317,9 @@
       <RootComponent type="62" schemaName="book_ARNGCheckbookUnfundedRequests" behavior="0" />
       <RootComponent type="62" schemaName="book_Strawman" behavior="0" />
       <RootComponent type="66" schemaName="book_ARNGCheckbook.ItemizedDetailsGrid" behavior="0" />
+      <RootComponent type="66" schemaName="book_ARNGCheckbook.PrioritizationFundingGrid" behavior="0" />
       <RootComponent type="66" schemaName="book_ARNGCheckbook.PrioritizationsForRequirement" behavior="0" />
+      <RootComponent type="66" schemaName="book_ARNGCheckbook.RequirementDetailFundingGrid" behavior="0" />
       <RootComponent type="66" schemaName="book_ARNGCheckbook.RequirementDetailsRank" behavior="0" />
       <RootComponent type="66" schemaName="book_ARNGCheckbook.ValidateAndFundGrid" behavior="0" />
       <RootComponent type="70" id="{007f55a5-4363-f011-bec2-001dd805a06b}" behavior="0" />
@@ -370,35 +378,54 @@
       <RootComponent type="9" schemaName="book_weeksinamonth" behavior="0" />
       <RootComponent type="91" id="{6836b59c-ded0-4517-b69b-37233137a49c}" schemaName="Checkbook_Plugins, Version=1.1.0.0, Culture=neutral, PublicKeyToken=041fde141b612e28" behavior="0" />
       <RootComponent type="92" id="{06566157-b652-f111-bec6-001dd8204135}" behavior="0" />
+      <RootComponent type="92" id="{0718edeb-7366-f111-a824-001dd8204135}" behavior="0" />
       <RootComponent type="92" id="{0a7ba1d8-b552-f111-bec6-001dd8204135}" behavior="0" />
+      <RootComponent type="92" id="{0aab2911-7166-f111-a824-001dd8204135}" behavior="0" />
       <RootComponent type="92" id="{0be5ed06-2853-f111-bec5-001dd8204df7}" behavior="0" />
       <RootComponent type="92" id="{14c0c4d9-b752-f111-bec5-001dd8204df7}" behavior="0" />
       <RootComponent type="92" id="{14f5813c-b552-f111-bec6-001dd8204135}" behavior="0" />
       <RootComponent type="92" id="{15d92cbf-2753-f111-bec5-001dd8204df7}" behavior="0" />
+      <RootComponent type="92" id="{19d42e67-7066-f111-a824-001dd8204135}" behavior="0" />
+      <RootComponent type="92" id="{24055826-766e-f111-ab0d-001dd8204df7}" behavior="0" />
       <RootComponent type="92" id="{295041df-5660-f111-a823-001dd8204df7}" behavior="0" />
+      <RootComponent type="92" id="{2b705cdf-6f6e-f111-ab0d-001dd8201529}" behavior="0" />
       <RootComponent type="92" id="{2ec0842c-b852-f111-bec6-001dd8204135}" behavior="0" />
       <RootComponent type="92" id="{2ed081db-b852-f111-bec6-001dd8204135}" behavior="0" />
       <RootComponent type="92" id="{33776d65-2753-f111-bec5-001dd8204df7}" behavior="0" />
+      <RootComponent type="92" id="{3ff5d9cf-7166-f111-a824-001dd8204df7}" behavior="0" />
       <RootComponent type="92" id="{42b5bc25-b752-f111-bec5-001dd8204df7}" behavior="0" />
+      <RootComponent type="92" id="{4327b08b-716e-f111-ab0d-001dd8204135}" behavior="0" />
       <RootComponent type="92" id="{4c7b07a6-b552-f111-bec5-001dd8204df7}" behavior="0" />
       <RootComponent type="92" id="{590fe6af-b752-f111-bec5-001dd8204df7}" behavior="0" />
+      <RootComponent type="92" id="{5a5f3860-706e-f111-ab0d-001dd8204df7}" behavior="0" />
+      <RootComponent type="92" id="{5aaaf1d0-7366-f111-a824-001dd8204df7}" behavior="0" />
       <RootComponent type="92" id="{5da3e67d-b752-f111-bec6-001dd8204135}" behavior="0" />
+      <RootComponent type="92" id="{5f40830f-766e-f111-ab0d-001dd8204135}" behavior="0" />
       <RootComponent type="92" id="{6182bc4a-b852-f111-bec6-001dd8204135}" behavior="0" />
+      <RootComponent type="92" id="{66887b29-6f66-f111-a824-001dd8204135}" behavior="0" />
       <RootComponent type="92" id="{691d0b68-b752-f111-bec5-001dd8204df7}" behavior="0" />
       <RootComponent type="92" id="{6fabe7ec-2753-f111-bec6-001dd8204135}" behavior="0" />
+      <RootComponent type="92" id="{72fe82e6-7066-f111-a824-001dd8204df7}" behavior="0" />
       <RootComponent type="92" id="{7d550a51-2753-f111-bec6-001dd8201529}" behavior="0" />
       <RootComponent type="92" id="{8052cec1-3b64-f111-a824-001dd8201529}" behavior="0" />
+      <RootComponent type="92" id="{8275d0d5-6e66-f111-a824-001dd8204df7}" behavior="0" />
+      <RootComponent type="92" id="{875924f0-756e-f111-ab0d-001dd8204135}" behavior="0" />
       <RootComponent type="92" id="{8ae21253-565f-f111-bec6-001dd8201529}" behavior="0" />
       <RootComponent type="92" id="{8e5ef211-b652-f111-bec5-001dd8204df7}" behavior="0" />
       <RootComponent type="92" id="{9a51a2f7-b752-f111-bec5-001dd8204df7}" behavior="0" />
+      <RootComponent type="92" id="{acc303e7-6f66-f111-a824-001dd8204135}" behavior="0" />
       <RootComponent type="92" id="{b5e99323-b952-f111-bec6-001dd8204135}" behavior="0" />
       <RootComponent type="92" id="{b7d5391e-b552-f111-bec6-001dd8204135}" behavior="0" />
+      <RootComponent type="92" id="{bfdee3b9-6f6e-f111-ab0d-001dd8204135}" behavior="0" />
       <RootComponent type="92" id="{c36753d1-b652-f111-bec5-001dd8204df7}" behavior="0" />
       <RootComponent type="92" id="{c6508389-b652-f111-bec5-001dd8204df7}" behavior="0" />
+      <RootComponent type="92" id="{cd6ee4d0-7266-f111-a824-001dd8204df7}" behavior="0" />
+      <RootComponent type="92" id="{ce1c4577-6e66-f111-a824-001dd8201529}" behavior="0" />
       <RootComponent type="92" id="{d13614f4-b552-f111-bec5-001dd8204df7}" behavior="0" />
       <RootComponent type="92" id="{d341884e-b552-f111-bec6-001dd8204135}" behavior="0" />
       <RootComponent type="92" id="{db034ca9-5660-f111-a823-001dd8204df7}" behavior="0" />
       <RootComponent type="92" id="{dfb732ab-b852-f111-bec6-001dd8204135}" behavior="0" />
+      <RootComponent type="92" id="{e5b2def6-716e-f111-ab0d-001dd8204df7}" behavior="0" />
       <RootComponent type="92" id="{e9a097bc-b452-f111-bec5-001dd8204df7}" behavior="0" />
       <RootComponent type="92" id="{f2be9007-b752-f111-bec5-001dd8204df7}" behavior="0" />
       <RootComponent type="92" id="{f9b09535-2753-f111-bec5-001dd8204df7}" behavior="0" />
@@ -406,10 +433,6 @@
       <RootComponent type="92" id="{fabe9faa-b452-f111-bec5-001dd8204df7}" behavior="0" />
     </RootComponents>
     <MissingDependencies>
-      <MissingDependency>
-        <Required type="1" schemaName="apmo_avb" displayName="AVB" solution="Active" />
-        <Dependent type="1" schemaName="book_opr" displayName="OPR" />
-      </MissingDependency>
       <MissingDependency>
         <Required type="1" schemaName="apmo_avb" displayName="AVB" solution="Active" />
         <Dependent type="1" schemaName="book_state" displayName="State" />
@@ -617,20 +640,20 @@
         <Dependent type="80" schemaName="book_Strawman" displayName="ARNG Checkbook - Strawman" />
       </MissingDependency>
       <MissingDependency>
-        <Required type="61" schemaName="msdyncrm_/KnowledgeArticleSubgrid/Hierarchy_16.svg" displayName="msdyncrm_/KnowledgeArticleSubgrid/Hierarchy_16.svg" solution="msdynce_KnowledgeManagementFeatures (9.0.26044.3023)">
-          <package appName="msdynce_KnowledgeManagement" version="9.0.26044.3023">msdynce_KnowledgeManagementAnchor (9.0.26044.3023)</package>
+        <Required type="61" schemaName="msdyncrm_/KnowledgeArticleSubgrid/Hierarchy_16.svg" displayName="msdyncrm_/KnowledgeArticleSubgrid/Hierarchy_16.svg" solution="msdynce_KnowledgeManagementFeatures (9.0.26052.3036)">
+          <package appName="msdynce_KnowledgeManagement" version="9.0.26052.3036">msdynce_KnowledgeManagementAnchor (9.0.26052.3036)</package>
         </Required>
         <Dependent type="1" schemaName="book_prioritization" displayName="Prioritization" />
       </MissingDependency>
       <MissingDependency>
-        <Required type="66" schemaName="MscrmControls.FieldControls.CheckboxControl" displayName="MscrmControls.FieldControls.CheckboxControl" solution="BaseCustomControlsCore (9.0.2604.4004)">
-          <package appName="Base Custom Controls" version="9.0.2604.4004">BaseCustomControlsCore (9.0.2604.4004)</package>
+        <Required type="66" schemaName="MscrmControls.FieldControls.CheckboxControl" displayName="MscrmControls.FieldControls.CheckboxControl" solution="BaseCustomControlsCore (9.0.2605.2010)">
+          <package appName="Base Custom Controls" version="9.0.2605.2010">BaseCustomControlsCore (9.0.2605.2010)</package>
         </Required>
         <Dependent type="60" displayName="Information" parentDisplayName="Funding Event" id="{a4b26f66-797c-4b39-875a-5f8b9646942f}" />
       </MissingDependency>
       <MissingDependency>
-        <Required type="66" schemaName="MscrmControls.OptionSet.OptionSetControl" displayName="MscrmControls.OptionSet.OptionSetControl" solution="CustomControlsCore (9.2.26044.00170)">
-          <package appName="Custom Controls Package" version="9.2.26044.00170">CustomControlsCore (9.2.26044.00170)</package>
+        <Required type="66" schemaName="MscrmControls.OptionSet.OptionSetControl" displayName="MscrmControls.OptionSet.OptionSetControl" solution="CustomControlsCore (9.2.26052.00164)">
+          <package appName="Custom Controls Package" version="9.2.26052.00164">CustomControlsCore (9.2.26052.00164)</package>
         </Required>
         <Dependent type="60" displayName="UFR - State" parentDisplayName="Unfunded Requests" id="{290d4184-6941-f011-b4cc-001dd8059413}" />
       </MissingDependency>
@@ -780,92 +803,92 @@
         <Dependent type="AppSetting" displayName="parentappmoduleid.uniquename=book_ARNGCheckbookUnfundedRequests,settingdefinitionid.uniquename=AllowNotificationsEarlyAccess" id.parentappmoduleid.uniquename="book_ARNGCheckbookUnfundedRequests" id.settingdefinitionid.uniquename="AllowNotificationsEarlyAccess" />
       </MissingDependency>
       <MissingDependency>
-        <Required type="SettingDefinition" displayName="AppChannel" solution="msdyn_AppFrameworkInfraExtensions (1.0.0.16)" id.uniquename="AppChannel">
+        <Required type="SettingDefinition" displayName="AppChannel" solution="msdyn_AppFrameworkInfraExtensions (1.0.0.17)" id.uniquename="AppChannel">
           <package appName="PowerAppsAppFramework Package" version="1.0.0.25">PowerAppsAppFramework_Anchor (1.0.0.25)</package>
         </Required>
         <Dependent type="AppSetting" displayName="parentappmoduleid.uniquename=book_1toNStates,settingdefinitionid.uniquename=AppChannel" id.parentappmoduleid.uniquename="book_1toNStates" id.settingdefinitionid.uniquename="AppChannel" />
       </MissingDependency>
       <MissingDependency>
-        <Required type="SettingDefinition" displayName="AppChannel" solution="msdyn_AppFrameworkInfraExtensions (1.0.0.16)" id.uniquename="AppChannel">
+        <Required type="SettingDefinition" displayName="AppChannel" solution="msdyn_AppFrameworkInfraExtensions (1.0.0.17)" id.uniquename="AppChannel">
           <package appName="PowerAppsAppFramework Package" version="1.0.0.25">PowerAppsAppFramework_Anchor (1.0.0.25)</package>
         </Required>
         <Dependent type="AppSetting" displayName="parentappmoduleid.uniquename=book_ARNGCheckbook,settingdefinitionid.uniquename=AppChannel" id.parentappmoduleid.uniquename="book_ARNGCheckbook" id.settingdefinitionid.uniquename="AppChannel" />
       </MissingDependency>
       <MissingDependency>
-        <Required type="SettingDefinition" displayName="AppChannel" solution="msdyn_AppFrameworkInfraExtensions (1.0.0.16)" id.uniquename="AppChannel">
+        <Required type="SettingDefinition" displayName="AppChannel" solution="msdyn_AppFrameworkInfraExtensions (1.0.0.17)" id.uniquename="AppChannel">
           <package appName="PowerAppsAppFramework Package" version="1.0.0.25">PowerAppsAppFramework_Anchor (1.0.0.25)</package>
         </Required>
         <Dependent type="AppSetting" displayName="parentappmoduleid.uniquename=book_ARNGCheckbookAdminCenter,settingdefinitionid.uniquename=AppChannel" id.parentappmoduleid.uniquename="book_ARNGCheckbookAdminCenter" id.settingdefinitionid.uniquename="AppChannel" />
       </MissingDependency>
       <MissingDependency>
-        <Required type="SettingDefinition" displayName="AppChannel" solution="msdyn_AppFrameworkInfraExtensions (1.0.0.16)" id.uniquename="AppChannel">
+        <Required type="SettingDefinition" displayName="AppChannel" solution="msdyn_AppFrameworkInfraExtensions (1.0.0.17)" id.uniquename="AppChannel">
           <package appName="PowerAppsAppFramework Package" version="1.0.0.25">PowerAppsAppFramework_Anchor (1.0.0.25)</package>
         </Required>
         <Dependent type="AppSetting" displayName="parentappmoduleid.uniquename=book_ARNGCheckbookLedger,settingdefinitionid.uniquename=AppChannel" id.parentappmoduleid.uniquename="book_ARNGCheckbookLedger" id.settingdefinitionid.uniquename="AppChannel" />
       </MissingDependency>
       <MissingDependency>
-        <Required type="SettingDefinition" displayName="AppChannel" solution="msdyn_AppFrameworkInfraExtensions (1.0.0.16)" id.uniquename="AppChannel">
+        <Required type="SettingDefinition" displayName="AppChannel" solution="msdyn_AppFrameworkInfraExtensions (1.0.0.17)" id.uniquename="AppChannel">
           <package appName="PowerAppsAppFramework Package" version="1.0.0.25">PowerAppsAppFramework_Anchor (1.0.0.25)</package>
         </Required>
         <Dependent type="AppSetting" displayName="parentappmoduleid.uniquename=book_ARNGCheckbookSpendPlans,settingdefinitionid.uniquename=AppChannel" id.parentappmoduleid.uniquename="book_ARNGCheckbookSpendPlans" id.settingdefinitionid.uniquename="AppChannel" />
       </MissingDependency>
       <MissingDependency>
-        <Required type="SettingDefinition" displayName="AppChannel" solution="msdyn_AppFrameworkInfraExtensions (1.0.0.16)" id.uniquename="AppChannel">
+        <Required type="SettingDefinition" displayName="AppChannel" solution="msdyn_AppFrameworkInfraExtensions (1.0.0.17)" id.uniquename="AppChannel">
           <package appName="PowerAppsAppFramework Package" version="1.0.0.25">PowerAppsAppFramework_Anchor (1.0.0.25)</package>
         </Required>
         <Dependent type="AppSetting" displayName="parentappmoduleid.uniquename=book_ARNGCheckbookUnfundedRequests,settingdefinitionid.uniquename=AppChannel" id.parentappmoduleid.uniquename="book_ARNGCheckbookUnfundedRequests" id.settingdefinitionid.uniquename="AppChannel" />
       </MissingDependency>
       <MissingDependency>
-        <Required type="SettingDefinition" displayName="AppChannel" solution="msdyn_AppFrameworkInfraExtensions (1.0.0.16)" id.uniquename="AppChannel">
+        <Required type="SettingDefinition" displayName="AppChannel" solution="msdyn_AppFrameworkInfraExtensions (1.0.0.17)" id.uniquename="AppChannel">
           <package appName="PowerAppsAppFramework Package" version="1.0.0.25">PowerAppsAppFramework_Anchor (1.0.0.25)</package>
         </Required>
         <Dependent type="AppSetting" displayName="parentappmoduleid.uniquename=book_Strawman,settingdefinitionid.uniquename=AppChannel" id.parentappmoduleid.uniquename="book_Strawman" id.settingdefinitionid.uniquename="AppChannel" />
       </MissingDependency>
       <MissingDependency>
-        <Required type="SettingDefinition" displayName="HeaderAndNavigationRefresh" solution="msdyn_AppFrameworkInfraExtensions (1.0.0.16)" id.uniquename="HeaderAndNavigationRefresh">
+        <Required type="SettingDefinition" displayName="HeaderAndNavigationRefresh" solution="msdyn_AppFrameworkInfraExtensions (1.0.0.17)" id.uniquename="HeaderAndNavigationRefresh">
           <package appName="PowerAppsAppFramework Package" version="1.0.0.25">PowerAppsAppFramework_Anchor (1.0.0.25)</package>
         </Required>
         <Dependent type="AppSetting" displayName="parentappmoduleid.uniquename=book_1toNStates,settingdefinitionid.uniquename=HeaderAndNavigationRefresh" id.parentappmoduleid.uniquename="book_1toNStates" id.settingdefinitionid.uniquename="HeaderAndNavigationRefresh" />
       </MissingDependency>
       <MissingDependency>
-        <Required type="SettingDefinition" displayName="HeaderAndNavigationRefresh" solution="msdyn_AppFrameworkInfraExtensions (1.0.0.16)" id.uniquename="HeaderAndNavigationRefresh">
+        <Required type="SettingDefinition" displayName="HeaderAndNavigationRefresh" solution="msdyn_AppFrameworkInfraExtensions (1.0.0.17)" id.uniquename="HeaderAndNavigationRefresh">
           <package appName="PowerAppsAppFramework Package" version="1.0.0.25">PowerAppsAppFramework_Anchor (1.0.0.25)</package>
         </Required>
         <Dependent type="AppSetting" displayName="parentappmoduleid.uniquename=book_ARNGCheckbook,settingdefinitionid.uniquename=HeaderAndNavigationRefresh" id.parentappmoduleid.uniquename="book_ARNGCheckbook" id.settingdefinitionid.uniquename="HeaderAndNavigationRefresh" />
       </MissingDependency>
       <MissingDependency>
-        <Required type="SettingDefinition" displayName="HeaderAndNavigationRefresh" solution="msdyn_AppFrameworkInfraExtensions (1.0.0.16)" id.uniquename="HeaderAndNavigationRefresh">
+        <Required type="SettingDefinition" displayName="HeaderAndNavigationRefresh" solution="msdyn_AppFrameworkInfraExtensions (1.0.0.17)" id.uniquename="HeaderAndNavigationRefresh">
           <package appName="PowerAppsAppFramework Package" version="1.0.0.25">PowerAppsAppFramework_Anchor (1.0.0.25)</package>
         </Required>
         <Dependent type="AppSetting" displayName="parentappmoduleid.uniquename=book_ARNGCheckbookAdminCenter,settingdefinitionid.uniquename=HeaderAndNavigationRefresh" id.parentappmoduleid.uniquename="book_ARNGCheckbookAdminCenter" id.settingdefinitionid.uniquename="HeaderAndNavigationRefresh" />
       </MissingDependency>
       <MissingDependency>
-        <Required type="SettingDefinition" displayName="HeaderAndNavigationRefresh" solution="msdyn_AppFrameworkInfraExtensions (1.0.0.16)" id.uniquename="HeaderAndNavigationRefresh">
+        <Required type="SettingDefinition" displayName="HeaderAndNavigationRefresh" solution="msdyn_AppFrameworkInfraExtensions (1.0.0.17)" id.uniquename="HeaderAndNavigationRefresh">
           <package appName="PowerAppsAppFramework Package" version="1.0.0.25">PowerAppsAppFramework_Anchor (1.0.0.25)</package>
         </Required>
         <Dependent type="AppSetting" displayName="parentappmoduleid.uniquename=book_ARNGCheckbookLedger,settingdefinitionid.uniquename=HeaderAndNavigationRefresh" id.parentappmoduleid.uniquename="book_ARNGCheckbookLedger" id.settingdefinitionid.uniquename="HeaderAndNavigationRefresh" />
       </MissingDependency>
       <MissingDependency>
-        <Required type="SettingDefinition" displayName="msdyn_TimelineModernization" solution="msdyn_TimelineExtended (9.0.26044.1027)" id.uniquename="msdyn_TimelineModernization">
-          <package appName="msdyn_CustomControlsExtended" version="9.0.26044.1027">msdyn_TimelineExtended (9.0.26044.1027)</package>
+        <Required type="SettingDefinition" displayName="msdyn_TimelineModernization" solution="msdyn_TimelineExtended (9.0.26052.1017)" id.uniquename="msdyn_TimelineModernization">
+          <package appName="msdyn_CustomControlsExtended" version="9.0.26052.1017">msdyn_TimelineExtended (9.0.26052.1017)</package>
         </Required>
         <Dependent type="AppSetting" displayName="parentappmoduleid.uniquename=book_1toNStates,settingdefinitionid.uniquename=msdyn_TimelineModernization" id.parentappmoduleid.uniquename="book_1toNStates" id.settingdefinitionid.uniquename="msdyn_TimelineModernization" />
       </MissingDependency>
       <MissingDependency>
-        <Required type="SettingDefinition" displayName="msdyn_TimelineModernization" solution="msdyn_TimelineExtended (9.0.26044.1027)" id.uniquename="msdyn_TimelineModernization">
-          <package appName="msdyn_CustomControlsExtended" version="9.0.26044.1027">msdyn_TimelineExtended (9.0.26044.1027)</package>
+        <Required type="SettingDefinition" displayName="msdyn_TimelineModernization" solution="msdyn_TimelineExtended (9.0.26052.1017)" id.uniquename="msdyn_TimelineModernization">
+          <package appName="msdyn_CustomControlsExtended" version="9.0.26052.1017">msdyn_TimelineExtended (9.0.26052.1017)</package>
         </Required>
         <Dependent type="AppSetting" displayName="parentappmoduleid.uniquename=book_ARNGCheckbook,settingdefinitionid.uniquename=msdyn_TimelineModernization" id.parentappmoduleid.uniquename="book_ARNGCheckbook" id.settingdefinitionid.uniquename="msdyn_TimelineModernization" />
       </MissingDependency>
       <MissingDependency>
-        <Required type="SettingDefinition" displayName="msdyn_TimelineModernization" solution="msdyn_TimelineExtended (9.0.26044.1027)" id.uniquename="msdyn_TimelineModernization">
-          <package appName="msdyn_CustomControlsExtended" version="9.0.26044.1027">msdyn_TimelineExtended (9.0.26044.1027)</package>
+        <Required type="SettingDefinition" displayName="msdyn_TimelineModernization" solution="msdyn_TimelineExtended (9.0.26052.1017)" id.uniquename="msdyn_TimelineModernization">
+          <package appName="msdyn_CustomControlsExtended" version="9.0.26052.1017">msdyn_TimelineExtended (9.0.26052.1017)</package>
         </Required>
         <Dependent type="AppSetting" displayName="parentappmoduleid.uniquename=book_ARNGCheckbookAdminCenter,settingdefinitionid.uniquename=msdyn_TimelineModernization" id.parentappmoduleid.uniquename="book_ARNGCheckbookAdminCenter" id.settingdefinitionid.uniquename="msdyn_TimelineModernization" />
       </MissingDependency>
       <MissingDependency>
-        <Required type="SettingDefinition" displayName="msdyn_TimelineModernization" solution="msdyn_TimelineExtended (9.0.26044.1027)" id.uniquename="msdyn_TimelineModernization">
-          <package appName="msdyn_CustomControlsExtended" version="9.0.26044.1027">msdyn_TimelineExtended (9.0.26044.1027)</package>
+        <Required type="SettingDefinition" displayName="msdyn_TimelineModernization" solution="msdyn_TimelineExtended (9.0.26052.1017)" id.uniquename="msdyn_TimelineModernization">
+          <package appName="msdyn_CustomControlsExtended" version="9.0.26052.1017">msdyn_TimelineExtended (9.0.26052.1017)</package>
         </Required>
         <Dependent type="AppSetting" displayName="parentappmoduleid.uniquename=book_ARNGCheckbookLedger,settingdefinitionid.uniquename=msdyn_TimelineModernization" id.parentappmoduleid.uniquename="book_ARNGCheckbookLedger" id.settingdefinitionid.uniquename="msdyn_TimelineModernization" />
       </MissingDependency>

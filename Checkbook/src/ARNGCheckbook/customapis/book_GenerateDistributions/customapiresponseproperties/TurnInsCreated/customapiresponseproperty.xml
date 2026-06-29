@@ -1,0 +1,11 @@
+<customapiresponseproperty uniquename="TurnInsCreated">
+  <description default="Generate Distributions - TurnIns">
+    <label description="Generate Distributions - TurnIns" languagecode="1033" />
+  </description>
+  <displayname default="Generate Distributions - TurnIns">
+    <label description="Generate Distributions - TurnIns" languagecode="1033" />
+  </displayname>
+  <iscustomizable>1</iscustomizable>
+  <name>Generate Distributions - TurnIns</name>
+  <type>7</type>
+</customapiresponseproperty>

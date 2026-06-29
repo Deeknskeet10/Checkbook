@@ -16,7 +16,7 @@
               <sections>
                 <section showlabel="true" showbar="false" IsUserDefined="0" id="{7bb6d946-cf5e-4b2d-ae05-9664d487151c}">
                   <labels>
-                    <label description="Funding Information" languagecode="1033" />
+                    <label description="Requirement Information" languagecode="1033" />
                   </labels>
                   <rows>
                     <row>
@@ -28,35 +28,19 @@
                       </cell>
                     </row>
                     <row>
-                      <cell id="{e222ccc1-7055-4369-b43f-f93c4116f613}" locklevel="0" colspan="1" rowspan="1">
+                      <cell id="{e788edc3-b3c9-438d-88bf-635b766ed1f8}" locklevel="0" colspan="1" rowspan="1">
                         <labels>
-                          <label description="TDC" languagecode="1033" />
+                          <label description="Quantity Type" languagecode="1033" />
                         </labels>
-                        <control id="book_tdc" classid="{270BD3DB-D9AF-4782-9025-509E298DEC0A}" datafieldname="book_tdc" disabled="false" />
+                        <control id="book_quantitytype" classid="{270BD3DB-D9AF-4782-9025-509E298DEC0A}" datafieldname="book_quantitytype" disabled="false" />
                       </cell>
                     </row>
                     <row>
-                      <cell id="{e978fb70-b7e7-4b24-8b27-8f8f4aa4636b}" locklevel="0" colspan="1" rowspan="1">
+                      <cell id="{cc8d2456-6d6d-447e-9186-afe3b18f0067}" locklevel="0" colspan="1" rowspan="1">
                         <labels>
-                          <label description="Deprecated - RVB" languagecode="1033" />
+                          <label description="Description" languagecode="1033" />
                         </labels>
-                        <control id="book_temprvb" classid="{4273EDBD-AC1D-40D3-9FB2-095C621B552D}" datafieldname="book_temprvb" disabled="false" />
-                      </cell>
-                    </row>
-                    <row>
-                      <cell id="{54765459-81ba-4e25-afdf-d39161737fd8}" locklevel="0" colspan="1" rowspan="1">
-                        <labels>
-                          <label description="WBS Number" languagecode="1033" />
-                        </labels>
-                        <control id="book_wbsnumber" classid="{4273EDBD-AC1D-40D3-9FB2-095C621B552D}" datafieldname="book_wbsnumber" disabled="false" />
-                      </cell>
-                    </row>
-                    <row>
-                      <cell id="{d86422e4-40e6-4890-9d22-2325e5d69fb7}" locklevel="0" colspan="1" rowspan="1">
-                        <labels>
-                          <label description="APE" languagecode="1033" />
-                        </labels>
-                        <control id="book_ape" classid="{270BD3DB-D9AF-4782-9025-509E298DEC0A}" datafieldname="book_ape" disabled="false" />
+                        <control id="book_description" classid="{E0DECE4B-6FC8-4A8F-A065-082708572369}" datafieldname="book_description" disabled="false" />
                       </cell>
                     </row>
                     <row>

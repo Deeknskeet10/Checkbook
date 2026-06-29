@@ -1,0 +1,11 @@
+<customapiresponseproperty uniquename="Skipped">
+  <description default="Generate Distributions - Skipped">
+    <label description="Generate Distributions - Skipped" languagecode="1033" />
+  </description>
+  <displayname default="Generate Distributions - Skipped">
+    <label description="Generate Distributions - Skipped" languagecode="1033" />
+  </displayname>
+  <iscustomizable>1</iscustomizable>
+  <name>Generate Distributions - Skipped</name>
+  <type>7</type>
+</customapiresponseproperty>

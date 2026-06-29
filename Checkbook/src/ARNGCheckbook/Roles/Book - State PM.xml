@@ -15,6 +15,7 @@
     <RolePrivilege name="prvAppendbook_Fund" level="Global" />
     <RolePrivilege name="prvAppendbook_FundCenter" level="Global" />
     <RolePrivilege name="prvAppendbook_FundingLine" level="Global" />
+    <RolePrivilege name="prvAppendbook_GFEBSOBSDOC" level="Local" />
     <RolePrivilege name="prvAppendbook_ItemizedDetails" level="Local" />
     <RolePrivilege name="prvAppendbook_LIN" level="Global" />
     <RolePrivilege name="prvAppendbook_LOEFocusArea" level="Global" />
@@ -66,6 +67,7 @@
     <RolePrivilege name="prvAppendTobook_Fund" level="Global" />
     <RolePrivilege name="prvAppendTobook_FundCenter" level="Global" />
     <RolePrivilege name="prvAppendTobook_FundingLine" level="Global" />
+    <RolePrivilege name="prvAppendTobook_GFEBSOBSDOC" level="Local" />
     <RolePrivilege name="prvAppendTobook_ItemizedDetails" level="Local" />
     <RolePrivilege name="prvAppendTobook_LIN" level="Global" />
     <RolePrivilege name="prvAppendTobook_LOEFocusArea" level="Global" />
@@ -118,6 +120,7 @@
     <RolePrivilege name="prvAssignActivity" level="Basic" />
     <RolePrivilege name="prvAssignactivityfileattachment" level="Basic" />
     <RolePrivilege name="prvAssignAsyncOperation" level="Basic" />
+    <RolePrivilege name="prvAssignbook_GFEBSOBSDOC" level="Local" />
     <RolePrivilege name="prvAssignbook_ItemizedDetails" level="Local" />
     <RolePrivilege name="prvAssignbook_ObligationAuthority" level="Local" />
     <RolePrivilege name="prvAssignbook_Prioritization" level="Local" />
@@ -146,6 +149,7 @@
     <RolePrivilege name="prvCreatebook_arngcheckbookoprapprovalworkflow" level="Global" />
     <RolePrivilege name="prvCreatebook_arngcheckbookufr" level="Global" />
     <RolePrivilege name="prvCreatebook_arngcheckbookufrvalidation" level="Global" />
+    <RolePrivilege name="prvCreatebook_GFEBSOBSDOC" level="Local" />
     <RolePrivilege name="prvCreatebook_ItemizedDetails" level="Local" />
     <RolePrivilege name="prvCreatebook_ObligationAuthority" level="Local" />
     <RolePrivilege name="prvCreatebook_Prioritization" level="Basic" />
@@ -185,6 +189,7 @@
     <RolePrivilege name="prvCreateWorkflowSession" level="Basic" />
     <RolePrivilege name="prvDeleteActivity" level="Basic" />
     <RolePrivilege name="prvDeleteactivityfileattachment" level="Basic" />
+    <RolePrivilege name="prvDeletebook_GFEBSOBSDOC" level="Basic" />
     <RolePrivilege name="prvDeleteEmailSignature" level="Basic" />
     <RolePrivilege name="prvDeleteEmailTemplate" level="Basic" />
     <RolePrivilege name="prvDeleteExchangeSyncIdMapping" level="Basic" />
@@ -233,6 +238,7 @@
     <RolePrivilege name="prvReadbook_FundingEvent" level="Global" />
     <RolePrivilege name="prvReadbook_FundingLine" level="Global" />
     <RolePrivilege name="prvReadbook_FundingTrack" level="Global" />
+    <RolePrivilege name="prvReadbook_GFEBSOBSDOC" level="Deep" />
     <RolePrivilege name="prvReadbook_Item" level="Global" />
     <RolePrivilege name="prvReadbook_ItemizedDetails" level="Local" />
     <RolePrivilege name="prvReadbook_Ledger" level="Global" />
@@ -327,6 +333,7 @@
     <RolePrivilege name="prvSendAppNotification" level="Global" />
     <RolePrivilege name="prvShareActivity" level="Global" />
     <RolePrivilege name="prvShareactivityfileattachment" level="Global" />
+    <RolePrivilege name="prvSharebook_GFEBSOBSDOC" level="Local" />
     <RolePrivilege name="prvSharebook_ItemizedDetails" level="Local" />
     <RolePrivilege name="prvSharebook_ObligationAuthority" level="Local" />
     <RolePrivilege name="prvSharebook_Prioritization" level="Local" />
@@ -352,6 +359,7 @@
     <RolePrivilege name="prvWriteAppUserSetting" level="Global" />
     <RolePrivilege name="prvWriteAsyncOperation" level="Basic" />
     <RolePrivilege name="prvWritebook_arngcheckbookufr" level="Global" />
+    <RolePrivilege name="prvWritebook_GFEBSOBSDOC" level="Local" />
     <RolePrivilege name="prvWritebook_ItemizedDetails" level="Local" />
     <RolePrivilege name="prvWritebook_ObligationAuthority" level="Local" />
     <RolePrivilege name="prvWritebook_Prioritization" level="Basic" />

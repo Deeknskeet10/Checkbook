@@ -14,8 +14,14 @@
     <PluginType AssemblyQualifiedName="Checkbook.Plugins.Items.ItemizedDetailsSynchronizer, Checkbook_Plugins, Version=1.1.0.0, Culture=neutral, PublicKeyToken=041fde141b612e28" PluginTypeId="12e117ff-a378-45ce-8da8-ac99878544a1" Name="Checkbook.Plugins.Items.ItemizedDetailsSynchronizer">
       <FriendlyName>7e1b35ac-fd65-4522-90de-09900f45ce9f</FriendlyName>
     </PluginType>
+    <PluginType AssemblyQualifiedName="Checkbook.Plugins.Items.PrioritizationFundCenterBackfill, Checkbook_Plugins, Version=1.1.0.0, Culture=neutral, PublicKeyToken=041fde141b612e28" PluginTypeId="d0af9844-4b81-442e-9e6a-994c36f82c9c" Name="Checkbook.Plugins.Items.PrioritizationFundCenterBackfill">
+      <FriendlyName>4a661d3c-de0f-4e31-bad9-a70ecd2d413c</FriendlyName>
+    </PluginType>
     <PluginType AssemblyQualifiedName="Checkbook.Plugins.Items.PrioritizationItemizedRollup, Checkbook_Plugins, Version=1.1.0.0, Culture=neutral, PublicKeyToken=041fde141b612e28" PluginTypeId="2f31a550-f75a-43e8-b110-0d67e19e73e0" Name="Checkbook.Plugins.Items.PrioritizationItemizedRollup">
       <FriendlyName>8f72b331-7751-4713-9213-b4b11366da60</FriendlyName>
+    </PluginType>
+    <PluginType AssemblyQualifiedName="Checkbook.Plugins.Items.RequirementFundCenterCascade, Checkbook_Plugins, Version=1.1.0.0, Culture=neutral, PublicKeyToken=041fde141b612e28" PluginTypeId="48f06901-298f-476c-b6d2-90aa59c17e87" Name="Checkbook.Plugins.Items.RequirementFundCenterCascade">
+      <FriendlyName>a938c167-ddf4-430b-be70-a95012b33d3a</FriendlyName>
     </PluginType>
     <PluginType AssemblyQualifiedName="Checkbook.Plugins.LOAs.FundingTrackLOASynchronizer, Checkbook_Plugins, Version=1.1.0.0, Culture=neutral, PublicKeyToken=041fde141b612e28" PluginTypeId="0a8ce478-f656-46ec-b5f6-bd50f3bd02e8" Name="Checkbook.Plugins.LOAs.FundingTrackLOASynchronizer">
       <FriendlyName>70490656-6251-4384-b7b9-8e66a294b653</FriendlyName>
@@ -44,8 +50,14 @@
     <PluginType AssemblyQualifiedName="Checkbook.Plugins.Recalculations.LedgerCreateFundingLineUpdater, Checkbook_Plugins, Version=1.1.0.0, Culture=neutral, PublicKeyToken=041fde141b612e28" PluginTypeId="4d178c0a-7eaf-474d-815d-9a127209ef9c" Name="Checkbook.Plugins.Recalculations.LedgerCreateFundingLineUpdater">
       <FriendlyName>b09d6401-aac9-4957-ab91-f4c2e760ae12</FriendlyName>
     </PluginType>
+    <PluginType AssemblyQualifiedName="Checkbook.Plugins.Recalculations.PrioritizationFundingRollup, Checkbook_Plugins, Version=1.1.0.0, Culture=neutral, PublicKeyToken=041fde141b612e28" PluginTypeId="c864aae3-c48f-4d34-a9ea-aba6c0b03a1d" Name="Checkbook.Plugins.Recalculations.PrioritizationFundingRollup">
+      <FriendlyName>a3829bfb-7788-4432-bfb6-3d8c022ecfb2</FriendlyName>
+    </PluginType>
     <PluginType AssemblyQualifiedName="Checkbook.Plugins.Recalculations.PrioritizationRollupToRequirementFunding, Checkbook_Plugins, Version=1.1.0.0, Culture=neutral, PublicKeyToken=041fde141b612e28" PluginTypeId="368228d4-74ee-480a-b80d-b8f53ebd9582" Name="Checkbook.Plugins.Recalculations.PrioritizationRollupToRequirementFunding">
       <FriendlyName>840863e8-7446-4524-8f39-2e6f46432f02</FriendlyName>
+    </PluginType>
+    <PluginType AssemblyQualifiedName="Checkbook.Plugins.Recalculations.RequirementDetailFundingRollup, Checkbook_Plugins, Version=1.1.0.0, Culture=neutral, PublicKeyToken=041fde141b612e28" PluginTypeId="8ca3ae02-68ae-4fb8-9b37-8501a16e75d1" Name="Checkbook.Plugins.Recalculations.RequirementDetailFundingRollup">
+      <FriendlyName>2a046c0b-6f9c-4a00-a243-8a12e3d00169</FriendlyName>
     </PluginType>
     <PluginType AssemblyQualifiedName="Checkbook.Plugins.Recalculations.RequirementFundingTDPRemainingUpdater, Checkbook_Plugins, Version=1.1.0.0, Culture=neutral, PublicKeyToken=041fde141b612e28" PluginTypeId="f8d95f77-daa2-4dfa-84ed-fe66d401063a" Name="Checkbook.Plugins.Recalculations.RequirementFundingTDPRemainingUpdater">
       <FriendlyName>72370de1-7d3a-4268-b75d-3efe02016122</FriendlyName>
@@ -65,11 +77,17 @@
     <PluginType AssemblyQualifiedName="Checkbook.Plugins.Validation.FundingEventValidator, Checkbook_Plugins, Version=1.1.0.0, Culture=neutral, PublicKeyToken=041fde141b612e28" PluginTypeId="b13cbb27-ff4e-46ae-969b-e3bbff49c771" Name="Checkbook.Plugins.Validation.FundingEventValidator">
       <FriendlyName>07dfba4d-a81d-4323-b2ab-c31ca8231e8b</FriendlyName>
     </PluginType>
+    <PluginType AssemblyQualifiedName="Checkbook.Plugins.Validation.PrioritizationFundingGuard, Checkbook_Plugins, Version=1.1.0.0, Culture=neutral, PublicKeyToken=041fde141b612e28" PluginTypeId="b00b10c3-60e8-45e8-99d3-07683b91e927" Name="Checkbook.Plugins.Validation.PrioritizationFundingGuard">
+      <FriendlyName>bc3c7b5e-839d-4968-ab32-8e33537cb16d</FriendlyName>
+    </PluginType>
     <PluginType AssemblyQualifiedName="Checkbook.Plugins.Validation.PrioritizationFundingValidator, Checkbook_Plugins, Version=1.1.0.0, Culture=neutral, PublicKeyToken=041fde141b612e28" PluginTypeId="08410e6d-76a6-430d-a449-1715b5916e6d" Name="Checkbook.Plugins.Validation.PrioritizationFundingValidator">
       <FriendlyName>17a164c6-c637-48b6-a95a-150229d36e9b</FriendlyName>
     </PluginType>
     <PluginType AssemblyQualifiedName="Checkbook.Plugins.Validation.RealignmentValidator, Checkbook_Plugins, Version=1.1.0.0, Culture=neutral, PublicKeyToken=041fde141b612e28" PluginTypeId="01c69e47-a17a-4f3d-8ce6-ac4683a8ebda" Name="Checkbook.Plugins.Validation.RealignmentValidator">
       <FriendlyName>6508eeaa-b260-40f4-acbd-a5c09c2ca89e</FriendlyName>
+    </PluginType>
+    <PluginType AssemblyQualifiedName="Checkbook.Plugins.Validation.RequirementDetailFundingGuard, Checkbook_Plugins, Version=1.1.0.0, Culture=neutral, PublicKeyToken=041fde141b612e28" PluginTypeId="19c525b1-12a5-4d1e-ae5f-c1b54e481826" Name="Checkbook.Plugins.Validation.RequirementDetailFundingGuard">
+      <FriendlyName>a1f31a34-9dbc-4fcf-b378-32748c93f455</FriendlyName>
     </PluginType>
     <PluginType AssemblyQualifiedName="Checkbook.Plugins.Validation.RequirementFundingTDPValidator, Checkbook_Plugins, Version=1.1.0.0, Culture=neutral, PublicKeyToken=041fde141b612e28" PluginTypeId="879601d7-38a3-4fcc-9e14-95d5c663c716" Name="Checkbook.Plugins.Validation.RequirementFundingTDPValidator">
       <FriendlyName>7e121e8c-6e01-4ff5-ad32-19c54aef273c</FriendlyName>

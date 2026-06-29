@@ -16,6 +16,7 @@
     <RolePrivilege name="prvAppendbook_Fund" level="Global" />
     <RolePrivilege name="prvAppendbook_FundCenter" level="Global" />
     <RolePrivilege name="prvAppendbook_FundingLine" level="Local" />
+    <RolePrivilege name="prvAppendbook_GFEBSOBSDOC" level="Local" />
     <RolePrivilege name="prvAppendbook_Item" level="Global" />
     <RolePrivilege name="prvAppendbook_LIN" level="Global" />
     <RolePrivilege name="prvAppendbook_MDEP" level="Global" />
@@ -26,6 +27,7 @@
     <RolePrivilege name="prvAppendbook_QuantityType" level="Global" />
     <RolePrivilege name="prvAppendbook_Realignments" level="Local" />
     <RolePrivilege name="prvAppendbook_realignmentsreview" level="Global" />
+    <RolePrivilege name="prvAppendbook_RequirementDetailFunding" level="Local" />
     <RolePrivilege name="prvAppendbook_RequirementDetails" level="Global" />
     <RolePrivilege name="prvAppendbook_RequirementFunding" level="Local" />
     <RolePrivilege name="prvAppendbook_requirementfundingvalidatefunding" level="Global" />
@@ -62,6 +64,7 @@
     <RolePrivilege name="prvAppendTobook_Fund" level="Global" />
     <RolePrivilege name="prvAppendTobook_FundCenter" level="Global" />
     <RolePrivilege name="prvAppendTobook_FundingLine" level="Local" />
+    <RolePrivilege name="prvAppendTobook_GFEBSOBSDOC" level="Local" />
     <RolePrivilege name="prvAppendTobook_Item" level="Global" />
     <RolePrivilege name="prvAppendTobook_LIN" level="Global" />
     <RolePrivilege name="prvAppendTobook_MDEP" level="Global" />
@@ -72,6 +75,7 @@
     <RolePrivilege name="prvAppendTobook_QuantityType" level="Global" />
     <RolePrivilege name="prvAppendTobook_Realignments" level="Local" />
     <RolePrivilege name="prvAppendTobook_realignmentsreview" level="Global" />
+    <RolePrivilege name="prvAppendTobook_RequirementDetailFunding" level="Local" />
     <RolePrivilege name="prvAppendTobook_RequirementDetails" level="Global" />
     <RolePrivilege name="prvAppendTobook_RequirementFunding" level="Local" />
     <RolePrivilege name="prvAppendTobook_requirementfundingvalidatefunding" level="Global" />
@@ -110,6 +114,7 @@
     <RolePrivilege name="prvAssignAsyncOperation" level="Deep" />
     <RolePrivilege name="prvAssignbook_ObligationAuthority" level="Local" />
     <RolePrivilege name="prvAssignbook_Realignments" level="Local" />
+    <RolePrivilege name="prvAssignbook_RequirementDetailFunding" level="Local" />
     <RolePrivilege name="prvAssignbook_RequirementDetails" level="Global" />
     <RolePrivilege name="prvAssignbook_RequirementFunding" level="Local" />
     <RolePrivilege name="prvAssignbook_Requirements" level="Local" />
@@ -133,9 +138,11 @@
     <RolePrivilege name="prvCreatebook_arngcheckbookoprapprovalworkflow" level="Global" />
     <RolePrivilege name="prvCreatebook_arngcheckbookufr" level="Global" />
     <RolePrivilege name="prvCreatebook_arngcheckbookufrvalidation" level="Global" />
+    <RolePrivilege name="prvCreatebook_GFEBSOBSDOC" level="Local" />
     <RolePrivilege name="prvCreatebook_ObligationAuthority" level="Local" />
     <RolePrivilege name="prvCreatebook_Realignments" level="Local" />
     <RolePrivilege name="prvCreatebook_realignmentsreview" level="Global" />
+    <RolePrivilege name="prvCreatebook_RequirementDetailFunding" level="Local" />
     <RolePrivilege name="prvCreatebook_RequirementDetails" level="Local" />
     <RolePrivilege name="prvCreatebook_RequirementFunding" level="Local" />
     <RolePrivilege name="prvCreatebook_requirementfundingvalidatefunding" level="Global" />
@@ -213,6 +220,7 @@
     <RolePrivilege name="prvReadbook_FundingEvent" level="Global" />
     <RolePrivilege name="prvReadbook_FundingLine" level="Local" />
     <RolePrivilege name="prvReadbook_FundingTrack" level="Global" />
+    <RolePrivilege name="prvReadbook_GFEBSOBSDOC" level="Global" />
     <RolePrivilege name="prvReadbook_Item" level="Global" />
     <RolePrivilege name="prvReadbook_ItemizedDetails" level="Global" />
     <RolePrivilege name="prvReadbook_Ledger" level="Global" />
@@ -230,6 +238,7 @@
     <RolePrivilege name="prvReadbook_QuantityType" level="Global" />
     <RolePrivilege name="prvReadbook_Realignments" level="Global" />
     <RolePrivilege name="prvReadbook_realignmentsreview" level="Global" />
+    <RolePrivilege name="prvReadbook_RequirementDetailFunding" level="Local" />
     <RolePrivilege name="prvReadbook_RequirementDetails" level="Global" />
     <RolePrivilege name="prvReadbook_RequirementFunding" level="Global" />
     <RolePrivilege name="prvReadbook_requirementfundingvalidatefunding" level="Global" />
@@ -303,6 +312,7 @@
     <RolePrivilege name="prvShareactivityfileattachment" level="Basic" />
     <RolePrivilege name="prvSharebook_ObligationAuthority" level="Local" />
     <RolePrivilege name="prvSharebook_Realignments" level="Local" />
+    <RolePrivilege name="prvSharebook_RequirementDetailFunding" level="Local" />
     <RolePrivilege name="prvSharebook_RequirementDetails" level="Global" />
     <RolePrivilege name="prvSharebook_RequirementFunding" level="Global" />
     <RolePrivilege name="prvSharebook_Requirements" level="Global" />
@@ -326,12 +336,14 @@
     <RolePrivilege name="prvWritebook_arngcheckbookoprapprovalworkflow" level="Global" />
     <RolePrivilege name="prvWritebook_arngcheckbookufr" level="Global" />
     <RolePrivilege name="prvWritebook_arngcheckbookufrvalidation" level="Global" />
+    <RolePrivilege name="prvWritebook_GFEBSOBSDOC" level="Local" />
     <RolePrivilege name="prvWritebook_ItemizedDetails" level="Global" />
     <RolePrivilege name="prvWritebook_ObligationAuthority" level="Local" />
     <RolePrivilege name="prvWritebook_Prioritization" level="Global" />
     <RolePrivilege name="prvWritebook_PriorityBIN" level="Global" />
     <RolePrivilege name="prvWritebook_Realignments" level="Global" />
     <RolePrivilege name="prvWritebook_realignmentsreview" level="Global" />
+    <RolePrivilege name="prvWritebook_RequirementDetailFunding" level="Local" />
     <RolePrivilege name="prvWritebook_RequirementDetails" level="Local" />
     <RolePrivilege name="prvWritebook_RequirementFunding" level="Local" />
     <RolePrivilege name="prvWritebook_requirementfundingvalidatefunding" level="Global" />

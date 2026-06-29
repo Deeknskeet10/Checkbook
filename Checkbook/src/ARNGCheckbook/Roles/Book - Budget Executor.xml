@@ -24,6 +24,7 @@
     <RolePrivilege name="prvAppendbook_FundingEvent" level="Global" />
     <RolePrivilege name="prvAppendbook_FundingLine" level="Global" />
     <RolePrivilege name="prvAppendbook_FundingTrack" level="Global" />
+    <RolePrivilege name="prvAppendbook_GFEBSOBSDOC" level="Global" />
     <RolePrivilege name="prvAppendbook_Item" level="Global" />
     <RolePrivilege name="prvAppendbook_LIN" level="Global" />
     <RolePrivilege name="prvAppendbook_LocalityPay" level="Global" />
@@ -38,6 +39,7 @@
     <RolePrivilege name="prvAppendbook_QuantityType" level="Global" />
     <RolePrivilege name="prvAppendbook_Realignments" level="Global" />
     <RolePrivilege name="prvAppendbook_realignmentsreview" level="Global" />
+    <RolePrivilege name="prvAppendbook_RequirementDetailFunding" level="Global" />
     <RolePrivilege name="prvAppendbook_RequirementDetails" level="Global" />
     <RolePrivilege name="prvAppendbook_RequirementFunding" level="Global" />
     <RolePrivilege name="prvAppendbook_requirementfundingvalidatefunding" level="Global" />
@@ -85,6 +87,7 @@
     <RolePrivilege name="prvAppendTobook_FundingEvent" level="Global" />
     <RolePrivilege name="prvAppendTobook_FundingLine" level="Global" />
     <RolePrivilege name="prvAppendTobook_FundingTrack" level="Global" />
+    <RolePrivilege name="prvAppendTobook_GFEBSOBSDOC" level="Global" />
     <RolePrivilege name="prvAppendTobook_Item" level="Global" />
     <RolePrivilege name="prvAppendTobook_LIN" level="Global" />
     <RolePrivilege name="prvAppendTobook_LocalityPay" level="Global" />
@@ -99,6 +102,7 @@
     <RolePrivilege name="prvAppendTobook_QuantityType" level="Global" />
     <RolePrivilege name="prvAppendTobook_Realignments" level="Global" />
     <RolePrivilege name="prvAppendTobook_realignmentsreview" level="Global" />
+    <RolePrivilege name="prvAppendTobook_RequirementDetailFunding" level="Global" />
     <RolePrivilege name="prvAppendTobook_RequirementDetails" level="Global" />
     <RolePrivilege name="prvAppendTobook_RequirementFunding" level="Global" />
     <RolePrivilege name="prvAppendTobook_requirementfundingvalidatefunding" level="Global" />
@@ -143,11 +147,13 @@
     <RolePrivilege name="prvAssignbook_FundingDetails" level="Global" />
     <RolePrivilege name="prvAssignbook_FundingEvent" level="Global" />
     <RolePrivilege name="prvAssignbook_FundingTrack" level="Global" />
+    <RolePrivilege name="prvAssignbook_GFEBSOBSDOC" level="Global" />
     <RolePrivilege name="prvAssignbook_Item" level="Global" />
     <RolePrivilege name="prvAssignbook_ObligationAuthority" level="Global" />
     <RolePrivilege name="prvAssignbook_ObligationPeriods" level="Global" />
     <RolePrivilege name="prvAssignbook_PriorityBIN" level="Global" />
     <RolePrivilege name="prvAssignbook_Realignments" level="Global" />
+    <RolePrivilege name="prvAssignbook_RequirementDetailFunding" level="Global" />
     <RolePrivilege name="prvAssignbook_RequirementDetails" level="Global" />
     <RolePrivilege name="prvAssignbook_RequirementFunding" level="Global" />
     <RolePrivilege name="prvAssignbook_Requirements" level="Global" />
@@ -185,6 +191,7 @@
     <RolePrivilege name="prvCreatebook_FundingEvent" level="Global" />
     <RolePrivilege name="prvCreatebook_FundingLine" level="Global" />
     <RolePrivilege name="prvCreatebook_FundingTrack" level="Global" />
+    <RolePrivilege name="prvCreatebook_GFEBSOBSDOC" level="Global" />
     <RolePrivilege name="prvCreatebook_Item" level="Global" />
     <RolePrivilege name="prvCreatebook_LocalityPay" level="Global" />
     <RolePrivilege name="prvCreatebook_LOEFocusArea" level="Global" />
@@ -198,6 +205,7 @@
     <RolePrivilege name="prvCreatebook_QuantityType" level="Global" />
     <RolePrivilege name="prvCreatebook_Realignments" level="Global" />
     <RolePrivilege name="prvCreatebook_realignmentsreview" level="Global" />
+    <RolePrivilege name="prvCreatebook_RequirementDetailFunding" level="Global" />
     <RolePrivilege name="prvCreatebook_RequirementDetails" level="Global" />
     <RolePrivilege name="prvCreatebook_RequirementFunding" level="Global" />
     <RolePrivilege name="prvCreatebook_requirementfundingvalidatefunding" level="Global" />
@@ -284,6 +292,7 @@
     <RolePrivilege name="prvReadbook_FundingEvent" level="Global" />
     <RolePrivilege name="prvReadbook_FundingLine" level="Global" />
     <RolePrivilege name="prvReadbook_FundingTrack" level="Global" />
+    <RolePrivilege name="prvReadbook_GFEBSOBSDOC" level="Global" />
     <RolePrivilege name="prvReadbook_Item" level="Global" />
     <RolePrivilege name="prvReadbook_ItemizedDetails" level="Global" />
     <RolePrivilege name="prvReadbook_Ledger" level="Global" />
@@ -301,6 +310,7 @@
     <RolePrivilege name="prvReadbook_QuantityType" level="Global" />
     <RolePrivilege name="prvReadbook_Realignments" level="Global" />
     <RolePrivilege name="prvReadbook_realignmentsreview" level="Global" />
+    <RolePrivilege name="prvReadbook_RequirementDetailFunding" level="Global" />
     <RolePrivilege name="prvReadbook_RequirementDetails" level="Global" />
     <RolePrivilege name="prvReadbook_RequirementFunding" level="Global" />
     <RolePrivilege name="prvReadbook_requirementfundingvalidatefunding" level="Global" />
@@ -375,11 +385,13 @@
     <RolePrivilege name="prvShareactivityfileattachment" level="Basic" />
     <RolePrivilege name="prvSharebook_FundingDetails" level="Global" />
     <RolePrivilege name="prvSharebook_FundingEvent" level="Global" />
+    <RolePrivilege name="prvSharebook_GFEBSOBSDOC" level="Global" />
     <RolePrivilege name="prvSharebook_Item" level="Global" />
     <RolePrivilege name="prvSharebook_ObligationAuthority" level="Global" />
     <RolePrivilege name="prvSharebook_ObligationPeriods" level="Global" />
     <RolePrivilege name="prvSharebook_PriorityBIN" level="Global" />
     <RolePrivilege name="prvSharebook_Realignments" level="Global" />
+    <RolePrivilege name="prvSharebook_RequirementDetailFunding" level="Global" />
     <RolePrivilege name="prvSharebook_RequirementDetails" level="Global" />
     <RolePrivilege name="prvSharebook_RequirementFunding" level="Global" />
     <RolePrivilege name="prvSharebook_SpendPlan" level="Deep" />
@@ -416,6 +428,7 @@
     <RolePrivilege name="prvWritebook_FundingEvent" level="Global" />
     <RolePrivilege name="prvWritebook_FundingLine" level="Global" />
     <RolePrivilege name="prvWritebook_FundingTrack" level="Global" />
+    <RolePrivilege name="prvWritebook_GFEBSOBSDOC" level="Global" />
     <RolePrivilege name="prvWritebook_Item" level="Global" />
     <RolePrivilege name="prvWritebook_LocalityPay" level="Global" />
     <RolePrivilege name="prvWritebook_LOEFocusArea" level="Global" />
@@ -429,6 +442,7 @@
     <RolePrivilege name="prvWritebook_QuantityType" level="Global" />
     <RolePrivilege name="prvWritebook_Realignments" level="Global" />
     <RolePrivilege name="prvWritebook_realignmentsreview" level="Global" />
+    <RolePrivilege name="prvWritebook_RequirementDetailFunding" level="Global" />
     <RolePrivilege name="prvWritebook_RequirementDetails" level="Global" />
     <RolePrivilege name="prvWritebook_RequirementFunding" level="Global" />
     <RolePrivilege name="prvWritebook_requirementfundingvalidatefunding" level="Global" />

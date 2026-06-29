@@ -59,6 +59,7 @@
                             <DependentAttributeName>book_prioritization.book_mdep</DependentAttributeName>
                             <DependentAttributeType>book_mdep</DependentAttributeType>
                             <FilterRelationshipName>book_requirements_MDEP_book_mdep</FilterRelationshipName>
+                            <DisableMru>true</DisableMru>
                           </parameters>
                         </control>
                       </cell>
@@ -67,6 +68,24 @@
                           <label description="LIN" languagecode="1033" />
                         </labels>
                         <control id="book_lin" classid="{270BD3DB-D9AF-4782-9025-509E298DEC0A}" datafieldname="book_lin" disabled="false" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell locklevel="0" id="{d26e30ec-84db-4ea7-92d3-41df327e757f}" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="New QV control 1782138356287" languagecode="1033" />
+                        </labels>
+                        <control id="QuickviewControl1782138356287" classid="{5C5600E0-1D6E-4205-A272-BE80DA87FD42}" datafieldname="book_requirement">
+                          <parameters>
+                            <DisplayAsCustomer360Tile>false</DisplayAsCustomer360Tile>
+                            <QuickForms>&lt;QuickFormIds&gt;&lt;QuickFormId entityname="book_requirements"&gt;37250519-aead-4fc1-ae67-35a0af35e4d5&lt;/QuickFormId&gt;&lt;/QuickFormIds&gt;</QuickForms>
+                          </parameters>
+                        </control>
+                      </cell>
+                      <cell locklevel="0" id="{2a6f6cbb-e48f-40b9-b153-7c218f19847c}">
+                        <labels>
+                          <label description="" languagecode="1033" />
+                        </labels>
                       </cell>
                     </row>
                     <row>
@@ -83,11 +102,24 @@
                           </parameters>
                         </control>
                       </cell>
-                      <cell id="{90c2e8f0-9af7-4e1c-8493-bb26599a158d}" locklevel="0" colspan="1" rowspan="1">
+                      <cell locklevel="0" id="{181e5fe0-35cd-49d6-ac34-2d726c24eb54}" rowspan="4" colspan="1" auto="true" showlabel="true">
                         <labels>
-                          <label description="Reference Number" languagecode="1033" />
+                          <label description="GFEBS OBS Documents" languagecode="1033" />
                         </labels>
-                        <control id="book_referencenumber" classid="{4273EDBD-AC1D-40D3-9FB2-095C621B552D}" datafieldname="book_referencenumber" disabled="false" />
+                        <control indicationOfSubgrid="true" id="Subgrid_new_1" classid="{E7A81278-8635-4D9E-8D4D-59480B391C5B}">
+                          <parameters>
+                            <RecordsPerPage>4</RecordsPerPage>
+                            <AutoExpand>Auto</AutoExpand>
+                            <EnableQuickFind>false</EnableQuickFind>
+                            <EnableViewPicker>false</EnableViewPicker>
+                            <EnableChartPicker>true</EnableChartPicker>
+                            <ChartGridMode>All</ChartGridMode>
+                            <RelationshipName>book_gfebsobsdoc_Prioritization_book_prioritization</RelationshipName>
+                            <TargetEntityType>book_gfebsobsdoc</TargetEntityType>
+                            <ViewId>{6E012F75-E351-4B77-937F-FACB8E0791CF}</ViewId>
+                            <ViewIds>{6E012F75-E351-4B77-937F-FACB8E0791CF}</ViewIds>
+                          </parameters>
+                        </control>
                       </cell>
                     </row>
                     <row>
@@ -102,11 +134,19 @@
                           </parameters>
                         </control>
                       </cell>
-                      <cell id="{71027c75-d58f-4bce-a643-8a25aabd0d39}" locklevel="0" colspan="1" rowspan="1">
+                    </row>
+                    <row>
+                      <cell locklevel="0" id="{8a46a0bc-823d-488e-90c9-b0d121c8780d}">
                         <labels>
-                          <label description="Reference Number System" languagecode="1033" />
+                          <label description="" languagecode="1033" />
                         </labels>
-                        <control id="book_referencenumbersystem" classid="{4273EDBD-AC1D-40D3-9FB2-095C621B552D}" datafieldname="book_referencenumbersystem" disabled="false" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell locklevel="0" id="{e6720d80-ec14-4397-a735-4512453841a0}">
+                        <labels>
+                          <label description="" languagecode="1033" />
+                        </labels>
                       </cell>
                     </row>
                     <row>
@@ -116,11 +156,10 @@
                         </labels>
                         <control id="book_statepriority" classid="{C6D124CA-7EDA-4A60-AEA9-7FB8D318B68F}" datafieldname="book_statepriority" disabled="false" />
                       </cell>
-                      <cell id="{ba74c62c-ff1e-4bca-b14e-e92311fa410a}" locklevel="0" colspan="1" rowspan="1">
+                      <cell locklevel="0" id="{c57fda34-1067-4a4f-9d04-ca7cbcd0acba}">
                         <labels>
-                          <label description="Work Breakdown Structure (WBS - GFEBS)" languagecode="1033" />
+                          <label description="" languagecode="1033" />
                         </labels>
-                        <control id="book_workbreakdownstructurewbsgfebs" classid="{4273EDBD-AC1D-40D3-9FB2-095C621B552D}" datafieldname="book_workbreakdownstructurewbsgfebs" disabled="false" />
                       </cell>
                     </row>
                     <row>
@@ -130,11 +169,10 @@
                         </labels>
                         <control id="book_quantities" classid="{C6D124CA-7EDA-4A60-AEA9-7FB8D318B68F}" datafieldname="book_quantities" disabled="false" />
                       </cell>
-                      <cell id="{6f427e11-4c7c-4d99-967d-7cdbdfce78db}" locklevel="0" colspan="1" rowspan="1">
+                      <cell locklevel="0" id="{bef507d7-b921-4b58-92a0-772084b99640}">
                         <labels>
-                          <label description="Work Breakdown Structure (additional WBS)" languagecode="1033" />
+                          <label description="" languagecode="1033" />
                         </labels>
-                        <control id="book_workbreakdownstructureadditionalwbs" classid="{4273EDBD-AC1D-40D3-9FB2-095C621B552D}" datafieldname="book_workbreakdownstructureadditionalwbs" disabled="false" />
                       </cell>
                     </row>
                     <row>
@@ -144,18 +182,18 @@
                         </labels>
                         <control id="book_statutoryjustification" classid="{E0DECE4B-6FC8-4A8F-A065-082708572369}" datafieldname="book_statutoryjustification" disabled="false" />
                       </cell>
+                      <cell locklevel="0" id="{43e407e9-148b-4027-af59-3c3b737a33a7}">
+                        <labels>
+                          <label description="" languagecode="1033" />
+                        </labels>
+                      </cell>
+                    </row>
+                    <row>
                       <cell id="{0218be97-6a47-4238-87ad-cec833b096e2}" locklevel="0" colspan="1" rowspan="1" visible="false">
                         <labels>
                           <label description="Approval Status" languagecode="1033" />
                         </labels>
                         <control id="book_approvalstatus" classid="{3EF39988-22BB-4F0B-BBBE-64B5A3748AEE}" datafieldname="book_approvalstatus" disabled="false" />
-                      </cell>
-                    </row>
-                    <row>
-                      <cell locklevel="0" id="{77636957-8977-4c98-b912-6db050fb98a1}">
-                        <labels>
-                          <label description="" languagecode="1033" />
-                        </labels>
                       </cell>
                     </row>
                     <row>
@@ -279,6 +317,54 @@
                     </row>
                   </rows>
                 </section>
+                <section name="tab_general_section_6" id="90ca9e9f-413a-49b0-b627-15922f5afb4a" IsUserDefined="0" locklevel="0" showlabel="true" showbar="false" layout="varwidth" celllabelalignment="Left" celllabelposition="Left" columns="11" labelwidth="115">
+                  <labels>
+                    <label description="GFEBS Data - To Be Deprecated" languagecode="1033" />
+                  </labels>
+                  <rows>
+                    <row />
+                    <row>
+                      <cell locklevel="0" id="{2913b7de-b9f6-44ba-a2e0-38fb966433db}">
+                        <labels>
+                          <label description="" languagecode="1033" />
+                        </labels>
+                      </cell>
+                      <cell id="{71027c75-d58f-4bce-a643-8a25aabd0d39}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="Reference Number System" languagecode="1033" />
+                        </labels>
+                        <control id="book_referencenumbersystem" classid="{4273EDBD-AC1D-40D3-9FB2-095C621B552D}" datafieldname="book_referencenumbersystem" disabled="false" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{90c2e8f0-9af7-4e1c-8493-bb26599a158d}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="Reference Number" languagecode="1033" />
+                        </labels>
+                        <control id="book_referencenumber" classid="{4273EDBD-AC1D-40D3-9FB2-095C621B552D}" datafieldname="book_referencenumber" disabled="false" />
+                      </cell>
+                      <cell id="{6f427e11-4c7c-4d99-967d-7cdbdfce78db}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="Work Breakdown Structure (additional WBS)" languagecode="1033" />
+                        </labels>
+                        <control id="book_workbreakdownstructureadditionalwbs" classid="{4273EDBD-AC1D-40D3-9FB2-095C621B552D}" datafieldname="book_workbreakdownstructureadditionalwbs" disabled="false" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{ba74c62c-ff1e-4bca-b14e-e92311fa410a}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="Work Breakdown Structure (WBS - GFEBS)" languagecode="1033" />
+                        </labels>
+                        <control id="book_workbreakdownstructurewbsgfebs" classid="{4273EDBD-AC1D-40D3-9FB2-095C621B552D}" datafieldname="book_workbreakdownstructurewbsgfebs" disabled="false" />
+                      </cell>
+                      <cell locklevel="0" id="{810212c7-7026-4e9a-bc5c-5904f7f8766d}">
+                        <labels>
+                          <label description="" languagecode="1033" />
+                        </labels>
+                      </cell>
+                    </row>
+                  </rows>
+                </section>
                 <section name="null_section_4" id="0dcd9572-3b5b-4278-9b18-3a6ba3444a04" IsUserDefined="0" locklevel="0" showlabel="false" showbar="false" layout="varwidth" celllabelalignment="Left" celllabelposition="Left" columns="1" labelwidth="115">
                   <labels>
                     <label description="New Section" languagecode="1033" />
@@ -310,49 +396,6 @@
                     <row />
                     <row />
                     <row />
-                    <row />
-                    <row />
-                    <row />
-                  </rows>
-                </section>
-              </sections>
-            </column>
-          </columns>
-        </tab>
-        <tab name="tab_3" id="2f4537e6-83e9-450d-8cb5-b23596add146" IsUserDefined="0" locklevel="0" showlabel="true">
-          <labels>
-            <label description="Commitments" languagecode="1033" />
-          </labels>
-          <columns>
-            <column width="100%">
-              <sections>
-                <section name="tab_3_section_1" id="16823f1e-f1f4-4bc7-b2cb-10a46d767fbf" IsUserDefined="0" locklevel="0" showlabel="true" showbar="false" layout="varwidth" celllabelalignment="Left" celllabelposition="Left" columns="1" labelwidth="115">
-                  <labels>
-                    <label description="Commitment Items" languagecode="1033" />
-                  </labels>
-                  <rows>
-                    <row />
-                    <row>
-                      <cell locklevel="0" id="{3093f3c5-13dc-4940-9b33-f16aedc442d6}" rowspan="4" colspan="1" auto="false" showlabel="false">
-                        <labels>
-                          <label description="New SG control 1775666744611" languagecode="1033" />
-                        </labels>
-                        <control indicationOfSubgrid="true" id="Subgrid_new_1" classid="{E7A81278-8635-4D9E-8D4D-59480B391C5B}">
-                          <parameters>
-                            <RecordsPerPage>4</RecordsPerPage>
-                            <AutoExpand>Fixed</AutoExpand>
-                            <EnableQuickFind>false</EnableQuickFind>
-                            <EnableViewPicker>false</EnableViewPicker>
-                            <EnableChartPicker>true</EnableChartPicker>
-                            <ChartGridMode>All</ChartGridMode>
-                            <RelationshipName>book_commitmentitem_Prioritization_book_prioritization</RelationshipName>
-                            <TargetEntityType>book_commitmentitem</TargetEntityType>
-                            <ViewId>{60b01a59-9339-4b9b-9a9e-72a44274fa61}</ViewId>
-                            <ViewIds>{60b01a59-9339-4b9b-9a9e-72a44274fa61}</ViewIds>
-                          </parameters>
-                        </control>
-                      </cell>
-                    </row>
                     <row />
                     <row />
                     <row />
@@ -640,22 +683,27 @@
         <Library name="book_showHideFC" libraryUniqueId="{e5277025-20a1-4522-8988-f2dd6c0288b1}" />
         <Library name="book_populateUserBU" libraryUniqueId="{831d1871-2d40-4609-a41e-5363a8452ae8}" />
         <Library name="book_verifyUniquePri" libraryUniqueId="{e8cb32af-59b1-4883-96f5-8ecb816f1066}" />
+        <Library name="book_Prioritizations" libraryUniqueId="{8d7a3de1-4a63-4c1c-befe-b5fc652ba8c9}" />
       </formLibraries>
       <events>
+        <event name="onsave" application="false" active="false">
+          <Handlers>
+            <Handler functionName="Book.Prioritization.onSave" libraryName="book_Prioritizations" handlerUniqueId="{9442ba63-bbf3-47c3-8de3-6bc65905fb55}" enabled="true" parameters="" passExecutionContext="true" />
+          </Handlers>
+        </event>
         <event name="onload" application="false" active="false">
           <Handlers>
-            <Handler functionName="showHideFields" libraryName="book_showHideFC" handlerUniqueId="{7c2084e7-6623-4147-8335-77baeb54d466}" enabled="true" parameters="" passExecutionContext="true" />
-            <Handler functionName="setStatefromBU" libraryName="book_populateUserBU" handlerUniqueId="{37482b6d-5880-44f6-a08e-a9fcfade650d}" enabled="true" parameters="" passExecutionContext="true" />
+            <Handler functionName="Book.Prioritization.onLoad" libraryName="book_Prioritizations" handlerUniqueId="{cdc79b02-c336-4ea3-bc2b-d0ce32f84511}" enabled="true" parameters="" passExecutionContext="true" />
           </Handlers>
         </event>
         <event name="onchange" application="false" active="false" attribute="book_requirementfunding">
           <Handlers>
-            <Handler functionName="showHideFields" libraryName="book_showHideFC" handlerUniqueId="{18446f45-ffce-4fcd-8e6d-db71fb143022}" enabled="true" parameters="" passExecutionContext="true" />
+            <Handler functionName="Book.Prioritization.onRequirementFundingChange" libraryName="book_Prioritizations" handlerUniqueId="{08245fb8-591f-4a9d-81d0-d67fe5df3902}" enabled="true" parameters="" passExecutionContext="true" />
           </Handlers>
         </event>
-        <event name="onsave" application="false" active="false">
+        <event name="onchange" application="false" active="false" attribute="book_requirement">
           <Handlers>
-            <Handler functionName="onSave" libraryName="book_showHideFC" handlerUniqueId="{c8fc1e75-6b36-440b-9a23-02fc0f0864c1}" enabled="true" parameters="" passExecutionContext="true" />
+            <Handler functionName="Book.Prioritization.onRequirementChange" libraryName="book_Prioritizations" handlerUniqueId="{198d60e5-f52e-4ea0-b1cd-ac733266edee}" enabled="true" parameters="" passExecutionContext="true" />
           </Handlers>
         </event>
       </events>

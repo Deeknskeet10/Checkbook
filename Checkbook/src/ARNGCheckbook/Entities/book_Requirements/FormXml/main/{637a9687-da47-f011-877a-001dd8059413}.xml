@@ -438,7 +438,7 @@
                 </section>
                 <section name="tab_4_section_1" id="8d0f652e-9028-482c-8982-351d02fc01a1" IsUserDefined="0" locklevel="0" showlabel="true" showbar="false" layout="varwidth" celllabelalignment="Left" celllabelposition="Left" columns="1" labelwidth="115">
                   <labels>
-                    <label description="Requirement Funding" languagecode="1033" />
+                    <label description="Fiscal Year Funding" languagecode="1033" />
                   </labels>
                   <rows>
                     <row>
@@ -449,11 +449,11 @@
                       </cell>
                     </row>
                     <row>
-                      <cell locklevel="0" id="{03ac2cd4-3781-41e7-955b-297d567b3ddd}" rowspan="4" colspan="1" auto="false" showlabel="false">
+                      <cell locklevel="0" id="{6d393ad5-576e-4099-a862-9dded58d41f5}" rowspan="4" colspan="1" auto="false" showlabel="false">
                         <labels>
-                          <label description="New SG control 1764105877458" languagecode="1033" />
+                          <label description="New SG control 1781286498885" languagecode="1033" />
                         </labels>
-                        <control indicationOfSubgrid="true" id="Subgrid_new_3" classid="{E7A81278-8635-4D9E-8D4D-59480B391C5B}">
+                        <control indicationOfSubgrid="true" id="Subgrid_new_7" classid="{F9A8A302-114E-466A-B582-6771B2AE0D92}" uniqueid="{0ffc9a4c-5201-49c1-806d-aaed29d9df18}">
                           <parameters>
                             <RecordsPerPage>4</RecordsPerPage>
                             <AutoExpand>Fixed</AutoExpand>
@@ -461,10 +461,11 @@
                             <EnableViewPicker>false</EnableViewPicker>
                             <EnableChartPicker>true</EnableChartPicker>
                             <ChartGridMode>All</ChartGridMode>
-                            <RelationshipName>book_requirementfunding_Requirement_book_requirements</RelationshipName>
-                            <TargetEntityType>book_requirementfunding</TargetEntityType>
-                            <ViewId>{2ADC352B-25CA-4F16-9770-E39CF2A9BE92}</ViewId>
-                            <ViewIds>{2ADC352B-25CA-4F16-9770-E39CF2A9BE92}</ViewIds>
+                            <RelationshipName>book_prioritization_Requirement_book_requirements</RelationshipName>
+                            <TargetEntityType>book_prioritization</TargetEntityType>
+                            <ViewId>{A7E73ED2-6F0B-F011-BAE2-001DD8056EC8}</ViewId>
+                            <ViewIds>{27BE16BA-190B-F011-BAE2-001DD8056EC8},{A7E73ED2-6F0B-F011-BAE2-001DD8056EC8}</ViewIds>
+                            <VisualizationId>{DEA16BA0-CD47-F011-877A-001DD805A06B}</VisualizationId>
                           </parameters>
                         </control>
                       </cell>
@@ -869,21 +870,101 @@
             </parameters>
           </customControl>
         </controlDescription>
+        <controlDescription forControl="{0ffc9a4c-5201-49c1-806d-aaed29d9df18}">
+          <customControl id="{E7A81278-8635-4D9E-8D4D-59480B391C5B}">
+            <parameters>
+              <RecordsPerPage>4</RecordsPerPage>
+              <AutoExpand>Fixed</AutoExpand>
+              <EnableQuickFind>false</EnableQuickFind>
+              <EnableViewPicker>false</EnableViewPicker>
+              <EnableChartPicker>true</EnableChartPicker>
+              <ChartGridMode>All</ChartGridMode>
+              <RelationshipName>book_prioritization_Requirement_book_requirements</RelationshipName>
+              <TargetEntityType>book_prioritization</TargetEntityType>
+              <ViewId>{A7E73ED2-6F0B-F011-BAE2-001DD8056EC8}</ViewId>
+              <ViewIds>{27BE16BA-190B-F011-BAE2-001DD8056EC8},{A7E73ED2-6F0B-F011-BAE2-001DD8056EC8}</ViewIds>
+              <VisualizationId>{DEA16BA0-CD47-F011-877A-001DD805A06B}</VisualizationId>
+            </parameters>
+          </customControl>
+          <customControl formFactor="0" name="book_ARNGCheckbook.PrioritizationFundingGrid">
+            <parameters>
+              <data-set name="prioritizations">
+                <ViewId>{a7e73ed2-6f0b-f011-bae2-001dd8056ec8}</ViewId>
+                <TargetEntityType>book_prioritization</TargetEntityType>
+                <IsUserView>false</IsUserView>
+                <EnableViewPicker>false</EnableViewPicker>
+                <RelationshipName>book_prioritization_Requirement_book_requirements</RelationshipName>
+                <FilteredViewIds>{27BE16BA-190B-F011-BAE2-001DD8056EC8},{A7E73ED2-6F0B-F011-BAE2-001DD8056EC8}</FilteredViewIds>
+                <name>book_name</name>
+                <statePriority>book_statepriority</statePriority>
+                <approvalStatus>book_approvalstatus</approvalStatus>
+                <fiscalYear>book_newfiscalyear</fiscalYear>
+                <fundingMode>book_fundingmode</fundingMode>
+                <requestedAmount>book_newrequestedamount</requestedAmount>
+                <fundedAmount>book_newfundedamounttdp</fundedAmount>
+                <validatedAmount>book_validatedamount</validatedAmount>
+                <requirement>book_requirement</requirement>
+              </data-set>
+            </parameters>
+          </customControl>
+          <customControl formFactor="2" name="book_ARNGCheckbook.PrioritizationFundingGrid">
+            <parameters>
+              <data-set name="prioritizations">
+                <ViewId>{a7e73ed2-6f0b-f011-bae2-001dd8056ec8}</ViewId>
+                <TargetEntityType>book_prioritization</TargetEntityType>
+                <IsUserView>false</IsUserView>
+                <EnableViewPicker>false</EnableViewPicker>
+                <RelationshipName>book_prioritization_Requirement_book_requirements</RelationshipName>
+                <FilteredViewIds>{27BE16BA-190B-F011-BAE2-001DD8056EC8},{A7E73ED2-6F0B-F011-BAE2-001DD8056EC8}</FilteredViewIds>
+                <name>book_name</name>
+                <statePriority>book_statepriority</statePriority>
+                <approvalStatus>book_approvalstatus</approvalStatus>
+                <fiscalYear>book_newfiscalyear</fiscalYear>
+                <fundingMode>book_fundingmode</fundingMode>
+                <requestedAmount>book_newrequestedamount</requestedAmount>
+                <fundedAmount>book_newfundedamounttdp</fundedAmount>
+                <validatedAmount>book_validatedamount</validatedAmount>
+                <requirement>book_requirement</requirement>
+              </data-set>
+            </parameters>
+          </customControl>
+          <customControl formFactor="1" name="book_ARNGCheckbook.PrioritizationFundingGrid">
+            <parameters>
+              <data-set name="prioritizations">
+                <ViewId>{a7e73ed2-6f0b-f011-bae2-001dd8056ec8}</ViewId>
+                <TargetEntityType>book_prioritization</TargetEntityType>
+                <IsUserView>false</IsUserView>
+                <EnableViewPicker>false</EnableViewPicker>
+                <RelationshipName>book_prioritization_Requirement_book_requirements</RelationshipName>
+                <FilteredViewIds>{27BE16BA-190B-F011-BAE2-001DD8056EC8},{A7E73ED2-6F0B-F011-BAE2-001DD8056EC8}</FilteredViewIds>
+                <name>book_name</name>
+                <statePriority>book_statepriority</statePriority>
+                <approvalStatus>book_approvalstatus</approvalStatus>
+                <fiscalYear>book_newfiscalyear</fiscalYear>
+                <fundingMode>book_fundingmode</fundingMode>
+                <requestedAmount>book_newrequestedamount</requestedAmount>
+                <fundedAmount>book_newfundedamounttdp</fundedAmount>
+                <validatedAmount>book_validatedamount</validatedAmount>
+                <requirement>book_requirement</requirement>
+              </data-set>
+            </parameters>
+          </customControl>
+        </controlDescription>
       </controlDescriptions>
       <formLibraries>
         <Library name="book_toggleReqTab" libraryUniqueId="{1aa431ba-e35a-4d1b-a3e7-864e44bf8a65}" />
         <Library name="book_showHideDOMOPs" libraryUniqueId="{635695aa-e763-436d-95e3-6f1cf2a84157}" />
+        <Library name="book_Requirements" libraryUniqueId="{2d62a456-dda1-4733-bf19-e60fe03c096c}" />
       </formLibraries>
       <events>
         <event name="onload" application="false" active="false">
           <Handlers>
-            <Handler functionName="toggleReqTab" libraryName="book_toggleReqTab" handlerUniqueId="{4f57e8e8-23ab-472f-ae60-2a774899c6f1}" enabled="true" parameters="" passExecutionContext="true" />
-            <Handler functionName="hideDOMOPs" libraryName="book_showHideDOMOPs" handlerUniqueId="{85b0c99f-2759-48f0-ad37-ed61175cb855}" enabled="true" parameters="" passExecutionContext="true" />
+            <Handler functionName="Book.Requirements.onLoad" libraryName="book_Requirements" handlerUniqueId="{362e0950-ce51-4b6b-aec7-401ea067fa45}" enabled="true" parameters="" passExecutionContext="true" />
           </Handlers>
         </event>
         <event name="onchange" application="false" active="false" attribute="book_type">
           <Handlers>
-            <Handler functionName="hideDOMOPs" libraryName="book_showHideDOMOPs" handlerUniqueId="{ae349bfc-ed6b-4827-864b-226ea6a0a806}" enabled="true" parameters="" passExecutionContext="true" />
+            <Handler functionName="Book.Requirements.onTypeChange" libraryName="book_Requirements" handlerUniqueId="{d9bb1a97-b994-4200-89be-b2a10be16d29}" enabled="true" parameters="" passExecutionContext="true" />
           </Handlers>
         </event>
       </events>

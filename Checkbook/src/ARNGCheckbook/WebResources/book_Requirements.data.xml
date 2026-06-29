@@ -1,0 +1,15 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<WebResource xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <WebResourceId>{4036a767-566e-f111-ab0d-001dd8204df7}</WebResourceId>
+  <Name>book_Requirements</Name>
+  <DisplayName>Requirements</DisplayName>
+  <Description>Source file for all Requirement form scripts.</Description>
+  <WebResourceType>3</WebResourceType>
+  <IntroducedVersion>1.11.0.66</IntroducedVersion>
+  <IsEnabledForMobileClient>0</IsEnabledForMobileClient>
+  <IsAvailableForMobileOffline>0</IsAvailableForMobileOffline>
+  <IsCustomizable>1</IsCustomizable>
+  <CanBeDeleted>1</CanBeDeleted>
+  <IsHidden>0</IsHidden>
+  <FileName>/WebResources/book_Requirements4036A767-566E-F111-AB0D-001DD8204DF7</FileName>
+</WebResource>

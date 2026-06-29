@@ -248,6 +248,7 @@
     <RolePrivilege name="prvReadbook_FundingEvent" level="Global" />
     <RolePrivilege name="prvReadbook_FundingLine" level="Global" />
     <RolePrivilege name="prvReadbook_FundingTrack" level="Global" />
+    <RolePrivilege name="prvReadbook_GFEBSOBSDOC" level="Global" />
     <RolePrivilege name="prvReadbook_Ledger" level="Global" />
     <RolePrivilege name="prvReadbook_LIN" level="Global" />
     <RolePrivilege name="prvReadbook_LocalityPay" level="Global" />
@@ -263,6 +264,8 @@
     <RolePrivilege name="prvReadbook_QuantityType" level="Global" />
     <RolePrivilege name="prvReadbook_Realignments" level="Global" />
     <RolePrivilege name="prvReadbook_realignmentsreview" level="Global" />
+    <RolePrivilege name="prvReadbook_RequirementDetailFunding" level="Global" />
+    <RolePrivilege name="prvReadbook_RequirementDetails" level="Global" />
     <RolePrivilege name="prvReadbook_RequirementFunding" level="Global" />
     <RolePrivilege name="prvReadbook_requirementfundingvalidatefunding" level="Global" />
     <RolePrivilege name="prvReadbook_Requirements" level="Global" />

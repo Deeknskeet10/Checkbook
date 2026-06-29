@@ -26,6 +26,6 @@
   <IntroducedVersion>1.0</IntroducedVersion>
   <CdsDependencies>{"cdsdependencies":[{"logicalname":"book_unfundedrequests","componenttype":1}]}</CdsDependencies>
   <IsCustomizable>1</IsCustomizable>
-  <BackgroundImageUri>/CanvasApps/book_arngcheckbookunfundedrequestsdefaultcomm41751_BackgroundImageUri</BackgroundImageUri>
-  <DocumentUri>/CanvasApps/book_arngcheckbookunfundedrequestsdefaultcomm18302_DocumentUri.msapp</DocumentUri>
+  <BackgroundImageUri>/CanvasApps/book_arngcheckbookunfundedrequestsdefaultcomm13505_BackgroundImageUri</BackgroundImageUri>
+  <DocumentUri>/CanvasApps/book_arngcheckbookunfundedrequestsdefaultcomm32730_DocumentUri.msapp</DocumentUri>
 </CanvasApp>
