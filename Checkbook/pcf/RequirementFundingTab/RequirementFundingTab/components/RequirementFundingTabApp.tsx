@@ -101,7 +101,7 @@ export const RequirementFundingTabApp: React.FC<RequirementFundingTabAppProps> =
     const prioSelect =
       "?$select=book_prioritizationid,book_name,book_statepriority," +
       "book_approvalstatus,book_newfiscalyear,book_fundingmode," +
-      "book_requestedamount,book_newfundedamounttdp,book_validatedamount," +
+      "book_newrequestedamount,book_newfundedamounttdp,book_validatedamount," +
       "_book_requirement_value,_book_state_value&$filter=" + filter;
 
     const rdSelect =
@@ -138,7 +138,7 @@ export const RequirementFundingTabApp: React.FC<RequirementFundingTabAppProps> =
             fundingMode: (e.book_fundingmode as number | null) ?? null,
             fundingModeLabel:
               (e[`book_fundingmode${FV}`] as string | undefined) ?? null,
-            requestedAmount: num(e.book_requestedamount),
+            requestedAmount: num(e.book_newrequestedamount),
             fundedAmount: num(e.book_newfundedamounttdp),
             validatedAmount: num(e.book_validatedamount),
             requirementId: stripBraces(e._book_requirement_value as string),

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <manifest>
-  <control namespace="ARNGCheckbook" constructor="RequirementFundingTab" version="0.1.0"
+  <control namespace="ARNGCheckbook" constructor="RequirementFundingTab" version="0.1.1"
            display-name-key="RequirementFundingTab"
            description-key="Composite Funding tab for a Requirement. Sticky FY picker drives a Requirement Details (rank) section, a read-only Requirement Fundings list, a Funding by Prioritizations grid, and a Funding by Requirement Details grid. Sections show/hide based on whether the Requirement has Prioritizations and/or Requirement Details. Bind to any text field on book_requirements (e.g. book_name) — the bound value is ignored."
            control-type="virtual" >
