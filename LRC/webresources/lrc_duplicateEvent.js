@@ -22,7 +22,7 @@ LRC.Event = LRC.Event || {};
 
         var pageInput = {
             pageType: "webresource",
-            webresourceName: "lrc_duplicateEventDialog.html",
+            webresourceName: "lrc_duplicateEventDialog",
             data: encodeURIComponent(JSON.stringify({ sourceId: sourceId }))
         };
         var navOptions = {

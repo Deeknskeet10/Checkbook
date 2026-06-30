@@ -12,10 +12,16 @@ opens a modal dialog asking for a new name and new start/end dates, then
 copies the source event (including all `lrc_EventDueOut` children, with
 their due dates shifted by the same offset as the new start date).
 
-| File | Type | Web resource name |
-|------|------|-------------------|
-| `lrc_duplicateEvent.js` | JavaScript (JScript) | `lrc_duplicateEvent.js` |
-| `lrc_duplicateEventDialog.html` | Webpage (HTML) | `lrc_duplicateEventDialog.html` |
+| File | Type | Web resource name (no extension in the Name) |
+|------|------|----------------------------------------------|
+| `lrc_duplicateEvent.js` | JavaScript (JScript) | `lrc_duplicateEvent` |
+| `lrc_duplicateEventDialog.html` | Webpage (HTML) | `lrc_duplicateEventDialog` |
+
+> **Naming gotcha:** Dataverse's web resource **Name** field is the logical
+> name and is what `Xrm.Navigation.navigateTo({ webresourceName: … })`
+> resolves against. Leave the file extension OFF the Name (use
+> `lrc_duplicateEventDialog`, not `lrc_duplicateEventDialog.html`) — that's
+> the unique name the JS expects. The Display name can be anything.
 
 ### Wiring it up in the maker portal
 
@@ -73,10 +79,10 @@ specified number of new `lrc_Event` rows, all stamped with a shared
 the same field set as Duplicate, with start/end dates shifted by the
 cadence and (optionally) due-outs copied with rebased due dates.
 
-| File | Type | Web resource name |
-|------|------|-------------------|
-| `lrc_recurringEvent.js` | JavaScript (JScript) | `lrc_recurringEvent.js` |
-| `lrc_recurringEventDialog.html` | Webpage (HTML) | `lrc_recurringEventDialog.html` |
+| File | Type | Web resource name (no extension in the Name) |
+|------|------|----------------------------------------------|
+| `lrc_recurringEvent.js` | JavaScript (JScript) | `lrc_recurringEvent` |
+| `lrc_recurringEventDialog.html` | Webpage (HTML) | `lrc_recurringEventDialog` |
 
 ### Schema prerequisites (add in the maker portal first)
 
