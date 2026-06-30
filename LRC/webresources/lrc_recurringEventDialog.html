@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <title>Make Event Recurring</title>
+    <style>
+        :root {
+            --fg: #242424;
+            --muted: #616161;
+            --border: #d1d1d1;
+            --accent: #0f6cbd;
+            --accent-hover: #115ea3;
+            --bg: #ffffff;
+            --error: #b10e1c;
+            --note-bg: #f5f5f5;
+        }
+        html, body {
+            margin: 0;
+            padding: 0;
+            font-family: "Segoe UI", "Segoe UI Web (West European)", -apple-system, system-ui, sans-serif;
+            font-size: 14px;
+            color: var(--fg);
+            background: var(--bg);
+            height: 100%;
+        }
+        .wrap {
+            padding: 16px 20px 20px;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            box-sizing: border-box;
+        }
+        h1 {
+            font-size: 16px;
+            font-weight: 600;
+            margin: 0 0 4px;
+        }
+        .subtitle {
+            color: var(--muted);
+            font-size: 12px;
+            margin-bottom: 12px;
+        }
+        label {
+            display: block;
+            font-weight: 600;
+            margin: 10px 0 4px;
+        }
+        select, input[type="number"], input[type="date"] {
+            box-sizing: border-box;
+            padding: 6px 8px;
+            font-size: 14px;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            font-family: inherit;
+        }
+        select { width: 100%; }
+        input[type="number"] { width: 90px; }
+        input[type="date"] { width: 100%; }
+        input:focus, select:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 1px var(--accent);
+        }
+        .end-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 6px 0;
+        }
+        .end-row label { margin: 0; font-weight: 400; flex-shrink: 0; }
+        .end-row input[type="radio"] { margin: 0; }
+        .checkbox-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 10px 0 4px;
+        }
+        .checkbox-row label { margin: 0; font-weight: 400; }
+        .preview {
+            margin-top: 10px;
+            padding: 8px 10px;
+            background: var(--note-bg);
+            border-radius: 4px;
+            font-size: 12px;
+            color: var(--muted);
+            min-height: 32px;
+            line-height: 1.4;
+        }
+        .actions {
+            margin-top: auto;
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+            padding-top: 16px;
+        }
+        button {
+            padding: 6px 16px;
+            font-size: 14px;
+            border-radius: 4px;
+            border: 1px solid var(--border);
+            background: #fff;
+            cursor: pointer;
+            font-family: inherit;
+        }
+        button.primary {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: #fff;
+        }
+        button.primary:hover:not(:disabled) { background: var(--accent-hover); }
+        button:disabled { opacity: 0.5; cursor: default; }
+        .status {
+            margin-top: 8px;
+            font-size: 12px;
+            color: var(--muted);
+            min-height: 16px;
+        }
+        .status.error { color: var(--error); }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+    <div class="wrap">
+        <h1>Make Event Recurring</h1>
+        <div class="subtitle" id="sourceLabel">Loading source event&hellip;</div>
+
+        <label for="cadence">Cadence</label>
+        <select id="cadence">
+            <option value="weekly">Weekly</option>
+            <option value="biweekly">Every 2 weeks</option>
+            <option value="monthly">Monthly (same day of month)</option>
+            <option value="quarterly">Quarterly</option>
+            <option value="yearly">Yearly</option>
+            <option value="custom">Every N days&hellip;</option>
+        </select>
+
+        <div id="customWrap" class="hidden">
+            <label for="customDays">Interval (days)</label>
+            <input type="number" id="customDays" min="1" max="3650" value="30" />
+        </div>
+
+        <label>End condition</label>
+        <div class="end-row">
+            <input type="radio" name="endMode" id="endCount" value="count" checked />
+            <label for="endCount">After</label>
+            <input type="number" id="countN" min="1" max="200" value="5" />
+            <label for="endCount">more occurrence(s)</label>
+        </div>
+        <div class="end-row">
+            <input type="radio" name="endMode" id="endDate" value="date" />
+            <label for="endDate">On or before</label>
+            <input type="date" id="endDateInput" disabled />
+        </div>
+
+        <div class="checkbox-row">
+            <input type="checkbox" id="copyDueOuts" checked />
+            <label for="copyDueOuts">Copy due-outs to each occurrence</label>
+        </div>
+
+        <div class="preview" id="preview"></div>
+        <div class="status" id="status"></div>
+
+        <div class="actions">
+            <button type="button" id="cancelBtn">Cancel</button>
+            <button type="button" id="okBtn" class="primary" disabled>Generate</button>
+        </div>
+    </div>
+
+    <script>
+        (function () {
+            var EVENT_ENTITY = "lrc_event";
+            var EVENT_SET = "lrc_events";
+            var DUEOUT_ENTITY = "lrc_eventdueout";
+            var MAX_OCCURRENCES = 60; // safety cap
+
+            var EVENT_SELECT = [
+                "lrc_name", "lrc_eventtype", "lrc_startdate", "lrc_enddate",
+                "lrc_detaileddescription", "lrc_location",
+                "lrc_pocname", "lrc_pocemail", "lrc_pocphone",
+                "lrc_seriesid", "lrc_isrecurring",
+                "_lrc_division_value", "_lrc_branch_value",
+                "_lrc_directorate_value", "_lrc_staff_value"
+            ].join(",");
+
+            var LOOKUPS = [
+                { value: "_lrc_division_value",    bind: "lrc_Division@odata.bind",    set: "geip_organizations" },
+                { value: "_lrc_branch_value",      bind: "lrc_Branch@odata.bind",      set: "geip_organizations" },
+                { value: "_lrc_directorate_value", bind: "lrc_Directorate@odata.bind", set: "geip_organizations" },
+                { value: "_lrc_staff_value",       bind: "lrc_Staff@odata.bind",       set: "geip_organizations" }
+            ];
+
+            var COPY_FIELDS = [
+                "lrc_eventtype", "lrc_detaileddescription", "lrc_location",
+                "lrc_pocname", "lrc_pocemail", "lrc_pocphone"
+            ];
+
+            // Maps the dialog cadence key to the integer value of the
+            // lrc_RecurrencePattern choice column. Option set values were
+            // reset to be sequential starting at 1 when the choice was
+            // created in the maker portal — keep this map in sync if you
+            // ever reorder or add options.
+            var CADENCE_OPTIONSET = {
+                weekly:    1,
+                biweekly:  2,
+                monthly:   3,
+                quarterly: 4,
+                yearly:    5,
+                custom:    6
+            };
+
+            var statusEl = document.getElementById("status");
+            var previewEl = document.getElementById("preview");
+            var okBtn = document.getElementById("okBtn");
+            var cancelBtn = document.getElementById("cancelBtn");
+            var sourceLabelEl = document.getElementById("sourceLabel");
+            var cadenceEl = document.getElementById("cadence");
+            var customWrap = document.getElementById("customWrap");
+            var customDaysEl = document.getElementById("customDays");
+            var endCountRadio = document.getElementById("endCount");
+            var endDateRadio = document.getElementById("endDate");
+            var countNEl = document.getElementById("countN");
+            var endDateEl = document.getElementById("endDateInput");
+            var copyDueOutsEl = document.getElementById("copyDueOuts");
+
+            var xrm = (window.parent && window.parent.Xrm) || window.Xrm;
+            var sourceId = null;
+            var sourceRecord = null;
+            var sourceStart = null;
+            var sourceEnd = null;
+            var sourceDurationDays = 0;
+
+            function setStatus(msg, isError) {
+                statusEl.textContent = msg || "";
+                statusEl.className = "status" + (isError ? " error" : "");
+            }
+
+            function parseInput() {
+                try {
+                    var params = new URLSearchParams(window.location.search);
+                    var raw = params.get("data");
+                    if (!raw) return null;
+                    return JSON.parse(decodeURIComponent(raw));
+                } catch (e) { return null; }
+            }
+
+            function pad(n) { return n < 10 ? "0" + n : "" + n; }
+            function toIsoDateOnly(d) {
+                return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate());
+            }
+            function fromIsoDateOnly(s) {
+                var parts = s.split("-");
+                return new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+            }
+            function addDays(d, n) {
+                var nd = new Date(d.getTime());
+                nd.setDate(nd.getDate() + n);
+                return nd;
+            }
+            function addMonthsClamped(d, months) {
+                // Preserve day-of-month, clamping to the target month's last day
+                // (e.g. Jan 31 + 1 month → Feb 28/29, not Mar 3).
+                var origDay = d.getDate();
+                var target = new Date(d.getFullYear(), d.getMonth() + months, 1);
+                var lastDay = new Date(target.getFullYear(), target.getMonth() + 1, 0).getDate();
+                target.setDate(Math.min(origDay, lastDay));
+                return target;
+            }
+            function addYearsClamped(d, years) {
+                return addMonthsClamped(d, years * 12);
+            }
+            function daysBetween(a, b) {
+                return Math.round((b.getTime() - a.getTime()) / 86400000);
+            }
+            function newGuid() {
+                if (window.crypto && typeof window.crypto.randomUUID === "function") {
+                    return window.crypto.randomUUID();
+                }
+                return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, function (c) {
+                    var r = Math.random() * 16 | 0;
+                    var v = c === "x" ? r : (r & 0x3 | 0x8);
+                    return v.toString(16);
+                });
+            }
+
+            function shiftStart(originalStart, cadence, customDays, n) {
+                // n = 1 → first generated occurrence after the source
+                switch (cadence) {
+                    case "weekly":    return addDays(originalStart, 7 * n);
+                    case "biweekly":  return addDays(originalStart, 14 * n);
+                    case "monthly":   return addMonthsClamped(originalStart, n);
+                    case "quarterly": return addMonthsClamped(originalStart, 3 * n);
+                    case "yearly":    return addYearsClamped(originalStart, n);
+                    case "custom":    return addDays(originalStart, customDays * n);
+                }
+                return addDays(originalStart, 7 * n);
+            }
+
+            function computeOccurrences() {
+                if (!sourceStart) return [];
+                var cadence = cadenceEl.value;
+                var customDays = Math.max(1, parseInt(customDaysEl.value, 10) || 1);
+                var mode = endCountRadio.checked ? "count" : "date";
+
+                var results = [];
+                if (mode === "count") {
+                    var n = Math.max(1, parseInt(countNEl.value, 10) || 1);
+                    n = Math.min(n, MAX_OCCURRENCES);
+                    for (var i = 1; i <= n; i++) {
+                        var s = shiftStart(sourceStart, cadence, customDays, i);
+                        var e = addDays(s, sourceDurationDays);
+                        results.push({ start: s, end: e });
+                    }
+                } else {
+                    if (!endDateEl.value) return [];
+                    var cutoff = fromIsoDateOnly(endDateEl.value);
+                    var i2 = 1;
+                    while (i2 <= MAX_OCCURRENCES) {
+                        var s2 = shiftStart(sourceStart, cadence, customDays, i2);
+                        if (s2 > cutoff) break;
+                        var e2 = addDays(s2, sourceDurationDays);
+                        results.push({ start: s2, end: e2 });
+                        i2++;
+                    }
+                }
+                return results;
+            }
+
+            function formatShort(d) {
+                var months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+                return d.getDate() + " " + months[d.getMonth()] + " " + d.getFullYear();
+            }
+
+            function refreshPreview() {
+                var occs = computeOccurrences();
+                if (!occs.length) {
+                    previewEl.textContent = "No occurrences will be generated.";
+                    okBtn.disabled = true;
+                    return;
+                }
+                var lines = ["Will generate " + occs.length + " occurrence(s):"];
+                var sample = occs.slice(0, 3);
+                sample.forEach(function (o, i) {
+                    lines.push("  " + (i + 1) + ". " + formatShort(o.start)
+                        + (sourceDurationDays > 0 ? " – " + formatShort(o.end) : ""));
+                });
+                if (occs.length > sample.length) {
+                    lines.push("  … and " + (occs.length - sample.length) + " more.");
+                }
+                previewEl.textContent = lines.join("\n");
+                okBtn.disabled = false;
+            }
+
+            function loadSource(id) {
+                return xrm.WebApi.retrieveRecord(EVENT_ENTITY, id, "?$select=" + EVENT_SELECT)
+                    .then(function (rec) {
+                        sourceRecord = rec;
+                        sourceLabelEl.textContent = "Source: " + (rec.lrc_name || "(unnamed event)");
+                        if (!rec.lrc_startdate) {
+                            setStatus("Source event has no start date; cannot generate a series.", true);
+                            return;
+                        }
+                        sourceStart = fromIsoDateOnly(rec.lrc_startdate.substring(0, 10));
+                        sourceEnd = rec.lrc_enddate
+                            ? fromIsoDateOnly(rec.lrc_enddate.substring(0, 10))
+                            : sourceStart;
+                        sourceDurationDays = Math.max(0, daysBetween(sourceStart, sourceEnd));
+
+                        // Sensible default end-date: 6 months out.
+                        var defaultEnd = addMonthsClamped(sourceStart, 6);
+                        endDateEl.value = toIsoDateOnly(defaultEnd);
+
+                        if (rec.lrc_seriesid) {
+                            sourceLabelEl.textContent += " — already part of a series; new occurrences will join it.";
+                        }
+                        refreshPreview();
+                    });
+            }
+
+            function fetchDueOuts(eventId) {
+                var query =
+                    "?$select=lrc_name,lrc_task,lrc_taskdescription,lrc_duedate" +
+                    "&$filter=_lrc_event_value eq " + eventId;
+                return xrm.WebApi.retrieveMultipleRecords(DUEOUT_ENTITY, query)
+                    .then(function (res) { return res.entities || []; });
+            }
+
+            function buildEventPayload(occ, seriesId, patternValue, intervalDays) {
+                var payload = {
+                    lrc_name: sourceRecord.lrc_name,
+                    lrc_startdate: toIsoDateOnly(occ.start),
+                    lrc_enddate: toIsoDateOnly(occ.end),
+                    lrc_seriesid: seriesId,
+                    lrc_isrecurring: true,
+                    lrc_recurrencepattern: patternValue
+                };
+                if (intervalDays != null) {
+                    payload.lrc_recurrenceintervaldays = intervalDays;
+                }
+                COPY_FIELDS.forEach(function (f) {
+                    if (sourceRecord[f] !== undefined && sourceRecord[f] !== null) {
+                        payload[f] = sourceRecord[f];
+                    }
+                });
+                LOOKUPS.forEach(function (lk) {
+                    var v = sourceRecord[lk.value];
+                    if (v) payload[lk.bind] = "/" + lk.set + "(" + v + ")";
+                });
+                return payload;
+            }
+
+            function generate() {
+                if (!sourceRecord) return;
+                var occs = computeOccurrences();
+                if (!occs.length) { setStatus("Nothing to generate.", true); return; }
+
+                var cadence = cadenceEl.value;
+                var patternValue = CADENCE_OPTIONSET[cadence];
+                var intervalDays = cadence === "custom"
+                    ? Math.max(1, parseInt(customDaysEl.value, 10) || 1)
+                    : null;
+
+                var seriesId = sourceRecord.lrc_seriesid || newGuid();
+                var copyDueOuts = copyDueOutsEl.checked;
+
+                okBtn.disabled = true;
+                cancelBtn.disabled = true;
+                setStatus("Preparing…");
+
+                var sourceDueOuts = [];
+                var created = 0;
+
+                var workflow = Promise.resolve();
+
+                // 1. Stamp the source with series id + recurring flag if not already.
+                if (!sourceRecord.lrc_seriesid || !sourceRecord.lrc_isrecurring) {
+                    workflow = workflow.then(function () {
+                        setStatus("Stamping source event…");
+                        var sourcePayload = {
+                            lrc_seriesid: seriesId,
+                            lrc_isrecurring: true,
+                            lrc_recurrencepattern: patternValue
+                        };
+                        if (intervalDays != null) {
+                            sourcePayload.lrc_recurrenceintervaldays = intervalDays;
+                        }
+                        return xrm.WebApi.updateRecord(EVENT_ENTITY, sourceId, sourcePayload);
+                    });
+                }
+
+                // 2. Fetch due-outs once if we'll copy them.
+                if (copyDueOuts) {
+                    workflow = workflow.then(function () {
+                        setStatus("Reading source due-outs…");
+                        return fetchDueOuts(sourceId).then(function (dos) { sourceDueOuts = dos; });
+                    });
+                }
+
+                // 3. Create each occurrence sequentially.
+                occs.forEach(function (occ, idx) {
+                    workflow = workflow.then(function () {
+                        setStatus("Creating occurrence " + (idx + 1) + " of " + occs.length + "…");
+                        var payload = buildEventPayload(occ, seriesId, patternValue, intervalDays);
+                        return xrm.WebApi.createRecord(EVENT_ENTITY, payload).then(function (createdRec) {
+                            created++;
+                            if (!copyDueOuts || !sourceDueOuts.length) return null;
+                            var shiftDays = daysBetween(sourceStart, occ.start);
+                            var chain = Promise.resolve();
+                            sourceDueOuts.forEach(function (d) {
+                                chain = chain.then(function () {
+                                    var dpayload = {
+                                        "lrc_Event@odata.bind": "/" + EVENT_SET + "(" + createdRec.id + ")"
+                                    };
+                                    if (d.lrc_name) dpayload.lrc_name = d.lrc_name;
+                                    if (d.lrc_task) dpayload.lrc_task = d.lrc_task;
+                                    if (d.lrc_taskdescription) dpayload.lrc_taskdescription = d.lrc_taskdescription;
+                                    if (d.lrc_duedate) {
+                                        var origDue = fromIsoDateOnly(d.lrc_duedate.substring(0, 10));
+                                        dpayload.lrc_duedate = toIsoDateOnly(addDays(origDue, shiftDays));
+                                    }
+                                    return xrm.WebApi.createRecord(DUEOUT_ENTITY, dpayload);
+                                });
+                            });
+                            return chain;
+                        });
+                    });
+                });
+
+                workflow
+                    .then(function () {
+                        setStatus("Done — created " + created + " occurrence(s).");
+                        setTimeout(function () { try { window.close(); } catch (e) { /* ignore */ } }, 600);
+                    })
+                    .catch(function (err) {
+                        console.error(err);
+                        var msg = (err && err.message) ? err.message : "Failed to generate series.";
+                        setStatus("Stopped after " + created + " occurrence(s): " + msg, true);
+                        okBtn.disabled = false;
+                        cancelBtn.disabled = false;
+                    });
+            }
+
+            // Wire up UI
+            cadenceEl.addEventListener("change", function () {
+                customWrap.classList.toggle("hidden", cadenceEl.value !== "custom");
+                refreshPreview();
+            });
+            customDaysEl.addEventListener("input", refreshPreview);
+            countNEl.addEventListener("input", refreshPreview);
+            endDateEl.addEventListener("change", refreshPreview);
+            endCountRadio.addEventListener("change", function () {
+                countNEl.disabled = false;
+                endDateEl.disabled = true;
+                refreshPreview();
+            });
+            endDateRadio.addEventListener("change", function () {
+                countNEl.disabled = true;
+                endDateEl.disabled = false;
+                refreshPreview();
+            });
+            cancelBtn.addEventListener("click", function () {
+                try { window.close(); } catch (e) { /* ignore */ }
+            });
+            okBtn.addEventListener("click", generate);
+
+            // Boot
+            var input = parseInput();
+            if (!input || !input.sourceId) {
+                setStatus("Missing source event id.", true);
+                return;
+            }
+            if (!xrm || !xrm.WebApi) {
+                setStatus("Dataverse Xrm context unavailable.", true);
+                return;
+            }
+            sourceId = input.sourceId;
+            loadSource(sourceId).catch(function (err) {
+                console.error(err);
+                setStatus("Could not load source event.", true);
+            });
+        })();
+    </script>
+</body>
+</html>

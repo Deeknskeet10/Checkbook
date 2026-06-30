@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <title>Duplicate Event</title>
+    <style>
+        :root {
+            --fg: #242424;
+            --muted: #616161;
+            --border: #d1d1d1;
+            --accent: #0f6cbd;
+            --accent-hover: #115ea3;
+            --bg: #ffffff;
+            --error: #b10e1c;
+        }
+        html, body {
+            margin: 0;
+            padding: 0;
+            font-family: "Segoe UI", "Segoe UI Web (West European)", -apple-system, system-ui, sans-serif;
+            font-size: 14px;
+            color: var(--fg);
+            background: var(--bg);
+            height: 100%;
+        }
+        .wrap {
+            padding: 16px 20px 20px;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            box-sizing: border-box;
+        }
+        h1 {
+            font-size: 16px;
+            font-weight: 600;
+            margin: 0 0 4px;
+        }
+        .subtitle {
+            color: var(--muted);
+            font-size: 12px;
+            margin-bottom: 12px;
+        }
+        label {
+            display: block;
+            font-weight: 600;
+            margin: 10px 0 4px;
+        }
+        input[type="text"], input[type="date"] {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 6px 8px;
+            font-size: 14px;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            font-family: inherit;
+        }
+        input:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 1px var(--accent);
+        }
+        .row {
+            display: flex;
+            gap: 12px;
+        }
+        .row > div { flex: 1; }
+        .actions {
+            margin-top: auto;
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+            padding-top: 16px;
+        }
+        button {
+            padding: 6px 16px;
+            font-size: 14px;
+            border-radius: 4px;
+            border: 1px solid var(--border);
+            background: #fff;
+            cursor: pointer;
+            font-family: inherit;
+        }
+        button.primary {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: #fff;
+        }
+        button.primary:hover:not(:disabled) { background: var(--accent-hover); }
+        button:disabled { opacity: 0.5; cursor: default; }
+        .status {
+            margin-top: 8px;
+            font-size: 12px;
+            color: var(--muted);
+            min-height: 16px;
+        }
+        .status.error { color: var(--error); }
+    </style>
+</head>
+<body>
+    <div class="wrap">
+        <h1>Duplicate Event</h1>
+        <div class="subtitle" id="sourceLabel">Loading source event&hellip;</div>
+
+        <label for="newName">Name</label>
+        <input type="text" id="newName" />
+
+        <div class="row">
+            <div>
+                <label for="newStart">New start date</label>
+                <input type="date" id="newStart" />
+            </div>
+            <div>
+                <label for="newEnd">New end date</label>
+                <input type="date" id="newEnd" />
+            </div>
+        </div>
+
+        <div class="status" id="status"></div>
+
+        <div class="actions">
+            <button type="button" id="cancelBtn">Cancel</button>
+            <button type="button" id="okBtn" class="primary" disabled>Duplicate</button>
+        </div>
+    </div>
+
+    <script>
+        (function () {
+            var EVENT_ENTITY = "lrc_event";
+            var EVENT_SET = "lrc_events";
+            var DUEOUT_SET = "lrc_eventdueouts";
+
+            var EVENT_SELECT = [
+                "lrc_name", "lrc_eventtype", "lrc_startdate", "lrc_enddate",
+                "lrc_detaileddescription", "lrc_location",
+                "lrc_pocname", "lrc_pocemail", "lrc_pocphone",
+                "_lrc_division_value", "_lrc_branch_value",
+                "_lrc_directorate_value", "_lrc_staff_value"
+            ].join(",");
+
+            // _lookup_value → {bindProperty, navProperty}. navProperty defaults to schema name from lookupLogicalName(...).
+            var LOOKUPS = [
+                { value: "_lrc_division_value",    bind: "lrc_Division@odata.bind",    set: "geip_organizations" },
+                { value: "_lrc_branch_value",      bind: "lrc_Branch@odata.bind",      set: "geip_organizations" },
+                { value: "_lrc_directorate_value", bind: "lrc_Directorate@odata.bind", set: "geip_organizations" },
+                { value: "_lrc_staff_value",       bind: "lrc_Staff@odata.bind",       set: "geip_organizations" }
+            ];
+
+            var COPY_FIELDS = [
+                "lrc_eventtype", "lrc_detaileddescription", "lrc_location",
+                "lrc_pocname", "lrc_pocemail", "lrc_pocphone"
+            ];
+
+            var statusEl = document.getElementById("status");
+            var okBtn = document.getElementById("okBtn");
+            var cancelBtn = document.getElementById("cancelBtn");
+            var nameEl = document.getElementById("newName");
+            var startEl = document.getElementById("newStart");
+            var endEl = document.getElementById("newEnd");
+            var sourceLabelEl = document.getElementById("sourceLabel");
+
+            var xrm = (window.parent && window.parent.Xrm) || window.Xrm;
+            var sourceId = null;
+            var sourceRecord = null;
+
+            function setStatus(msg, isError) {
+                statusEl.textContent = msg || "";
+                statusEl.className = "status" + (isError ? " error" : "");
+            }
+
+            function parseInput() {
+                try {
+                    var params = new URLSearchParams(window.location.search);
+                    var raw = params.get("data");
+                    if (!raw) return null;
+                    return JSON.parse(decodeURIComponent(raw));
+                } catch (e) {
+                    return null;
+                }
+            }
+
+            function toIsoDateOnly(d) {
+                // YYYY-MM-DD in local time — these are date-only fields.
+                var pad = function (n) { return n < 10 ? "0" + n : "" + n; };
+                return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate());
+            }
+
+            function fromIsoDateOnly(s) {
+                // Build a Date in local time at midnight; avoids TZ shift from `new Date("YYYY-MM-DD")` which is UTC.
+                var parts = s.split("-");
+                return new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+            }
+
+            function daysBetween(a, b) {
+                var ms = b.getTime() - a.getTime();
+                return Math.round(ms / 86400000);
+            }
+
+            function addDays(d, days) {
+                var nd = new Date(d.getTime());
+                nd.setDate(nd.getDate() + days);
+                return nd;
+            }
+
+            function close() {
+                // navigateTo dialogs close via the host
+                if (xrm && xrm.Navigation && xrm.Navigation.navigateTo) {
+                    // No direct "close" API for embedded dialogs — use back navigation as a fallback.
+                }
+                if (window.top !== window.self && window.parent) {
+                    // Most reliable: the dialog frame is owned by the platform host; closing the page closes the dialog.
+                    try { window.close(); } catch (e) { /* ignore */ }
+                }
+                // If still here, just clear UI — the user can dismiss via the dialog's X.
+            }
+
+            function loadSource(id) {
+                return xrm.WebApi.retrieveRecord(EVENT_ENTITY, id, "?$select=" + EVENT_SELECT)
+                    .then(function (rec) {
+                        sourceRecord = rec;
+                        sourceLabelEl.textContent = "Source: " + (rec.lrc_name || "(unnamed event)");
+                        nameEl.value = (rec.lrc_name || "Event") + " (Copy)";
+
+                        var origStart = rec.lrc_startdate ? fromIsoDateOnly(rec.lrc_startdate.substring(0, 10)) : null;
+                        var origEnd = rec.lrc_enddate ? fromIsoDateOnly(rec.lrc_enddate.substring(0, 10)) : origStart;
+
+                        // Default: shift forward by 7 days.
+                        if (origStart) {
+                            startEl.value = toIsoDateOnly(addDays(origStart, 7));
+                            endEl.value = toIsoDateOnly(addDays(origEnd || origStart, 7));
+                        } else {
+                            var today = new Date();
+                            startEl.value = toIsoDateOnly(today);
+                            endEl.value = toIsoDateOnly(today);
+                        }
+                        okBtn.disabled = false;
+                    });
+            }
+
+            function fetchDueOuts(eventId) {
+                var query =
+                    "?$select=lrc_name,lrc_task,lrc_taskdescription,lrc_duedate" +
+                    "&$filter=_lrc_event_value eq " + eventId;
+                return xrm.WebApi.retrieveMultipleRecords("lrc_eventdueout", query)
+                    .then(function (res) { return res.entities || []; });
+            }
+
+            function buildEventPayload(newName, newStart, newEnd) {
+                var payload = {
+                    lrc_name: newName,
+                    lrc_startdate: toIsoDateOnly(newStart),
+                    lrc_enddate: toIsoDateOnly(newEnd)
+                };
+                COPY_FIELDS.forEach(function (f) {
+                    if (sourceRecord[f] !== undefined && sourceRecord[f] !== null) {
+                        payload[f] = sourceRecord[f];
+                    }
+                });
+                LOOKUPS.forEach(function (lk) {
+                    var v = sourceRecord[lk.value];
+                    if (v) {
+                        payload[lk.bind] = "/" + lk.set + "(" + v + ")";
+                    }
+                });
+                return payload;
+            }
+
+            function duplicate() {
+                if (!sourceRecord) return;
+                var newName = (nameEl.value || "").trim();
+                if (!newName) { setStatus("Name is required.", true); return; }
+                if (!startEl.value || !endEl.value) { setStatus("Both dates are required.", true); return; }
+
+                var newStart = fromIsoDateOnly(startEl.value);
+                var newEnd = fromIsoDateOnly(endEl.value);
+                if (newEnd < newStart) { setStatus("End date must be on or after start date.", true); return; }
+
+                var origStart = sourceRecord.lrc_startdate
+                    ? fromIsoDateOnly(sourceRecord.lrc_startdate.substring(0, 10))
+                    : newStart;
+                var shiftDays = daysBetween(origStart, newStart);
+
+                okBtn.disabled = true;
+                cancelBtn.disabled = true;
+                setStatus("Creating duplicate…");
+
+                var payload = buildEventPayload(newName, newStart, newEnd);
+                var newEventId = null;
+
+                xrm.WebApi.createRecord(EVENT_ENTITY, payload)
+                    .then(function (created) {
+                        newEventId = created.id;
+                        return fetchDueOuts(sourceId);
+                    })
+                    .then(function (dueOuts) {
+                        if (!dueOuts.length) return null;
+                        setStatus("Copying " + dueOuts.length + " due-out(s)…");
+                        var chain = Promise.resolve();
+                        dueOuts.forEach(function (d) {
+                            chain = chain.then(function () {
+                                var dpayload = {
+                                    "lrc_Event@odata.bind": "/" + EVENT_SET + "(" + newEventId + ")"
+                                };
+                                if (d.lrc_name) dpayload.lrc_name = d.lrc_name;
+                                if (d.lrc_task) dpayload.lrc_task = d.lrc_task;
+                                if (d.lrc_taskdescription) dpayload.lrc_taskdescription = d.lrc_taskdescription;
+                                if (d.lrc_duedate) {
+                                    var origDue = fromIsoDateOnly(d.lrc_duedate.substring(0, 10));
+                                    dpayload.lrc_duedate = toIsoDateOnly(addDays(origDue, shiftDays));
+                                }
+                                return xrm.WebApi.createRecord("lrc_eventdueout", dpayload);
+                            });
+                        });
+                        return chain;
+                    })
+                    .then(function () {
+                        setStatus("Opening duplicate…");
+                        return xrm.Navigation.openForm({
+                            entityName: EVENT_ENTITY,
+                            entityId: newEventId
+                        });
+                    })
+                    .then(function () {
+                        close();
+                    })
+                    .catch(function (err) {
+                        console.error(err);
+                        setStatus((err && err.message) ? err.message : "Failed to duplicate event.", true);
+                        okBtn.disabled = false;
+                        cancelBtn.disabled = false;
+                    });
+            }
+
+            // Wire up
+            cancelBtn.addEventListener("click", close);
+            okBtn.addEventListener("click", duplicate);
+
+            var input = parseInput();
+            if (!input || !input.sourceId) {
+                setStatus("Missing source event id.", true);
+                return;
+            }
+            if (!xrm || !xrm.WebApi) {
+                setStatus("Dataverse Xrm context unavailable.", true);
+                return;
+            }
+            sourceId = input.sourceId;
+
+            loadSource(sourceId).catch(function (err) {
+                console.error(err);
+                setStatus("Could not load source event.", true);
+            });
+        })();
+    </script>
+</body>
+</html>
