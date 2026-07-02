@@ -53,7 +53,7 @@ registrations.
 
 ## Schema additions required (before deploying this build)
 
-Three columns must be added to `book_turnin` in the maker portal before
+Four columns must be added to `book_turnin` in the maker portal before
 registering the FundingEvent + Turn-In plugins below. The plugin code references
 their schema names directly; the build will succeed without them, but at
 runtime the Create / Update messages will fail.
@@ -63,6 +63,7 @@ runtime the Create / Update messages will fail.
 | `book_origin`           | Choice (option set)  | `State` | Values: **State** = `0`, **Sweep** = `1`. Distinguishes Kind A (state-submitted) from Kind B (sweep-created over-allocation tracker). |
 | `book_afpamount`        | Decimal (2 decimals) | `0`     | AFP amount that will flow back to A18 on approval. Auto-populated by `TurnInAmountCalculator` for Kind A; written by `GenerateDistributions` for Kind B. |
 | `book_allotmentamount`  | Decimal (2 decimals) | `0`     | Allotment amount that will flow back to A18 on approval. Same population sources as above. |
+| `book_requiresbeapproval` | Two Options (Yes/No) | `Yes` | Derived flag driving the Turn-In BPF's BE-Approval branch. Kept in sync by `TurnInRequiresBEApprovalRecalc` on item Create/Update/Delete. Default **Yes** so a fresh (item-less) Turn-In starts on the BE path until items say otherwise. |
 
 `book_newamount` keeps its existing schema; its semantic meaning narrows to
 "TDP amount being returned (Kind A) or 0 (Kind B)" — no migration needed.
@@ -503,6 +504,24 @@ re-enter.
 |---|---------|----------------|-----------------|------|---------------------------|-------|
 | 1 | Update  | `book_turnin`  | Post-Operation  | Sync | `book_stateapproved`      | Only acts on true → false transitions. **Requires PreImage** (`book_stateapproved, statecode`). |
 
+### `Checkbook.Plugins.TurnIns.TurnInRequiresBEApprovalRecalc`
+
+Keeps `book_turnin.book_requiresbeapproval` in sync as child Turn-In Items
+change. Rule: BE Approval is required when the Turn-In has zero active items
+(AFP-only path) or any active item lacks a Prioritization (RF-only item). The
+flag is what the Turn-In BPF branches on to route the BE Approval stage;
+`TurnInValidator` still enforces the same rule at approval time.
+
+Cross-entity writer (writes `book_turnin`, triggered by `book_turninitems`), so
+it does not recurse with the other Turn-In steps. The plugin no-ops the Update
+when the flag already matches to avoid noise on the Turn-In sync stack.
+
+| # | Message | Primary entity      | Stage           | Mode | Filtering attributes                          | Notes |
+|---|---------|---------------------|-----------------|------|-----------------------------------------------|-------|
+| 1 | Create  | `book_turninitems`  | Post-Operation  | Sync | *(none)*                                      | Recalc parent Turn-In. |
+| 2 | Update  | `book_turninitems`  | Post-Operation  | Sync | `book_turnin, book_prioritization, statecode` | Recalc parent(s) — also the old parent on reparent. **Requires PreImage** (`book_turnin, book_prioritization, statecode`). |
+| 3 | Delete  | `book_turninitems`  | Post-Operation  | Sync | *(none)*                                      | Recalc parent Turn-In. **Requires PreImage** (`book_turnin`). |
+
 ---
 
 ## LOAs
@@ -631,6 +650,10 @@ to sort the right pane by **Message** then by **Primary Entity**.
   - [ ] Update of `book_turnin` — Post-Op Sync, PreImage, filter `book_stateapproved, book_beapproved`
 - [ ] `Checkbook.Plugins.TurnIns.TurnInDeactivator`
   - [ ] Update of `book_turnin` — Post-Op Sync, PreImage, filter `book_stateapproved`
+- [ ] `Checkbook.Plugins.TurnIns.TurnInRequiresBEApprovalRecalc`
+  - [ ] Create of `book_turninitems` — Post-Op Sync
+  - [ ] Update of `book_turninitems` — Post-Op Sync, PreImage, filter `book_turnin, book_prioritization, statecode`
+  - [ ] Delete of `book_turninitems` — Post-Op Sync, PreImage
 
 ### LOAs
 - [ ] Custom API `book_GenerateLOAs` exists with Plugin Type = `Checkbook.Plugins.LOAs.LOAGenerator`
@@ -644,7 +667,7 @@ to sort the right pane by **Message** then by **Primary Entity**.
 - [ ] Step on the Custom API runs **Async** (PowerApps caller would otherwise hit the 2-minute sync limit)
 
 ### Schema + env vars
-- [ ] `book_turnin` has the three new columns (`book_origin`, `book_afpamount`, `book_allotmentamount`)
+- [ ] `book_turnin` has the four new columns (`book_origin`, `book_afpamount`, `book_allotmentamount`, `book_requiresbeapproval`)
 - [ ] Env var `book_DistributionHoldingFundCenter` is defined and set to the A18 record's GUID
 - [ ] Env var `book_TurnInCreditOPR` is defined and set to the BE OPR's record GUID (required for FY27+ Turn-Ins)
 

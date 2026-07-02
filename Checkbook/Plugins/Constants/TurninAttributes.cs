@@ -25,6 +25,13 @@ namespace Checkbook.Plugins.Constants
         public const string IdentifiedTurnInAmount = "book_identifiedturninamount";
         public const string StateApproved = "book_stateapproved";
         public const string BEApproved = "book_beapproved";
+        // Derived flag: does this Turn-In need Budget Execution approval in addition
+        // to State approval? True when (a) any active item lacks a Prioritization
+        // (RF-only), or (b) the Turn-In has zero active items (AFP-only path).
+        // Recomputed by TurnInRequiresBEApprovalRecalc on Turn-In Item changes.
+        // Default in the maker portal should be Yes so a fresh (item-less) Turn-In
+        // starts on the BE-approval path until items say otherwise.
+        public const string RequiresBEApproval = "book_requiresbeapproval";
         // Distinguishes Kind A (State-submitted) from Kind B (sweep-created over-allocation
         // tracker). The Distributions sweep only mutates / deactivates Sweep-origin records.
         // Column must be created in the maker portal — option set values State=0, Sweep=1.
