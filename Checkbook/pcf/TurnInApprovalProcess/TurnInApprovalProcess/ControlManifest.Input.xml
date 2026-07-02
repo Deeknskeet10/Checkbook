@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<manifest>
+  <control namespace="ARNGCheckbook" constructor="TurnInApprovalProcess" version="0.1.0"
+           display-name-key="TurnInApprovalProcess"
+           description-key="Replacement for the Turn-In Business Process Flow bar. Renders a chevron-style progress bar (State Approval, optionally BE Approval, Approved) with role-gated Approve/Deny buttons. The BE Approval stage is hidden when book_requiresbeapproval is No. Role checks (State Approver / State Administrator / Checkbook Administrator for State; Budget Executor / Checkbook Administrator for BE) are mirrored in TurnInValidator as the authoritative security boundary."
+           control-type="virtual" >
+    <external-service-usage enabled="false">
+    </external-service-usage>
+    <!-- Bound to book_name so it can sit at the top of the Turn-In form. The bound
+         value is unused — the component reads the record via context.webAPI and
+         the current record ID from context.mode.contextInfo. -->
+    <property name="turnInName" display-name-key="Turn-In Name"
+              description-key="Field the control is placed on. Value is unused."
+              of-type="SingleLine.Text" usage="bound" required="true" />
+    <resources>
+      <code path="index.ts" order="1"/>
+      <css path="css/TurnInApprovalProcess.css" order="1" />
+      <platform-library name="React" version="16.14.0" />
+      <platform-library name="Fluent" version="9.46.2" />
+    </resources>
+    <feature-usage>
+      <uses-feature name="WebAPI" required="true" />
+    </feature-usage>
+  </control>
+</manifest>

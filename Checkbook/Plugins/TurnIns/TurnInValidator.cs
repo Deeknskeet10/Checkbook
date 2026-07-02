@@ -64,6 +64,13 @@ namespace Checkbook.Plugins.TurnIns
             bool newBeApproved = (preImage?.GetAttributeValue<bool?>(TurninAttributes.BEApproved) ?? false)
                 || beApprovalTransition;
 
+            // ---- Role gating ----
+            // Table-level privileges let a few State roles (PM, FC Reviewer) update
+            // Turn-Ins for editing purposes, but only Approvers/Administrators may
+            // actually flip the approval flags. Checkbook Administrators always pass.
+            EnforceApprovalRoles(
+                service, tracing, context.UserId, stateApprovalTransition, beApprovalTransition);
+
             // ---- Idempotency: have we already created ledgers for this Turn-In? ----
             // Per design choice (Q2 = option C), existence of ledger rows linked back to
             // this Turn-In is the idempotency signal. End users can edit booleans through
@@ -146,6 +153,53 @@ namespace Checkbook.Plugins.TurnIns
             }
 
             tracing.Trace("TurnInValidator: all validations passed.");
+        }
+
+        // Role names come straight from Roles/*.xml — the source of truth for this
+        // solution's security model. Keep in sync if a role is renamed there.
+        private const string RoleStateApprover        = "Book - State Approver";
+        private const string RoleStateAdministrator   = "Book - State Administrator";
+        private const string RoleBudgetExecutor       = "Book - Budget Executor";
+        private const string RoleCheckbookAdministrator = "Book - Checkbook Administrator";
+
+        /// <summary>
+        /// Blocks approval transitions when the caller doesn't hold an appropriate
+        /// role. Checkbook Administrators always pass on both sides. State transitions
+        /// require State Approver or State Administrator; BE transitions require the
+        /// Budget Executor role.
+        /// </summary>
+        private static void EnforceApprovalRoles(
+            IOrganizationService service,
+            ITracingService tracing,
+            Guid userId,
+            bool stateTransition,
+            bool beTransition)
+        {
+            if (stateTransition)
+            {
+                bool allowed = UserRoleHelper.HasAnyRole(
+                    service, tracing, userId,
+                    RoleStateApprover, RoleStateAdministrator, RoleCheckbookAdministrator);
+                if (!allowed)
+                {
+                    throw new InvalidPluginExecutionException(
+                        "Only users in the State Approver, State Administrator, or Checkbook " +
+                        "Administrator roles may approve a Turn-In for the State.");
+                }
+            }
+
+            if (beTransition)
+            {
+                bool allowed = UserRoleHelper.HasAnyRole(
+                    service, tracing, userId,
+                    RoleBudgetExecutor, RoleCheckbookAdministrator);
+                if (!allowed)
+                {
+                    throw new InvalidPluginExecutionException(
+                        "Only users in the Budget Executor or Checkbook Administrator roles " +
+                        "may grant Budget Execution approval on a Turn-In.");
+                }
+            }
         }
 
         /// <summary>

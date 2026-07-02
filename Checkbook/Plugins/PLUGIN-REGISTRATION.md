@@ -473,6 +473,13 @@ Pre-op validation of an in-flight Turn-In approval. Idempotency (no
 duplicate ledgers), header math, per-item math, aggregated availability per
 source, and approval routing (RF-only items require BE Approval).
 
+Also enforces **role gating** via `UserRoleHelper`: State approval requires
+`Book - State Approver`, `Book - State Administrator`, or
+`Book - Checkbook Administrator`; BE approval requires `Book - Budget Executor`
+or `Book - Checkbook Administrator`. Role names come straight from the
+`src/ARNGCheckbook/Roles/*.xml` source of truth — keep in sync if a role is
+renamed. The PCF process-bar control mirrors these lists on the UI side.
+
 | # | Message | Primary entity | Stage         | Mode | Filtering attributes                  | Notes |
 |---|---------|----------------|---------------|------|---------------------------------------|-------|
 | 1 | Update  | `book_turnin`  | Pre-Operation | Sync | `book_stateapproved, book_beapproved` | Only fires on approval transitions. **Requires PreImage** (`book_stateapproved, book_beapproved, book_amount`). |
