@@ -44,28 +44,30 @@ namespace Checkbook.Plugins.Naming
                 return;
             }
 
+            var state = GetEffectiveEntityReference(target, preImage, PrioritizationAttributes.State);
             var fundCenter = GetEffectiveEntityReference(target, preImage, PrioritizationAttributes.FundCenter);
             var statePriority = GetEffectiveInt(target, preImage, PrioritizationAttributes.StatePriority);
             var reqFunding = GetEffectiveEntityReference(target, preImage, PrioritizationAttributes.RequirementFunding);
             var requirement = GetEffectiveEntityReference(target, preImage, PrioritizationAttributes.Requirement);
 
-            // goal_fiscalyear picklist values ARE the year (e.g. value 2026 → "2026").
-            var fyText = fy.Value.ToString(CultureInfo.InvariantCulture);
+            // goal_fiscalyear picklist values ARE the year (e.g. value 2026 → "FY2026").
+            var fyText = "FY" + fy.Value.ToString(CultureInfo.InvariantCulture);
+            var stateName = ResolveName(service, state);
             var fcName = ResolveName(service, fundCenter);
 
             string name;
             if (fy.Value == FY25 || fy.Value == FY26)
             {
-                // Branch A — FY25/26: {FY}-{FundCenter}-{StatePriority}-{RequirementFunding}
+                // Branch A — FY25/26: FY{FY}-{State}-{FundCenter}-{StatePriority}-{RequirementFunding}
                 var rfName = ResolveName(service, reqFunding);
                 var priorityText = statePriority?.ToString(CultureInfo.InvariantCulture);
-                name = Join(fyText, fcName, priorityText, rfName);
+                name = Join(fyText, stateName, fcName, priorityText, rfName);
             }
             else
             {
-                // Branch B — FY27+: {FY}-{FundCenter}-{Requirement}
+                // Branch B — FY27+: FY{FY}-{State}-{FundCenter}-{Requirement}
                 var reqName = ResolveName(service, requirement);
-                name = Join(fyText, fcName, reqName);
+                name = Join(fyText, stateName, fcName, reqName);
             }
 
             tracing.Trace($"Computed book_name = '{name}'");
