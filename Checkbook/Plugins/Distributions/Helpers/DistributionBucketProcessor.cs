@@ -12,6 +12,9 @@ namespace Checkbook.Plugins.Distributions.Helpers
     /// One Generate-Distributions bucket: a unique (Fund, PG, FundCenter, FiscalYear)
     /// tuple plus the funded total it represents. Built from either a Prioritization
     /// aggregation (Phase 2) or a Requirement-Funding aggregation (Phase 3).
+    /// FundCenterId here is the *destination* FC (after parent/self resolution).
+    /// OwningBusinessUnit is the dest FC's owning BU, resolved by the plugin during
+    /// bucket construction so the processor doesn't have to look it up.
     /// </summary>
     public sealed class DistributionBucket
     {
@@ -20,6 +23,7 @@ namespace Checkbook.Plugins.Distributions.Helpers
         public Guid FundCenterId { get; set; }
         public int FiscalYear { get; set; }
         public decimal TotalFunding { get; set; }
+        public EntityReference OwningBusinessUnit { get; set; }
     }
 
     public sealed class BucketResult
@@ -32,100 +36,117 @@ namespace Checkbook.Plugins.Distributions.Helpers
     }
 
     /// <summary>
-    /// Compares a bucket's <c>target</c> (TotalFunding × distributionpercentage / 100)
-    /// against the sum of existing TYPE-FILTERED credit Distributions for that
-    /// (Fund, FC, PG) and:
-    ///   • target &gt; existing  → create a debit/credit pair for the shortfall;
-    ///                            also deactivate any open Sweep Turn-In on this
-    ///                            bucket's per-type amount column (baseline caught up).
-    ///   • target &lt; existing  → record/refresh the overage on a Kind B Sweep
-    ///                            Turn-In's per-type amount column. One Sweep Turn-In
-    ///                            per (Fund, FC, PG), carrying both AFP and Allotment
-    ///                            amounts independently.
-    ///   • target == existing → if a Sweep Turn-In's per-type amount is non-zero,
-    ///                            zero it out. Deactivate if both type amounts hit 0.
+    /// Processes a group of buckets that all share the same (Fund, PG). Each bucket in
+    /// the group represents one destination FC's slice of the group's funding.
+    ///
+    /// For each destination, compares its <c>target</c> (TotalFunding × pct / 100)
+    /// against the sum of existing TYPE-FILTERED credit Distributions at (Fund, dest FC, PG):
+    ///   • target &gt; existing → shortfall; this destination gets a credit.
+    ///                          Any lingering per-type overage on its open Sweep Turn-In
+    ///                          is cleared.
+    ///   • target &lt; existing → overage; per-destination Sweep Turn-In carries the
+    ///                          per-type amount (one record per (Fund, FC, PG), both
+    ///                          AFP and Allotment columns tracked independently).
+    ///   • target == existing → if a Sweep Turn-In's per-type amount is non-zero, zero
+    ///                          it out; deactivate if both type amounts hit 0.
+    ///
+    /// All shortfalls in the group are consolidated into ONE debit at the holding FC
+    /// carrying the sum, and one credit per shortfall destination pointing at that
+    /// shared debit via <c>book_debiteddistribution</c>.
     /// </summary>
     public static class DistributionBucketProcessor
     {
-        public static BucketResult Process(
+        public static BucketResult ProcessGroup(
             IOrganizationService service,
             ITracingService tracing,
-            DistributionBucket bucket,
+            IList<DistributionBucket> groupBuckets,
             EntityReference fundingEvent,
             int fundingType,
             Guid holdingFundCenterId,
-            EntityReference owningBu,
+            EntityReference holdingOwningBu,
             IDictionary<string, FundingPercentageHelper.FundingResolution> pctCache = null)
         {
             var result = new BucketResult();
+            if (groupBuckets == null || groupBuckets.Count == 0) return result;
+
+            var fundId = groupBuckets[0].FundId;
+            var pgId   = groupBuckets[0].PgId;
 
             var resolution = FundingPercentageHelper.Resolve(
-                service, tracing, bucket.FundId, bucket.PgId, fundingType, DateTime.UtcNow.Date, pctCache);
+                service, tracing, fundId, pgId, fundingType, DateTime.UtcNow.Date, pctCache);
             if (resolution == null || resolution.FundingEvent.Id != fundingEvent.Id)
             {
                 tracing.Trace(
                     $"  No matching FundingDetails for (FE={fundingEvent.Id}, type={fundingType}, " +
-                    $"Fund={bucket.FundId}, PG={bucket.PgId}) — skipping bucket.");
-                result.Skipped++;
+                    $"Fund={fundId}, PG={pgId}) — skipping group ({groupBuckets.Count} destination(s)).");
+                result.Skipped += groupBuckets.Count;
                 return result;
             }
 
-            var target   = Math.Round(bucket.TotalFunding * resolution.Percentage / 100m, 2);
-            var existing = SumExistingCreditDistributions(
-                service, bucket.FundId, bucket.FundCenterId, bucket.PgId, fundingType);
+            var shortfalls = new List<(DistributionBucket bucket, decimal amount)>();
 
-            tracing.Trace(
-                $"  Bucket (Fund={bucket.FundId}, FC={bucket.FundCenterId}, PG={bucket.PgId}, " +
-                $"FY={bucket.FiscalYear}, type={fundingType}): funded={bucket.TotalFunding:C}, " +
-                $"pct={resolution.Percentage}, target={target:C}, existingCredits={existing:C}.");
-
-            // Find an open Sweep Turn-In for this bucket (any type — one record carries both).
-            var openTurnIn = FindOpenSweepTurnIn(service, bucket.FundId, bucket.FundCenterId, bucket.PgId);
-
-            if (target > existing)
+            foreach (var bucket in groupBuckets)
             {
-                var amount = target - existing;
-                CreateDistributionPair(
-                    service, tracing, bucket, amount, fundingEvent, holdingFundCenterId, owningBu);
-                result.DistributionsCreated += 2;
+                var target   = Math.Round(bucket.TotalFunding * resolution.Percentage / 100m, 2);
+                var existing = SumExistingCreditDistributions(
+                    service, fundId, bucket.FundCenterId, pgId, fundingType);
 
-                // Baseline now meets or exceeds existing for THIS type — clear any
-                // lingering overage on the open Sweep Turn-In's matching column.
-                if (openTurnIn != null && GetTypeAmount(openTurnIn, fundingType) > 0m)
+                tracing.Trace(
+                    $"  Dest FC={bucket.FundCenterId} (FY={bucket.FiscalYear}, type={fundingType}): " +
+                    $"funded={bucket.TotalFunding:C}, pct={resolution.Percentage}, " +
+                    $"target={target:C}, existingCredits={existing:C}.");
+
+                var openTurnIn = FindOpenSweepTurnIn(service, fundId, bucket.FundCenterId, pgId);
+
+                if (target > existing)
                 {
-                    if (ZeroTypeAmount(service, tracing, openTurnIn, fundingType))
-                        result.TurnInsDeactivated++;
-                    else
-                        result.TurnInsUpdated++;
-                }
-            }
-            else if (existing > target)
-            {
-                var overage = existing - target;
-                if (openTurnIn == null)
-                {
-                    CreateOverageTurnIn(service, tracing, bucket, overage, fundingType, owningBu);
-                    result.TurnInsCreated++;
-                }
-                else
-                {
-                    var currentAmount = GetTypeAmount(openTurnIn, fundingType);
-                    if (currentAmount != overage)
+                    shortfalls.Add((bucket, target - existing));
+
+                    if (openTurnIn != null && GetTypeAmount(openTurnIn, fundingType) > 0m)
                     {
-                        UpdateTypeAmount(service, tracing, openTurnIn, fundingType, overage);
-                        result.TurnInsUpdated++;
+                        if (ZeroTypeAmount(service, tracing, openTurnIn, fundingType))
+                            result.TurnInsDeactivated++;
+                        else
+                            result.TurnInsUpdated++;
+                    }
+                }
+                else if (existing > target)
+                {
+                    var overage = existing - target;
+                    if (openTurnIn == null)
+                    {
+                        CreateOverageTurnIn(service, tracing, bucket, overage, fundingType, bucket.OwningBusinessUnit);
+                        result.TurnInsCreated++;
+                    }
+                    else
+                    {
+                        var currentAmount = GetTypeAmount(openTurnIn, fundingType);
+                        if (currentAmount != overage)
+                        {
+                            UpdateTypeAmount(service, tracing, openTurnIn, fundingType, overage);
+                            result.TurnInsUpdated++;
+                        }
+                    }
+                }
+                else // even
+                {
+                    if (openTurnIn != null && GetTypeAmount(openTurnIn, fundingType) > 0m)
+                    {
+                        if (ZeroTypeAmount(service, tracing, openTurnIn, fundingType))
+                            result.TurnInsDeactivated++;
+                        else
+                            result.TurnInsUpdated++;
                     }
                 }
             }
-            else // existing == target
+
+            if (shortfalls.Count > 0)
             {
-                if (openTurnIn != null && GetTypeAmount(openTurnIn, fundingType) > 0m)
-                {
-                    if (ZeroTypeAmount(service, tracing, openTurnIn, fundingType))
-                        result.TurnInsDeactivated++;
-                    else
-                        result.TurnInsUpdated++;
-                }
+                var totalDebit = shortfalls.Sum(s => s.amount);
+                CreateConsolidatedDebitAndCredits(
+                    service, tracing, fundId, pgId, shortfalls, totalDebit,
+                    fundingEvent, holdingFundCenterId, holdingOwningBu);
+                result.DistributionsCreated += 1 + shortfalls.Count;
             }
 
             return result;
@@ -277,42 +298,56 @@ namespace Checkbook.Plugins.Distributions.Helpers
         }
 
         // -----------------------------------------------------------------
-        // Forward distribution: debit at holding FC, credit at bucket FC,
-        // both tagged with the active FundingEvent (so book_fundingtype resolves).
+        // One debit at the holding FC carrying the sum of all shortfall credits;
+        // one credit per shortfall destination pointing at that shared debit.
+        // Debit's owningbusinessunit is the holding FC's BU (since that's where
+        // the debit lives); each credit's owningbusinessunit is its destination
+        // FC's BU. All tagged with the active FundingEvent so book_fundingtype
+        // resolves for each row.
         // -----------------------------------------------------------------
-        private static void CreateDistributionPair(
+        private static void CreateConsolidatedDebitAndCredits(
             IOrganizationService service,
             ITracingService tracing,
-            DistributionBucket bucket,
-            decimal amount,
+            Guid fundId,
+            Guid pgId,
+            IList<(DistributionBucket bucket, decimal amount)> shortfalls,
+            decimal totalDebit,
             EntityReference fundingEvent,
             Guid holdingFundCenterId,
-            EntityReference owningBu)
+            EntityReference holdingOwningBu)
         {
             var debit = new Entity(EntityNames.Distributions);
-            debit[DistributionsAttributes.Amount]                = amount;
-            debit[DistributionsAttributes.Fund]                  = new EntityReference(EntityNames.Fund, bucket.FundId);
+            debit[DistributionsAttributes.Amount]                = totalDebit;
+            debit[DistributionsAttributes.Fund]                  = new EntityReference(EntityNames.Fund, fundId);
             debit[DistributionsAttributes.FundCenter]            = new EntityReference(EntityNames.FundCenter, holdingFundCenterId);
-            debit[DistributionsAttributes.PGSAG]                 = new EntityReference(EntityNames.PG, bucket.PgId);
+            debit[DistributionsAttributes.PGSAG]                 = new EntityReference(EntityNames.PG, pgId);
             debit[DistributionsAttributes.DisbursementDirection] = new OptionSetValue(DisbursementDirectionValues.Debit);
             debit[DistributionsAttributes.FundingEvent]          = fundingEvent;
             debit[DistributionsAttributes.ManualEntry]           = false;
-            if (owningBu != null) debit["owningbusinessunit"] = owningBu;
+            if (holdingOwningBu != null) debit["owningbusinessunit"] = holdingOwningBu;
             var debitId = service.Create(debit);
+            var debitRef = new EntityReference(EntityNames.Distributions, debitId);
 
-            var credit = new Entity(EntityNames.Distributions);
-            credit[DistributionsAttributes.Amount]                = amount;
-            credit[DistributionsAttributes.Fund]                  = new EntityReference(EntityNames.Fund, bucket.FundId);
-            credit[DistributionsAttributes.FundCenter]            = new EntityReference(EntityNames.FundCenter, bucket.FundCenterId);
-            credit[DistributionsAttributes.PGSAG]                 = new EntityReference(EntityNames.PG, bucket.PgId);
-            credit[DistributionsAttributes.DisbursementDirection] = new OptionSetValue(DisbursementDirectionValues.Credit);
-            credit[DistributionsAttributes.FundingEvent]          = fundingEvent;
-            credit[DistributionsAttributes.DebitedDistribution]   = new EntityReference(EntityNames.Distributions, debitId);
-            credit[DistributionsAttributes.ManualEntry]           = false;
-            if (owningBu != null) credit["owningbusinessunit"] = owningBu;
-            var creditId = service.Create(credit);
+            tracing.Trace(
+                $"  → Created consolidated Debit {debitId} at holding FC for {totalDebit:C} " +
+                $"({shortfalls.Count} credit(s) to follow).");
 
-            tracing.Trace($"  → Created Debit {debitId} + Credit {creditId} for {amount:C}.");
+            foreach (var s in shortfalls)
+            {
+                var credit = new Entity(EntityNames.Distributions);
+                credit[DistributionsAttributes.Amount]                = s.amount;
+                credit[DistributionsAttributes.Fund]                  = new EntityReference(EntityNames.Fund, fundId);
+                credit[DistributionsAttributes.FundCenter]            = new EntityReference(EntityNames.FundCenter, s.bucket.FundCenterId);
+                credit[DistributionsAttributes.PGSAG]                 = new EntityReference(EntityNames.PG, pgId);
+                credit[DistributionsAttributes.DisbursementDirection] = new OptionSetValue(DisbursementDirectionValues.Credit);
+                credit[DistributionsAttributes.FundingEvent]          = fundingEvent;
+                credit[DistributionsAttributes.DebitedDistribution]   = debitRef;
+                credit[DistributionsAttributes.ManualEntry]           = false;
+                if (s.bucket.OwningBusinessUnit != null) credit["owningbusinessunit"] = s.bucket.OwningBusinessUnit;
+                var creditId = service.Create(credit);
+
+                tracing.Trace($"    → Credit {creditId} to FC {s.bucket.FundCenterId} for {s.amount:C}.");
+            }
         }
 
         // -----------------------------------------------------------------

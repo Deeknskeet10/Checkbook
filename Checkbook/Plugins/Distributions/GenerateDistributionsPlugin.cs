@@ -20,13 +20,15 @@ namespace Checkbook.Plugins.Distributions
     /// <list type="number">
     ///   <item>Deactivate every active <c>book_distributions</c> whose
     ///         <c>book_newenteredintogfebs = "No"</c>.</item>
-    ///   <item>Aggregate active Prioritizations into (dest_fc, state, PG, fund, FY)
-    ///         buckets and reconcile each bucket against existing credit Distributions
-    ///         — create a debit/credit pair for shortfalls, or a Turn-In for overages.
-    ///         The destination FC is the Prio's own FC when the Requirement is
-    ///         centrally managed (book_national = 1; the FC is the Requirement's FC
-    ///         via the <c>PrioritizationFundCenterBackfill</c> plugin) and the Prio's
-    ///         parent FC otherwise.</item>
+    ///   <item>Aggregate active Prioritizations into (dest_fc, PG, fund, FY) buckets,
+    ///         then group buckets by (Fund, PG). Per group: compute per-destination
+    ///         target vs existing credits, then emit ONE consolidated debit at the
+    ///         holding FC (sum of shortfalls) plus one credit per shortfall destination
+    ///         pointing at that debit; per-destination overages/evens roll through the
+    ///         Sweep Turn-In machinery unchanged. Destination FC is the Prio's own FC
+    ///         when the Requirement is centrally managed (book_national = 1; FC is
+    ///         backfilled from Req by <c>PrioritizationFundCenterBackfill</c>) and the
+    ///         Prio's parent FC otherwise.</item>
     ///   <item>Same reconciliation for BE-approved Requirements that have no
     ///         Prioritizations (types TARC + ARNGExternal, or national State-type),
     ///         grouped on (fundcenter, PG, fund, FY); the bucket FC is resolved as
@@ -42,9 +44,10 @@ namespace Checkbook.Plugins.Distributions
     ///
     /// Output parameters:
     ///   <c>Deactivated</c>        (int) — Phase 1 distributions set inactive in THIS invocation.
-    ///   <c>Created</c>            (int) — Distribution rows created in Phases 2 + 3 (pairs counted as 2).
+    ///   <c>Created</c>            (int) — Distribution rows created in Phases 2 + 3 (each
+    ///                                     consolidated debit counts 1, plus 1 per credit).
     ///   <c>TurnInsCreated</c>     (int) — Overage Turn-Ins created in Phases 2 + 3.
-    ///   <c>Skipped</c>            (int) — Buckets skipped (missing FundingDetails percentage, etc).
+    ///   <c>Skipped</c>            (int) — Destinations skipped (missing FundingDetails percentage, etc).
     ///   <c>ContinuationToken</c>  (string) — empty = done; non-empty = caller should re-invoke
     ///                                        passing this back as input ContinuationToken.
     ///
@@ -93,6 +96,14 @@ namespace Checkbook.Plugins.Distributions
 
             var holdingFundCenterId = EnvironmentVariableHelper.GetGuid(service, HoldingFundCenterEnvVar);
             tracing.Trace($"Holding Fund Center (env var {HoldingFundCenterEnvVar}) = {holdingFundCenterId}.");
+
+            // Per-invocation caches (both need to be alive by the time we build
+            // buckets, since bucket construction now resolves owning BU).
+            var fcCache  = new Dictionary<Guid, FundCenterMeta>();
+            var pctCache = new Dictionary<string, FundingPercentageHelper.FundingResolution>();
+
+            // Debit rows live at the holding FC — own them by the holding FC's BU.
+            var holdingOwningBu = GetFundCenterMeta(service, fcCache, holdingFundCenterId)?.OwningBusinessUnit;
 
             var stopwatch = Stopwatch.StartNew();
 
@@ -143,13 +154,6 @@ namespace Checkbook.Plugins.Distributions
                 }
             }
 
-            // Per-invocation FundCenter metadata cache. Cannot be an instance field —
-            // the platform reuses plugin instances across executions.
-            var fcCache = new Dictionary<Guid, FundCenterMeta>();
-            // Per-invocation FundingPercentage memo (same reasoning). Many buckets
-            // share (Fund, PG, type) tuples; without this each bucket re-resolves.
-            var pctCache = new Dictionary<string, FundingPercentageHelper.FundingResolution>();
-
             for (var feIdx = startFeIdx; feIdx < fundingEvents.Count; feIdx++)
             {
                 var fundingEvent = fundingEvents[feIdx];
@@ -160,22 +164,22 @@ namespace Checkbook.Plugins.Distributions
                 // ---- Phase 2 — Prioritizations -------------------------------
                 if (startPhase <= 2)
                 {
-                    var phase2Buckets = QueryPrioritizationBuckets(service, tracing, fiscalYearFilter);
-                    var bucketStart = (feIdx == startFeIdx && startPhase == 2) ? startBucket : 0;
-                    for (var i = bucketStart; i < phase2Buckets.Count; i++)
+                    var phase2Buckets = QueryPrioritizationBuckets(service, tracing, fcCache, fiscalYearFilter);
+                    var phase2Groups  = GroupByFundAndPg(phase2Buckets);
+                    tracing.Trace($"Phase 2: {phase2Groups.Count} (Fund, PG) group(s) to process.");
+                    var groupStart = (feIdx == startFeIdx && startPhase == 2) ? startBucket : 0;
+                    for (var i = groupStart; i < phase2Groups.Count; i++)
                     {
                         if (stopwatch.Elapsed > TimeBudget)
                         {
                             outCursor = new Cursor { Phase = 2, FundingEventId = fundingEvent.Id, BucketIdx = i };
-                            tracing.Trace($"Time budget reached at FE {fundingEvent.Id} Phase 2 bucket {i} — returning continuation.");
+                            tracing.Trace($"Time budget reached at FE {fundingEvent.Id} Phase 2 group {i} — returning continuation.");
                             WriteOutputs(context, deactivated, totalCreated, totalTurnIns, totalSkipped, outCursor);
                             return;
                         }
-                        var bucket = phase2Buckets[i];
-                        var fcMeta = GetFundCenterMeta(service, fcCache, bucket.FundCenterId);
-                        var r = DistributionBucketProcessor.Process(
-                            service, tracing, bucket, fundingEventRef, fundingType,
-                            holdingFundCenterId, fcMeta?.OwningBusinessUnit, pctCache);
+                        var r = DistributionBucketProcessor.ProcessGroup(
+                            service, tracing, phase2Groups[i], fundingEventRef, fundingType,
+                            holdingFundCenterId, holdingOwningBu, pctCache);
                         totalCreated += r.DistributionsCreated;
                         totalTurnIns += r.TurnInsCreated;
                         totalSkipped += r.Skipped;
@@ -185,28 +189,28 @@ namespace Checkbook.Plugins.Distributions
                 // ---- Phase 3 — Requirements ----------------------------------
                 {
                     var phase3Buckets = QueryRequirementBuckets(service, tracing, holdingFundCenterId, fcCache, fiscalYearFilter);
-                    var bucketStart = (feIdx == startFeIdx && startPhase == 3) ? startBucket : 0;
-                    for (var i = bucketStart; i < phase3Buckets.Count; i++)
+                    var phase3Groups  = GroupByFundAndPg(phase3Buckets);
+                    tracing.Trace($"Phase 3: {phase3Groups.Count} (Fund, PG) group(s) to process.");
+                    var groupStart = (feIdx == startFeIdx && startPhase == 3) ? startBucket : 0;
+                    for (var i = groupStart; i < phase3Groups.Count; i++)
                     {
                         if (stopwatch.Elapsed > TimeBudget)
                         {
                             outCursor = new Cursor { Phase = 3, FundingEventId = fundingEvent.Id, BucketIdx = i };
-                            tracing.Trace($"Time budget reached at FE {fundingEvent.Id} Phase 3 bucket {i} — returning continuation.");
+                            tracing.Trace($"Time budget reached at FE {fundingEvent.Id} Phase 3 group {i} — returning continuation.");
                             WriteOutputs(context, deactivated, totalCreated, totalTurnIns, totalSkipped, outCursor);
                             return;
                         }
-                        var bucket = phase3Buckets[i];
-                        var fcMeta = GetFundCenterMeta(service, fcCache, bucket.FundCenterId);
-                        var r = DistributionBucketProcessor.Process(
-                            service, tracing, bucket, fundingEventRef, fundingType,
-                            holdingFundCenterId, fcMeta?.OwningBusinessUnit, pctCache);
+                        var r = DistributionBucketProcessor.ProcessGroup(
+                            service, tracing, phase3Groups[i], fundingEventRef, fundingType,
+                            holdingFundCenterId, holdingOwningBu, pctCache);
                         totalCreated += r.DistributionsCreated;
                         totalTurnIns += r.TurnInsCreated;
                         totalSkipped += r.Skipped;
                     }
                 }
 
-                // Once we've finished an FE, subsequent ones start from Phase 2 / bucket 0.
+                // Once we've finished an FE, subsequent ones start from Phase 2 / group 0.
                 startPhase = 2;
                 startBucket = 0;
             }
@@ -337,9 +341,17 @@ namespace Checkbook.Plugins.Distributions
         // is backfilled onto the Prio by PrioritizationFundCenterBackfill. For
         // non-centrally-managed Prios, destination FC is the Prio's parent FC.
         // FY filter (optional) constrains to a single book_fund.book_fiscalyear.
+        //
+        // Post-aggregation the raw fetch rows are COLLAPSED by destination
+        // (FundId, destFcId, PgId, FiscalYear) — multiple non-national child FCs
+        // sharing a parent all resolve to the same destination, and treating
+        // them as separate buckets caused the second bucket to see the first's
+        // credits and mistakenly ping-pong between under-provisioning and
+        // spurious Sweep Turn-Ins.
         // -----------------------------------------------------------------
         private static List<DistributionBucket> QueryPrioritizationBuckets(
-            IOrganizationService service, ITracingService tracing, int? fiscalYearFilter)
+            IOrganizationService service, ITracingService tracing,
+            Dictionary<Guid, FundCenterMeta> fcCache, int? fiscalYearFilter)
         {
             var fyCondition = fiscalYearFilter.HasValue
                 ? $"<condition attribute='book_fiscalyear' operator='eq' value='{fiscalYearFilter.Value}' />"
@@ -379,10 +391,10 @@ namespace Checkbook.Plugins.Distributions
 </fetch>";
 
             var rows = service.RetrieveMultiple(new FetchExpression(fetchXml)).Entities;
-            tracing.Trace($"Phase 2: {rows.Count} Prioritization bucket(s)" +
+            tracing.Trace($"Phase 2: {rows.Count} raw Prioritization aggregation row(s)" +
                           (fiscalYearFilter.HasValue ? $" (FY={fiscalYearFilter.Value})." : "."));
 
-            var buckets = new List<DistributionBucket>(rows.Count);
+            var collapsed = new Dictionary<string, DistributionBucket>(rows.Count);
             foreach (var row in rows)
             {
                 var prioFcId   = GetAliasedGuid(row, "prio_fc_id");
@@ -399,16 +411,30 @@ namespace Checkbook.Plugins.Distributions
                 if (destFcId == Guid.Empty || fundId == Guid.Empty || pgId == Guid.Empty)
                     continue;
 
-                buckets.Add(new DistributionBucket
+                var fy      = GetAliasedOption(row, "fy");
+                var funded  = GetAliasedDecimal(row, "total_funding");
+                var key     = $"{fundId}|{destFcId}|{pgId}|{fy}";
+
+                if (collapsed.TryGetValue(key, out var existing))
                 {
-                    FundId        = fundId,
-                    PgId          = pgId,
-                    FundCenterId  = destFcId,
-                    FiscalYear    = GetAliasedOption(row, "fy"),
-                    TotalFunding  = GetAliasedDecimal(row, "total_funding"),
-                });
+                    existing.TotalFunding += funded;
+                }
+                else
+                {
+                    collapsed[key] = new DistributionBucket
+                    {
+                        FundId             = fundId,
+                        PgId               = pgId,
+                        FundCenterId       = destFcId,
+                        FiscalYear         = fy,
+                        TotalFunding       = funded,
+                        OwningBusinessUnit = GetFundCenterMeta(service, fcCache, destFcId)?.OwningBusinessUnit,
+                    };
+                }
             }
-            return buckets;
+
+            tracing.Trace($"Phase 2: collapsed to {collapsed.Count} destination bucket(s).");
+            return collapsed.Values.ToList();
         }
 
         // -----------------------------------------------------------------
@@ -473,10 +499,10 @@ namespace Checkbook.Plugins.Distributions
 </fetch>";
 
             var rows = service.RetrieveMultiple(new FetchExpression(fetchXml)).Entities;
-            tracing.Trace($"Phase 3: {rows.Count} Requirement-Funding bucket(s)" +
+            tracing.Trace($"Phase 3: {rows.Count} raw Requirement-Funding aggregation row(s)" +
                           (fiscalYearFilter.HasValue ? $" (FY={fiscalYearFilter.Value})." : "."));
 
-            var buckets = new List<DistributionBucket>(rows.Count);
+            var collapsed = new Dictionary<string, DistributionBucket>(rows.Count);
             foreach (var row in rows)
             {
                 var fcId   = GetAliasedGuid(row, "fundcenter_id");
@@ -492,16 +518,47 @@ namespace Checkbook.Plugins.Distributions
                     ? fcId
                     : fcMeta.ParentFundCenterId.Value;
 
-                buckets.Add(new DistributionBucket
+                var fy     = GetAliasedOption(row, "fy");
+                var funded = GetAliasedDecimal(row, "total_funding");
+                var key    = $"{fundId}|{destFc}|{pgId}|{fy}";
+
+                if (collapsed.TryGetValue(key, out var existing))
                 {
-                    FundId        = fundId,
-                    PgId          = pgId,
-                    FundCenterId  = destFc,
-                    FiscalYear    = GetAliasedOption(row, "fy"),
-                    TotalFunding  = GetAliasedDecimal(row, "total_funding"),
-                });
+                    existing.TotalFunding += funded;
+                }
+                else
+                {
+                    collapsed[key] = new DistributionBucket
+                    {
+                        FundId             = fundId,
+                        PgId               = pgId,
+                        FundCenterId       = destFc,
+                        FiscalYear         = fy,
+                        TotalFunding       = funded,
+                        OwningBusinessUnit = GetFundCenterMeta(service, fcCache, destFc)?.OwningBusinessUnit,
+                    };
+                }
             }
-            return buckets;
+
+            tracing.Trace($"Phase 3: collapsed to {collapsed.Count} destination bucket(s).");
+            return collapsed.Values.ToList();
+        }
+
+        // -----------------------------------------------------------------
+        // Group collapsed buckets by (FundId, PgId) — one group becomes one
+        // consolidated debit at the holding FC plus N credits to destinations.
+        // Deterministic ordering (by FundId then PgId as GUID strings) so the
+        // continuation cursor's group index is stable across invocations of
+        // the same run. Within a group, destinations are ordered by FC GUID
+        // for readable tracing.
+        // -----------------------------------------------------------------
+        private static List<List<DistributionBucket>> GroupByFundAndPg(List<DistributionBucket> buckets)
+        {
+            return buckets
+                .GroupBy(b => new { b.FundId, b.PgId })
+                .OrderBy(g => g.Key.FundId).ThenBy(g => g.Key.PgId)
+                .Select(g => g.OrderBy(b => b.FundCenterId).ToList())
+                .ToList();
         }
 
         // -----------------------------------------------------------------
@@ -546,8 +603,10 @@ namespace Checkbook.Plugins.Distributions
         // Continuation cursor — tiny key=value text, no escaping needed since
         // values are int / Guid only. Three states:
         //   phase=1                        → Phase 1 incomplete, resume the sweep
-        //   phase=2;fe=<guid>;idx=<n>      → mid-Phase-2 of FE <guid>, bucket <n>
-        //   phase=3;fe=<guid>;idx=<n>      → mid-Phase-3 of FE <guid>, bucket <n>
+        //   phase=2;fe=<guid>;idx=<n>      → mid-Phase-2 of FE <guid>, (Fund,PG) group <n>
+        //   phase=3;fe=<guid>;idx=<n>      → mid-Phase-3 of FE <guid>, (Fund,PG) group <n>
+        // idx is a group index (see GroupByFundAndPg) — never within a group, so
+        // a group's consolidated debit+credits are always emitted atomically.
         // -----------------------------------------------------------------
         private sealed class Cursor
         {
