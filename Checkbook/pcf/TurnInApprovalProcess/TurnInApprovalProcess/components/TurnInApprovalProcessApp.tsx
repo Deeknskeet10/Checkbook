@@ -76,7 +76,13 @@ interface TurnInRecord {
 }
 
 const useStyles = makeStyles({
+  provider: {
+    width: "100%",
+    boxSizing: "border-box",
+  },
   root: {
+    width: "100%",
+    boxSizing: "border-box",
     ...shorthands.padding("12px", "16px"),
     backgroundColor: tokens.colorNeutralBackground2,
     ...shorthands.borderRadius(tokens.borderRadiusMedium),
@@ -232,7 +238,7 @@ export const TurnInApprovalProcessApp: React.FC<TurnInApprovalProcessProps> = ({
 
   if (loading) {
     return (
-      <FluentProvider theme={webLightTheme}>
+      <FluentProvider theme={webLightTheme} className={styles.provider}>
         <div className={styles.root}>
           <Spinner size="tiny" label="Loading Turn-In status..." />
         </div>
@@ -242,7 +248,7 @@ export const TurnInApprovalProcessApp: React.FC<TurnInApprovalProcessProps> = ({
 
   if (!record) {
     return (
-      <FluentProvider theme={webLightTheme}>
+      <FluentProvider theme={webLightTheme} className={styles.provider}>
         <div className={styles.root}>
           <Text>Save the Turn-In first to see the approval process.</Text>
         </div>
@@ -268,7 +274,7 @@ export const TurnInApprovalProcessApp: React.FC<TurnInApprovalProcessProps> = ({
   };
 
   return (
-    <FluentProvider theme={webLightTheme}>
+    <FluentProvider theme={webLightTheme} className={styles.provider}>
       <div className={styles.root}>
         <div className={styles.chevronRow}>
           {stages.map((s, i) => (
