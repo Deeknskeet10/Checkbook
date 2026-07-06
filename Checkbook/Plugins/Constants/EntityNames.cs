@@ -25,6 +25,8 @@ namespace Checkbook.Plugins.Constants
         public const string Realignments = "book_realignments";
         public const string Turnin = "book_turnin";
         public const string TurnInItems = "book_turninitems";
+        public const string StateSwap = "book_stateswap";
+        public const string SwapItem = "book_swapitem";
 
         // Reference Data
         public const string State = "book_state";

@@ -1,0 +1,3 @@
+/* All layout styles live in Fluent's makeStyles inside the component.
+   This file exists so the PCF resources block has a css entry, keeping
+   the manifest identical in shape to the other Checkbook PCFs. */

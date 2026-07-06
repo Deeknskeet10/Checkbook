@@ -1,0 +1,107 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using Microsoft.Xrm.Sdk;
+using Microsoft.Xrm.Sdk.Query;
+using Checkbook.Plugins.Constants;
+using Checkbook.Plugins.Helpers;
+
+namespace Checkbook.Plugins.StateSwaps.Helpers
+{
+    /// <summary>
+    /// One resolved swap item: paired debit + credit legs with their LOAs and
+    /// parent RFs materialized. LOAs and parent RFs are read from each side's
+    /// Prioritization (FY26: Prio → book_lineofaccounting, Prio → book_requirementfunding).
+    /// FY27 will need a different LOA path; isolate that change in this resolver.
+    /// </summary>
+    public sealed class ResolvedSwapItem
+    {
+        public Guid SwapItemId;
+        public decimal Amount;
+        public EntityReference DebitPrio;
+        public EntityReference CreditPrio;
+        public EntityReference DebitLOA;
+        public EntityReference CreditLOA;
+        public EntityReference DebitRF;
+        public EntityReference CreditRF;
+    }
+
+    /// <summary>
+    /// Loads active swap items for a State Swap and resolves each one's debit /
+    /// credit LOAs (and parent RFs) via the two linked Prioritizations. Rows
+    /// missing an LOA are treated as validation failures — SwapValidator should
+    /// have caught them pre-op, but we still throw here as a defensive guard.
+    /// </summary>
+    public static class SwapLOAResolver
+    {
+        public static List<ResolvedSwapItem> ResolveItems(
+            IOrganizationService service,
+            ITracingService tracing,
+            Guid swapId)
+        {
+            // Pull each item plus both linked Prios' LOA + RF references in a
+            // single FetchXml round-trip.
+            var fetch = $@"
+                <fetch>
+                    <entity name='{EntityNames.SwapItem}'>
+                        <attribute name='{SwapItemAttributes.Id}'/>
+                        <attribute name='{SwapItemAttributes.Amount}'/>
+                        <attribute name='{SwapItemAttributes.DebitPrioritization}'/>
+                        <attribute name='{SwapItemAttributes.CreditPrioritization}'/>
+                        <filter type='and'>
+                            <condition attribute='{SwapItemAttributes.StateSwap}' operator='eq' value='{swapId}'/>
+                            <condition attribute='{SwapItemAttributes.StateCode}' operator='eq' value='{StateCodeValues.Active}'/>
+                        </filter>
+                        <link-entity name='{EntityNames.Prioritization}'
+                                     from='{PrioritizationAttributes.Id}'
+                                     to='{SwapItemAttributes.DebitPrioritization}'
+                                     link-type='inner' alias='dp'>
+                            <attribute name='{PrioritizationAttributes.LineOfAccounting}'/>
+                            <attribute name='{PrioritizationAttributes.RequirementFunding}'/>
+                        </link-entity>
+                        <link-entity name='{EntityNames.Prioritization}'
+                                     from='{PrioritizationAttributes.Id}'
+                                     to='{SwapItemAttributes.CreditPrioritization}'
+                                     link-type='inner' alias='cp'>
+                            <attribute name='{PrioritizationAttributes.LineOfAccounting}'/>
+                            <attribute name='{PrioritizationAttributes.RequirementFunding}'/>
+                        </link-entity>
+                    </entity>
+                </fetch>";
+
+            var rows = service.RetrieveMultiple(new FetchExpression(fetch)).Entities;
+            var resolved = new List<ResolvedSwapItem>(rows.Count);
+
+            foreach (var row in rows)
+            {
+                var item = new ResolvedSwapItem
+                {
+                    SwapItemId = row.Id,
+                    Amount     = NumericHelper.ToDecimal(
+                                     row.GetAttributeValue<object>(SwapItemAttributes.Amount), 0m),
+                    DebitPrio  = row.GetAttributeValue<EntityReference>(SwapItemAttributes.DebitPrioritization),
+                    CreditPrio = row.GetAttributeValue<EntityReference>(SwapItemAttributes.CreditPrioritization),
+                    DebitLOA   = AliasedRef(row, "dp." + PrioritizationAttributes.LineOfAccounting),
+                    CreditLOA  = AliasedRef(row, "cp." + PrioritizationAttributes.LineOfAccounting),
+                    DebitRF    = AliasedRef(row, "dp." + PrioritizationAttributes.RequirementFunding),
+                    CreditRF   = AliasedRef(row, "cp." + PrioritizationAttributes.RequirementFunding),
+                };
+
+                if (item.DebitLOA == null || item.CreditLOA == null)
+                {
+                    throw new InvalidPluginExecutionException(
+                        $"Swap Item {item.SwapItemId} has a Prioritization without an LOA. " +
+                        "Both Prioritizations must have a Line of Accounting set before the swap can be processed.");
+                }
+
+                resolved.Add(item);
+            }
+
+            tracing.Trace($"SwapLOAResolver: resolved {resolved.Count} item(s) for swap {swapId}.");
+            return resolved;
+        }
+
+        private static EntityReference AliasedRef(Entity row, string alias)
+            => (row.GetAttributeValue<AliasedValue>(alias))?.Value as EntityReference;
+    }
+}

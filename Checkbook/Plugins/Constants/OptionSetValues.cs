@@ -42,13 +42,19 @@ namespace Checkbook.Plugins.Constants
     }
 
     /// <summary>
-    /// Type values for book_ledger.book_ledgertype.
+    /// Type values for book_ledger.book_ledgertype (global option set book_ledgertype).
+    /// Values match the option-set XML: Realignment=0, Turn-in=1, Swap=2 (relabeled
+    /// from the previous "Add"), Cut=3 (unused by plugins).
+    /// Historical note: earlier revisions of this file used 100000000-based values
+    /// which were invalid — LedgerCreator wrote ledger rows whose ledgertype did
+    /// not match any option label. Existing rows may need backfill if their
+    /// ledgertype needs to be reportable.
     /// </summary>
     public static class LedgerTypeValues
     {
-        public const int Distribution = 100000000;
-        public const int Realignment = 100000001;
-        public const int TurnIn = 100000002;
+        public const int Realignment = 0;
+        public const int TurnIn = 1;
+        public const int Swap = 2;
     }
 
     /// <summary>

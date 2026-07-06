@@ -1,0 +1,47 @@
+import * as React from "react";
+import { IInputs, IOutputs } from "./generated/ManifestTypes";
+import {
+  StateSwapApprovalProcessApp,
+  StateSwapApprovalProcessProps,
+} from "./components/StateSwapApprovalProcessApp";
+
+export class StateSwapApprovalProcess
+  implements ComponentFramework.ReactControl<IInputs, IOutputs>
+{
+  private notifyOutputChanged: () => void;
+
+  constructor() {
+    // Empty
+  }
+
+  public init(
+    context: ComponentFramework.Context<IInputs>,
+    notifyOutputChanged: () => void
+  ): void {
+    this.notifyOutputChanged = notifyOutputChanged;
+    context.mode.trackContainerResize(true);
+  }
+
+  public updateView(
+    context: ComponentFramework.Context<IInputs>
+  ): React.ReactElement {
+    const ctxInfo = (context.mode as any).contextInfo ?? {};
+    const props: StateSwapApprovalProcessProps = {
+      webAPI: context.webAPI,
+      userSettings: context.userSettings,
+      entityId: ctxInfo.entityId ?? "",
+      entityName: ctxInfo.entityTypeName ?? "book_stateswap",
+      isDisabled: context.mode.isControlDisabled,
+      width: context.mode.allocatedWidth,
+    };
+    return React.createElement(StateSwapApprovalProcessApp, props);
+  }
+
+  public getOutputs(): IOutputs {
+    return {};
+  }
+
+  public destroy(): void {
+    // no-op
+  }
+}

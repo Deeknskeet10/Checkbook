@@ -14,6 +14,7 @@ namespace Checkbook.Plugins.Constants
         public const string LedgerDirection = "book_ledgerdirection";
         public const string Realignment = "book_realignment";
         public const string TurnIn = "book_turnin";
+        public const string StateSwap = "book_stateswap";
         public const string RelatedEntry = "book_relatedentry";
         public const string StateCode = "statecode";
     }

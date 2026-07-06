@@ -40,12 +40,19 @@ namespace Checkbook.Plugins.Validation
             }
 
             // ---------------------------------------------------------------
-            // Skip LOA TDP validation when triggered by realignment 
-            // (recursive parent walk — guaranteed to detect realignment)
+            // Skip LOA TDP validation when triggered by a Realignment or a
+            // State Swap approval (recursive parent walk). Both orchestrators
+            // produce intermediate RF states where Funded/TDP transiently
+            // diverge; validating those would reject a legitimate movement.
             // ---------------------------------------------------------------
             if (IsTriggeredByRealignment(context))
             {
                 tracingService.Trace("Skipping LOA validation — RF update triggered by RealignmentProcessor (ancestor context detected).");
+                return;
+            }
+            if (IsTriggeredByStateSwap(context))
+            {
+                tracingService.Trace("Skipping LOA validation — RF update triggered by SwapApprovalPlugin (ancestor context detected).");
                 return;
             }
 
@@ -140,6 +147,22 @@ namespace Checkbook.Plugins.Validation
             while (ctx != null)
             {
                 if (ctx.PrimaryEntityName == EntityNames.Realignments &&
+                    ctx.MessageName == "Update")
+                {
+                    return true;
+                }
+
+                ctx = ctx.ParentContext;
+            }
+
+            return false;
+        }
+
+        private bool IsTriggeredByStateSwap(IPluginExecutionContext ctx)
+        {
+            while (ctx != null)
+            {
+                if (ctx.PrimaryEntityName == EntityNames.StateSwap &&
                     ctx.MessageName == "Update")
                 {
                     return true;

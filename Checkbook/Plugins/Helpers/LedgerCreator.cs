@@ -6,13 +6,15 @@ using Checkbook.Plugins.Constants;
 namespace Checkbook.Plugins.Helpers
 {
     /// <summary>
-    /// Unified entry point for creating paired ledger rows. Two callers today:
+    /// Unified entry point for creating paired ledger rows. Three callers today:
     ///   • Realignments: one debit + one credit, 1:1 LOA mapping.
     ///   • Turn-Ins: N debits + M credits (usually one credit), with same-LOA
     ///     pairing when both sides include a matching LOA.
-    /// Both flows share the per-row construction in <see cref="CreateLedgerEntry"/>
+    ///   • State Swaps: one debit + one credit per swap item, 1:1 LOA mapping
+    ///     (like Realignment but per-item within a multi-item parent).
+    /// All flows share the per-row construction in <see cref="CreateLedgerEntry"/>
     /// (parent FK + type + direction + amount + LOA), but the orchestration
-    /// differs enough that exposing two top-level methods is clearer than
+    /// differs enough that exposing top-level methods per caller is clearer than
     /// forcing a single mega-API.
     /// </summary>
     public static class LedgerCreator
@@ -51,6 +53,43 @@ namespace Checkbook.Plugins.Helpers
             });
 
             tracing.Trace("Realignment ledger pair created and linked.");
+        }
+
+        /// <summary>
+        /// Creates a single debit/credit ledger pair for one State Swap item and
+        /// cross-links them via book_relatedentry. Callers skip this for same-LOA
+        /// items (net-zero at the LOA level).
+        /// </summary>
+        public static void CreateStateSwapPair(
+            IOrganizationService service,
+            ITracingService tracing,
+            EntityReference debitLOA,
+            EntityReference creditLOA,
+            decimal amount,
+            Guid stateSwapId)
+        {
+            tracing.Trace($"Creating State Swap ledger pair (amount {amount}).");
+
+            var swapRef = new EntityReference(EntityNames.StateSwap, stateSwapId);
+
+            var debitId = CreateLedgerEntry(
+                service, debitLOA, amount,
+                LedgerTypeValues.Swap, LedgerDirectionValues.Debited,
+                LedgerAttributes.StateSwap, swapRef,
+                relatedEntry: null);
+
+            var creditId = CreateLedgerEntry(
+                service, creditLOA, amount,
+                LedgerTypeValues.Swap, LedgerDirectionValues.Credited,
+                LedgerAttributes.StateSwap, swapRef,
+                relatedEntry: new EntityReference(EntityNames.Ledger, debitId));
+
+            service.Update(new Entity(EntityNames.Ledger, debitId)
+            {
+                [LedgerAttributes.RelatedEntry] = new EntityReference(EntityNames.Ledger, creditId),
+            });
+
+            tracing.Trace($"State Swap ledger pair created: debit {debitId} / credit {creditId}.");
         }
 
         /// <summary>

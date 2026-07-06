@@ -9,7 +9,7 @@ This file is the source of truth for **what steps should exist** in any env
 running these plugins. When you finish a registration session, walk the
 verification checklist at the bottom and confirm every row is present.
 
-The assembly currently ships **29 plugin classes**, grouped under
+The assembly currently ships **35 plugin classes**, grouped under
 `Checkbook.Plugins.<folder>`. Three folders also have their own deep-dive docs
 covering prerequisites, Custom APIs, and smoke tests:
 [`LOAs/REGISTRATION.md`](LOAs/REGISTRATION.md),
@@ -67,6 +67,23 @@ runtime the Create / Update messages will fail.
 
 `book_newamount` keeps its existing schema; its semantic meaning narrows to
 "TDP amount being returned (Kind A) or 0 (Kind B)" — no migration needed.
+
+### State Swap schema
+
+State Swap ships two new tables and a small additive change to `book_ledger`.
+Full field-by-field spec is in [`../dist/SCHEMA-StateSwap.md`](../dist/SCHEMA-StateSwap.md).
+Register the plugin steps below **after** these are created and published.
+
+Required in the maker portal before enabling the State Swap steps:
+
+| Item | Change |
+|---|---|
+| `book_stateswap` table (new) | Full attribute list in the schema doc §1. |
+| `book_swapitem` table (new) | Full attribute list §2. Configure the 1:N from `book_stateswap` with **Share cascade = Cascade All** (§4) so item sharing follows the parent. |
+| `book_ledger` (existing) | Add lookup `book_stateswap` → `book_stateswap` (peer of `book_turnin`, `book_realignment`). |
+| `book_ledgertype` option set (existing) | Relabel value `2` from **Add** to **Swap** (values stay Realignment=0, Turn-in=1, Swap=2, Cut=3). This corrects a pre-existing constants bug — `LedgerTypeValues` in this build now uses 0/1/2. Historical ledger rows previously written with `book_ledgertype = 100000001` / `100000002` should be backfilled to `0` / `1` if reporting on ledger type matters. |
+| Owner teams per state | Names `{StateAbbr} - State Approver` and `{StateAbbr} - State Administrator` (e.g. `AL - State Approver`). One pair per state. `SwapAutoSharePlugin` looks them up by name and shares each swap with both teams. Missing teams are logged and skipped, not fatal. |
+| Role privileges | Grant User-level Create/Read/Write/Delete/Append/AppendTo/Share on `book_stateswap` + `book_swapitem` to `Book - State Approver` and `Book - State Administrator`; Org-level Read to `Book - Budget Executor` and `Book - Read Only`; Org-level everything to `Book - Checkbook Administrator`. See schema doc §5.1. |
 
 ---
 
@@ -531,6 +548,108 @@ when the flag already matches to avoid noise on the Turn-In sync stack.
 
 ---
 
+## State Swaps
+
+The State Swap flow moves funding between two states via paired debit/credit
+Prioritizations. Six plugin classes cover derived-fields, roll-up, validation,
+auto-sharing, BE-approval orchestration, and denial reset. Design and data-model
+detail is in [`../dist/SCHEMA-StateSwap.md`](../dist/SCHEMA-StateSwap.md).
+
+### `Checkbook.Plugins.StateSwaps.SwapItemDerivedFieldsPlugin`
+
+Pre-op writer on `book_swapitem`. Denormalizes `book_fund`, `book_pg`, and
+`book_debitstate` from the debit Prio's LOA + State onto the item. Also
+enforces the per-row invariants (both Prios share a Fund + PG; the two Prios
+belong to distinct states matching the parent's StateA + StateB; amount > 0).
+
+| # | Message | Primary entity   | Stage         | Mode | Filtering attributes                                                                                          | Notes |
+|---|---------|------------------|---------------|------|---------------------------------------------------------------------------------------------------------------|-------|
+| 1 | Create  | `book_swapitem`  | Pre-Operation | Sync | *(none)*                                                                                                      | Initial derived-field write + invariant enforcement. |
+| 2 | Update  | `book_swapitem`  | Pre-Operation | Sync | `book_debitprioritization, book_creditprioritization, book_stateswap, book_newamount`                          | Re-derive on any input change. **Requires PreImage** (`book_debitprioritization, book_creditprioritization, book_stateswap, book_newamount`). |
+
+### `Checkbook.Plugins.StateSwaps.SwapRollupPlugin`
+
+Post-op cross-entity writer that keeps `book_stateswap.book_totalsentbya`,
+`book_totalsentbyb`, and `book_isbalanced` in sync as child items change.
+Handles reparent (recomputes both old and new parent on Update).
+
+| # | Message | Primary entity  | Stage           | Mode | Filtering attributes                                             | Notes |
+|---|---------|-----------------|-----------------|------|------------------------------------------------------------------|-------|
+| 1 | Create  | `book_swapitem` | Post-Operation  | Sync | *(none)*                                                         | Recalc parent totals + isbalanced. |
+| 2 | Update  | `book_swapitem` | Post-Operation  | Sync | `book_stateswap, book_newamount, book_debitstate, statecode`     | Recalc parent(s) on reparent / amount / activation change. **Requires PreImage** (`book_stateswap, book_newamount, book_debitstate, statecode`). |
+| 3 | Delete  | `book_swapitem` | Post-Operation  | Sync | *(none)*                                                         | Recalc former parent. **Requires PreImage** (`book_stateswap`). |
+
+### `Checkbook.Plugins.StateSwaps.SwapValidator`
+
+Pre-op gate on `book_stateswap` approval / denial transitions. Enforces
+idempotency (no re-processing if ledgers exist), role gating with
+**per-state BU scoping** via `StateScopeHelper` (a State A Approver in the
+wrong BU cannot approve the State A side), balance (recomputed live from
+active items — the stored `book_isbalanced` is not trusted), overdraw per
+debit Prio, and the "BE requires both state approvals" prereq. Denial
+transitions skip balance / overdraw / BE-prereq checks so an incomplete
+swap can still be denied.
+
+Role checks map:
+- State A / State B approval: `Book - State Approver` or `Book - State Administrator` **and** user BU matches that state's owning BU. `Book - Checkbook Administrator` bypasses the BU scope.
+- BE approval: `Book - Budget Executor` or `Book - Checkbook Administrator`.
+- Denial: any of the four approver roles.
+
+| # | Message | Primary entity   | Stage         | Mode | Filtering attributes                                                                | Notes |
+|---|---------|------------------|---------------|------|--------------------------------------------------------------------------------------|-------|
+| 1 | Update  | `book_stateswap` | Pre-Operation | Sync | `book_stateaapproved, book_statebapproved, book_beapproved, book_denied`             | Only fires on approval / denial transitions. **Requires PreImage** (`book_stateaapproved, book_statebapproved, book_beapproved, book_denied, book_statea, book_stateb`). |
+
+### `Checkbook.Plugins.StateSwaps.SwapAutoSharePlugin`
+
+Post-op sharing writer. On Create, shares the swap with StateA + StateB's
+`{Abbr} - State Approver` and `{Abbr} - State Administrator` owner-teams
+(4 teams). On Update, revokes access from an old state's teams and grants
+to the new state's teams when `book_statea` or `book_stateb` changes.
+Missing teams are logged and skipped so environment misconfiguration does
+not block record creation. Item sharing follows automatically via the
+parent 1:N's Share = Cascade All.
+
+| # | Message | Primary entity   | Stage           | Mode | Filtering attributes                | Notes |
+|---|---------|------------------|-----------------|------|-------------------------------------|-------|
+| 1 | Create  | `book_stateswap` | Post-Operation  | Sync | *(none)*                            | Initial share to StateA + StateB teams. |
+| 2 | Update  | `book_stateswap` | Post-Operation  | Sync | `book_statea, book_stateb`          | Rebalance shares when a state changes. **Requires PreImage** (`book_statea, book_stateb`). |
+
+### `Checkbook.Plugins.StateSwaps.SwapApprovalPlugin`
+
+Post-op orchestrator for a BE-approved State Swap. Fires only on
+`book_beapproved` false → true. Resolves each item's debit/credit LOA +
+parent RF via `SwapLOAResolver`, writes ledger pairs (skipping same-LOA
+net-zero items), recalcs touched LOA TDPs, applies net Prio `FundedAmount`
+and parent RF `TDP` deltas via `SwapPrioritizationUpdater`, recalcs LOA
+TDPs again as a catch-all, and deactivates the swap (statecode Inactive,
+statuscode 2 = BE Approved). Depth-guarded.
+
+Piggybacks on the `IsTriggeredByStateSwap` bypass added to
+`RequirementFundingTDPValidator` — RF intermediate states during Prio /
+RF delta application would otherwise trip the TDP-vs-Funded check.
+
+| # | Message | Primary entity   | Stage           | Mode | Filtering attributes | Notes |
+|---|---------|------------------|-----------------|------|----------------------|-------|
+| 1 | Update  | `book_stateswap` | Post-Operation  | Sync | `book_beapproved`    | Fires on BE approval transition; idempotency-guarded. **Requires PreImage** (full image: `book_beapproved, book_stateaapproved, book_statebapproved, book_statea, book_stateb, book_newfiscalyear`). |
+
+### `Checkbook.Plugins.StateSwaps.SwapDenialPlugin`
+
+Pre-op denial-lifecycle writer. Three cases on the same Update, all at
+Depth 1 only:
+
+- **A. Denial transition** (`book_denied` false → true): clears all three approval flags + their by/on lookups; preserves `book_denialreason` as history.
+- **B. Next save after denial** (`preImage.book_denied = true` + no denial change this update): clears `book_denied` so the swap leaves the denied state.
+- **C. Resubmission approval** (state A or state B false → true + `preImage.book_denialreason` had a value): clears `book_denialreason`.
+
+Depth guard prevents `SwapRollupPlugin`'s nested parent Update from clearing
+denied on the drafter's behalf.
+
+| # | Message | Primary entity   | Stage         | Mode | Filtering attributes                                                     | Notes |
+|---|---------|------------------|---------------|------|--------------------------------------------------------------------------|-------|
+| 1 | Update  | `book_stateswap` | Pre-Operation | Sync | `book_denied, book_stateaapproved, book_statebapproved`                  | Rank **10** — runs before `SwapValidator` (rank 20). **Requires PreImage** (`book_denied, book_denialreason, book_stateaapproved, book_statebapproved, book_beapproved`). |
+
+---
+
 ## LOAs
 
 > Full prerequisites (alternate key, Custom API definition, smoke tests) live
@@ -662,6 +781,24 @@ to sort the right pane by **Message** then by **Primary Entity**.
   - [ ] Update of `book_turninitems` — Post-Op Sync, PreImage, filter `book_turnin, book_prioritization, statecode`
   - [ ] Delete of `book_turninitems` — Post-Op Sync, PreImage
 
+### State Swaps
+- [ ] `Checkbook.Plugins.StateSwaps.SwapItemDerivedFieldsPlugin`
+  - [ ] Create of `book_swapitem` — Pre-Op Sync
+  - [ ] Update of `book_swapitem` — Pre-Op Sync, PreImage, filter `book_debitprioritization, book_creditprioritization, book_stateswap, book_newamount`
+- [ ] `Checkbook.Plugins.StateSwaps.SwapRollupPlugin`
+  - [ ] Create of `book_swapitem` — Post-Op Sync
+  - [ ] Update of `book_swapitem` — Post-Op Sync, PreImage, filter `book_stateswap, book_newamount, book_debitstate, statecode`
+  - [ ] Delete of `book_swapitem` — Post-Op Sync, PreImage
+- [ ] `Checkbook.Plugins.StateSwaps.SwapValidator`
+  - [ ] Update of `book_stateswap` — Pre-Op Sync, PreImage, filter `book_stateaapproved, book_statebapproved, book_beapproved, book_denied`
+- [ ] `Checkbook.Plugins.StateSwaps.SwapAutoSharePlugin`
+  - [ ] Create of `book_stateswap` — Post-Op Sync
+  - [ ] Update of `book_stateswap` — Post-Op Sync, PreImage, filter `book_statea, book_stateb`
+- [ ] `Checkbook.Plugins.StateSwaps.SwapApprovalPlugin`
+  - [ ] Update of `book_stateswap` — Post-Op Sync, full PreImage, filter `book_beapproved`
+- [ ] `Checkbook.Plugins.StateSwaps.SwapDenialPlugin`
+  - [ ] Update of `book_stateswap` — Pre-Op Sync, **Rank 10** (before `SwapValidator` at rank 20), PreImage, filter `book_denied, book_stateaapproved, book_statebapproved`
+
 ### LOAs
 - [ ] Custom API `book_GenerateLOAs` exists with Plugin Type = `Checkbook.Plugins.LOAs.LOAGenerator`
 - [ ] `Checkbook.Plugins.LOAs.LOANameSetter`
@@ -677,6 +814,11 @@ to sort the right pane by **Message** then by **Primary Entity**.
 - [ ] `book_turnin` has the four new columns (`book_origin`, `book_afpamount`, `book_allotmentamount`, `book_requiresbeapproval`)
 - [ ] Env var `book_DistributionHoldingFundCenter` is defined and set to the A18 record's GUID
 - [ ] Env var `book_TurnInCreditOPR` is defined and set to the BE OPR's record GUID (required for FY27+ Turn-Ins)
+- [ ] `book_stateswap` and `book_swapitem` tables exist per [`../dist/SCHEMA-StateSwap.md`](../dist/SCHEMA-StateSwap.md)
+- [ ] `book_stateswap` → `book_swapitem` 1:N has **Share cascade = Cascade All**
+- [ ] `book_ledger` has new lookup `book_stateswap`
+- [ ] `book_ledgertype` option-set value `2` relabeled from **Add** to **Swap**
+- [ ] Owner teams `{Abbr} - State Approver` and `{Abbr} - State Administrator` exist for each state that will participate in swaps
 
 ---
 
