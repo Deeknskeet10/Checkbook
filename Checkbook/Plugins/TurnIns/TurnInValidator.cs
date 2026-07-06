@@ -18,13 +18,18 @@ namespace Checkbook.Plugins.TurnIns
     ///
     /// Responsibilities (validation only — execution is in TurnInApprovalPlugin post-op):
     ///   1. Idempotency — block re-approval if ledger entries already exist for this Turn-In.
-    ///   2. Header amount > 0.
-    ///   3. Sum of item amounts equals header amount.
-    ///   4. Each item has either a Prioritization or a Requirement Funding (or both).
-    ///   5. Each item amount does not exceed available funds on its source
-    ///      (Prio.book_newfundedamounttdp, or RF.book_newfundedamount when RF-only).
-    ///   6. Approval routing: if any item is RF-only (no Prio), book_beapproved must be true.
-    ///      Otherwise book_stateapproved is sufficient.
+    ///   2. AFP-only path (book_origin = Sweep with zero items):
+    ///        - Header book_newamount must equal 0 (no TDP is moving).
+    ///        - Either book_afpamount or book_allotmentamount must be &gt; 0.
+    ///        - book_beapproved must be true (matches RequiresBEApprovalRecalc).
+    ///   3. Regular (item-bearing) path:
+    ///        - Header amount &gt; 0.
+    ///        - Sum of item amounts equals header amount.
+    ///        - Each item has either a Prioritization or a Requirement Funding (or both).
+    ///        - Each item amount does not exceed available funds on its source
+    ///          (Prio.book_newfundedamounttdp, or RF.book_newfundedamount when RF-only).
+    ///        - Approval routing: if any item is RF-only (no Prio), book_beapproved must
+    ///          be true. Otherwise book_stateapproved is sufficient.
     ///
     /// All failures throw InvalidPluginExecutionException with a user-facing message.
     /// </summary>
@@ -86,20 +91,63 @@ namespace Checkbook.Plugins.TurnIns
             // Need a merged view to read amount + fund/pg etc. consistently
             var merged = GetMergedEntity(target, preImage);
 
-            // ---- Header amount > 0 ----
             decimal headerAmount = NumericHelper.ToDecimal(merged, TurninAttributes.Amount) ?? 0m;
+            int origin = merged.GetAttributeValue<OptionSetValue>(TurninAttributes.Origin)?.Value
+                ?? TurnInOriginValues.State;
+            bool isSweep = origin == TurnInOriginValues.Sweep;
+
+            // ---- Load items ----
+            var items = TurnInItemRepository.GetTurnInItems(service, tracing, context.PrimaryEntityId);
+
+            // ---- AFP-only (Kind B / sweep) path: zero items permitted ----
+            // Sweep-created Turn-Ins track an AFP/Allotment over-allocation; no TDP moves,
+            // so there are no items and header book_newamount is 0. RequiresBEApprovalRecalc
+            // already flips book_requiresbeapproval = true for zero-item Turn-Ins, and we
+            // enforce that routing here.
+            if (items.Count == 0)
+            {
+                if (!isSweep)
+                {
+                    throw new InvalidPluginExecutionException(
+                        "Turn-In has no Turn-In Items. Add at least one item before approving.");
+                }
+
+                if (Math.Round(headerAmount, 2) != 0m)
+                {
+                    throw new InvalidPluginExecutionException(
+                        $"Sweep-origin (AFP-only) Turn-In must have Amount = 0 — no TDP moves on approval. " +
+                        $"Current value: {headerAmount:C}");
+                }
+
+                decimal afpAmount = NumericHelper.ToDecimal(merged, TurninAttributes.AFPAmount) ?? 0m;
+                decimal allotmentAmount = NumericHelper.ToDecimal(merged, TurninAttributes.AllotmentAmount) ?? 0m;
+                if (afpAmount <= 0m && allotmentAmount <= 0m)
+                {
+                    throw new InvalidPluginExecutionException(
+                        "Sweep-origin (AFP-only) Turn-In must carry a positive AFP or Allotment amount.");
+                }
+
+                if (!newBeApproved)
+                {
+                    throw new InvalidPluginExecutionException(
+                        "Sweep-origin (AFP-only) Turn-Ins require Budget Execution Approval before processing.");
+                }
+
+                if (!newStateApproved)
+                {
+                    throw new InvalidPluginExecutionException(
+                        "State Approval is required before a Turn-In can be processed.");
+                }
+
+                tracing.Trace("TurnInValidator: AFP-only sweep Turn-In validations passed.");
+                return;
+            }
+
+            // ---- Header amount > 0 (item-bearing path) ----
             if (headerAmount <= 0m)
             {
                 throw new InvalidPluginExecutionException(
                     $"Turn-In Amount must be greater than zero. Current value: {headerAmount:C}");
-            }
-
-            // ---- Load items ----
-            var items = TurnInItemRepository.GetTurnInItems(service, tracing, context.PrimaryEntityId);
-            if (items.Count == 0)
-            {
-                throw new InvalidPluginExecutionException(
-                    "Turn-In has no Turn-In Items. Add at least one item before approving.");
             }
 
             // ---- Sum-of-items equals header ----
@@ -155,13 +203,6 @@ namespace Checkbook.Plugins.TurnIns
             tracing.Trace("TurnInValidator: all validations passed.");
         }
 
-        // Role names come straight from Roles/*.xml — the source of truth for this
-        // solution's security model. Keep in sync if a role is renamed there.
-        private const string RoleStateApprover        = "Book - State Approver";
-        private const string RoleStateAdministrator   = "Book - State Administrator";
-        private const string RoleBudgetExecutor       = "Book - Budget Executor";
-        private const string RoleCheckbookAdministrator = "Book - Checkbook Administrator";
-
         /// <summary>
         /// Blocks approval transitions when the caller doesn't hold an appropriate
         /// role. Checkbook Administrators always pass on both sides. State transitions
@@ -179,7 +220,7 @@ namespace Checkbook.Plugins.TurnIns
             {
                 bool allowed = UserRoleHelper.HasAnyRole(
                     service, tracing, userId,
-                    RoleStateApprover, RoleStateAdministrator, RoleCheckbookAdministrator);
+                    RoleNames.StateApprover, RoleNames.StateAdministrator, RoleNames.CheckbookAdministrator);
                 if (!allowed)
                 {
                     throw new InvalidPluginExecutionException(
@@ -192,7 +233,7 @@ namespace Checkbook.Plugins.TurnIns
             {
                 bool allowed = UserRoleHelper.HasAnyRole(
                     service, tracing, userId,
-                    RoleBudgetExecutor, RoleCheckbookAdministrator);
+                    RoleNames.BudgetExecutor, RoleNames.CheckbookAdministrator);
                 if (!allowed)
                 {
                     throw new InvalidPluginExecutionException(
