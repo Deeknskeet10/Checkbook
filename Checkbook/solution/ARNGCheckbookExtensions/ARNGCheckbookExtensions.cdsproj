@@ -57,6 +57,7 @@
     <ProjectReference Include="../../pcf/RequirementDetailFundingGrid/RequirementDetailFundingGrid.pcfproj" />
     <ProjectReference Include="../../pcf/RequirementFundingTab/RequirementFundingTab.pcfproj" />
     <ProjectReference Include="../../pcf/TurnInApprovalProcess/TurnInApprovalProcess.pcfproj" />
+    <ProjectReference Include="../../pcf/StateSwapApprovalProcess/StateSwapApprovalProcess.pcfproj" />
   </ItemGroup>
 
   <Import Project="$(MSBuildToolsPath)\Microsoft.Common.targets" />
