@@ -83,20 +83,27 @@ namespace Checkbook.Plugins.Distributions.Helpers
                 return result;
             }
 
+            // Read batching: two group-wide queries instead of 2N per destination.
+            // Existing credits are aggregated by FC in one FetchXml; open Sweep
+            // Turn-Ins are pulled in one RetrieveMultiple keyed by (Fund, PG).
+            // Destinations not present in either map fall back to 0 / null,
+            // matching the per-destination behavior of the old queries.
+            var existingByFc = SumExistingCreditDistributionsByFc(service, fundId, pgId, fundingType);
+            var openTurnInByFc = FindOpenSweepTurnInsByFc(service, fundId, pgId);
+
             var shortfalls = new List<(DistributionBucket bucket, decimal amount)>();
 
             foreach (var bucket in groupBuckets)
             {
                 var target   = Math.Round(bucket.TotalFunding * resolution.Percentage / 100m, 2);
-                var existing = SumExistingCreditDistributions(
-                    service, fundId, bucket.FundCenterId, pgId, fundingType);
+                var existing = existingByFc.TryGetValue(bucket.FundCenterId, out var e) ? e : 0m;
 
                 tracing.Trace(
                     $"  Dest FC={bucket.FundCenterId} (FY={bucket.FiscalYear}, type={fundingType}): " +
                     $"funded={bucket.TotalFunding:C}, pct={resolution.Percentage}, " +
                     $"target={target:C}, existingCredits={existing:C}.");
 
-                var openTurnIn = FindOpenSweepTurnIn(service, fundId, bucket.FundCenterId, pgId);
+                openTurnInByFc.TryGetValue(bucket.FundCenterId, out var openTurnIn);
 
                 if (target > existing)
                 {
@@ -153,90 +160,110 @@ namespace Checkbook.Plugins.Distributions.Helpers
         }
 
         // -----------------------------------------------------------------
-        // Existing credits — filtered by FundingType via link-entity on
-        // book_fundingevent. Distributions whose FundingEvent is missing or
-        // of a different type are excluded.
+        // Existing credits, batched: one FetchXml aggregate per group, grouped
+        // by book_fundcenter. Returns a dictionary keyed by destination FC id
+        // so ProcessGroup's per-destination lookup is O(1). Distributions whose
+        // FundingEvent is missing or of a different type are excluded via the
+        // inner join. FCs with no matching credits simply won't appear in the
+        // map — callers fall back to 0m.
         // -----------------------------------------------------------------
-        private static decimal SumExistingCreditDistributions(
-            IOrganizationService service, Guid fundId, Guid fundCenterId, Guid pgId, int fundingType)
+        private static Dictionary<Guid, decimal> SumExistingCreditDistributionsByFc(
+            IOrganizationService service, Guid fundId, Guid pgId, int fundingType)
         {
-            var query = new QueryExpression(EntityNames.Distributions)
-            {
-                ColumnSet = new ColumnSet(DistributionsAttributes.Amount),
-                Criteria = new FilterExpression(LogicalOperator.And)
-                {
-                    Conditions =
-                    {
-                        new ConditionExpression(DistributionsAttributes.Fund,                  ConditionOperator.Equal, fundId),
-                        new ConditionExpression(DistributionsAttributes.FundCenter,            ConditionOperator.Equal, fundCenterId),
-                        new ConditionExpression(DistributionsAttributes.PGSAG,                 ConditionOperator.Equal, pgId),
-                        new ConditionExpression(DistributionsAttributes.DisbursementDirection, ConditionOperator.Equal, DisbursementDirectionValues.Credit),
-                        new ConditionExpression(DistributionsAttributes.StateCode,             ConditionOperator.Equal, StateCodeValues.Active),
-                    },
-                },
-                PageInfo = new PagingInfo { Count = 5000, PageNumber = 1, ReturnTotalRecordCount = false },
-                NoLock = true,
-            };
+            var fetchXml = $@"
+<fetch aggregate='true' no-lock='true'>
+  <entity name='{EntityNames.Distributions}'>
+    <attribute name='{DistributionsAttributes.FundCenter}' alias='fc'    groupby='true' />
+    <attribute name='{DistributionsAttributes.Amount}'     alias='total' aggregate='sum' />
+    <filter type='and'>
+      <condition attribute='{DistributionsAttributes.Fund}'                  operator='eq' value='{fundId}' />
+      <condition attribute='{DistributionsAttributes.PGSAG}'                 operator='eq' value='{pgId}' />
+      <condition attribute='{DistributionsAttributes.DisbursementDirection}' operator='eq' value='{DisbursementDirectionValues.Credit}' />
+      <condition attribute='{DistributionsAttributes.StateCode}'             operator='eq' value='{StateCodeValues.Active}' />
+    </filter>
+    <link-entity name='{EntityNames.FundingEvent}' from='{FundingEventAttributes.Id}' to='{DistributionsAttributes.FundingEvent}' link-type='inner'>
+      <filter type='and'>
+        <condition attribute='{FundingEventAttributes.FundingType}' operator='eq' value='{fundingType}' />
+      </filter>
+    </link-entity>
+  </entity>
+</fetch>";
 
-            var feLink = query.AddLink(
-                EntityNames.FundingEvent,
-                DistributionsAttributes.FundingEvent,
-                FundingEventAttributes.Id,
-                JoinOperator.Inner);
-            feLink.LinkCriteria = new FilterExpression(LogicalOperator.And)
+            var rows = service.RetrieveMultiple(new FetchExpression(fetchXml)).Entities;
+            var byFc = new Dictionary<Guid, decimal>(rows.Count);
+            foreach (var row in rows)
             {
-                Conditions =
-                {
-                    new ConditionExpression(FundingEventAttributes.FundingType, ConditionOperator.Equal, fundingType),
-                },
-            };
-
-            decimal total = 0m;
-            while (true)
-            {
-                var page = service.RetrieveMultiple(query);
-                foreach (var d in page.Entities)
-                    total += NumericHelper.ToDecimal(
-                        d.Contains(DistributionsAttributes.Amount) ? d[DistributionsAttributes.Amount] : null,
-                        0m);
-
-                if (!page.MoreRecords) break;
-                query.PageInfo.PageNumber++;
-                query.PageInfo.PagingCookie = page.PagingCookie;
+                var fcId = GetAliasedGuid(row, "fc");
+                if (fcId == Guid.Empty) continue;
+                byFc[fcId] = GetAliasedDecimal(row, "total");
             }
-            return total;
+            return byFc;
         }
 
         // -----------------------------------------------------------------
-        // Open Kind B (Sweep) Turn-In lookup — one per (Fund, FC, PG), regardless
-        // of type. AFP and Allotment overages live on separate columns of the
-        // same record.
+        // Open Kind B (Sweep) Turn-Ins, batched: one RetrieveMultiple per group
+        // keyed by (Fund, PG), returned as an FC → Entity map. Callers treat a
+        // missing key as "no open Turn-In" (same as the old single-row lookup
+        // returning null). One row per FC is expected; if duplicates ever slip
+        // in, first-write-wins preserves prior single-lookup semantics.
         // -----------------------------------------------------------------
-        private static Entity FindOpenSweepTurnIn(
-            IOrganizationService service, Guid fundId, Guid fundCenterId, Guid pgId)
+        private static Dictionary<Guid, Entity> FindOpenSweepTurnInsByFc(
+            IOrganizationService service, Guid fundId, Guid pgId)
         {
             var query = new QueryExpression(EntityNames.Turnin)
             {
                 ColumnSet = new ColumnSet(
                     TurninAttributes.Id,
+                    TurninAttributes.FundCenter,
                     TurninAttributes.AFPAmount,
                     TurninAttributes.AllotmentAmount),
-                TopCount = 1,
                 Criteria = new FilterExpression(LogicalOperator.And)
                 {
                     Conditions =
                     {
                         new ConditionExpression(TurninAttributes.Fund,        ConditionOperator.Equal, fundId),
-                        new ConditionExpression(TurninAttributes.FundCenter,  ConditionOperator.Equal, fundCenterId),
                         new ConditionExpression(TurninAttributes.PG,          ConditionOperator.Equal, pgId),
                         new ConditionExpression(TurninAttributes.StateCode,   ConditionOperator.Equal, StateCodeValues.Active),
                         new ConditionExpression(TurninAttributes.Origin,      ConditionOperator.Equal, TurnInOriginValues.Sweep),
                         new ConditionExpression(TurninAttributes.BEApproved,  ConditionOperator.Equal, false),
                     },
                 },
+                PageInfo = new PagingInfo { Count = 5000, PageNumber = 1, ReturnTotalRecordCount = false },
                 NoLock = true,
             };
-            return service.RetrieveMultiple(query).Entities.FirstOrDefault();
+
+            var byFc = new Dictionary<Guid, Entity>();
+            while (true)
+            {
+                var page = service.RetrieveMultiple(query);
+                foreach (var t in page.Entities)
+                {
+                    var fcRef = t.GetAttributeValue<EntityReference>(TurninAttributes.FundCenter);
+                    if (fcRef == null || byFc.ContainsKey(fcRef.Id)) continue;
+                    byFc[fcRef.Id] = t;
+                }
+                if (!page.MoreRecords) break;
+                query.PageInfo.PageNumber++;
+                query.PageInfo.PagingCookie = page.PagingCookie;
+            }
+            return byFc;
+        }
+
+        // AliasedValue helpers — used by the aggregate FetchXml above.
+        private static Guid GetAliasedGuid(Entity e, string alias)
+        {
+            if (!e.Contains(alias)) return Guid.Empty;
+            var raw = (e[alias] as AliasedValue)?.Value;
+            if (raw is Guid g) return g;
+            if (raw is EntityReference er) return er.Id;
+            return Guid.Empty;
+        }
+
+        private static decimal GetAliasedDecimal(Entity e, string alias)
+        {
+            if (!e.Contains(alias)) return 0m;
+            var raw = (e[alias] as AliasedValue)?.Value;
+            return NumericHelper.ToDecimal(raw, 0m);
         }
 
         private static decimal GetTypeAmount(Entity turnIn, int fundingType)
