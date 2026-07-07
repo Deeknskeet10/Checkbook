@@ -31,7 +31,7 @@ access is granted via sharing (see §5).
 | `book_newfiscalyear` | Picklist → `goal_fiscalyear` global option set | Business Recommended | Same picklist used everywhere else (see [[fiscalyear-is-picklist]] convention) |
 | `book_totalsentbya` | Decimal (2) | System (plugin-maintained) | Σ item amounts where the debit Prio belongs to StateA |
 | `book_totalsentbyb` | Decimal (2) | System (plugin-maintained) | Σ item amounts where the debit Prio belongs to StateB |
-| `book_isbalanced` | Two Options (Yes/No), default No | System (plugin-maintained) | `totalsentbya == totalsentbyb && totalsentbya > 0` |
+| `book_isbalanced` | Two Options (Yes/No), default No | System (plugin-maintained) | **Semantic: "ready to approve."** True iff both states contribute (`totalsentbya > 0 && totalsentbyb > 0`) AND every active item has both Debit and Credit Prio populated. The name is legacy; the equal-totals rule was retired — a state may trade 2-for-1 if both sides agree. |
 | `book_stateaapproved` | Two Options (Yes/No), default No | Optional | StateA sign-off. Written by PCF / plugin only. |
 | `book_stateaapprovedby` | Lookup → `systemuser` | Optional | Plugin-set on transition |
 | `book_stateaapprovedon` | Date/Time | Optional | Plugin-set on transition |
@@ -77,9 +77,9 @@ Sharing cascades from parent per Share = Cascade All.
 | `book_swapitemid` | Uniqueidentifier | System | Primary key |
 | `book_name` | Single Line of Text (100) | System | Auto-populated `SWAPITEM-{parent.name}-{seq}` |
 | `book_stateswap` | Lookup → `book_stateswap` | Required | Parent |
-| `book_debitprioritization` | Lookup → `book_prioritization` | Business Required | Giving side. Belongs to one of the two states named on the parent. |
-| `book_creditprioritization` | Lookup → `book_prioritization` | Business Required | Receiving side. Belongs to the *other* state on the parent. |
-| `book_newamount` | Decimal (2) | Business Required | Positive amount to move for this row. Named `book_newamount` to match `LedgerAttributes.Amount`. |
+| `book_debitprioritization` | Lookup → `book_prioritization` | Business Required | Giving side. Belongs to one of the two states named on the parent. Entered by the debiting state at draft time. |
+| `book_creditprioritization` | Lookup → `book_prioritization` | **Optional** | Receiving side. Belongs to the *other* state on the parent. Left blank at draft time — the credited state fills this in later. Completeness (every item paired) is enforced by [[SwapValidator]] at approval, not at Save. |
+| `book_newamount` | Decimal (2) | Business Required | Positive amount to move for this row. Named `book_newamount` to match `LedgerAttributes.Amount`. Entered with the debit Prio. |
 | `book_fund` | Lookup → `book_fund` | System (plugin-derived) | Denormalized from debit Prio |
 | `book_pg` | Lookup → `book_pg` | System (plugin-derived) | Denormalized from debit Prio |
 | `book_debitstate` | Lookup → `book_state` | System (plugin-derived) | Owning state of debit Prio; used to bucket parent totals |

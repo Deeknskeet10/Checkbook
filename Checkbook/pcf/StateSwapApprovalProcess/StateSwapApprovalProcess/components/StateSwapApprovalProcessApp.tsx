@@ -406,9 +406,13 @@ export const StateSwapApprovalProcessApp: React.FC<StateSwapApprovalProcessProps
   };
 
   const showApproveButtons = !record.denied && current !== "done";
+  // book_isbalanced is now "ready to approve" — both states contribute >0 AND
+  // every item has both Debit + Credit Prio set. The name is legacy; the
+  // semantic changed when the equal-totals rule was retired (states may trade
+  // unevenly, e.g. 2-for-1).
   const balancedRequiredMsg =
     !record.isBalanced && current !== "done"
-      ? "State Swap totals are not balanced. Approve is disabled until Sent-by-A equals Sent-by-B."
+      ? "State Swap is not ready to approve. Every Swap Item must have both a Debit and a Credit Prioritization, and both states must contribute."
       : null;
 
   return (

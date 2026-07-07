@@ -13,7 +13,12 @@ namespace Checkbook.Plugins.StateSwaps
     /// Rolls up active items onto the parent book_stateswap:
     ///   - book_totalsentbya   = Σ items where debitState == parent.StateA
     ///   - book_totalsentbyb   = Σ items where debitState == parent.StateB
-    ///   - book_isbalanced     = totalsentbya == totalsentbyb && totalsentbya > 0
+    ///   - book_isbalanced     = "ready to approve" — both sides contribute
+    ///                           (totalA > 0 && totalB > 0) AND every active
+    ///                           item has both Debit and Credit Prio populated.
+    ///                           The name is legacy; the semantic is now
+    ///                           readiness, not equal-totals (per the removed
+    ///                           2-for-1 hard rule).
     ///
     /// Recomputes both the current parent and (on Update) the previous parent if
     /// the item was re-parented.
@@ -95,10 +100,12 @@ namespace Checkbook.Plugins.StateSwaps
             if (stateB != null)
                 totalB = SumActiveItemsForDebitState(service, swapId, stateB.Id);
 
-            var isBalanced = totalA > 0m && totalA == totalB;
+            int unpairedItems = CountItemsMissingCreditPrio(service, swapId);
+            var isBalanced = totalA > 0m && totalB > 0m && unpairedItems == 0;
 
             tracing.Trace(
-                $"SwapRollupPlugin: swap {swapId} totals A={totalA}, B={totalB}, balanced={isBalanced}.");
+                $"SwapRollupPlugin: swap {swapId} totals A={totalA}, B={totalB}, " +
+                $"unpaired={unpairedItems}, readyToApprove={isBalanced}.");
 
             var update = new Entity(EntityNames.StateSwap, swapId)
             {
@@ -107,6 +114,26 @@ namespace Checkbook.Plugins.StateSwaps
                 [StateSwapAttributes.IsBalanced]   = isBalanced,
             };
             service.Update(update);
+        }
+
+        private static int CountItemsMissingCreditPrio(
+            IOrganizationService service, Guid swapId)
+        {
+            var fetch = $@"
+                <fetch aggregate='true'>
+                    <entity name='{EntityNames.SwapItem}'>
+                        <attribute name='{SwapItemAttributes.Id}' alias='n' aggregate='count'/>
+                        <filter type='and'>
+                            <condition attribute='{SwapItemAttributes.StateSwap}' operator='eq' value='{swapId}'/>
+                            <condition attribute='{SwapItemAttributes.StateCode}' operator='eq' value='{StateCodeValues.Active}'/>
+                            <condition attribute='{SwapItemAttributes.CreditPrioritization}' operator='null'/>
+                        </filter>
+                    </entity>
+                </fetch>";
+            var rows = service.RetrieveMultiple(new FetchExpression(fetch)).Entities;
+            if (rows.Count == 0) return 0;
+            var raw = rows[0].GetAttributeValue<AliasedValue>("n")?.Value;
+            return raw is int i ? i : 0;
         }
 
         private static decimal SumActiveItemsForDebitState(

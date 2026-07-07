@@ -19,15 +19,20 @@ namespace Checkbook.Plugins.StateSwaps
     ///   2. Role gating — State transitions require State Approver / State Administrator
     ///      / Checkbook Administrator; BE transitions require Budget Executor /
     ///      Checkbook Administrator; denial requires any approver role.
-    ///   3. Balance — book_totalsentbya must equal book_totalsentbyb (and be > 0) before
-    ///      any approval transition. Recomputed live from active items — the stored
+    ///   3. Completeness — every active item must have both Debit Prio and Credit
+    ///      Prio populated. (Debit-first drafting is allowed via
+    ///      [[SwapItemDerivedFieldsPlugin]]; the pairing must be finished before
+    ///      any approval.)
+    ///   4. Both sides contribute — book_totalsentbya and book_totalsentbyb must
+    ///      each be > 0. Amounts do NOT have to be equal (a state can trade 2-for-1
+    ///      if both sides agree). Recomputed live from active items — the stored
     ///      book_isbalanced flag is not trusted here (belt and suspenders).
-    ///   4. Overdraw — the sum of item amounts debited from each Prio must not exceed
+    ///   5. Overdraw — the sum of item amounts debited from each Prio must not exceed
     ///      that Prio's book_newfundedamounttdp.
-    ///   5. BE approval requires both state approvals to be effectively true post-update.
+    ///   6. BE approval requires both state approvals to be effectively true post-update.
     ///
-    /// Denial transitions bypass balance / overdraw checks — a denied swap can be
-    /// unbalanced or otherwise incomplete.
+    /// Denial transitions bypass completeness / balance / overdraw checks — a
+    /// denied swap can be incomplete or one-sided.
     ///
     /// Register PreImage 'PreImage' with the full entity (need pre-update values of
     /// all approval + denied flags to detect transitions).
@@ -99,7 +104,18 @@ namespace Checkbook.Plugins.StateSwaps
                 return;
             }
 
-            // ---- 3. Balance + 4. Overdraw ----
+            // ---- 3. Completeness ----
+            // Every active item must have both Debit and Credit Prio set.
+            // Debit-first drafting is allowed on Save, but not for approval.
+            var incompleteCount = CountItemsMissingCreditPrio(service, context.PrimaryEntityId);
+            if (incompleteCount > 0)
+            {
+                throw new InvalidPluginExecutionException(
+                    $"State Swap has {incompleteCount} item(s) missing a Credit Prioritization. " +
+                    "Every Swap Item must have both a Debit and a Credit Prioritization before approval.");
+            }
+
+            // ---- 4. Both-sides-contribute + 5. Overdraw ----
             // Recompute totals live from Active items — do not trust the stored
             // book_isbalanced flag in case items were changed via a path that
             // bypassed SwapRollupPlugin.
@@ -116,17 +132,17 @@ namespace Checkbook.Plugins.StateSwaps
             perDebitState.TryGetValue(stateA.Id, out var totalA);
             perDebitState.TryGetValue(stateB.Id, out var totalB);
 
-            if (totalA <= 0m || totalB <= 0m || totalA != totalB)
+            if (totalA <= 0m || totalB <= 0m)
             {
                 throw new InvalidPluginExecutionException(
-                    $"State Swap totals are not balanced. State A sends {totalA:C}, " +
-                    $"State B sends {totalB:C}. Both totals must be positive and equal " +
-                    "before the swap can be approved.");
+                    $"State Swap requires both states to contribute. State A sends {totalA:C}, " +
+                    $"State B sends {totalB:C}. Add at least one item on each side before approval. " +
+                    "(Totals do not have to be equal — a state may trade unevenly.)");
             }
 
             ValidateAggregatedOverdraw(service, tracing, perDebitPrio);
 
-            // ---- 5. BE approval prerequisites ----
+            // ---- 6. BE approval prerequisites ----
             if (beTx)
             {
                 bool effStateA = GetEffectiveBool(target, preImage, StateSwapAttributes.StateAApproved);
@@ -218,6 +234,28 @@ namespace Checkbook.Plugins.StateSwaps
                         "or Checkbook Administrator) may deny a State Swap.");
                 }
             }
+        }
+
+        private static int CountItemsMissingCreditPrio(
+            IOrganizationService service,
+            Guid swapId)
+        {
+            var fetch = $@"
+                <fetch aggregate='true'>
+                    <entity name='{EntityNames.SwapItem}'>
+                        <attribute name='{SwapItemAttributes.Id}' alias='n' aggregate='count'/>
+                        <filter type='and'>
+                            <condition attribute='{SwapItemAttributes.StateSwap}' operator='eq' value='{swapId}'/>
+                            <condition attribute='{SwapItemAttributes.StateCode}' operator='eq' value='{StateCodeValues.Active}'/>
+                            <condition attribute='{SwapItemAttributes.CreditPrioritization}' operator='null'/>
+                        </filter>
+                    </entity>
+                </fetch>";
+            var rows = service.RetrieveMultiple(new FetchExpression(fetch)).Entities;
+            if (rows.Count == 0) return 0;
+            var raw = rows[0].GetAttributeValue<AliasedValue>("n")?.Value;
+            if (raw is int i) return i;
+            return 0;
         }
 
         private struct DebitBucket { public Guid DebitStateId; public decimal Amount; }

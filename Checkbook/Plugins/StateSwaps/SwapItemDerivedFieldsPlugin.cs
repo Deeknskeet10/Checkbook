@@ -10,15 +10,23 @@ namespace Checkbook.Plugins.StateSwaps
     /// <summary>
     /// Pre-operation plugin on book_swapitem Create + Update.
     ///
-    /// Responsibilities:
-    /// - Denormalize Fund / PG / DebitState from the debit Prioritization onto the
-    ///   swap item so the parent roll-up and filtered lookups don't need to traverse
-    ///   the Prio each time.
-    /// - Enforce per-row invariants that must hold on every write:
-    ///     1. Debit Prio's Fund/PG match Credit Prio's Fund/PG (same-currency swap).
-    ///     2. Debit and Credit Prios belong to *different* states.
-    ///     3. Those two states match the parent's StateA / StateB (one each).
-    ///     4. Amount is positive.
+    /// **Debit-first entry model.** The debiting (sending) state drafts a row
+    /// with just Debit Prio + Amount and saves. The credited state comes back
+    /// later and fills in the Credit Prio. So on every write:
+    ///
+    ///   Always required:
+    ///     • Debit Prio
+    ///     • Amount > 0
+    ///     • Debit Prio's state matches one of the parent's StateA / StateB
+    ///     • Fund / PG / DebitState denormalized from Debit Prio
+    ///
+    ///   Only enforced when Credit Prio is populated (pair complete):
+    ///     • Debit Prio's Fund/PG match Credit Prio's Fund/PG (same-currency swap)
+    ///     • Debit and Credit Prios belong to *different* states
+    ///     • Those two states match the parent's StateA / StateB (one each)
+    ///
+    /// Approval-time completeness (every item paired) is enforced by
+    /// SwapValidator, not here.
     ///
     /// Fund / PG are read via the debit Prio's LOA (book_lineofaccounting →
     /// book_fundingline). FY26 assumes Prios have a single LOA; FY27 will need
@@ -56,53 +64,43 @@ namespace Checkbook.Plugins.StateSwaps
             if (debitPrio == null)
                 throw new InvalidPluginExecutionException(
                     "Swap Item requires a Debit Prioritization.");
-            if (creditPrio == null)
-                throw new InvalidPluginExecutionException(
-                    "Swap Item requires a Credit Prioritization.");
             if (parent == null)
                 throw new InvalidPluginExecutionException(
                     "Swap Item must belong to a State Swap.");
             if (amount <= 0m)
                 throw new InvalidPluginExecutionException(
                     "Swap Item Amount must be greater than zero.");
-            if (debitPrio.Id == creditPrio.Id)
+            if (creditPrio != null && debitPrio.Id == creditPrio.Id)
                 throw new InvalidPluginExecutionException(
                     "Debit and Credit Prioritizations must be different records.");
 
-            // Fetch both Prios + their LOAs in a single FetchXml round-trip.
-            var prioIds = new[] { debitPrio.Id, creditPrio.Id };
+            // Fetch the debit Prio (and the credit Prio if set) in a single
+            // FetchXml round-trip.
+            var prioIds = creditPrio != null
+                ? new[] { debitPrio.Id, creditPrio.Id }
+                : new[] { debitPrio.Id };
             var prioRows = RetrievePrioContext(service, prioIds);
 
             var debitCtx = prioRows.FirstOrDefault(r => r.PrioId == debitPrio.Id);
-            var creditCtx = prioRows.FirstOrDefault(r => r.PrioId == creditPrio.Id);
+            var creditCtx = creditPrio != null
+                ? prioRows.FirstOrDefault(r => r.PrioId == creditPrio.Id)
+                : null;
 
             if (debitCtx == null)
                 throw new InvalidPluginExecutionException(
                     "Could not load the Debit Prioritization.");
-            if (creditCtx == null)
+            if (creditPrio != null && creditCtx == null)
                 throw new InvalidPluginExecutionException(
                     "Could not load the Credit Prioritization.");
 
-            if (debitCtx.State == null || creditCtx.State == null)
+            if (debitCtx.State == null)
                 throw new InvalidPluginExecutionException(
-                    "Both Prioritizations must have a State set.");
-            if (debitCtx.State.Id == creditCtx.State.Id)
+                    "Debit Prioritization must have a State set.");
+            if (debitCtx.Fund == null || debitCtx.PG == null)
                 throw new InvalidPluginExecutionException(
-                    "Swap items cannot debit and credit within the same State.");
+                    "Debit Prioritization must resolve to an LOA with a Fund and PG set.");
 
-            if (debitCtx.Fund == null || creditCtx.Fund == null ||
-                debitCtx.PG == null   || creditCtx.PG == null)
-                throw new InvalidPluginExecutionException(
-                    "Both Prioritizations must resolve to an LOA with a Fund and PG set.");
-            if (debitCtx.Fund.Id != creditCtx.Fund.Id)
-                throw new InvalidPluginExecutionException(
-                    "Debit and Credit Prioritizations must share the same Fund.");
-            if (debitCtx.PG.Id != creditCtx.PG.Id)
-                throw new InvalidPluginExecutionException(
-                    "Debit and Credit Prioritizations must share the same PG.");
-
-            // Parent StateA / StateB check — the two Prio states must match the
-            // parent's two states (in either order).
+            // Parent state check applies to whichever side(s) are populated.
             var parentEntity = service.Retrieve(
                 EntityNames.StateSwap,
                 parent.Id,
@@ -114,21 +112,46 @@ namespace Checkbook.Plugins.StateSwaps
                 throw new InvalidPluginExecutionException(
                     "State Swap must have both State A and State B set before items can be added.");
 
-            var parentStateIds = new[] { stateA.Id, stateB.Id };
-            var prioStateIds   = new[] { debitCtx.State.Id, creditCtx.State.Id };
-            if (!parentStateIds.OrderBy(g => g).SequenceEqual(prioStateIds.OrderBy(g => g)))
+            if (debitCtx.State.Id != stateA.Id && debitCtx.State.Id != stateB.Id)
                 throw new InvalidPluginExecutionException(
-                    "The Debit and Credit Prioritizations must belong to State A and State B on the parent Swap.");
+                    "Debit Prioritization must belong to State A or State B on the parent Swap.");
+
+            if (creditCtx != null)
+            {
+                if (creditCtx.State == null)
+                    throw new InvalidPluginExecutionException(
+                        "Credit Prioritization must have a State set.");
+                if (debitCtx.State.Id == creditCtx.State.Id)
+                    throw new InvalidPluginExecutionException(
+                        "Swap items cannot debit and credit within the same State.");
+                if (creditCtx.Fund == null || creditCtx.PG == null)
+                    throw new InvalidPluginExecutionException(
+                        "Credit Prioritization must resolve to an LOA with a Fund and PG set.");
+                if (debitCtx.Fund.Id != creditCtx.Fund.Id)
+                    throw new InvalidPluginExecutionException(
+                        "Debit and Credit Prioritizations must share the same Fund.");
+                if (debitCtx.PG.Id != creditCtx.PG.Id)
+                    throw new InvalidPluginExecutionException(
+                        "Debit and Credit Prioritizations must share the same PG.");
+
+                var parentStateIds = new[] { stateA.Id, stateB.Id };
+                var prioStateIds   = new[] { debitCtx.State.Id, creditCtx.State.Id };
+                if (!parentStateIds.OrderBy(g => g).SequenceEqual(prioStateIds.OrderBy(g => g)))
+                    throw new InvalidPluginExecutionException(
+                        "The Debit and Credit Prioritizations must belong to State A and State B on the parent Swap.");
+            }
 
             // Write derived fields onto the Target so they persist without a
-            // second Update call.
+            // second Update call. Fund / PG / DebitState always come from the
+            // debit side — that's the source of truth for the row's bucket.
             target[SwapItemAttributes.Fund] = debitCtx.Fund;
             target[SwapItemAttributes.PG] = debitCtx.PG;
             target[SwapItemAttributes.DebitState] = debitCtx.State;
 
             tracing.Trace(
                 $"SwapItemDerivedFieldsPlugin: item validated. Fund={debitCtx.Fund.Id}, " +
-                $"PG={debitCtx.PG.Id}, DebitState={debitCtx.State.Id}, Amount={amount}.");
+                $"PG={debitCtx.PG.Id}, DebitState={debitCtx.State.Id}, Amount={amount}, " +
+                $"CreditPrioSet={creditPrio != null}.");
         }
 
         private sealed class PrioContext
