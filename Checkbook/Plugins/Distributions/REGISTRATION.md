@@ -34,7 +34,7 @@ Replaces (deactivate, don't delete):
      |---|---|---|---|
      | `FundingType`       | Integer | Yes | `0` = AFP only, `1` = Allotment only. Omit to process both. |
      | `FiscalYear`        | Integer | Yes | Option-set value on `book_fund.book_fiscalyear` (e.g. FY26). Omit / `0` → process all FYs. |
-     | `ContinuationToken` | String  | Yes | Echo the previous response's `ContinuationToken` to resume. Omit / empty → fresh start. |
+     | `NextToken`         | String  | Yes | Echo the previous response's `NextToken` to resume. Omit / empty → fresh start. (Renamed from `ContinuationToken` — see note below.) |
    - Response properties:
      | Name | Type | Notes |
      |---|---|---|
@@ -42,7 +42,16 @@ Replaces (deactivate, don't delete):
      | `Created`           | Integer | Per-invocation count. |
      | `TurnInsCreated`    | Integer | Per-invocation count. |
      | `Skipped`           | Integer | Per-invocation count. |
-     | `ContinuationToken` | String  | Empty → done. Non-empty → call again with this value as input. |
+     | `NextToken`         | String  | Empty → done. Non-empty → call again with this value as input. |
+
+   > **Naming note:** the wire-level parameter is `NextToken`. It was originally
+   > `ContinuationToken`, but that name is unusable in the target org: an
+   > earlier `ContinuationToken` response property was created with Type=Boolean,
+   > and its backing `sdkmessageresponsefield` row survived every delete
+   > (Dataverse refuses `DELETE` on `sdkmessageresponsefield`), so any new
+   > String-typed `ContinuationToken` property is shadowed by the Boolean
+   > orphan at marshal time and non-empty strings throw a conversion error.
+   > `NextToken` is a fresh name with no ancestor to shadow it.
 
 ## Execution mode
 

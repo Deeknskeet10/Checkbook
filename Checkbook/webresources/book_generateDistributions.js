@@ -108,8 +108,10 @@ var DistributionGenerator = (function () {
     });
   }
 
-  // Pump the Custom API in a continuation loop. Each call returns a
-  // ContinuationToken; loop until it comes back empty.
+  // Pump the Custom API in a continuation loop. Each call returns a NextToken;
+  // loop until it comes back empty. (The wire-level name is NextToken; the
+  // Custom API previously used ContinuationToken but that name is locked out
+  // of the org by an orphaned Boolean-typed sdkmessageresponsefield.)
   function execute(primaryControl, fundingType, fiscalYear) {
     var totals = { Deactivated: 0, Created: 0, TurnInsCreated: 0, Skipped: 0 };
     var passes = 0;
@@ -131,7 +133,7 @@ var DistributionGenerator = (function () {
           passes++;
           showProgress(passes, totals);
 
-          var nextToken = body.ContinuationToken || "";
+          var nextToken = body.NextToken || "";
           if (!nextToken) return; // done
           if (passes >= MAX_PASSES) {
             return Promise.reject(new Error(
@@ -168,7 +170,7 @@ var DistributionGenerator = (function () {
 
   // FundingType = 2 → omit the param so the plugin processes both.
   // fiscalYear null/0 → omit FY (all FYs).
-  // token empty → omit ContinuationToken (fresh start).
+  // token empty → omit NextToken (fresh start).
   function buildRequest(fundingType, fiscalYear, continuationToken) {
     var includeFundingType =
       fundingType === FUNDING_TYPE_AFP || fundingType === FUNDING_TYPE_ALLOTMENT;
@@ -185,7 +187,7 @@ var DistributionGenerator = (function () {
           parameterTypes.FiscalYear = { typeName: "Edm.Int32", structuralProperty: 1 };
         }
         if (includeToken) {
-          parameterTypes.ContinuationToken = { typeName: "Edm.String", structuralProperty: 1 };
+          parameterTypes.NextToken = { typeName: "Edm.String", structuralProperty: 1 };
         }
         return {
           boundParameter: null,
@@ -198,7 +200,7 @@ var DistributionGenerator = (function () {
 
     if (includeFundingType) req.FundingType = fundingType;
     if (includeFy)          req.FiscalYear  = fiscalYear;
-    if (includeToken)       req.ContinuationToken = continuationToken;
+    if (includeToken)       req.NextToken   = continuationToken;
 
     return req;
   }

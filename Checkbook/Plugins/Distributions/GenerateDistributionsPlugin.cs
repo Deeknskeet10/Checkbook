@@ -39,8 +39,13 @@ namespace Checkbook.Plugins.Distributions
     ///   <c>FundingType</c>        (int, optional)    — 0 = AFP only, 1 = Allotment only, omitted = both.
     ///   <c>FiscalYear</c>         (int, optional)    — option-set value on book_fund.book_fiscalyear;
     ///                                                  filters Phase 2 + 3 buckets. Omitted = all FYs.
-    ///   <c>ContinuationToken</c>  (string, optional) — opaque resume marker returned by a prior call.
-    ///                                                  Empty/missing = fresh start.
+    ///   <c>NextToken</c>          (string, optional) — opaque resume marker returned by a prior call.
+    ///                                                  Empty/missing = fresh start. (The wire-level
+    ///                                                  name is <c>NextToken</c>; internally the
+    ///                                                  concept is a continuation cursor. Renamed
+    ///                                                  from <c>ContinuationToken</c> to sidestep an
+    ///                                                  orphaned Boolean-typed sdkmessageresponsefield
+    ///                                                  row in the target org.)
     ///
     /// Output parameters:
     ///   <c>Deactivated</c>        (int) — Phase 1 distributions set inactive in THIS invocation.
@@ -48,8 +53,8 @@ namespace Checkbook.Plugins.Distributions
     ///                                     consolidated debit counts 1, plus 1 per credit).
     ///   <c>TurnInsCreated</c>     (int) — Overage Turn-Ins created in Phases 2 + 3.
     ///   <c>Skipped</c>            (int) — Destinations skipped (missing FundingDetails percentage, etc).
-    ///   <c>ContinuationToken</c>  (string) — empty = done; non-empty = caller should re-invoke
-    ///                                        passing this back as input ContinuationToken.
+    ///   <c>NextToken</c>          (string) — empty = done; non-empty = caller should re-invoke
+    ///                                        passing this back as input <c>NextToken</c>.
     ///
     /// Time budget: the plugin tracks a wall-clock budget below the 2-minute sandbox
     /// ceiling. When the budget is exceeded between buckets, processing halts and a
@@ -85,7 +90,7 @@ namespace Checkbook.Plugins.Distributions
                 fiscalYearFilter = fy;
 
             string tokenIn = null;
-            if (context.InputParameters.TryGetValue("ContinuationToken", out var rawTok) && rawTok is string s)
+            if (context.InputParameters.TryGetValue("NextToken", out var rawTok) && rawTok is string s)
                 tokenIn = s;
             var cursor = Cursor.Parse(tokenIn);
 
@@ -688,7 +693,7 @@ namespace Checkbook.Plugins.Distributions
             context.OutputParameters["Created"]           = created;
             context.OutputParameters["TurnInsCreated"]    = turnIns;
             context.OutputParameters["Skipped"]           = skipped;
-            context.OutputParameters["ContinuationToken"] = cursor != null ? cursor.Serialize() : string.Empty;
+            context.OutputParameters["NextToken"] = cursor != null ? cursor.Serialize() : string.Empty;
         }
     }
 }
