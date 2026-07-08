@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <manifest>
-  <control namespace="ARNGCheckbook" constructor="TurnInApprovalProcess" version="0.1.1"
+  <control namespace="ARNGCheckbook" constructor="TurnInApprovalProcess" version="0.1.2"
            display-name-key="TurnInApprovalProcess"
            description-key="Replacement for the Turn-In Business Process Flow bar. Renders a chevron-style progress bar (State Approval, optionally BE Approval, Approved) with role-gated Approve/Deny buttons. The BE Approval stage is hidden when book_requiresbeapproval is No. Role checks (State Approver / State Administrator / Checkbook Administrator for State; Budget Executor / Checkbook Administrator for BE) are mirrored in TurnInValidator as the authoritative security boundary."
            control-type="virtual" >

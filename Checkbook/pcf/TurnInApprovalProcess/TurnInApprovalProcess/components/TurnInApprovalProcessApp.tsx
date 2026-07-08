@@ -186,11 +186,16 @@ export const TurnInApprovalProcessApp: React.FC<TurnInApprovalProcessProps> = ({
     const userId = (userSettings.userId || "").replace(/[{}]/g, "");
     if (!userId) return;
     try {
-      // Direct role assignments — includes team-derived roles inherited through
-      // the systemuser/team join Dataverse exposes on this navigation property.
+      // Mirror UserRoleHelper on the plugin side: fetch direct role assignments
+      // AND roles inherited via team membership. The systemuserroles_association
+      // navigation returns only direct assignments; team-derived roles come in
+      // through teamroles_association → teammembership_association.
+      const filter =
+        `systemuserroles_association/any(o:o/systemuserid eq ${userId})` +
+        ` or teamroles_association/any(t:t/teammembership_association/any(m:m/systemuserid eq ${userId}))`;
       const resp = await webAPI.retrieveMultipleRecords(
         "role",
-        `?$select=name&$filter=systemuserroles_association/any(o:o/systemuserid eq ${userId})`
+        `?$select=name&$filter=${filter}`
       );
       const names = new Set<string>();
       for (const r of resp.entities) {
