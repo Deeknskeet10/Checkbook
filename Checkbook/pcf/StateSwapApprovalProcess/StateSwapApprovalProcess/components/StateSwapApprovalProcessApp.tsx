@@ -263,11 +263,16 @@ export const StateSwapApprovalProcessApp: React.FC<StateSwapApprovalProcessProps
     if (!userId) return;
     try {
       // Fetch roles + the caller's business unit in parallel — the BU is what
-      // gates per-state approval alongside the role check.
+      // gates per-state approval alongside the role check. Role query mirrors
+      // UserRoleHelper: direct assignments (systemuserroles_association) OR
+      // team-derived roles (teamroles_association → teammembership_association).
+      const roleFilter =
+        `systemuserroles_association/any(o:o/systemuserid eq ${userId})` +
+        ` or teamroles_association/any(t:t/teammembership_association/any(m:m/systemuserid eq ${userId}))`;
       const [rolesResp, user] = await Promise.all([
         webAPI.retrieveMultipleRecords(
           "role",
-          `?$select=name&$filter=systemuserroles_association/any(o:o/systemuserid eq ${userId})`
+          `?$select=name&$filter=${roleFilter}`
         ),
         webAPI.retrieveRecord(USER_ENTITY, userId, `?$select=${USER_BU_VALUE}`),
       ]);
