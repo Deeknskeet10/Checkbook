@@ -82,5 +82,37 @@ namespace Checkbook.Plugins.Helpers
 
             return id;
         }
+
+        /// <summary>
+        /// Reads a boolean env var. Missing / empty / unrecognized values return
+        /// <paramref name="defaultIfMissing"/> instead of throwing so callers can
+        /// treat the toggle as "off by default".
+        /// Accepts "true"/"false", "yes"/"no", "1"/"0" (case-insensitive) — the
+        /// exact wire format depends on how the value was written (maker portal
+        /// vs. our own ToggleFundedAmountLock Custom API).
+        /// </summary>
+        public static bool GetBool(
+            IOrganizationService service,
+            string schemaName,
+            bool defaultIfMissing = false)
+        {
+            var raw = GetValue(service, schemaName);
+            if (string.IsNullOrWhiteSpace(raw))
+                return defaultIfMissing;
+
+            switch (raw.Trim().ToLowerInvariant())
+            {
+                case "true":
+                case "yes":
+                case "1":
+                    return true;
+                case "false":
+                case "no":
+                case "0":
+                    return false;
+                default:
+                    return defaultIfMissing;
+            }
+        }
     }
 }
