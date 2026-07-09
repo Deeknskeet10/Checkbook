@@ -84,11 +84,12 @@ namespace Checkbook.Plugins.Distributions.Helpers
             }
 
             // Read batching: two group-wide queries instead of 2N per destination.
-            // Existing credits are aggregated by FC in one FetchXml; open Sweep
-            // Turn-Ins are pulled in one RetrieveMultiple keyed by (Fund, PG).
-            // Destinations not present in either map fall back to 0 / null,
-            // matching the per-destination behavior of the old queries.
-            var existingByFc = SumExistingCreditDistributionsByFc(service, fundId, pgId, fundingType);
+            // Existing NET Distributions (credits − debits) are aggregated by FC
+            // in one FetchXml; open Sweep Turn-Ins are pulled in one
+            // RetrieveMultiple keyed by (Fund, PG). Destinations not present in
+            // either map fall back to 0 / null, matching the per-destination
+            // behavior of the old queries.
+            var existingByFc = SumExistingNetDistributionsByFc(service, fundId, pgId, fundingType);
             var openTurnInByFc = FindOpenSweepTurnInsByFc(service, fundId, pgId);
 
             var shortfalls = new List<(DistributionBucket bucket, decimal amount)>();
@@ -101,7 +102,7 @@ namespace Checkbook.Plugins.Distributions.Helpers
                 tracing.Trace(
                     $"  Dest FC={bucket.FundCenterId} (FY={bucket.FiscalYear}, type={fundingType}): " +
                     $"funded={bucket.TotalFunding:C}, pct={resolution.Percentage}, " +
-                    $"target={target:C}, existingCredits={existing:C}.");
+                    $"target={target:C}, existingNet={existing:C}.");
 
                 openTurnInByFc.TryGetValue(bucket.FundCenterId, out var openTurnIn);
 
@@ -160,26 +161,30 @@ namespace Checkbook.Plugins.Distributions.Helpers
         }
 
         // -----------------------------------------------------------------
-        // Existing credits, batched: one FetchXml aggregate per group, grouped
-        // by book_fundcenter. Returns a dictionary keyed by destination FC id
-        // so ProcessGroup's per-destination lookup is O(1). Distributions whose
-        // FundingEvent is missing or of a different type are excluded via the
-        // inner join. FCs with no matching credits simply won't appear in the
-        // map — callers fall back to 0m.
+        // Existing NET Distributions (credits − debits), batched: one FetchXml
+        // aggregate per group, grouped by (book_fundcenter, direction). Returns
+        // a dictionary keyed by destination FC id so ProcessGroup's
+        // per-destination lookup is O(1). Distributions whose FundingEvent is
+        // missing or of a different type are excluded via the inner join —
+        // this includes approved-turn-in debits, which carry a FundingEvent
+        // (TurnInDistributionCreator), so they correctly count against the FC's
+        // balance and prevent turn-ins from being regenerated each run.
+        // FCs with no matching activity simply won't appear in the map —
+        // callers fall back to 0m.
         // -----------------------------------------------------------------
-        private static Dictionary<Guid, decimal> SumExistingCreditDistributionsByFc(
+        private static Dictionary<Guid, decimal> SumExistingNetDistributionsByFc(
             IOrganizationService service, Guid fundId, Guid pgId, int fundingType)
         {
             var fetchXml = $@"
 <fetch aggregate='true' no-lock='true'>
   <entity name='{EntityNames.Distributions}'>
-    <attribute name='{DistributionsAttributes.FundCenter}' alias='fc'    groupby='true' />
-    <attribute name='{DistributionsAttributes.Amount}'     alias='total' aggregate='sum' />
+    <attribute name='{DistributionsAttributes.FundCenter}'            alias='fc'    groupby='true' />
+    <attribute name='{DistributionsAttributes.DisbursementDirection}' alias='dir'   groupby='true' />
+    <attribute name='{DistributionsAttributes.Amount}'                alias='total' aggregate='sum' />
     <filter type='and'>
-      <condition attribute='{DistributionsAttributes.Fund}'                  operator='eq' value='{fundId}' />
-      <condition attribute='{DistributionsAttributes.PGSAG}'                 operator='eq' value='{pgId}' />
-      <condition attribute='{DistributionsAttributes.DisbursementDirection}' operator='eq' value='{DisbursementDirectionValues.Credit}' />
-      <condition attribute='{DistributionsAttributes.StateCode}'             operator='eq' value='{StateCodeValues.Active}' />
+      <condition attribute='{DistributionsAttributes.Fund}'      operator='eq' value='{fundId}' />
+      <condition attribute='{DistributionsAttributes.PGSAG}'     operator='eq' value='{pgId}' />
+      <condition attribute='{DistributionsAttributes.StateCode}' operator='eq' value='{StateCodeValues.Active}' />
     </filter>
     <link-entity name='{EntityNames.FundingEvent}' from='{FundingEventAttributes.Id}' to='{DistributionsAttributes.FundingEvent}' link-type='inner'>
       <filter type='and'>
@@ -190,12 +195,18 @@ namespace Checkbook.Plugins.Distributions.Helpers
 </fetch>";
 
             var rows = service.RetrieveMultiple(new FetchExpression(fetchXml)).Entities;
-            var byFc = new Dictionary<Guid, decimal>(rows.Count);
+            var byFc = new Dictionary<Guid, decimal>();
             foreach (var row in rows)
             {
                 var fcId = GetAliasedGuid(row, "fc");
                 if (fcId == Guid.Empty) continue;
-                byFc[fcId] = GetAliasedDecimal(row, "total");
+                var dir    = GetAliasedInt(row, "dir");
+                var amount = GetAliasedDecimal(row, "total");
+                byFc.TryGetValue(fcId, out var running);
+                if (dir == DisbursementDirectionValues.Credit)
+                    byFc[fcId] = running + amount;
+                else if (dir == DisbursementDirectionValues.Debit)
+                    byFc[fcId] = running - amount;
             }
             return byFc;
         }
@@ -264,6 +275,15 @@ namespace Checkbook.Plugins.Distributions.Helpers
             if (!e.Contains(alias)) return 0m;
             var raw = (e[alias] as AliasedValue)?.Value;
             return NumericHelper.ToDecimal(raw, 0m);
+        }
+
+        private static int GetAliasedInt(Entity e, string alias)
+        {
+            if (!e.Contains(alias)) return 0;
+            var raw = (e[alias] as AliasedValue)?.Value;
+            if (raw is OptionSetValue osv) return osv.Value;
+            if (raw is int i) return i;
+            return 0;
         }
 
         private static decimal GetTypeAmount(Entity turnIn, int fundingType)
