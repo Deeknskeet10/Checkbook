@@ -445,10 +445,13 @@ namespace Checkbook.Plugins.Distributions
         // -----------------------------------------------------------------
         // Phase 3 aggregation: BE-approved Requirements that have no
         // Prioritizations, grouped by (fundcenter_id, PG, fund, FY). Bucket FC
-        // is resolved per-row from the original FC + its parent, applying the
-        // "parent ∈ {holding, null} → self" rule that lived in the flow's
-        // "Determine_correct_FC" compose. Today the qualifying types are TARC
-        // (1) and ARNG External (4) — both centrally managed without Prios.
+        // is resolved per-row by walking up the FundCenter parent chain until
+        // we reach an FC whose parent is the holding FC (state-level). Reqs
+        // may sit multiple levels below the state, so a one-hop lookup is not
+        // enough — we keep hopping until FC.parent == holding, or the chain
+        // ends (null / missing metadata), or the parent equals the holding FC
+        // itself (already at state). Today the qualifying types are TARC (1)
+        // and ARNG External (4) — both centrally managed without Prios.
         // Centrally managed Reqs that DO have Prios (State+national=1, PEC FY26
         // centrally, DOMOPs) flow through Phase 2 instead; the outer-join
         // null-check on book_prioritization guards against stray Prios under a
@@ -516,12 +519,11 @@ namespace Checkbook.Plugins.Distributions
                 if (fcId == Guid.Empty || fundId == Guid.Empty || pgId == Guid.Empty)
                     continue;
 
-                // Resolve parent-or-self: use parent FC unless the parent is null or
-                // is the holding FC, in which case use self.
-                var fcMeta = GetFundCenterMeta(service, fcCache, fcId);
-                var destFc = (fcMeta?.ParentFundCenterId == null || fcMeta.ParentFundCenterId == holdingFundCenterId)
-                    ? fcId
-                    : fcMeta.ParentFundCenterId.Value;
+                // Walk up to the state-level FC (the one whose parent is the
+                // holding FC). Stops early if the chain runs out or metadata
+                // is missing, and has a hard hop cap to guard against a cyclic
+                // parent-of graph.
+                var destFc = ResolveStateFundCenter(service, fcCache, tracing, fcId, holdingFundCenterId);
 
                 var fy     = GetAliasedOption(row, "fy");
                 var funded = GetAliasedDecimal(row, "total_funding");
@@ -602,6 +604,45 @@ namespace Checkbook.Plugins.Distributions
                 cache[fundCenterId] = null;
                 return null;
             }
+        }
+
+        // -----------------------------------------------------------------
+        // Walk the FundCenter parent chain until we reach the FC whose parent
+        // is the holding FC (state level). Fallbacks match the legacy one-hop
+        // rule: an FC that is itself the holding FC, has no parent, or lacks
+        // metadata resolves to itself; an FC already at state (parent = holding)
+        // resolves to itself in the first loop turn. MaxHops caps the walk at
+        // a sane depth to defend against a cyclic parent-of graph.
+        // -----------------------------------------------------------------
+        private const int MaxFundCenterWalkHops = 16;
+
+        private static Guid ResolveStateFundCenter(
+            IOrganizationService service,
+            Dictionary<Guid, FundCenterMeta> cache,
+            ITracingService tracing,
+            Guid fcId,
+            Guid holdingFundCenterId)
+        {
+            if (fcId == Guid.Empty || fcId == holdingFundCenterId) return fcId;
+
+            var current = fcId;
+            for (var hop = 0; hop < MaxFundCenterWalkHops; hop++)
+            {
+                var meta = GetFundCenterMeta(service, cache, current);
+                var parent = meta?.ParentFundCenterId;
+
+                // No parent, or metadata missing → stop here.
+                if (parent == null) return current;
+                // Parent is the holding FC → current is state-level; done.
+                if (parent.Value == holdingFundCenterId) return current;
+
+                current = parent.Value;
+            }
+
+            tracing.Trace(
+                $"  ResolveStateFundCenter: hop cap ({MaxFundCenterWalkHops}) reached starting at " +
+                $"FC {fcId}; returning {current}. Check for a cyclic parent-of chain.");
+            return current;
         }
 
         // -----------------------------------------------------------------
