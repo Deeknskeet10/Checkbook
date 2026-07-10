@@ -169,7 +169,7 @@ namespace Checkbook.Plugins.Distributions
                 // ---- Phase 2 — Prioritizations -------------------------------
                 if (startPhase <= 2)
                 {
-                    var phase2Buckets = QueryPrioritizationBuckets(service, tracing, fcCache, fiscalYearFilter);
+                    var phase2Buckets = QueryPrioritizationBuckets(service, tracing, holdingFundCenterId, fcCache, fiscalYearFilter);
                     var phase2Groups  = GroupByFundAndPg(phase2Buckets);
                     tracing.Trace($"Phase 2: {phase2Groups.Count} (Fund, PG) group(s) to process.");
                     var groupStart = (feIdx == startFeIdx && startPhase == 2) ? startBucket : 0;
@@ -340,23 +340,28 @@ namespace Checkbook.Plugins.Distributions
 
         // -----------------------------------------------------------------
         // Phase 2 aggregation: active Prioritizations with funded TDP > 0,
-        // grouped by (prio_fc, parent_fc, req_national, state, PG, fund, FY).
-        // Destination FC is the Prioritization's own FC when the Requirement is
-        // centrally managed (book_national = 1) — the centrally identified FC
-        // is backfilled onto the Prio by PrioritizationFundCenterBackfill. For
-        // non-centrally-managed Prios, destination FC is the Prio's parent FC.
+        // grouped by (prio_fc, state, PG, fund, FY). Destination FC is resolved
+        // per-row by walking up the FundCenter parent chain to state (the FC
+        // whose parent is the holding FC) — same rule as Phase 3. Applies to
+        // both centrally-managed Prios (Prio.FC = Req.FC via
+        // PrioritizationFundCenterBackfill, can sit several hops below state,
+        // e.g. A1834 → A18NG → A18) and non-centrally-managed Prios (Prio.FC is
+        // typically a state child, one hop from state). A one-hop rule was
+        // wrong for the former and coincidentally right for the common case of
+        // the latter; the walk handles both.
         // FY filter (optional) constrains to a single book_fund.book_fiscalyear.
         //
         // Post-aggregation the raw fetch rows are COLLAPSED by destination
-        // (FundId, destFcId, PgId, FiscalYear) — multiple non-national child FCs
-        // sharing a parent all resolve to the same destination, and treating
-        // them as separate buckets caused the second bucket to see the first's
+        // (FundId, destFcId, PgId, FiscalYear) — multiple child FCs walking up
+        // to the same state resolve to the same destination, and treating them
+        // as separate buckets caused the second bucket to see the first's
         // credits and mistakenly ping-pong between under-provisioning and
         // spurious Sweep Turn-Ins.
         // -----------------------------------------------------------------
         private static List<DistributionBucket> QueryPrioritizationBuckets(
             IOrganizationService service, ITracingService tracing,
-            Dictionary<Guid, FundCenterMeta> fcCache, int? fiscalYearFilter)
+            Guid holdingFundCenterId, Dictionary<Guid, FundCenterMeta> fcCache,
+            int? fiscalYearFilter)
         {
             var fyCondition = fiscalYearFilter.HasValue
                 ? $"<condition attribute='book_fiscalyear' operator='eq' value='{fiscalYearFilter.Value}' />"
@@ -371,16 +376,12 @@ namespace Checkbook.Plugins.Distributions
       <condition attribute='book_newfundedamounttdp' operator='gt' value='0' />
     </filter>
     <link-entity name='book_fundcenter' from='book_fundcenterid' to='book_fundcenter' link-type='inner' alias='fundcenter'>
-      <attribute name='book_fundcenterid'     alias='prio_fc_id'           groupby='true' />
-      <attribute name='book_parentfundcenter' alias='parent_fundcenter_id' groupby='true' />
+      <attribute name='book_fundcenterid' alias='prio_fc_id' groupby='true' />
     </link-entity>
     <link-entity name='book_state' from='book_stateid' to='book_state' link-type='inner' alias='state'>
       <attribute name='book_stateid' alias='state_id' groupby='true' />
     </link-entity>
     <link-entity name='book_requirementfunding' from='book_requirementfundingid' to='book_requirementfunding' link-type='inner' alias='req_funding'>
-      <link-entity name='book_requirements' from='book_requirementsid' to='book_requirement' link-type='inner' alias='requirement'>
-        <attribute name='book_national' alias='req_national' groupby='true' />
-      </link-entity>
       <link-entity name='book_fundingline' from='book_fundinglineid' to='book_lineofaccounting' link-type='inner' alias='loa'>
         <link-entity name='book_pg' from='book_pgid' to='book_pg' link-type='inner' alias='pg'>
           <attribute name='book_pgid' alias='pg_id' groupby='true' />
@@ -402,18 +403,17 @@ namespace Checkbook.Plugins.Distributions
             var collapsed = new Dictionary<string, DistributionBucket>(rows.Count);
             foreach (var row in rows)
             {
-                var prioFcId   = GetAliasedGuid(row, "prio_fc_id");
-                var parentFcId = GetAliasedGuid(row, "parent_fundcenter_id");
-                var fundId     = GetAliasedGuid(row, "fund_id");
-                var pgId       = GetAliasedGuid(row, "pg_id");
-                var isNational = GetAliasedBool(row, "req_national");
+                var prioFcId = GetAliasedGuid(row, "prio_fc_id");
+                var fundId   = GetAliasedGuid(row, "fund_id");
+                var pgId     = GetAliasedGuid(row, "pg_id");
+                if (prioFcId == Guid.Empty || fundId == Guid.Empty || pgId == Guid.Empty)
+                    continue;
 
-                // Centrally managed → use the Prio's own FC (= Req.FC via backfill).
-                // Otherwise → use the parent FC. Skip rows that can't resolve a
-                // destination (e.g. non-centrally-managed Prio whose FC has no parent,
-                // mirroring the legacy "Get_FC returned null → no-op" behavior).
-                var destFcId = isNational ? prioFcId : parentFcId;
-                if (destFcId == Guid.Empty || fundId == Guid.Empty || pgId == Guid.Empty)
+                // Walk up to the state-level FC (parent == holding). Same rule
+                // as Phase 3; handles centrally-managed Prios that sit several
+                // hops below state (Prio.FC = Req.FC, e.g. A1834 → A18NG → A18).
+                var destFcId = ResolveStateFundCenter(service, fcCache, tracing, prioFcId, holdingFundCenterId);
+                if (destFcId == Guid.Empty)
                     continue;
 
                 var fy      = GetAliasedOption(row, "fy");
@@ -717,14 +717,6 @@ namespace Checkbook.Plugins.Distributions
             if (!e.Contains(alias)) return 0m;
             var raw = (e[alias] as AliasedValue)?.Value;
             return NumericHelper.ToDecimal(raw, 0m);
-        }
-
-        private static bool GetAliasedBool(Entity e, string alias)
-        {
-            if (!e.Contains(alias)) return false;
-            var raw = (e[alias] as AliasedValue)?.Value;
-            if (raw is bool b) return b;
-            return false;
         }
 
         private static void WriteOutputs(IPluginExecutionContext context,
