@@ -9,7 +9,7 @@ This file is the source of truth for **what steps should exist** in any env
 running these plugins. When you finish a registration session, walk the
 verification checklist at the bottom and confirm every row is present.
 
-The assembly currently ships **35 plugin classes**, grouped under
+The assembly currently ships **36 plugin classes**, grouped under
 `Checkbook.Plugins.<folder>`. Three folders also have their own deep-dive docs
 covering prerequisites, Custom APIs, and smoke tests:
 [`LOAs/REGISTRATION.md`](LOAs/REGISTRATION.md),
@@ -499,7 +499,7 @@ renamed. The PCF process-bar control mirrors these lists on the UI side.
 
 | # | Message | Primary entity | Stage         | Mode | Filtering attributes                  | Notes |
 |---|---------|----------------|---------------|------|---------------------------------------|-------|
-| 1 | Update  | `book_turnin`  | Pre-Operation | Sync | `book_stateapproved, book_beapproved` | Only fires on approval transitions. **Requires PreImage** (`book_stateapproved, book_beapproved, book_amount`). |
+| 1 | Update  | `book_turnin`  | Pre-Operation | Sync | `book_stateapproved, book_beapproved` | Only fires on approval transitions. **Requires PreImage** (`book_stateapproved, book_beapproved, book_newamount, book_origin, book_afpamount, book_allotmentamount`) — origin + AFP/Allotment amounts are needed to evaluate the sweep-origin AFP-only path. |
 
 ### `Checkbook.Plugins.TurnIns.TurnInApprovalPlugin`
 
@@ -668,11 +668,18 @@ registration required beyond that.
 ### `Checkbook.Plugins.LOAs.LOANameSetter`
 
 Pre-op writer that builds the canonical LOA name from its grain attributes
-on Create. Used to enforce the `book_LOAUniqueName` alternate key.
+on Create, and re-builds it on Update when a grain field changes. Used to
+enforce the `book_LOAUniqueName` alternate key.
+
+FY27+ names use the GFEBS-aligned format
+`{OPR}-{Fund}-{PG or SAG}-{FundedProgram}-{Category}` (Funded Program read
+from the Fund's `book_newfundedprogram` lookup, Category from the LOA's
+`book_category` choice); FY26 names keep `{OPR}-{Fund}-{BOC}-{DT}-{PG or SAG}-{MDEP}`.
 
 | # | Message | Primary entity      | Stage          | Mode | Filtering attributes | Notes |
 |---|---------|---------------------|----------------|------|----------------------|-------|
 | 1 | Create  | `book_fundingline`  | Pre-Operation  | Sync | *(none)*             | Sets `book_name` + FY on every new LOA. |
+| 2 | Update  | `book_fundingline`  | Pre-Operation  | Sync | `book_disbursingofficial, book_fund, book_newboc, book_newdollartype, book_pg, book_sag, book_mdep, book_category` | Re-names on any grain change so direct LOA edits can't drift from the canonical format (the `book_name` alternate key rejects a rename into a duplicate). **Requires PreImage** (`book_disbursingofficial, book_fund, book_newboc, book_newdollartype, book_pg, book_sag, book_mdep, book_category, book_name, book_fiscalyear`). |
 
 ### `Checkbook.Plugins.LOAs.FundingTrackLOASynchronizer`
 
@@ -680,9 +687,28 @@ Pre-op synchronizer that re-links a Funding Track to a different (or new)
 LOA when any grain attribute changes. Runs at the same depth as the post-op
 `FundingTrackTDPRecalculator` so the recalc sees both old + new LOA.
 
-| # | Message | Primary entity        | Stage          | Mode | Filtering attributes                                                                            | Notes |
-|---|---------|-----------------------|----------------|------|-------------------------------------------------------------------------------------------------|-------|
-| 1 | Update  | `book_fundingtrack`   | Pre-Operation  | Sync | `book_disbursingofficial, book_fund, book_boc, book_dollartype, book_pg, book_sag, book_mdep`   | Re-links to canonical LOA on grain change. **Requires PreImage** (`book_disbursingofficial, book_fund, book_boc, book_dollartype, book_pg, book_sag, book_mdep, book_ape, book_lineofaccountingloa, owningbusinessunit`). |
+| # | Message | Primary entity        | Stage          | Mode | Filtering attributes                                                                                             | Notes |
+|---|---------|-----------------------|----------------|------|--------------------------------------------------------------------------------------------------------------------|-------|
+| 1 | Update  | `book_fundingtrack`   | Pre-Operation  | Sync | `book_disbursingofficial, book_fund, book_boc, book_dollartype, book_pg, book_sag, book_mdep, book_category`   | Re-links to canonical LOA on grain change. **Requires PreImage** (`book_disbursingofficial, book_fund, book_boc, book_dollartype, book_pg, book_sag, book_mdep, book_category, book_ape, book_lineofaccountingloa, owningbusinessunit`). |
+
+---
+
+## Funds
+
+### `Checkbook.Plugins.Funds.FundKeySetter`
+
+Pre-op writer that composes `book_fundkey` — the display string that makes
+duplicated Fund names distinguishable in lookups. Replaces the retired
+`Fund-CreateKey` XAML workflow (deactivate it before registering this step;
+the two would race on the same field).
+
+Format: FY26 and earlier `{Name}-{BOC}-{DollarType}` (identical to the XAML
+output); FY27+ `{Name}-{FundedProgram}`.
+
+| # | Message | Primary entity | Stage          | Mode | Filtering attributes                                                       | Notes |
+|---|---------|----------------|----------------|------|-----------------------------------------------------------------------------|-------|
+| 1 | Create  | `book_fund`    | Pre-Operation  | Sync | *(none)*                                                                    | Sets `book_fundkey` on every new Fund. |
+| 2 | Update  | `book_fund`    | Pre-Operation  | Sync | `book_name, book_boc, book_dollartypefundedprogram, book_newfundedprogram` | Recomposes on key-field change. **Requires PreImage** (`book_name, book_boc, book_dollartypefundedprogram, book_newfundedprogram`). |
 
 ---
 
@@ -803,8 +829,15 @@ to sort the right pane by **Message** then by **Primary Entity**.
 - [ ] Custom API `book_GenerateLOAs` exists with Plugin Type = `Checkbook.Plugins.LOAs.LOAGenerator`
 - [ ] `Checkbook.Plugins.LOAs.LOANameSetter`
   - [ ] Create of `book_fundingline` — Pre-Op Sync
+  - [ ] Update of `book_fundingline` — Pre-Op Sync, PreImage, filter on grain attrs (incl. `book_category`)
 - [ ] `Checkbook.Plugins.LOAs.FundingTrackLOASynchronizer`
-  - [ ] Update of `book_fundingtrack` — Pre-Op Sync, PreImage, filter on grain attrs
+  - [ ] Update of `book_fundingtrack` — Pre-Op Sync, PreImage, filter on grain attrs (incl. `book_category`)
+
+### Funds
+- [ ] `Checkbook.Plugins.Funds.FundKeySetter`
+  - [ ] Create of `book_fund` — Pre-Op Sync
+  - [ ] Update of `book_fund` — Pre-Op Sync, PreImage, filter `book_name, book_boc, book_dollartypefundedprogram, book_newfundedprogram`
+- [ ] Classic workflow **`Fund-CreateKey`** is deactivated (FundKeySetter owns `book_fundkey` now)
 
 ### Distributions
 - [ ] Custom API `book_GenerateDistributions` exists with Plugin Type = `Checkbook.Plugins.Distributions.GenerateDistributionsPlugin`
@@ -812,6 +845,12 @@ to sort the right pane by **Message** then by **Primary Entity**.
 
 ### Schema + env vars
 - [ ] `book_turnin` has the four new columns (`book_origin`, `book_afpamount`, `book_allotmentamount`, `book_requiresbeapproval`)
+- [ ] FY27 fund model (all nullable — FY26 rows never carry them):
+  - [ ] Table `book_fundedprogram` exists (primary name `book_name`)
+  - [ ] `book_fund` has lookup `book_newfundedprogram` → `book_fundedprogram` (the plain `book_fundedprogram` logical name is taken by a legacy picklist on `book_fund`)
+  - [ ] Global choice `book_category` exists with **explicit values** RISK=0, TSP=1, RPA=2, CON=3 (must match `Constants/CategoryValues.cs`)
+  - [ ] `book_fundingtrack` has choice column `book_category`
+  - [ ] `book_fundingline` has choice column `book_category`
 - [ ] Env var `book_DistributionHoldingFundCenter` is defined and set to the A18 record's GUID
 - [ ] Env var `book_TurnInCreditOPR` is defined and set to the BE OPR's record GUID (required for FY27+ Turn-Ins)
 - [ ] `book_stateswap` and `book_swapitem` tables exist per [`../dist/SCHEMA-StateSwap.md`](../dist/SCHEMA-StateSwap.md)

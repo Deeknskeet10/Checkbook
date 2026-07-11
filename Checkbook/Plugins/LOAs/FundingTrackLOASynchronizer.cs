@@ -10,7 +10,7 @@ namespace Checkbook.Plugins.LOAs
     /// Pre-Operation Update plugin on <c>book_fundingtrack</c>.
     ///
     /// When an FT already linked to an LOA has a grain field changed
-    /// (OPR / Fund / BOC / DT / PG / SAG / MDEP), this plugin recomputes the
+    /// (OPR / Fund / BOC / DT / PG / SAG / MDEP / Category), this plugin recomputes the
     /// target LOA grain, find-or-creates the matching LOA, and rewrites
     /// <c>book_lineofaccountingloa</c> on the FT in place.
     ///
@@ -37,6 +37,7 @@ namespace Checkbook.Plugins.LOAs
             FundingTrackAttributes.PG,
             FundingTrackAttributes.SAG,
             FundingTrackAttributes.MDEP,
+            FundingTrackAttributes.Category,
         };
 
         protected override void ExecutePlugin(

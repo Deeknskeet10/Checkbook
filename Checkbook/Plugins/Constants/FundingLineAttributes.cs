@@ -16,6 +16,7 @@ namespace Checkbook.Plugins.Constants
         public const string MDEP = "book_mdep";
         public const string BOC = "book_newboc";
         public const string DollarType = "book_newdollartype";
+        public const string Category = "book_category";
         public const string FiscalYear = "book_fiscalyear";
         public const string StateCode = "statecode";
 

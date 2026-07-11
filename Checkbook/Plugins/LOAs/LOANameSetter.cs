@@ -14,8 +14,8 @@ namespace Checkbook.Plugins.LOAs
     /// • <b>Create</b>: writes <c>book_name</c>, copies <c>book_fiscalyear</c>
     ///   from the Fund, and inherits <c>owningbusinessunit</c> from the
     ///   Disbursing Official's BU.
-    /// • <b>Update</b>: when a grain field (OPR/Fund/BOC/DT/PG/SAG/MDEP) changes,
-    ///   re-resolves and rewrites <c>book_name</c> + <c>book_fiscalyear</c>.
+    /// • <b>Update</b>: when a grain field (OPR/Fund/BOC/DT/PG/SAG/MDEP/Category)
+    ///   changes, re-resolves and rewrites <c>book_name</c> + <c>book_fiscalyear</c>.
     ///   BU is intentionally left alone on Update — owningbusinessunit is not a
     ///   directly-updatable field; reassigning the LOA owner is the proper path.
     ///
@@ -26,7 +26,7 @@ namespace Checkbook.Plugins.LOAs
     /// on the unique index.
     ///
     /// Update step must register a PreImage named "PreImage" containing all
-    /// seven grain fields plus <c>book_name</c>/<c>book_fiscalyear</c>.
+    /// eight grain fields plus <c>book_name</c>/<c>book_fiscalyear</c>.
     /// </summary>
     public class LOANameSetter : PluginBase
     {
@@ -39,6 +39,7 @@ namespace Checkbook.Plugins.LOAs
             FundingLineAttributes.PG,
             FundingLineAttributes.SAG,
             FundingLineAttributes.MDEP,
+            FundingLineAttributes.Category,
         };
 
         protected override void ExecutePlugin(
@@ -87,6 +88,10 @@ namespace Checkbook.Plugins.LOAs
             CopyRef(effective, FundingLineAttributes.PG,                 ftShape, FundingTrackAttributes.PG);
             CopyRef(effective, FundingLineAttributes.SAG,                ftShape, FundingTrackAttributes.SAG);
             CopyRef(effective, FundingLineAttributes.MDEP,               ftShape, FundingTrackAttributes.MDEP);
+
+            var category = effective.GetAttributeValue<OptionSetValue>(FundingLineAttributes.Category);
+            if (category != null)
+                ftShape[FundingTrackAttributes.Category] = category;
 
             var grain = LOAResolver.Resolve(service, ftShape, tracing);
             if (grain == null)

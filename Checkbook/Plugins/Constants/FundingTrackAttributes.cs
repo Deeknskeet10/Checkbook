@@ -19,6 +19,7 @@ namespace Checkbook.Plugins.Constants
         public const string PG = "book_pg";
         public const string SAG = "book_sag";
         public const string MDEP = "book_mdep";
+        public const string Category = "book_category";
         public const string APE = "book_ape";
 
         public const string StateCode = "statecode";

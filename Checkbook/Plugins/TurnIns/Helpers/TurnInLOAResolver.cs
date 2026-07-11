@@ -57,7 +57,7 @@ namespace Checkbook.Plugins.TurnIns.Helpers
     ///
     /// Credit LOA depends on the Turn-In's fiscal year (parsed from the Fund name's
     /// trailing 2 digits — same convention LOANameBuilder uses):
-    ///   • FY &lt;= <see cref="LOANameBuilder.MdepInNameLastFy"/> (FY26):
+    ///   • FY &lt;= <see cref="LOANameBuilder.LegacyGrainLastFy"/> (FY26):
     ///       Fund + PG + BOC(BASE) + DollarType(BASE) + MDEP(RISK)
     ///   • FY27+:
     ///       Fund + DisbursingOfficial(BE OPR, from env var <see cref="CreditOprEnvVar"/>)
@@ -137,7 +137,7 @@ namespace Checkbook.Plugins.TurnIns.Helpers
                     $"Cannot determine fiscal year from Fund '{fundName}': {ex.Message}");
             }
 
-            if (fy <= LOANameBuilder.MdepInNameLastFy)
+            if (fy <= LOANameBuilder.LegacyGrainLastFy)
             {
                 var risk = TryResolveCreditLOA_FY26(service, tracing, fund, pg);
                 if (risk != null)

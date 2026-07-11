@@ -17,6 +17,10 @@ namespace Checkbook.Plugins.LOAs.Helpers
         public string PGName;
         public string SAGName;
         public string MDEPName;
+        /// <summary>Fund's funded-program display name (FY27+ only).</summary>
+        public string FundedProgramName;
+        /// <summary>Label of the FT's <c>book_category</c> choice (FY27+ only).</summary>
+        public string CategoryName;
         /// <summary>Fund's <c>book_appropriation</c> option-set value.</summary>
         public int Appropriation;
     }
@@ -26,14 +30,16 @@ namespace Checkbook.Plugins.LOAs.Helpers
     /// alternate-key uniqueness handle.
     ///
     /// Format:
-    ///   <c>{OPR}-{Fund}-{BOC}-{DT}-{PG or SAG}[-{MDEP}]</c>
+    ///   FY26 and earlier: <c>{OPR}-{Fund}-{BOC}-{DT}-{PG or SAG}-{MDEP}</c>
+    ///   FY27 and later:   <c>{OPR}-{Fund}-{PG or SAG}-{FundedProgram}-{Category}</c>
     ///
-    /// • The 5th slot is <b>PG</b> for procurement/RDT&amp;E appropriations
+    /// • The PG-or-SAG slot is <b>PG</b> for procurement/RDT&amp;E appropriations
     ///   (NGPA / NGPM / NGREA) and <b>SAG</b> for everything else — mirrors the
     ///   "APPN requires PG" branch in the legacy <c>LineofAccounting-Initialization</c>
-    ///   XAML workflow.
-    /// • MDEP is appended only for fiscal years <see cref="MdepInNameLastFy"/> and earlier
-    ///   (FY26 keeps the FY26 alternate-key composite intact; FY27+ drops it).
+    ///   XAML workflow. The rule applies in both eras.
+    /// • FY27+ drops BOC / DollarType / MDEP entirely: BOC and DT are replaced by
+    ///   the Fund's Funded Program plus the FT's Category choice (GFEBS-aligned
+    ///   fund model), and LOAs intentionally collapse across MDEPs.
     ///
     /// Fiscal year is parsed from the <b>last two digits</b> of the Fund name
     /// (e.g. <c>...26 → 26</c>). Any character may precede those digits — the
@@ -42,8 +48,12 @@ namespace Checkbook.Plugins.LOAs.Helpers
     /// </summary>
     public static class LOANameBuilder
     {
-        /// <summary>Highest FY (2-digit) whose LOA names still carry MDEP.</summary>
-        public const int MdepInNameLastFy = 26;
+        /// <summary>
+        /// Highest FY (2-digit) using the legacy grain (BOC / DollarType / MDEP,
+        /// composite alternate key). FY27+ uses Fund+FundedProgram+Category and
+        /// identifies solely by canonical name.
+        /// </summary>
+        public const int LegacyGrainLastFy = 26;
 
         private static readonly Regex FyTrailer = new Regex(@"(\d{2})$", RegexOptions.Compiled);
 
@@ -55,38 +65,48 @@ namespace Checkbook.Plugins.LOAs.Helpers
         {
             if (parts == null) throw new ArgumentNullException(nameof(parts));
 
-            RequireNonEmpty(parts.OPRName,        "OPR");
-            RequireNonEmpty(parts.FundName,       "Fund");
-            RequireNonEmpty(parts.BOCName,        "BOC");
-            RequireNonEmpty(parts.DollarTypeName, "DollarType");
+            RequireNonEmpty(parts.OPRName,  "OPR");
+            RequireNonEmpty(parts.FundName, "Fund");
 
             var fy = ParseFiscalYear(parts.FundName);
             var usesPg = AppropriationValues.RequiresPg(parts.Appropriation);
 
-            string fifth;
+            string pgOrSag;
             if (usesPg)
             {
                 RequireNonEmpty(parts.PGName, "PG (required for APPN " + parts.Appropriation + ")");
-                fifth = parts.PGName;
+                pgOrSag = parts.PGName;
             }
             else
             {
                 RequireNonEmpty(parts.SAGName, "SAG (required for APPN " + parts.Appropriation + ")");
-                fifth = parts.SAGName;
+                pgOrSag = parts.SAGName;
             }
 
-            var includeMdep = fy <= MdepInNameLastFy;
-            if (includeMdep)
-                RequireNonEmpty(parts.MDEPName, "MDEP (required for FY" + fy + ")");
+            if (fy <= LegacyGrainLastFy)
+            {
+                RequireNonEmpty(parts.BOCName,        "BOC (required for FY" + fy + ")");
+                RequireNonEmpty(parts.DollarTypeName, "DollarType (required for FY" + fy + ")");
+                RequireNonEmpty(parts.MDEPName,       "MDEP (required for FY" + fy + ")");
 
-            var core = string.Join("-",
+                return string.Join("-",
+                    parts.OPRName,
+                    parts.FundName,
+                    parts.BOCName,
+                    parts.DollarTypeName,
+                    pgOrSag,
+                    parts.MDEPName);
+            }
+
+            RequireNonEmpty(parts.FundedProgramName, "FundedProgram (required for FY" + fy + ")");
+            RequireNonEmpty(parts.CategoryName,      "Category (required for FY" + fy + ")");
+
+            return string.Join("-",
                 parts.OPRName,
                 parts.FundName,
-                parts.BOCName,
-                parts.DollarTypeName,
-                fifth);
-
-            return includeMdep ? core + "-" + parts.MDEPName : core;
+                pgOrSag,
+                parts.FundedProgramName,
+                parts.CategoryName);
         }
 
         /// <summary>

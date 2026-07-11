@@ -213,6 +213,7 @@ namespace Checkbook.Plugins.LOAs
                     FundingTrackAttributes.PG,
                     FundingTrackAttributes.SAG,
                     FundingTrackAttributes.MDEP,
+                    FundingTrackAttributes.Category,
                     FundingTrackAttributes.APE,
                     FundingTrackAttributes.LineOfAccounting),
                 Criteria = new FilterExpression(LogicalOperator.And)

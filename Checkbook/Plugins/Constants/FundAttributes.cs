@@ -13,7 +13,14 @@ namespace Checkbook.Plugins.Constants
         public const string Appropriation = "book_appropriation";
         public const string BOC = "book_boc";
         public const string DollarType = "book_dollartypefundedprogram";
-        public const string FundedProgram = "book_fundedprogram";
+
+        /// <summary>
+        /// Lookup to the book_fundedprogram table (FY27+ fund model). The
+        /// "new" prefix is deliberate — the logical name book_fundedprogram
+        /// is already taken by a legacy picklist on this entity.
+        /// </summary>
+        public const string FundedProgram = "book_newfundedprogram";
+
         public const string StateCode = "statecode";
     }
 }

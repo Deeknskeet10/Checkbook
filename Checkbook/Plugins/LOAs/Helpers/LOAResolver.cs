@@ -20,6 +20,10 @@ namespace Checkbook.Plugins.LOAs.Helpers
         public EntityReference SAG;
         public EntityReference MDEP;
         public EntityReference APE;
+        /// <summary>Fund's funded-program lookup (FY27+ grain).</summary>
+        public EntityReference FundedProgram;
+        /// <summary>FT's <c>book_category</c> choice (FY27+ grain).</summary>
+        public OptionSetValue Category;
 
         public int Appropriation;
         /// <summary>Fund's <c>book_fiscalyear</c> option-set value (copied to the LOA).</summary>
@@ -37,8 +41,9 @@ namespace Checkbook.Plugins.LOAs.Helpers
     {
         /// <summary>
         /// Resolves a grain from a Funding Track entity. <paramref name="ftEntity"/>
-        /// must already carry the grain lookups (OPR/Fund/BOC/DT/PG/SAG/MDEP/APE) —
-        /// use a Retrieve or a merged target+pre-image.
+        /// must already carry the grain fields (OPR/Fund/BOC/DT/PG/SAG/MDEP/Category/APE) —
+        /// use a Retrieve or a merged target+pre-image. The FY27+ Funded Program
+        /// comes off the Fund row, not the FT.
         ///
         /// Returns <c>null</c> if any required field is missing or the name can't be built;
         /// reasons are written to <paramref name="tracing"/>.
@@ -57,6 +62,7 @@ namespace Checkbook.Plugins.LOAs.Helpers
             var pg         = ftEntity.GetAttributeValue<EntityReference>(FundingTrackAttributes.PG);
             var sag        = ftEntity.GetAttributeValue<EntityReference>(FundingTrackAttributes.SAG);
             var mdep       = ftEntity.GetAttributeValue<EntityReference>(FundingTrackAttributes.MDEP);
+            var category   = ftEntity.GetAttributeValue<OptionSetValue>(FundingTrackAttributes.Category);
             var ape        = ftEntity.GetAttributeValue<EntityReference>(FundingTrackAttributes.APE);
 
             if (fund == null)
@@ -65,12 +71,14 @@ namespace Checkbook.Plugins.LOAs.Helpers
                 return null;
             }
 
-            // Fund carries the authoritative FY + APPN. Fetch them once.
+            // Fund carries the authoritative FY + APPN + Funded Program. Fetch them once.
             var fundRecord = service.Retrieve(EntityNames.Fund, fund.Id, new ColumnSet(
-                FundAttributes.Name, FundAttributes.FiscalYear, FundAttributes.Appropriation));
+                FundAttributes.Name, FundAttributes.FiscalYear, FundAttributes.Appropriation,
+                FundAttributes.FundedProgram));
             var fundName = fundRecord.GetAttributeValue<string>(FundAttributes.Name);
             var fy       = fundRecord.GetAttributeValue<OptionSetValue>(FundAttributes.FiscalYear);
             var appnOs   = fundRecord.GetAttributeValue<OptionSetValue>(FundAttributes.Appropriation);
+            var fundedProgram = fundRecord.GetAttributeValue<EntityReference>(FundAttributes.FundedProgram);
 
             if (string.IsNullOrWhiteSpace(fundName) || appnOs == null)
             {
@@ -83,7 +91,7 @@ namespace Checkbook.Plugins.LOAs.Helpers
             // LOAGenerator's runtime on environments with many unlinked FTs.
             var nameMap = ResolveNamesBatch(
                 service, tracing,
-                new[] { opr, boc, dollarType, pg, sag, mdep });
+                new[] { opr, boc, dollarType, pg, sag, mdep, fundedProgram });
 
             string NameOf(EntityReference reference) =>
                 reference == null
@@ -103,18 +111,22 @@ namespace Checkbook.Plugins.LOAs.Helpers
                     SAG        = sag,
                     MDEP       = mdep,
                     APE        = ape,
+                    FundedProgram = fundedProgram,
+                    Category      = category,
                     Appropriation = appnOs.Value,
                     FiscalYear    = fy,
                     NameParts = new LOANameParts
                     {
-                        OPRName        = NameOf(opr),
-                        FundName       = fundName,
-                        BOCName        = NameOf(boc),
-                        DollarTypeName = NameOf(dollarType),
-                        PGName         = NameOf(pg),
-                        SAGName        = NameOf(sag),
-                        MDEPName       = NameOf(mdep),
-                        Appropriation  = appnOs.Value,
+                        OPRName           = NameOf(opr),
+                        FundName          = fundName,
+                        BOCName           = NameOf(boc),
+                        DollarTypeName    = NameOf(dollarType),
+                        PGName            = NameOf(pg),
+                        SAGName           = NameOf(sag),
+                        MDEPName          = NameOf(mdep),
+                        FundedProgramName = NameOf(fundedProgram),
+                        CategoryName      = category != null ? CategoryValues.NameOf(category.Value) : null,
+                        Appropriation     = appnOs.Value,
                     },
                 };
                 grain.CanonicalName = LOANameBuilder.Build(grain.NameParts);
@@ -151,7 +163,7 @@ namespace Checkbook.Plugins.LOAs.Helpers
             if (byName.HasValue) return byName;
 
             var fy = LOANameBuilder.ParseFiscalYear(grain.NameParts.FundName);
-            if (fy > LOANameBuilder.MdepInNameLastFy)
+            if (fy > LOANameBuilder.LegacyGrainLastFy)
                 return null;
 
             return FindByCompositeKey(service, grain, tracing);
@@ -242,12 +254,15 @@ namespace Checkbook.Plugins.LOAs.Helpers
             loa[FundingLineAttributes.PG]                 = grain.PG;
             loa[FundingLineAttributes.SAG]                = grain.SAG;
 
-            // MDEP is only carried on the LOA for fiscal years that still include it
-            // in the canonical name (FY26 and earlier). FY27+ LOAs intentionally
-            // collapse across MDEPs and must leave the field empty.
+            // MDEP is only carried on the LOA for legacy-grain fiscal years (FY26
+            // and earlier). FY27+ LOAs intentionally collapse across MDEPs and
+            // must leave the field empty; they carry Category instead (Funded
+            // Program is reached through the Fund lookup, not stored on the LOA).
             var fy = LOANameBuilder.ParseFiscalYear(grain.NameParts.FundName);
-            if (fy <= LOANameBuilder.MdepInNameLastFy)
+            if (fy <= LOANameBuilder.LegacyGrainLastFy)
                 loa[FundingLineAttributes.MDEP] = grain.MDEP;
+            else if (grain.Category != null)
+                loa[FundingLineAttributes.Category] = grain.Category;
 
             // FY is also set by LOANameSetter for safety, but include it here for clarity.
             if (grain.FiscalYear != null)

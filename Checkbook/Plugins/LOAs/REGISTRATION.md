@@ -20,6 +20,15 @@ Replaces (deactivate, don't delete):
    - Field: `book_name`.
    - Keep the existing `book_LOAUniqueKey` composite key in place — it still
      enforces uniqueness for FY26 rows.
+1a. **FY27 fund-model columns** (see the "Schema + env vars" checklist in
+   [`../PLUGIN-REGISTRATION.md`](../PLUGIN-REGISTRATION.md)): table
+   `book_fundedprogram`, lookup `book_newfundedprogram` on `book_fund`, and
+   the `book_category` choice (explicit values matching
+   `Constants/CategoryValues.cs`) on `book_fundingtrack` + `book_fundingline`.
+   FY27+ LOA names are `{OPR}-{Fund}-{PG or SAG}-{FundedProgram}-{Category}`;
+   the name builder refuses FY27+ grains missing either part, so FY27 FTs
+   without a Category (or Funds without a Funded Program) are skipped and
+   surface in the Custom API's `Skipped` count.
 2. **Custom API**: `book_GenerateLOAs`
    - Unique name: `book_GenerateLOAs`
    - Binding type: **Global** (unbound).
@@ -68,3 +77,16 @@ itself at the end of its run.
    the same LOA, LOA TDP = sum of both FTs.
 5. Try to create an LOA in the UI with a duplicate name → Dataverse rejects
    it on the `book_LOAUniqueName` alternate key.
+
+### FY27 additions
+
+6. Create an FY27 FT (Fund name ending in 27+, Fund has a Funded Program,
+   FT has a Category): expect an LOA named
+   `{OPR}-{Fund}-{PG/SAG}-{FP}-{Category}` with `book_category` set and
+   BOC / DollarType / MDEP empty.
+7. Change that FT's Category: expect relink to a different/new LOA, TDP
+   moving with it (same behavior as the FY26 BOC swap in step 3).
+8. Create an FY27 FT whose Fund has no Funded Program (or FT has no
+   Category): expect `Skipped` to increment and no LOA created.
+9. Re-run step 1–4 with an FY26 FT afterward to confirm the legacy path is
+   untouched.
