@@ -15,6 +15,7 @@
 
 - Message: Create, Update
 - Stage: PreOperation, Sync
+- Create step Rank: **30** — must run after `PrioritizationFundCenterBackfill` (rank 10) and `RequirementDetailFundingGuard` (rank 20); the name embeds the FC that the backfill writes into the Target. See the ordering box in [`../PLUGIN-REGISTRATION.md`](../PLUGIN-REGISTRATION.md).
 - Filtering attributes: `book_state, book_requirementfunding, book_requirement, book_statepriority, book_fundcenter, book_newfiscalyear`
 - PreImage `PreImage`: same attributes
 

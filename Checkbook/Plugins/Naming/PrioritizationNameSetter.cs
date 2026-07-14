@@ -14,7 +14,10 @@ namespace Checkbook.Plugins.Naming
     /// "Prioritization - Set Name" workflow.
     ///
     /// Register:
-    ///   - Message=Create, Stage=PreOperation, Mode=Sync
+    ///   - Message=Create, Stage=PreOperation, Mode=Sync, Rank=30
+    ///       (after PrioritizationFundCenterBackfill rank 10 and
+    ///       RequirementDetailFundingGuard rank 20 — this plugin reads
+    ///       book_fundcenter from the Target to build the name)
     ///   - Message=Update, Stage=PreOperation, Mode=Sync
     ///       FilteringAttributes: book_state, book_requirementfunding, book_requirement,
     ///                            book_statepriority, book_fundcenter, book_newfiscalyear

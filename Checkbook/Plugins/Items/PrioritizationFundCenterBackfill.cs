@@ -14,7 +14,9 @@ namespace Checkbook.Plugins.Items
     /// FC or national flag changes) is handled by RequirementFundCenterCascade.
     /// </summary>
     /// <remarks>
-    /// Register: PreOperation, Sync, book_prioritization, Create (no filter).
+    /// Register: PreOperation, Sync, book_prioritization, Create (no filter),
+    /// Rank 10 — MUST run before PrioritizationNameSetter (rank 30), which
+    /// embeds the FC name in book_name.
     /// </remarks>
     public class PrioritizationFundCenterBackfill : PluginBase
     {
@@ -35,25 +37,34 @@ namespace Checkbook.Plugins.Items
 
             var target = GetTarget(context);
 
-            var rfRef = target.GetAttributeValue<EntityReference>(
-                PrioritizationAttributes.RequirementFunding);
-            if (rfRef == null)
-            {
-                tracing.Trace("No Requirement Funding on new Prioritization; skipping FC backfill.");
-                return;
-            }
+            // Resolve the parent Requirement: prefer the direct lookup (FY27+
+            // shape), fall back to RF.Requirement for legacy-shape Prios.
+            var reqRef = target.GetAttributeValue<EntityReference>(
+                PrioritizationAttributes.Requirement);
 
-            var rf = service.Retrieve(
-                EntityNames.RequirementFunding,
-                rfRef.Id,
-                new ColumnSet(RequirementFundingAttributes.Requirement));
-
-            var reqRef = rf.GetAttributeValue<EntityReference>(
-                RequirementFundingAttributes.Requirement);
             if (reqRef == null)
             {
-                tracing.Trace($"RF {rfRef.Id} has no Requirement; skipping FC backfill.");
-                return;
+                var rfRef = target.GetAttributeValue<EntityReference>(
+                    PrioritizationAttributes.RequirementFunding);
+                if (rfRef == null)
+                {
+                    tracing.Trace(
+                        "No Requirement or Requirement Funding on new Prioritization; skipping FC backfill.");
+                    return;
+                }
+
+                var rf = service.Retrieve(
+                    EntityNames.RequirementFunding,
+                    rfRef.Id,
+                    new ColumnSet(RequirementFundingAttributes.Requirement));
+
+                reqRef = rf.GetAttributeValue<EntityReference>(
+                    RequirementFundingAttributes.Requirement);
+                if (reqRef == null)
+                {
+                    tracing.Trace($"RF {rfRef.Id} has no Requirement; skipping FC backfill.");
+                    return;
+                }
             }
 
             var req = service.Retrieve(

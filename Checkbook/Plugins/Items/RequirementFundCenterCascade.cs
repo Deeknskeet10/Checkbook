@@ -9,7 +9,8 @@ namespace Checkbook.Plugins.Items
     /// <summary>
     /// When a Requirement's Fund Center or centrally-managed (book_national) flag
     /// changes, cascade the new FC to every active Prioritization linked under
-    /// the Requirement via its Requirement Fundings. The Requirement is the
+    /// the Requirement — directly via book_requirement (FY27+ shape) or via
+    /// its Requirement Fundings (legacy shape). The Requirement is the
     /// source of truth for the FC of centrally managed work; Prios stay in
     /// sync.
     /// </summary>
@@ -80,6 +81,8 @@ namespace Checkbook.Plugins.Items
 
         private static EntityCollection QueryLinkedActivePrios(IOrganizationService service, Guid requirementId)
         {
+            // Matches both Prio shapes: FY27+ (direct book_requirement) and
+            // legacy (book_requirementfunding → RF.Requirement).
             var query = new QueryExpression(EntityNames.Prioritization)
             {
                 ColumnSet = new ColumnSet(PrioritizationAttributes.FundCenter),
@@ -88,7 +91,9 @@ namespace Checkbook.Plugins.Items
                 {
                     Conditions =
                     {
-                        new ConditionExpression(PrioritizationAttributes.StateCode, ConditionOperator.Equal, 0),
+                        new ConditionExpression(
+                            PrioritizationAttributes.StateCode,
+                            ConditionOperator.Equal, StateCodeValues.Active),
                     },
                 },
             };
@@ -97,10 +102,18 @@ namespace Checkbook.Plugins.Items
                 EntityNames.RequirementFunding,
                 PrioritizationAttributes.RequirementFunding,
                 RequirementFundingAttributes.Id,
-                JoinOperator.Inner);
+                JoinOperator.LeftOuter);
             rfLink.EntityAlias = "rf";
-            rfLink.LinkCriteria.AddCondition(
-                RequirementFundingAttributes.Requirement, ConditionOperator.Equal, requirementId);
+
+            var shapeFilter = new FilterExpression(LogicalOperator.Or);
+            shapeFilter.AddCondition(new ConditionExpression(
+                PrioritizationAttributes.Requirement,
+                ConditionOperator.Equal, requirementId));
+            shapeFilter.AddCondition(new ConditionExpression(
+                "rf",
+                RequirementFundingAttributes.Requirement,
+                ConditionOperator.Equal, requirementId));
+            query.Criteria.AddFilter(shapeFilter);
 
             return service.RetrieveMultiple(query);
         }
