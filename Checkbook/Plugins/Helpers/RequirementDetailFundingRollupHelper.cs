@@ -44,11 +44,8 @@ namespace Checkbook.Plugins.Helpers
 
             if (result.Entities.Count > 0)
             {
-                var f = result.Entities[0].GetAttributeValue<AliasedValue>("total_funded");
-                var v = result.Entities[0].GetAttributeValue<AliasedValue>("total_validated");
-
-                fundedTotal = f != null ? Convert.ToDecimal(f.Value) : 0m;
-                validatedTotal = v != null ? Convert.ToDecimal(v.Value) : 0m;
+                fundedTotal = AliasedValueHelper.GetDecimal(result.Entities[0], "total_funded");
+                validatedTotal = AliasedValueHelper.GetDecimal(result.Entities[0], "total_validated");
             }
 
             tracing.Trace(
@@ -89,11 +86,8 @@ namespace Checkbook.Plugins.Helpers
 
             if (result.Entities.Count > 0)
             {
-                var f = result.Entities[0].GetAttributeValue<AliasedValue>("total_funded");
-                var v = result.Entities[0].GetAttributeValue<AliasedValue>("total_validated");
-
-                fundedTotal = f != null ? Convert.ToDecimal(f.Value) : 0m;
-                validatedTotal = v != null ? Convert.ToDecimal(v.Value) : 0m;
+                fundedTotal = AliasedValueHelper.GetDecimal(result.Entities[0], "total_funded");
+                validatedTotal = AliasedValueHelper.GetDecimal(result.Entities[0], "total_validated");
             }
 
             return (fundedTotal, validatedTotal);

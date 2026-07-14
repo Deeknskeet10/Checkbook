@@ -60,7 +60,7 @@ namespace Checkbook.Plugins.StateSwaps
             var swapId = context.PrimaryEntityId;
 
             // ---- 1. Idempotency (defense-in-depth) ----
-            if (SwapIdempotency.HasExistingLedger(service, swapId))
+            if (LedgerIdempotency.HasExistingLedger(service, LedgerAttributes.StateSwap, swapId))
             {
                 tracing.Trace(
                     "SwapApprovalPlugin: ledger entries already exist for this swap — orchestrator declines. " +
@@ -118,7 +118,7 @@ namespace Checkbook.Plugins.StateSwaps
             service.Update(new Entity(EntityNames.StateSwap, swapId)
             {
                 ["statecode"] = new OptionSetValue(StateCodeValues.Inactive),
-                ["statuscode"] = new OptionSetValue(2),
+                ["statuscode"] = new OptionSetValue(StatusCodeValues.InactiveDefault),
             });
 
             tracing.Trace("SwapApprovalPlugin: completed successfully.");

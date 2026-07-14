@@ -198,10 +198,10 @@ namespace Checkbook.Plugins.Distributions.Helpers
             var byFc = new Dictionary<Guid, decimal>();
             foreach (var row in rows)
             {
-                var fcId = GetAliasedGuid(row, "fc");
+                var fcId = AliasedValueHelper.GetGuid(row, "fc");
                 if (fcId == Guid.Empty) continue;
-                var dir    = GetAliasedInt(row, "dir");
-                var amount = GetAliasedDecimal(row, "total");
+                var dir    = AliasedValueHelper.GetInt(row, "dir");
+                var amount = AliasedValueHelper.GetDecimal(row, "total");
                 byFc.TryGetValue(fcId, out var running);
                 if (dir == DisbursementDirectionValues.Credit)
                     byFc[fcId] = running + amount;
@@ -260,32 +260,6 @@ namespace Checkbook.Plugins.Distributions.Helpers
             return byFc;
         }
 
-        // AliasedValue helpers — used by the aggregate FetchXml above.
-        private static Guid GetAliasedGuid(Entity e, string alias)
-        {
-            if (!e.Contains(alias)) return Guid.Empty;
-            var raw = (e[alias] as AliasedValue)?.Value;
-            if (raw is Guid g) return g;
-            if (raw is EntityReference er) return er.Id;
-            return Guid.Empty;
-        }
-
-        private static decimal GetAliasedDecimal(Entity e, string alias)
-        {
-            if (!e.Contains(alias)) return 0m;
-            var raw = (e[alias] as AliasedValue)?.Value;
-            return NumericHelper.ToDecimal(raw, 0m);
-        }
-
-        private static int GetAliasedInt(Entity e, string alias)
-        {
-            if (!e.Contains(alias)) return 0;
-            var raw = (e[alias] as AliasedValue)?.Value;
-            if (raw is OptionSetValue osv) return osv.Value;
-            if (raw is int i) return i;
-            return 0;
-        }
-
         private static decimal GetTypeAmount(Entity turnIn, int fundingType)
         {
             var attr = fundingType == FundingTypeValues.AFP
@@ -331,7 +305,7 @@ namespace Checkbook.Plugins.Distributions.Helpers
                 {
                     [attr] = 0m,
                     ["statecode"] = new OptionSetValue(StateCodeValues.Inactive),
-                    ["statuscode"] = new OptionSetValue(2),
+                    ["statuscode"] = new OptionSetValue(StatusCodeValues.InactiveDefault),
                 });
                 turnIn[attr] = 0m;
                 tracing.Trace($"  → Deactivated Sweep Turn-In {turnIn.Id} (both type amounts cleared).");

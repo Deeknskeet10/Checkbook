@@ -10,6 +10,19 @@ namespace Checkbook.Plugins.Constants
     }
 
     /// <summary>
+    /// Status reason (statuscode) values. Every book_* entity in this solution
+    /// keeps the platform default of statuscode 2 for statecode Inactive (some
+    /// relabel it — e.g. book_stateswap shows it as "BE Approved" — but the
+    /// numeric value is the default 2). If an entity ever gets a custom
+    /// inactive status reason (values start at 100000000), add a dedicated
+    /// constant rather than reusing this one.
+    /// </summary>
+    public static class StatusCodeValues
+    {
+        public const int InactiveDefault = 2;
+    }
+
+    /// <summary>
     /// Approval status values for book_prioritization.book_approvalstatus.
     /// </summary>
     public static class ApprovalStatusValues
@@ -19,6 +32,14 @@ namespace Checkbook.Plugins.Constants
         public const int StateReview = 2;
         public const int StateApproved = 3;
         public const int NPMReview = 4;
+
+        /// <summary>
+        /// The terminal approval state — Prios in this state count toward
+        /// funded/validated rollups and TDP caps. Currently NPM Review (4);
+        /// if the pipeline later ends at NPM Validated (5), change only this
+        /// alias, never the queries.
+        /// </summary>
+        public const int FinalApproved = NPMReview;
     }
 
     /// <summary>

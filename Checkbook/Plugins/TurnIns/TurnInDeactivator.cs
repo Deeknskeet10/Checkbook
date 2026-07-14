@@ -60,7 +60,7 @@ namespace Checkbook.Plugins.TurnIns
             // statecode/statuscode update works for system-defined statuses too.
             var update = new Entity(EntityNames.Turnin, context.PrimaryEntityId);
             update["statecode"] = new OptionSetValue(StateCodeValues.Inactive);
-            update["statuscode"] = new OptionSetValue(2); // "Inactive" default — confirm in env
+            update["statuscode"] = new OptionSetValue(StatusCodeValues.InactiveDefault);
 
             service.Update(update);
 

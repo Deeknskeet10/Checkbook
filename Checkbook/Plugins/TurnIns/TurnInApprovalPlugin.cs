@@ -61,7 +61,7 @@ namespace Checkbook.Plugins.TurnIns
             // ---- Idempotency: bail if any ledgers already exist for this Turn-In ----
             // Defense-in-depth — the validator should have caught this pre-op, but if
             // the validator step ever gets disabled this guard still prevents duplicates.
-            if (TurnInIdempotency.HasExistingLedger(service, context.PrimaryEntityId))
+            if (LedgerIdempotency.HasExistingLedger(service, LedgerAttributes.TurnIn, context.PrimaryEntityId))
             {
                 tracing.Trace(
                     "Ledger entries already exist for this Turn-In — orchestrator declines to re-process. " +
@@ -186,7 +186,7 @@ namespace Checkbook.Plugins.TurnIns
             service.Update(new Entity(EntityNames.Turnin, turnInId)
             {
                 ["statecode"] = new OptionSetValue(StateCodeValues.Inactive),
-                ["statuscode"] = new OptionSetValue(2),
+                ["statuscode"] = new OptionSetValue(StatusCodeValues.InactiveDefault),
             });
 
             tracing.Trace("TurnInApprovalPlugin completed successfully.");

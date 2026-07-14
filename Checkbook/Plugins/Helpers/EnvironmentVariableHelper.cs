@@ -24,6 +24,19 @@ namespace Checkbook.Plugins.Helpers
         /// </summary>
         public static string GetValue(IOrganizationService service, string schemaName)
         {
+            var (_, _, effectiveValue) = GetValueRecord(service, schemaName);
+            return effectiveValue;
+        }
+
+        /// <summary>
+        /// Returns the definition id, the override value record (null when no
+        /// override exists), and the effective raw value. Use this instead of
+        /// <see cref="GetValue"/> when the caller needs to write the variable
+        /// back (create/update the override record).
+        /// </summary>
+        public static (Guid definitionId, Entity valueRecord, string effectiveValue) GetValueRecord(
+            IOrganizationService service, string schemaName)
+        {
             if (string.IsNullOrWhiteSpace(schemaName))
                 throw new ArgumentException("Schema name is required.", nameof(schemaName));
 
@@ -44,7 +57,7 @@ namespace Checkbook.Plugins.Helpers
 
             var valueQuery = new QueryExpression("environmentvariablevalue")
             {
-                ColumnSet = new ColumnSet("value"),
+                ColumnSet = new ColumnSet("environmentvariablevalueid", "value"),
                 TopCount = 1,
                 Criteria = new FilterExpression(LogicalOperator.And)
                 {
@@ -60,9 +73,11 @@ namespace Checkbook.Plugins.Helpers
             };
             var overrideRecord = service.RetrieveMultiple(valueQuery).Entities.FirstOrDefault();
 
-            return overrideRecord != null
+            var effective = overrideRecord != null
                 ? overrideRecord.GetAttributeValue<string>("value")
                 : definition.GetAttributeValue<string>("defaultvalue");
+
+            return (definition.Id, overrideRecord, effective);
         }
 
         /// <summary>
@@ -96,7 +111,15 @@ namespace Checkbook.Plugins.Helpers
             string schemaName,
             bool defaultIfMissing = false)
         {
-            var raw = GetValue(service, schemaName);
+            return ParseBool(GetValue(service, schemaName), defaultIfMissing);
+        }
+
+        /// <summary>
+        /// Parses a boolean env-var wire value ("true"/"false", "yes"/"no",
+        /// "1"/"0", case-insensitive). Anything else returns the default.
+        /// </summary>
+        public static bool ParseBool(string raw, bool defaultIfMissing = false)
+        {
             if (string.IsNullOrWhiteSpace(raw))
                 return defaultIfMissing;
 

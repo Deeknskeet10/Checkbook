@@ -41,8 +41,5 @@ namespace Checkbook.Plugins.Constants
         public const string ItemizedDetails = "book_itemizeddetails";
         public const string RequirementDetails = "book_requirementdetails";
         public const string RequirementDetailFunding = "book_requirementdetailfunding";
-
-        // Approval Entities
-        public const string UFR = "book_arngcheckbookufr";
     }
 }

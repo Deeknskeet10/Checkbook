@@ -89,12 +89,9 @@ namespace Checkbook.Plugins.Helpers
                 </fetch>";
 
             var result = service.RetrieveMultiple(new FetchExpression(fetch));
-            decimal siblingSum = 0m;
-            if (result.Entities.Count > 0)
-            {
-                var aliased = result.Entities[0].GetAttributeValue<AliasedValue>("total_funded");
-                if (aliased != null) siblingSum = Convert.ToDecimal(aliased.Value);
-            }
+            var siblingSum = result.Entities.Count > 0
+                ? AliasedValueHelper.GetDecimal(result.Entities[0], "total_funded")
+                : 0m;
 
             var proposedTotal = context.MessageName == "Create"
                 ? siblingSum + newFunded

@@ -1,9 +1,7 @@
-using System.Linq;
 using Checkbook.Plugins.Base;
 using Checkbook.Plugins.Constants;
 using Checkbook.Plugins.Helpers;
 using Microsoft.Xrm.Sdk;
-using Microsoft.Xrm.Sdk.Query;
 
 namespace Checkbook.Plugins.Admin
 {
@@ -48,7 +46,9 @@ namespace Checkbook.Plugins.Admin
                     "to change the Funded Amount lock.");
             }
 
-            var (definitionId, valueRecord, currentlyLocked) = LoadEnvVar(service);
+            var (definitionId, valueRecord, effectiveValue) =
+                EnvironmentVariableHelper.GetValueRecord(service, EnvVarSchema);
+            var currentlyLocked = EnvironmentVariableHelper.ParseBool(effectiveValue);
             var nextLocked = !currentlyLocked;
             var nextValue = nextLocked ? "true" : "false";
 
@@ -72,70 +72,6 @@ namespace Checkbook.Plugins.Admin
             }
 
             context.OutputParameters[OutputIsLocked] = nextLocked;
-        }
-
-        private static (System.Guid defId, Entity valueRec, bool currentlyLocked) LoadEnvVar(
-            IOrganizationService service)
-        {
-            var defQuery = new QueryExpression("environmentvariabledefinition")
-            {
-                ColumnSet = new ColumnSet("environmentvariabledefinitionid", "defaultvalue"),
-                TopCount = 1,
-                Criteria = new FilterExpression(LogicalOperator.And)
-                {
-                    Conditions =
-                    {
-                        new ConditionExpression("schemaname", ConditionOperator.Equal, EnvVarSchema),
-                    },
-                },
-                NoLock = true,
-            };
-            var definition = service.RetrieveMultiple(defQuery).Entities.FirstOrDefault();
-            if (definition == null)
-            {
-                throw new InvalidPluginExecutionException(
-                    $"Environment variable '{EnvVarSchema}' is not defined in this environment. " +
-                    "Import it before enabling the Funded Amount lock button.");
-            }
-
-            var valQuery = new QueryExpression("environmentvariablevalue")
-            {
-                ColumnSet = new ColumnSet("environmentvariablevalueid", "value"),
-                TopCount = 1,
-                Criteria = new FilterExpression(LogicalOperator.And)
-                {
-                    Conditions =
-                    {
-                        new ConditionExpression(
-                            "environmentvariabledefinitionid",
-                            ConditionOperator.Equal,
-                            definition.Id),
-                    },
-                },
-                NoLock = true,
-            };
-            var valRec = service.RetrieveMultiple(valQuery).Entities.FirstOrDefault();
-
-            var effective = valRec != null
-                ? valRec.GetAttributeValue<string>("value")
-                : definition.GetAttributeValue<string>("defaultvalue");
-
-            var currentlyLocked = ParseBool(effective);
-            return (definition.Id, valRec, currentlyLocked);
-        }
-
-        private static bool ParseBool(string raw)
-        {
-            if (string.IsNullOrWhiteSpace(raw)) return false;
-            switch (raw.Trim().ToLowerInvariant())
-            {
-                case "true":
-                case "yes":
-                case "1":
-                    return true;
-                default:
-                    return false;
-            }
         }
     }
 }

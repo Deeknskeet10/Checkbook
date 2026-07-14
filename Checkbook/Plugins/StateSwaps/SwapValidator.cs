@@ -70,7 +70,7 @@ namespace Checkbook.Plugins.StateSwaps
                 $"be={beTx}, denied={deniedTx}.");
 
             // ---- 1. Idempotency ----
-            if (SwapIdempotency.HasExistingLedger(service, context.PrimaryEntityId))
+            if (LedgerIdempotency.HasExistingLedger(service, LedgerAttributes.StateSwap, context.PrimaryEntityId))
             {
                 throw new InvalidPluginExecutionException(
                     "This State Swap has already been processed — ledger entries exist against it. " +

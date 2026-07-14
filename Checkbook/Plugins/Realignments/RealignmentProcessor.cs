@@ -299,7 +299,7 @@ namespace Checkbook.Plugins.Realignments
 
             var update = new Entity(EntityNames.Realignments, id);
             update["statecode"] = new OptionSetValue(StateCodeValues.Inactive);
-            update["statuscode"] = new OptionSetValue(2); // "Completed" / "Inactive" — confirm env value
+            update["statuscode"] = new OptionSetValue(StatusCodeValues.InactiveDefault);
 
             service.Update(update);
 

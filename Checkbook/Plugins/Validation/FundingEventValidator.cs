@@ -360,10 +360,10 @@ namespace Checkbook.Plugins.Validation
             {
                 DetailId         = fd.Id,
                 FundingEventId   = fd.GetAttributeValue<EntityReference>(FundingDetailsAttributes.FundingEvent)?.Id ?? Guid.Empty,
-                FundingEventName = GetAliasedString(fd, "fe", FundingEventAttributes.Name),
-                FundingType      = GetAliasedOption(fd, "fe", FundingEventAttributes.FundingType),
-                StartDate        = GetAliasedDate(fd, "fe", FundingEventAttributes.StartDate) ?? DateTime.MinValue,
-                EndDate          = GetAliasedDate(fd, "fe", FundingEventAttributes.EndDate)   ?? DateTime.MaxValue,
+                FundingEventName = AliasedValueHelper.GetString(fd, "fe." + FundingEventAttributes.Name),
+                FundingType      = AliasedValueHelper.GetInt(fd, "fe." + FundingEventAttributes.FundingType, -1),
+                StartDate        = AliasedValueHelper.GetDate(fd, "fe." + FundingEventAttributes.StartDate) ?? DateTime.MinValue,
+                EndDate          = AliasedValueHelper.GetDate(fd, "fe." + FundingEventAttributes.EndDate)   ?? DateTime.MaxValue,
                 Pct              = NumericHelper.ToDecimal(fd, FundingDetailsAttributes.DistributionPercentage) ?? 0m,
             }).ToList();
         }
@@ -515,30 +515,5 @@ namespace Checkbook.Plugins.Validation
             return sc != null && sc.Value != StateCodeValues.Active;
         }
 
-        private static string GetAliasedString(Entity e, string alias, string attr)
-        {
-            var key = alias + "." + attr;
-            if (!e.Contains(key)) return null;
-            var raw = (e[key] as AliasedValue)?.Value;
-            return raw as string;
-        }
-
-        private static int GetAliasedOption(Entity e, string alias, string attr)
-        {
-            var key = alias + "." + attr;
-            if (!e.Contains(key)) return -1;
-            var raw = (e[key] as AliasedValue)?.Value;
-            if (raw is OptionSetValue osv) return osv.Value;
-            if (raw is int i) return i;
-            return -1;
-        }
-
-        private static DateTime? GetAliasedDate(Entity e, string alias, string attr)
-        {
-            var key = alias + "." + attr;
-            if (!e.Contains(key)) return null;
-            var raw = (e[key] as AliasedValue)?.Value;
-            return raw as DateTime?;
-        }
     }
 }

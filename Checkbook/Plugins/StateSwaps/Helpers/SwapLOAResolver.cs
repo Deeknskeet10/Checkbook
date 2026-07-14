@@ -81,10 +81,10 @@ namespace Checkbook.Plugins.StateSwaps.Helpers
                                      row.GetAttributeValue<object>(SwapItemAttributes.Amount), 0m),
                     DebitPrio  = row.GetAttributeValue<EntityReference>(SwapItemAttributes.DebitPrioritization),
                     CreditPrio = row.GetAttributeValue<EntityReference>(SwapItemAttributes.CreditPrioritization),
-                    DebitLOA   = AliasedRef(row, "dp." + PrioritizationAttributes.LineOfAccounting),
-                    CreditLOA  = AliasedRef(row, "cp." + PrioritizationAttributes.LineOfAccounting),
-                    DebitRF    = AliasedRef(row, "dp." + PrioritizationAttributes.RequirementFunding),
-                    CreditRF   = AliasedRef(row, "cp." + PrioritizationAttributes.RequirementFunding),
+                    DebitLOA   = AliasedValueHelper.GetReference(row, "dp." + PrioritizationAttributes.LineOfAccounting),
+                    CreditLOA  = AliasedValueHelper.GetReference(row, "cp." + PrioritizationAttributes.LineOfAccounting),
+                    DebitRF    = AliasedValueHelper.GetReference(row, "dp." + PrioritizationAttributes.RequirementFunding),
+                    CreditRF   = AliasedValueHelper.GetReference(row, "cp." + PrioritizationAttributes.RequirementFunding),
                 };
 
                 if (item.DebitLOA == null || item.CreditLOA == null)
@@ -100,8 +100,5 @@ namespace Checkbook.Plugins.StateSwaps.Helpers
             tracing.Trace($"SwapLOAResolver: resolved {resolved.Count} item(s) for swap {swapId}.");
             return resolved;
         }
-
-        private static EntityReference AliasedRef(Entity row, string alias)
-            => (row.GetAttributeValue<AliasedValue>(alias))?.Value as EntityReference;
     }
 }

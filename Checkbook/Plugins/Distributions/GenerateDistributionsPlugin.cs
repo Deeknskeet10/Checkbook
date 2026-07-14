@@ -403,9 +403,9 @@ namespace Checkbook.Plugins.Distributions
             var collapsed = new Dictionary<string, DistributionBucket>(rows.Count);
             foreach (var row in rows)
             {
-                var prioFcId = GetAliasedGuid(row, "prio_fc_id");
-                var fundId   = GetAliasedGuid(row, "fund_id");
-                var pgId     = GetAliasedGuid(row, "pg_id");
+                var prioFcId = AliasedValueHelper.GetGuid(row, "prio_fc_id");
+                var fundId   = AliasedValueHelper.GetGuid(row, "fund_id");
+                var pgId     = AliasedValueHelper.GetGuid(row, "pg_id");
                 if (prioFcId == Guid.Empty || fundId == Guid.Empty || pgId == Guid.Empty)
                     continue;
 
@@ -416,8 +416,8 @@ namespace Checkbook.Plugins.Distributions
                 if (destFcId == Guid.Empty)
                     continue;
 
-                var fy      = GetAliasedOption(row, "fy");
-                var funded  = GetAliasedDecimal(row, "total_funding");
+                var fy      = AliasedValueHelper.GetInt(row, "fy");
+                var funded  = AliasedValueHelper.GetDecimal(row, "total_funding");
                 var key     = $"{fundId}|{destFcId}|{pgId}|{fy}";
 
                 if (collapsed.TryGetValue(key, out var existing))
@@ -477,11 +477,11 @@ namespace Checkbook.Plugins.Distributions
     </filter>
     <link-entity name='book_requirements' from='book_requirementsid' to='book_requirement' link-type='inner' alias='reqs'>
       <filter type='and'>
-        <condition attribute='book_approvalstatus' operator='eq' value='7' />
-        <condition attribute='statecode'           operator='eq' value='0' />
+        <condition attribute='book_approvalstatus' operator='eq' value='{RequirementApprovalStatusValues.BEApproved}' />
+        <condition attribute='statecode'           operator='eq' value='{StateCodeValues.Active}' />
         <filter type='or'>
-          <condition attribute='book_type' operator='eq' value='1' />
-          <condition attribute='book_type' operator='eq' value='4' />
+          <condition attribute='book_type' operator='eq' value='{RequirementTypeValues.TARC}' />
+          <condition attribute='book_type' operator='eq' value='{RequirementTypeValues.ARNGExternal}' />
         </filter>
       </filter>
       <link-entity name='book_fundcenter' from='book_fundcenterid' to='book_fundcenter' link-type='inner' alias='fundcenter'>
@@ -513,9 +513,9 @@ namespace Checkbook.Plugins.Distributions
             var collapsed = new Dictionary<string, DistributionBucket>(rows.Count);
             foreach (var row in rows)
             {
-                var fcId   = GetAliasedGuid(row, "fundcenter_id");
-                var fundId = GetAliasedGuid(row, "fund_id");
-                var pgId   = GetAliasedGuid(row, "pg_id");
+                var fcId   = AliasedValueHelper.GetGuid(row, "fundcenter_id");
+                var fundId = AliasedValueHelper.GetGuid(row, "fund_id");
+                var pgId   = AliasedValueHelper.GetGuid(row, "pg_id");
                 if (fcId == Guid.Empty || fundId == Guid.Empty || pgId == Guid.Empty)
                     continue;
 
@@ -525,8 +525,8 @@ namespace Checkbook.Plugins.Distributions
                 // parent-of graph.
                 var destFc = ResolveStateFundCenter(service, fcCache, tracing, fcId, holdingFundCenterId);
 
-                var fy     = GetAliasedOption(row, "fy");
-                var funded = GetAliasedDecimal(row, "total_funding");
+                var fy     = AliasedValueHelper.GetInt(row, "fy");
+                var funded = AliasedValueHelper.GetDecimal(row, "total_funding");
                 var key    = $"{fundId}|{destFc}|{pgId}|{fy}";
 
                 if (collapsed.TryGetValue(key, out var existing))
@@ -688,35 +688,6 @@ namespace Checkbook.Plugins.Distributions
                 if (c.Phase >= 2 && c.FundingEventId != Guid.Empty) return c;
                 return null;
             }
-        }
-
-        // -----------------------------------------------------------------
-        // AliasedValue extraction helpers — FetchXML aggregates always wrap
-        // grouped/aggregated attributes in AliasedValue.
-        // -----------------------------------------------------------------
-        private static Guid GetAliasedGuid(Entity e, string alias)
-        {
-            if (!e.Contains(alias)) return Guid.Empty;
-            var raw = (e[alias] as AliasedValue)?.Value;
-            if (raw is Guid g) return g;
-            if (raw is EntityReference er) return er.Id;
-            return Guid.Empty;
-        }
-
-        private static int GetAliasedOption(Entity e, string alias)
-        {
-            if (!e.Contains(alias)) return 0;
-            var raw = (e[alias] as AliasedValue)?.Value;
-            if (raw is OptionSetValue osv) return osv.Value;
-            if (raw is int i) return i;
-            return 0;
-        }
-
-        private static decimal GetAliasedDecimal(Entity e, string alias)
-        {
-            if (!e.Contains(alias)) return 0m;
-            var raw = (e[alias] as AliasedValue)?.Value;
-            return NumericHelper.ToDecimal(raw, 0m);
         }
 
         private static void WriteOutputs(IPluginExecutionContext context,

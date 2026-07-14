@@ -32,10 +32,6 @@ namespace Checkbook.Plugins.Validation
                 target, preImage, PrioritizationAttributes.FundedAmountTDP
             );
 
-            var newValidated = GetEffectiveDecimal(
-                target, preImage, PrioritizationAttributes.ValidatedAmount
-            );
-
             var parentRF = GetEffectiveEntityReference(
                 target, preImage, PrioritizationAttributes.RequirementFunding
             );
@@ -75,10 +71,9 @@ namespace Checkbook.Plugins.Validation
                 <fetch aggregate='true'>
                   <entity name='{EntityNames.Prioritization}'>
                     <attribute name='{PrioritizationAttributes.FundedAmountTDP}' alias='total_funded' aggregate='sum'/>
-                    <attribute name='{PrioritizationAttributes.ValidatedAmount}' alias='total_validated' aggregate='sum'/>
                     <filter type='and'>
-                        <condition attribute='{PrioritizationAttributes.ApprovalStatus}' operator='eq' value='4'/>
-                        <condition attribute='{PrioritizationAttributes.StateCode}' operator='eq' value='0'/>
+                        <condition attribute='{PrioritizationAttributes.ApprovalStatus}' operator='eq' value='{ApprovalStatusValues.FinalApproved}'/>
+                        <condition attribute='{PrioritizationAttributes.StateCode}' operator='eq' value='{StateCodeValues.Active}'/>
                     </filter>
                     <link-entity name='{EntityNames.RequirementFunding}' from='{RequirementFundingAttributes.Id}' 
                                  to='{PrioritizationAttributes.RequirementFunding}' link-type='inner'>
@@ -91,13 +86,9 @@ namespace Checkbook.Plugins.Validation
 
             var result = service.RetrieveMultiple(new FetchExpression(fetch));
 
-            decimal siblingFundedSum = 0m;
-
-            if (result.Entities.Count > 0)
-            {
-                var fundedAlias = result.Entities[0].GetAttributeValue<AliasedValue>("total_funded");
-                siblingFundedSum = fundedAlias != null ? Convert.ToDecimal(fundedAlias.Value) : 0m;
-            }
+            var siblingFundedSum = result.Entities.Count > 0
+                ? AliasedValueHelper.GetDecimal(result.Entities[0], "total_funded")
+                : 0m;
 
             tracing.Trace($"Sibling funded total: {siblingFundedSum}");
 

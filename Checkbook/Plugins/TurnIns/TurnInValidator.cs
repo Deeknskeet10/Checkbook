@@ -80,7 +80,7 @@ namespace Checkbook.Plugins.TurnIns
             // Per design choice (Q2 = option C), existence of ledger rows linked back to
             // this Turn-In is the idempotency signal. End users can edit booleans through
             // various data paths (incl. Excel) — ledger existence is the durable side effect.
-            if (TurnInIdempotency.HasExistingLedger(service, context.PrimaryEntityId))
+            if (LedgerIdempotency.HasExistingLedger(service, LedgerAttributes.TurnIn, context.PrimaryEntityId))
             {
                 throw new InvalidPluginExecutionException(
                     "This Turn-In has already been processed — ledger entries exist against it. " +
