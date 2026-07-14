@@ -35,16 +35,20 @@ Replaces (deactivate, don't delete):
    - Is function: **No**.
    - Allowed custom processing step type: **Async + Sync**.
    - Plugin type: **`Checkbook.Plugins.LOAs.LOAGenerator`** (set after the assembly is registered).
-   - Request parameter:
+   - Request parameters:
      | Name | Type | Optional | Notes |
      |---|---|---|---|
      | `FiscalYear` | Integer | Yes | Fund FY option-set value. `0` or omitted = all FYs. |
+     | `BatchSize`  | Integer | Yes | Max Funding Tracks to attempt this invocation. `0` or omitted = unlimited. Use with `Remaining` to pump large backlogs in slices. |
    - Response properties:
-     | Name | Type |
-     |---|---|
-     | `Created` | Integer |
-     | `Linked`  | Integer |
-     | `Skipped` | Integer |
+     | Name | Type | Notes |
+     |---|---|---|
+     | `Created` | Integer | |
+     | `Linked`  | Integer | |
+     | `Skipped` | Integer | |
+     | `Failed`  | Integer | FTs that threw during processing (per-FT failures do not abort the run). |
+     | `Remaining` | Integer | FTs left unprocessed when `BatchSize` capped the run; re-invoke until 0. |
+     | `FailedDetails` | String | Semicolon-joined `FT id: error` list for the `Failed` count. |
 
 ## Step-ordering contract
 

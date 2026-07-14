@@ -3,9 +3,9 @@
 Deep-dive doc for the `book_TurnInCreditOPR` env var that the Turn-In
 approval pipeline reads via `TurnInLOAResolver` for FY27+ records.
 
-> **Canonical step registrations for the four Turn-In plugins**
+> **Canonical step registrations for the five Turn-In plugins**
 > (`TurnInAmountCalculator`, `TurnInValidator`, `TurnInApprovalPlugin`,
-> `TurnInDeactivator`) **live in
+> `TurnInDeactivator`, `TurnInRequiresBEApprovalRecalc`) **live in
 > [`../PLUGIN-REGISTRATION.md`](../PLUGIN-REGISTRATION.md) under the
 > `## TurnIns` section.** This file only covers the FY27 credit-LOA
 > resolution rules and the env var that drives them.
@@ -35,8 +35,8 @@ Read by `TurnInLOAResolver.ResolveCreditLOA_FY27Plus` (via
    - PG vs SAG follows the same APPN rule as LOA names: NGPA / NGPM / NGREA → PG;
      all other appropriations → SAG, derived from PG via `book_sag.book_pg`.
 
-The cutoff lives in `LOAs.Helpers.LOANameBuilder.MdepInNameLastFy` (currently
-26). Bump that constant if the MDEP-in-name rule ever extends another year.
+The cutoff lives in `LOAs.Helpers.LOANameBuilder.LegacyGrainLastFy` (currently
+26). Bump that constant if the legacy-grain rule ever extends another year.
 
 ### Failure modes (all surface as `InvalidPluginExecutionException`)
 

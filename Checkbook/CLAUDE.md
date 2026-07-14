@@ -82,10 +82,9 @@ Checkbook/
 │       │       └── css/
 │       └── Dashboards/
 ├── Plugins/                          # C# plugin project (.NET Framework 4.6.2)
-├── pcf/                              # Buildable PCF projects (npm + pac pcf)
-│   └── ItemizedDetailsGrid/          # Editable grid for a Prioritization's Itemized Details
-├── pcf-reference/                    # PCF control source (.tsx) — REFERENCE ONLY
-│   └── <ControlName>/                # *App.tsx, index.ts, ControlManifest.Input.xml, css/
+├── pcf/                              # Buildable PCF projects (npm + pac pcf) — 21 controls, the ONLY PCF source
+│   └── <ControlName>/                # package.json + .pcfproj + index.ts + <Name>App.tsx
+├── pcf-reference/                    # ⚠ STALE snapshot of old control source — do not use; slated for deletion
 ├── solution/                         # pac solution projects → build importable .zip
 │   └── ARNGCheckbookExtensions/      # Delivery solution (publisher: book) — bundles new PCF
 ├── .config/dotnet-tools.json         # pac CLI pinned as a local dotnet tool
@@ -145,27 +144,29 @@ Plugins live in `Plugins/` — the `Checkbook_Plugins` project (assembly
 `Checkbook_Plugins.dll`, namespace root `Checkbook.Plugins`), targeting
 **.NET Framework 4.6.2**, strong-named with `Checkbook_Plugins.snk`, and
 referencing `Microsoft.CrmSdk.CoreAssemblies`. It is **already implemented** —
-17 registered plugins, all inheriting `Base/PluginBase.cs`:
+**40 concrete plugin classes**, all inheriting `Base/PluginBase.cs` (four via
+the intermediate `Recalculations/LOATouchPropagator` base):
 
 ```
 Plugins/
 ├── Checkbook Plugins.sln · Checkbook_Plugins.csproj
+├── PLUGIN-REGISTRATION.md           # SOURCE OF TRUTH for step registrations + pipeline maps
 ├── Base/PluginBase.cs               # Shared IPlugin base (Execute boilerplate + helpers)
-├── Validation/                      # Pre-operation validators
-│   ├── PrioritizationFundingValidator.cs
-│   ├── RealignmentValidator.cs
-│   ├── RequirementFundingTDPValidator.cs
-│   └── ValidationMessages.cs
-├── TurnIns/                         # Turn-In approve/deny workflow
-│   ├── TurnInValidator.cs · TurnInApprovalPlugin.cs · TurnInDeactivator.cs
-│   └── Helpers/                     # ledger/distribution creators, LOA resolver, RF/Prio updaters
-├── Realignments/                    # RealignmentValidator, RealignmentProcessor,
-│                                    #   SetSameFundSagFlagPlugin, LedgerCreator
-├── Recalculations/                  # TDP roll-up recalculators (Decision, FundingLine,
-│                                    #   FundingTrack, Ledger-create, Prioritization, RF)
-├── Items/                           # ItemizedDetailsSynchronizer, PrioritizationItemizedRollup
-├── Helpers/                         # NumericHelper, TDPCalculationHelper
-└── Constants/                       # 20 per-entity attribute/name constant files
+├── Admin/                           # ToggleFundedAmountLockPlugin (book_ToggleFundedAmountLock Custom API)
+├── Validation/                      # Pre-operation validators + guards (Prio funding, RF TDP,
+│                                    #   Realignment, FundingEvent, RD-funding XOR, funded-amount lock)
+├── Naming/                          # PrioritizationNameSetter (see Naming/README.md)
+├── TurnIns/                         # Turn-In approve/deny pipeline (5 plugins + Helpers/)
+├── StateSwaps/                      # State Swap pipeline (6 plugins + Helpers/)
+├── Realignments/                    # RealignmentProcessor, SetSameFundSagFlagPlugin, LedgerCreator
+├── Recalculations/                  # TDP roll-up recalculators + LOATouchPropagator subclasses
+├── Items/                           # ItemizedDetails sync/rollup, FC backfill + cascade
+├── LOAs/                            # LOA naming/generation (book_GenerateLOAs Custom API)
+├── Distributions/                   # GenerateDistributionsPlugin (book_GenerateDistributions Custom API)
+├── Funds/                           # FundKeySetter
+├── Helpers/                         # NumericHelper, TDPCalculationHelper, AliasedValueHelper,
+│                                    #   EnvironmentVariableHelper, LedgerIdempotency, rollup helpers …
+└── Constants/                       # Per-entity attribute/name/option-value constant files
 ```
 
 ```bash
@@ -179,10 +180,14 @@ registering `Checkbook_Plugins.dll` with the Plugin Registration Tool, not via
 a solution `.zip`. The solution's own copy of the registration lives under
 `src/ARNGCheckbook/PluginAssemblies/` and `SdkMessageProcessingSteps/`.
 
-> **Note:** this project has **no step-registration manifest** yet — the old
-> `ARNGCheckbook.Plugins` project's `PluginRegistration.json` /
-> `Register-Plugins.ps1` / `PLUGIN-REGISTRATION.md` were removed with it. Step
-> registrations must currently be done by hand in the Plugin Registration Tool.
+> **Note:** step registrations are done by hand in the Plugin Registration
+> Tool, following [`Plugins/PLUGIN-REGISTRATION.md`](Plugins/PLUGIN-REGISTRATION.md)
+> — that doc is the source of truth for every step, rank, filter, and
+> pre-image, and includes per-entity pipeline maps and a verification
+> checklist. Subfolder deep-dives: `Plugins/LOAs/REGISTRATION.md`,
+> `Plugins/Distributions/REGISTRATION.md`, `Plugins/TurnIns/REGISTRATION.md`,
+> `Plugins/Naming/README.md`, `docs/FundedAmountLock-Setup.md`. Keep these in
+> sync with code changes — they are the handoff docs.
 
 ---
 
@@ -221,15 +226,16 @@ publisher question above is resolved.
 project archive. It is **reference material only** — not a buildable PCF project
 (no `package.json`/`pcfproj`) and not wired into any solution.
 
-The plan is to **rebuild the controls one by one** from this source, as proper
-PCF projects under the `book` publisher, then bring them into the single merged
-solution. `pcf-reference/` has 13 controls — the 11 currently deployed in
-`ARNGCheckbookSupplyCodes` plus `FundingTrackTimeline` and `SuppliesGrid`, which
-are not yet deployed.
+The rebuild is **essentially complete**: `pcf/` now holds 21 buildable
+projects covering 12 of the 13 reference controls plus new work
+(ItemizedDetailsGrid, the FundingGrid family, ApprovalProcess pair, Rank
+pair, SpendPlanCalendar, ValidateAndFund* grids, …). Only `SuppliesGrid` was
+never rebuilt (dead — exists solely in `pcf-reference/`).
 
-Rebuilt so far: **`ItemizedDetailsGrid`** (`pcf/ItemizedDetailsGrid/`) — a new
-control, not one of the 13; an editable grid for a Prioritization's Itemized
-Details.
+⚠ `pcf-reference/` is now a **stale snapshot** — 2 of its 13 copies
+(ValidateAndFundGrid, PrioritizationsForRequirement) have rotted badly out of
+sync with the live `pcf/` sources. Never edit or copy from it; treat `pcf/`
+as the only source. It is slated for deletion (git history preserves it).
 
 ---
 

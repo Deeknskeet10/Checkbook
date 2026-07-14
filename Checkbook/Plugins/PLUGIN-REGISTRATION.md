@@ -9,13 +9,17 @@ This file is the source of truth for **what steps should exist** in any env
 running these plugins. When you finish a registration session, walk the
 verification checklist at the bottom and confirm every row is present.
 
-The assembly currently ships **36 plugin classes**, grouped under
-`Checkbook.Plugins.<folder>`. Three folders also have their own deep-dive docs
-covering prerequisites, Custom APIs, and smoke tests:
+The assembly currently ships **40 concrete plugin classes** (39 + the four
+`LOATouchPropagator` subclasses minus the abstract base), grouped under
+`Checkbook.Plugins.<folder>`. Deep-dive docs covering prerequisites, Custom
+APIs, and smoke tests:
 [`LOAs/REGISTRATION.md`](LOAs/REGISTRATION.md),
 [`Distributions/REGISTRATION.md`](Distributions/REGISTRATION.md),
-[`TurnIns/REGISTRATION.md`](TurnIns/REGISTRATION.md). Those docs assume the
-canonical step tables below are authoritative.
+[`TurnIns/REGISTRATION.md`](TurnIns/REGISTRATION.md),
+[`Naming/README.md`](Naming/README.md) (Prioritization naming + bulk rename),
+and [`../docs/FundedAmountLock-Setup.md`](../docs/FundedAmountLock-Setup.md)
+(Funded Amount lock: env var, Custom API, command button). Those docs assume
+the canonical step tables below are authoritative.
 
 ---
 
@@ -42,7 +46,7 @@ If `Checkbook_Plugins.dll` has never been registered in this env:
 2. **Register → Register New Assembly**.
 3. Browse to `Plugins/bin/Release/net462/Checkbook_Plugins.dll`.
 4. Step 2 — **Specify the location**: **Database** (default).
-5. Step 2 — **Select the plugins** to register: leave all **29** checked.
+5. Step 2 — **Select the plugins** to register: leave all **40** checked.
 6. Click **Register Selected Plugins**.
 
 For subsequent code changes, use **Update Assembly** on the existing
@@ -93,6 +97,7 @@ Required in the maker portal before enabling the State Swap steps:
 |---------------------------------------|------|----------------------------------------------------------|-------|
 | `book_DistributionHoldingFundCenter`  | Text | `GenerateDistributionsPlugin`                            | See [`Distributions/REGISTRATION.md`](Distributions/REGISTRATION.md). The A18 record's GUID. |
 | `book_TurnInCreditOPR`                | Text | `TurnInApprovalPlugin` (via `TurnInLOAResolver`)         | See [`TurnIns/REGISTRATION.md`](TurnIns/REGISTRATION.md). Required for FY27+ Turn-Ins. |
+| `book_LockManualFundedEdits`          | Yes/No | `PrioritizationFundedAmountLock`; written by `ToggleFundedAmountLockPlugin` | See [`../docs/FundedAmountLock-Setup.md`](../docs/FundedAmountLock-Setup.md). Ships default `false`; toggled via the Admin Center button. |
 
 ---
 
@@ -103,6 +108,7 @@ Required in the maker portal before enabling the State Swap steps:
 | `book_ReconcileItemizedDetails`     | `Checkbook.Plugins.Items.ItemizedDetailsReconciler`              | See **Items — `ItemizedDetailsReconciler`** below. |
 | `book_GenerateLOAs`                 | `Checkbook.Plugins.LOAs.LOAGenerator`                            | See [`LOAs/REGISTRATION.md`](LOAs/REGISTRATION.md). |
 | `book_GenerateDistributions`        | `Checkbook.Plugins.Distributions.GenerateDistributionsPlugin`    | See [`Distributions/REGISTRATION.md`](Distributions/REGISTRATION.md). |
+| `book_ToggleFundedAmountLock`       | `Checkbook.Plugins.Admin.ToggleFundedAmountLockPlugin`           | Global, no inputs, output `IsLocked` (Boolean). Full spec in [`../docs/FundedAmountLock-Setup.md`](../docs/FundedAmountLock-Setup.md). |
 
 The Custom API record's **Plugin Type** field auto-wires the handler; no
 separate SDK Message Processing Step is required beyond setting that field on
@@ -117,7 +123,9 @@ separate SDK Message Processing Step. **Common PRT field values** for every
 step unless noted otherwise:
 
 - **Run in User's Context**: `Calling User`
-- **Execution Order**: `1`
+- **Execution Order**: `1` unless the row states a **Rank** — same-rank steps
+  on the same message/entity execute in nondeterministic order, so every
+  documented Rank is load-bearing
 - **Deployment**: `Server Only`
 - **Description**: copy the row's *Notes* column
 
@@ -141,17 +149,33 @@ Enforces (A) no two same-type Funding Events with overlapping date ranges and
 | 3 | Create  | `book_fundingdetails`  | Pre-Operation  | Sync | *(none)*                                                                             | Validates Allotment ≤ AFP for the new row. |
 | 4 | Update  | `book_fundingdetails`  | Pre-Operation  | Sync | `book_distributionpercentage, book_fund, book_pgsag, book_fundingevent, statecode`   | Re-validates on pct / fund / PG change. **Requires PreImage** (`book_fundingevent, book_fund, book_pgsag, book_distributionpercentage, statecode`). |
 
+### `Checkbook.Plugins.Validation.PrioritizationFundedAmountLock`
+
+When the `book_LockManualFundedEdits` env var is `true`, blocks direct edits
+to `book_newfundedamounttdp` on `book_prioritization` unless the update comes
+from an authorized parent operation (Turn-In / Realignment / State Swap
+approval or `book_GenerateDistributions` — detected by walking
+`context.ParentContext`). Full setup (env var, Custom API, command button):
+[`../docs/FundedAmountLock-Setup.md`](../docs/FundedAmountLock-Setup.md).
+
+| # | Message | Primary entity        | Stage          | Mode | Filtering attributes         | Notes |
+|---|---------|-----------------------|----------------|------|------------------------------|-------|
+| 1 | Update  | `book_prioritization` | Pre-Operation  | Sync | `book_newfundedamounttdp`    | Rank **10** (runs before the other Pre-Op Update validators). **Requires PreImage** (`book_newfundedamounttdp`). |
+
 ### `Checkbook.Plugins.Validation.PrioritizationFundingValidator`
 
 Enforces RF TDP cap + LOA TDP allocation when a Prioritization's
-`book_newfundedamounttdp` or `book_validatedamount` changes. Sibling sum of
-APPROVED + ACTIVE Prios under the parent RF must not exceed RF.TDP, and the
-resulting RF.TDP must not exceed the LOA's allocated TDP cap.
+`book_newfundedamounttdp` changes. Sibling sum of FINAL-APPROVED + ACTIVE
+Prios under the parent RF must not exceed RF.TDP, and the resulting total
+must not exceed the LOA's allocated TDP cap. Validated amounts are NOT
+checked by this plugin (an earlier revision fetched them but never validated;
+that dead code has been removed — do not re-add `book_validatedamount` to the
+filter).
 
-| # | Message | Primary entity        | Stage          | Mode | Filtering attributes                                                                                              | Notes |
-|---|---------|-----------------------|----------------|------|-------------------------------------------------------------------------------------------------------------------|-------|
-| 1 | Create  | `book_prioritization` | Pre-Operation  | Sync | *(none)*                                                                                                          | Initial validation of a new Prio against its parent RF + LOA. |
-| 2 | Update  | `book_prioritization` | Pre-Operation  | Sync | `book_newfundedamounttdp, book_validatedamount, book_requirementfunding, book_approvalstatus, statecode`          | Re-validates on funded/validated/parent change. **Requires PreImage** (`book_newfundedamounttdp, book_validatedamount, book_requirementfunding`). |
+| # | Message | Primary entity        | Stage          | Mode | Filtering attributes                                                                       | Notes |
+|---|---------|-----------------------|----------------|------|----------------------------------------------------------------------------------------------|-------|
+| 1 | Create  | `book_prioritization` | Pre-Operation  | Sync | *(none)*                                                                                   | Initial validation of a new Prio against its parent RF + LOA. |
+| 2 | Update  | `book_prioritization` | Pre-Operation  | Sync | `book_newfundedamounttdp, book_requirementfunding, book_approvalstatus, statecode`         | Re-validates on funded/parent/approval change. **Requires PreImage** (`book_newfundedamounttdp, book_requirementfunding`). Envs registered from an older revision may still carry `book_validatedamount` in the filter — harmless, but remove it on the next registration pass. |
 
 ### `Checkbook.Plugins.Validation.PrioritizationFundingGuard`
 
@@ -186,7 +210,7 @@ funding.
 |---|---------|-----------------------------------|----------------|------|---------------------------------------------------------------------------------------------------|-------|
 | 1 | Create  | `book_requirementdetailfunding`   | Pre-Operation  | Sync | *(none)*                                                                                          | Validates junction parents, XOR, uniqueness, RF.TDP cap; autopops name. |
 | 2 | Update  | `book_requirementdetailfunding`   | Pre-Operation  | Sync | `book_requirementdetail, book_requirementfunding, book_fundedamount, book_validatedamount`        | Re-validates on amount or parent change. **Requires PreImage** (same four attrs). |
-| 3 | Create  | `book_prioritization`             | Pre-Operation  | Sync | *(none)*                                                                                          | Rejects new Prio if its Requirement already has active RD-direct funding. |
+| 3 | Create  | `book_prioritization`             | Pre-Operation  | Sync | *(none)*                                                                                          | Rank **20** (after `PrioritizationFundCenterBackfill` at 10, before `PrioritizationNameSetter` at 30). Rejects new Prio if its Requirement already has active RD-direct funding. |
 
 ### `Checkbook.Plugins.Validation.RequirementFundingTDPValidator`
 
@@ -345,20 +369,54 @@ mode Prios keep their manually entered funding.
 On Prioritization Create, if the parent Requirement is centrally managed
 (`book_national = 1`), authoritatively sets `Prio.book_fundcenter` to the
 Requirement's FC. Users do not pick FC on Prios for centrally managed work.
+Resolves the Requirement from the direct `book_requirement` lookup (FY27+
+shape) first, then falls back to `RF → Requirement` (legacy shape).
 
 | # | Message | Primary entity        | Stage          | Mode | Filtering attributes | Notes |
 |---|---------|-----------------------|----------------|------|----------------------|-------|
-| 1 | Create  | `book_prioritization` | Pre-Operation  | Sync | *(none)*             | Reads `RF → Requirement` to decide; no-ops for non-national. |
+| 1 | Create  | `book_prioritization` | Pre-Operation  | Sync | *(none)*             | Rank **10** — MUST run before `PrioritizationNameSetter` (rank 30), which embeds the FC name in `book_name`. See the ordering box below. |
+
+> **⚠ book_prioritization Pre-Op Create ordering.** Four plugins register
+> Pre-Operation Sync on `book_prioritization` Create and the order matters:
+>
+> | Rank | Step | Why this order |
+> |------|------|----------------|
+> | 1 (default) | `PrioritizationFundingValidator` | Pure validation against parent RF + LOA; reads only Target amounts, so it can safely run first. |
+> | 10 | `PrioritizationFundCenterBackfill` | Writes `book_fundcenter` into the Target for centrally managed Requirements. |
+> | 20 | `RequirementDetailFundingGuard` (Prio Create step) | Rejects the Prio outright on XOR violation — no point naming a record that will be rejected, but must not run after the name stamp has already paid two retrieves. |
+> | 30 | `PrioritizationNameSetter` | Reads `book_fundcenter` from the Target to build `book_name`. If it runs before the backfill (rank 10), centrally managed Prios get a name with a missing/wrong FC segment. |
+>
+> If ranks were never set in an environment (all default to 1), PRT executes
+> same-rank steps in nondeterministic order — fix the ranks, don't rely on
+> observed behavior.
 
 ### `Checkbook.Plugins.Items.RequirementFundCenterCascade`
 
 When a Requirement's FC or `book_national` flag changes, cascades the new FC
-to every active Prioritization linked under the Requirement (via its RFs).
-Flips from national → non-national leave existing Prio FCs in place.
+to every active Prioritization linked under the Requirement — directly via
+`book_requirement` (FY27+ shape) or via its RFs (legacy shape). Flips from
+national → non-national leave existing Prio FCs in place.
 
 | # | Message | Primary entity      | Stage           | Mode | Filtering attributes              | Notes |
 |---|---------|---------------------|-----------------|------|-----------------------------------|-------|
 | 1 | Update  | `book_requirements` | Post-Operation  | Sync | `book_fundcenter, book_national`  | Cascades to linked Prios. **Requires PreImage** (`book_fundcenter, book_national`). |
+
+---
+
+## Naming
+
+### `Checkbook.Plugins.Naming.PrioritizationNameSetter`
+
+Stamps `book_name` on `book_prioritization` at PreOperation so the
+`book_uniqueprioritizationname` alternate key (on `book_name`) catches
+duplicates inside the user's transaction. Replaces the async
+"Prioritization - Set Name" workflow. Naming convention, rationale, and the
+bulk-rename runbook live in [`Naming/README.md`](Naming/README.md).
+
+| # | Message | Primary entity        | Stage         | Mode | Filtering attributes | Notes |
+|---|---------|-----------------------|---------------|------|----------------------|-------|
+| 1 | Create  | `book_prioritization` | Pre-Operation | Sync | *(none)*             | Rank **30** — MUST run after `PrioritizationFundCenterBackfill` (rank 10); it reads `book_fundcenter` from the Target to build the name. See the ordering box under PrioritizationFundCenterBackfill. |
+| 2 | Update  | `book_prioritization` | Pre-Operation | Sync | `book_state, book_requirementfunding, book_requirement, book_statepriority, book_fundcenter, book_newfiscalyear` | Re-stamps on any name-segment change. **Requires PreImage** (same attributes). |
 
 ---
 
@@ -725,8 +783,85 @@ their target `funded × pct` and create debit/credit pairs (or overage
 Sweep Turn-Ins). Wired via the Custom API's **Plugin Type** field — no
 separate Step registration required beyond that.
 
-Async execution is required for environment-wide runs (caller gets an
-immediate ack instead of blocking on the 2-minute sync limit).
+**Runs Sync** (Allowed custom processing step type: Sync only). The plugin
+self-budgets to ~105s of the 120s sandbox ceiling and returns a `NextToken`
+when it runs out; the caller (the `book_generateDistributions` web resource
+pump) re-invokes with the token until it comes back empty. Do NOT register
+it Async — that suppresses the outputs the pump depends on. See
+[`Distributions/REGISTRATION.md`](Distributions/REGISTRATION.md) for the
+migration note if an env still has an older Async registration.
+
+---
+
+## Admin
+
+### `Checkbook.Plugins.Admin.ToggleFundedAmountLockPlugin`
+
+Custom API handler `book_ToggleFundedAmountLock`. Flips the
+`book_LockManualFundedEdits` env-var value record and returns the new state
+as `IsLocked`. Role-gated in code to `Book - Checkbook Administrator`
+(direct or team-derived). Wired via the Custom API's **Plugin Type** field —
+no separate Step registration. Backs the Admin Center "Lock/Unlock Funding"
+command button; full setup in
+[`../docs/FundedAmountLock-Setup.md`](../docs/FundedAmountLock-Setup.md).
+
+---
+
+## Per-entity pipeline maps
+
+The step tables above are grouped by plugin; this section is the inverse view
+for the busiest entities — every step that fires for a given message, in
+execution order (stage, then rank, then message order). Use it before adding
+a step or changing a rank: the ordering constraints live here.
+**Keep this section in sync when you add/move a step.**
+
+### `book_prioritization`
+
+**Create** (in order):
+
+| Order | Stage | Mode | Step | Ordering constraint |
+|---|---|---|---|---|
+| 1 | Pre-Op (rank 1) | Sync | `PrioritizationFundingValidator` | None — reads only Target amounts. |
+| 2 | Pre-Op (rank 10) | Sync | `PrioritizationFundCenterBackfill` | Must precede NameSetter (writes `book_fundcenter` into Target). |
+| 3 | Pre-Op (rank 20) | Sync | `RequirementDetailFundingGuard` | XOR guard; before NameSetter so rejected Prios skip the naming retrieves. |
+| 4 | Pre-Op (rank 30) | Sync | `PrioritizationNameSetter` | Reads `book_fundcenter` from Target — MUST run after the backfill. |
+| 5 | Post-Op | Sync | `PrioritizationRollupToRequirementFunding` | Rolls new Prio into parent RF totals. |
+| 6 | Post-Op | **Async** | `ItemizedDetailsSynchronizer` | Seeds Itemized Details; async, so it lands after the transaction. |
+
+**Update** (in order):
+
+| Order | Stage | Mode | Step | Filter / constraint |
+|---|---|---|---|---|
+| 1 | Pre-Op (rank 10) | Sync | `PrioritizationFundedAmountLock` | `book_newfundedamounttdp` — lock guard runs before other validators so users get the lock message, not a cap error. |
+| 2 | Pre-Op | Sync | `PrioritizationFundingValidator` | `book_newfundedamounttdp, book_requirementfunding, book_approvalstatus, statecode` |
+| 3 | Pre-Op | Sync | `PrioritizationNameSetter` | `book_state, book_requirementfunding, book_requirement, book_statepriority, book_fundcenter, book_newfiscalyear` |
+| 4 | Post-Op | Sync | `PrioritizationRollupToRequirementFunding` | `book_newfundedamounttdp, book_validatedamount, book_requirementfunding, statecode` |
+| 5 | Post-Op | **Async** | `ItemizedDetailsSynchronizer` | `book_requirementfunding` (RF swap re-points details) |
+
+**Delete**: Post-Op Sync `PrioritizationRollupToRequirementFunding` (recalcs the pre-image parent RF).
+
+Also touches this entity from other entities: `RequirementFundCenterCascade`
+(FC cascade from `book_requirements`), `PrioritizationItemizedRollup` /
+`PrioritizationFundingRollup` (rollups from child tables), Turn-In / Swap /
+Realignment updaters (funding moves), `book_GenerateDistributions` (reads).
+
+### `book_turnin` — Update
+
+| Order | Stage | Mode | Step | Filter |
+|---|---|---|---|---|
+| 1 | Pre-Op | Sync | `TurnInAmountCalculator` | `book_newamount, book_fund, book_pg, book_fundcenter, …` |
+| 2 | Pre-Op | Sync | `TurnInValidator` | `book_stateapproved, book_beapproved` — role gate + idempotency + availability. |
+| 3 | Post-Op | Sync | `TurnInApprovalPlugin` | `book_stateapproved, book_beapproved` — writes ledgers/distributions. |
+| 4 | Post-Op | Sync | `TurnInDeactivator` | `book_stateapproved` — acts only on true → false. |
+
+### `book_stateswap` — Update
+
+| Order | Stage | Mode | Step | Filter |
+|---|---|---|---|---|
+| 1 | Pre-Op (rank 10) | Sync | `SwapDenialPlugin` | `book_denied, book_stateaapproved, book_statebapproved` — MUST precede SwapValidator. |
+| 2 | Pre-Op (rank 20) | Sync | `SwapValidator` | `book_stateaapproved, book_statebapproved, book_beapproved, book_denied` |
+| 3 | Post-Op | Sync | `SwapApprovalPlugin` | `book_beapproved` — writes ledgers. |
+| 4 | Post-Op | Sync | `SwapAutoSharePlugin` | `book_statea, book_stateb` — re-shares with state teams. |
 
 ---
 
@@ -740,6 +875,8 @@ to sort the right pane by **Message** then by **Primary Entity**.
 - [ ] `Checkbook.Plugins.Validation.FundingEventValidator`
   - [ ] Create + Update of `book_fundingevent` — Pre-Op Sync, Update has PreImage
   - [ ] Create + Update of `book_fundingdetails` — Pre-Op Sync, Update has PreImage
+- [ ] `Checkbook.Plugins.Validation.PrioritizationFundedAmountLock`
+  - [ ] Update of `book_prioritization` — Pre-Op Sync, **Rank 10**, PreImage, filter `book_newfundedamounttdp`
 - [ ] `Checkbook.Plugins.Validation.PrioritizationFundingValidator`
   - [ ] Create + Update of `book_prioritization` — Pre-Op Sync, Update has PreImage
 - [ ] `Checkbook.Plugins.Validation.PrioritizationFundingGuard`
@@ -748,7 +885,7 @@ to sort the right pane by **Message** then by **Primary Entity**.
   - [ ] Update of `book_realignments` — Pre-Op Sync, PreImage
 - [ ] `Checkbook.Plugins.Validation.RequirementDetailFundingGuard`
   - [ ] Create + Update of `book_requirementdetailfunding` — Pre-Op Sync, Update has PreImage
-  - [ ] Create of `book_prioritization` — Pre-Op Sync
+  - [ ] Create of `book_prioritization` — Pre-Op Sync, **Rank 20** (after `PrioritizationFundCenterBackfill` at 10, before `PrioritizationNameSetter` at 30)
 - [ ] `Checkbook.Plugins.Validation.RequirementFundingTDPValidator`
   - [ ] Create + Update of `book_requirementfunding` — Pre-Op Sync, Update has PreImage
 
@@ -771,7 +908,10 @@ to sort the right pane by **Message** then by **Primary Entity**.
 - [ ] `Checkbook.Plugins.Items.PrioritizationItemizedRollup`
   - [ ] Create / Update / Delete of `book_itemizeddetails` — Post-Op Sync; Update + Delete have PreImage
 - [ ] `Checkbook.Plugins.Items.PrioritizationFundCenterBackfill`
-  - [ ] Create of `book_prioritization` — Pre-Op Sync
+  - [ ] Create of `book_prioritization` — Pre-Op Sync, **Rank 10** (before `RequirementDetailFundingGuard` at 20 and `PrioritizationNameSetter` at 30)
+- [ ] `Checkbook.Plugins.Naming.PrioritizationNameSetter`
+  - [ ] Create of `book_prioritization` — Pre-Op Sync, **Rank 30** (after backfill + guard)
+  - [ ] Update of `book_prioritization` — Pre-Op Sync, PreImage, filter `book_state, book_requirementfunding, book_requirement, book_statepriority, book_fundcenter, book_newfiscalyear`
 - [ ] `Checkbook.Plugins.Items.RequirementFundCenterCascade`
   - [ ] Update of `book_requirements` — Post-Op Sync, filter `book_fundcenter, book_national`, PreImage
 
@@ -841,7 +981,10 @@ to sort the right pane by **Message** then by **Primary Entity**.
 
 ### Distributions
 - [ ] Custom API `book_GenerateDistributions` exists with Plugin Type = `Checkbook.Plugins.Distributions.GenerateDistributionsPlugin`
-- [ ] Step on the Custom API runs **Async** (PowerApps caller would otherwise hit the 2-minute sync limit)
+- [ ] The Custom API / its step run **Sync** (the caller pumps `NextToken`; Async suppresses outputs — see [`Distributions/REGISTRATION.md`](Distributions/REGISTRATION.md))
+
+### Admin
+- [ ] Custom API `book_ToggleFundedAmountLock` exists with Plugin Type = `Checkbook.Plugins.Admin.ToggleFundedAmountLockPlugin`, output `IsLocked` (Boolean)
 
 ### Schema + env vars
 - [ ] `book_turnin` has the four new columns (`book_origin`, `book_afpamount`, `book_allotmentamount`, `book_requiresbeapproval`)
@@ -853,6 +996,7 @@ to sort the right pane by **Message** then by **Primary Entity**.
   - [ ] `book_fundingline` has choice column `book_category`
 - [ ] Env var `book_DistributionHoldingFundCenter` is defined and set to the A18 record's GUID
 - [ ] Env var `book_TurnInCreditOPR` is defined and set to the BE OPR's record GUID (required for FY27+ Turn-Ins)
+- [ ] Env var `book_LockManualFundedEdits` (Yes/No) is defined, default `false`
 - [ ] `book_stateswap` and `book_swapitem` tables exist per [`../dist/SCHEMA-StateSwap.md`](../dist/SCHEMA-StateSwap.md)
 - [ ] `book_stateswap` → `book_swapitem` 1:N has **Share cascade = Cascade All**
 - [ ] `book_ledger` has new lookup `book_stateswap`
@@ -931,3 +1075,11 @@ When a new plugin class is wired into PRT, append a new `###` section in the
 right domain folder above with the same table shape, then add a corresponding
 bullet group to the verification checklist. Keep the table columns identical
 so a reader can scan the whole doc top-to-bottom.
+
+Also:
+
+1. Update the **plugin class count** in the intro (and the assembly-registration
+   step 5 count).
+2. If the step lands on an entity in **Per-entity pipeline maps**, insert it
+   there in execution order — and set an explicit Rank if order matters.
+3. If it reads an env var or backs a Custom API, add rows to those tables.
