@@ -172,6 +172,15 @@ checked by this plugin (an earlier revision fetched them but never validated;
 that dead code has been removed — do not re-add `book_validatedamount` to the
 filter).
 
+Skips entirely when an ancestor context is an Update on `book_turnin`,
+`book_realignments`, or `book_stateswap` (recursive parent walk, same
+pattern as `RequirementFundingTDPValidator`). Those orchestrators own their
+own pre-op overdraw validation, and their funding deltas create intermediate
+states that would otherwise fail the absolute checks here — e.g. a State
+Swap reduces debit-side RF TDP only *after* the credit-side Prio update, and
+a same-LOA swap item never grows the LOA total. No registration change: the
+bypass is code-level, not a step filter.
+
 | # | Message | Primary entity        | Stage          | Mode | Filtering attributes                                                                       | Notes |
 |---|---------|-----------------------|----------------|------|----------------------------------------------------------------------------------------------|-------|
 | 1 | Create  | `book_prioritization` | Pre-Operation  | Sync | *(none)*                                                                                   | Initial validation of a new Prio against its parent RF + LOA. |

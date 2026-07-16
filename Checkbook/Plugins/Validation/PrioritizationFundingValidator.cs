@@ -20,6 +20,19 @@ namespace Checkbook.Plugins.Validation
             if (context.MessageName != "Create" && context.MessageName != "Update")
                 return;
 
+            // ---------------------------------------------------------------
+            // Skip validation when triggered by a ledger orchestrator
+            // (Turn-In / Realignment / State Swap approval — recursive parent
+            // walk). Each owns its own pre-op overdraw validation, and their
+            // funding deltas produce intermediate Prio/RF/LOA states that
+            // would fail the absolute checks below (e.g. debit-side RF TDP is
+            // reduced only after the credit-side Prio update, and same-LOA
+            // swap items never grow the LOA total). Mirrors the bypass in
+            // RequirementFundingTDPValidator.
+            // ---------------------------------------------------------------
+            if (IsTriggeredByLedgerOrchestrator(context, tracing))
+                return;
+
             var target = GetTarget(context);
 
             // Pre-image for Update
@@ -120,6 +133,28 @@ namespace Checkbook.Plugins.Validation
             }
 
             tracing.Trace("Prioritization validation passed.");
+        }
+
+        private static bool IsTriggeredByLedgerOrchestrator(
+            IPluginExecutionContext ctx,
+            ITracingService tracing)
+        {
+            while (ctx != null)
+            {
+                if (ctx.MessageName == "Update" && (
+                        ctx.PrimaryEntityName == EntityNames.Turnin ||
+                        ctx.PrimaryEntityName == EntityNames.Realignments ||
+                        ctx.PrimaryEntityName == EntityNames.StateSwap))
+                {
+                    tracing.Trace(
+                        $"Skipping validation — Prioritization change triggered by an Update on {ctx.PrimaryEntityName} (ledger orchestrator ancestor detected).");
+                    return true;
+                }
+
+                ctx = ctx.ParentContext;
+            }
+
+            return false;
         }
     }
 }
