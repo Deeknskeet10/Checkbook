@@ -691,6 +691,12 @@ and parent RF `TDP` deltas via `SwapPrioritizationUpdater`, recalcs LOA
 TDPs again as a catch-all, and deactivates the swap (statecode Inactive,
 statuscode 2 = BE Approved). Depth-guarded.
 
+When a credit pushes a Prio's `FundedAmount` above its `RequestedAmount`,
+`SwapPrioritizationUpdater` raises `RequestedAmount` to match **in the same
+Update** — the entity-scoped "Requested vs Funded" business rule on
+Prioritization has no ancestor-context bypass and would otherwise block the
+swap (same pattern as `RealignmentProcessor`).
+
 Piggybacks on the `IsTriggeredByStateSwap` bypass added to
 `RequirementFundingTDPValidator` — RF intermediate states during Prio /
 RF delta application would otherwise trip the TDP-vs-Funded check.
