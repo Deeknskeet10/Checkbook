@@ -16,5 +16,9 @@ namespace Checkbook.Plugins.Constants
         public const string CheckbookAdministrator = "Book - Checkbook Administrator";
         public const string StateAdministrator     = "Book - State Administrator";
         public const string StateApprover          = "Book - State Approver";
+
+        // Platform role, not a Book role — used by DeactivationRoleGuard so
+        // service accounts (flow connections, deployment users) are exempt.
+        public const string SystemAdministrator    = "System Administrator";
     }
 }

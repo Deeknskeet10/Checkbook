@@ -137,6 +137,27 @@ Mode is **Synchronous** unless explicitly noted Async.
 
 ## Validation
 
+### `Checkbook.Plugins.Validation.DeactivationRoleGuard`
+
+Blocks deactivation (`statecode` → Inactive) of any `book_*` record unless the
+initiating user holds **Book - State Administrator**,
+**Book - Checkbook Administrator**, or **System Administrator** (the platform
+role — so the cascade-deactivation flows keep working under a service-account
+connection). Automated deactivations pass through:
+pipeline depth > 1 (our own plugins, e.g. `TurnInDeactivator`) and Updates
+with a surviving parent context (Custom APIs). Platform wrappers
+(`SetState`, `SetStateDynamicEntity`, `ExecuteMultiple`,
+`ExecuteTransaction`) do **not** count as automated — grid bulk-deactivate
+and legacy SetState clients are direct user actions and are still gated.
+
+This is a **global step** — in the PRT leave **Primary Entity** blank
+(`none`). Global steps cannot have filtering attributes or images; the plugin
+exits immediately unless Target carries `statecode = 1` on a `book_*` table.
+
+| # | Message | Primary entity | Stage          | Mode | Filtering attributes | Notes |
+|---|---------|----------------|----------------|------|----------------------|-------|
+| 1 | Update  | *(none — global)* | Pre-Validation | Sync | *(n/a on global steps)* | Rank **1**. No images. Fires for every Update org-wide; guards only `book_*` deactivations by non-admin users. |
+
 ### `Checkbook.Plugins.Validation.FundingEventValidator`
 
 Enforces (A) no two same-type Funding Events with overlapping date ranges and
@@ -829,6 +850,11 @@ for the busiest entities — every step that fires for a given message, in
 execution order (stage, then rank, then message order). Use it before adding
 a step or changing a rank: the ordering constraints live here.
 **Keep this section in sync when you add/move a step.**
+
+> **Global step not shown below:** `DeactivationRoleGuard` is registered on
+> Update with no primary entity, so it runs at Pre-Validation before every
+> per-entity Update pipeline in these maps (no-op unless the Update sets
+> `statecode` to Inactive on a `book_*` table).
 
 ### `book_prioritization`
 
