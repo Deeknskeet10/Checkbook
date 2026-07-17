@@ -5,6 +5,7 @@ Backend for this feature is in the Checkbook plugin project:
 - `Plugins/Helpers/EnvironmentVariableHelper.cs` — added `GetBool(...)` overload
 - `Plugins/Validation/PrioritizationFundedAmountLock.cs` — the guard plugin
 - `Plugins/Admin/ToggleFundedAmountLockPlugin.cs` — the toggle Custom API
+- `webresources/book_fundedAmountLock.js` — the command bar button script
 
 This doc lists **every name you need** and the maker-portal steps that are
 not doable from the repo — the environment variable, the Custom API metadata,
@@ -33,6 +34,8 @@ the two plugin step registrations, and the command bar button.
 | Guard plugin type | `Checkbook.Plugins.Validation.PrioritizationFundedAmountLock` |
 | Locked field | `book_newfundedamounttdp` on `book_prioritization` |
 | Authorized role for toggle | `Book - Checkbook Administrator` |
+| Command web resource | `book_fundedAmountLock` (source: `webresources/book_fundedAmountLock.js`) |
+| Command function | `FundedAmountLock.run` |
 
 ---
 
@@ -134,80 +137,48 @@ Then on the new step → **Register New Image**:
 
 ## 6. Command bar button — Admin Center MDA
 
+> Modern command bar buttons have a **static** Label and Icon (no Power Fx
+> binding), and commanding Power Fx cannot call unbound Custom APIs. So this
+> is one static button whose **Run JavaScript** action reads the current
+> state, confirms, calls the Custom API, and reports the new state — same
+> pattern as the Generate Distributions button
+> (`webresources/book_generateDistributions.js`).
+
+### 6a. Register the web resource
+
+Solutions → **ARNGCheckbookExtensions** → New → More → **Web resource**:
+
+| Field | Value |
+|---|---|
+| Display name | `book_fundedAmountLock` |
+| Name | `book_fundedAmountLock` |
+| Type | JavaScript (JS) |
+| Content | paste `webresources/book_fundedAmountLock.js` |
+
+Save + **Publish**.
+
+### 6b. Add the command
+
 Open the Admin Center app (`book_ARNGCheckbookAdminCenter`) → **Edit command
-bar** on the **Prioritization** table → **Main grid**.
+bar** on the **Prioritization** table → **Main grid** → **New command**:
 
-Add a **new command**.
-
-**Label** (Power Fx):
-
-```powerfx
-If(
-    LookUp(
-        'Environment Variables',
-        'Schema Name' = "book_LockManualFundedEdits"
-    ).'Current Value' = "true",
-    "Unlock Funding",
-    "Lock Funding"
-)
-```
-
-> The Dataverse connector surfaces the merged current-value on the
-> `Environment Variables` table. If your maker environment shows it as
-> `Environment Variable Definitions` + `Environment Variable Values`, use:
->
-> ```powerfx
-> If(
->     LookUp(
->         'Environment Variable Values',
->         'Environment Variable Definition'.'Schema Name' = "book_LockManualFundedEdits"
->     ).Value = "true",
->     "Unlock Funding",
->     "Lock Funding"
-> )
-> ```
-
-**Icon** (Power Fx, optional):
-
-```powerfx
-If(
-    LookUp(
-        'Environment Variables',
-        'Schema Name' = "book_LockManualFundedEdits"
-    ).'Current Value' = "true",
-    "LockSolid",
-    "Unlock"
-)
-```
-
-**Visibility:** `true` — Admin Center app access is the gate; the Custom API
-also rejects non-admins server-side.
-
-**Action → Run Formula → OnSelect** (Power Fx):
-
-```powerfx
-Set(
-    _lockResult,
-    Environment.book_ToggleFundedAmountLock.Run()
-);
-Refresh('Environment Variables');
-Notify(
-    If(
-        _lockResult.IsLocked,
-        "Funded Amount edits are now LOCKED. Users must use Turn-Ins, Realignments, State Swaps, or the Distribution generator.",
-        "Funded Amount edits are now UNLOCKED. Manual edits are allowed."
-    ),
-    NotificationType.Success
-)
-```
-
-> The exact `Environment.book_ToggleFundedAmountLock.Run()` shape depends on
-> how the command designer exposes unbound Custom APIs in your tenant — some
-> orgs surface it as `book_ToggleFundedAmountLock.Run()` at the top level,
-> others under `Environment.` If autocomplete doesn't find it after the
-> Custom API is imported, close and reopen the command designer.
+| Field | Value |
+|---|---|
+| Label | `Funding Lock` |
+| Icon | `LockSolid` (static — pick from the icon library) |
+| Tooltip | `Lock or unlock direct edits to Funded Amount (TDP)` |
+| Action | **Run JavaScript** |
+| Library | `book_fundedAmountLock` |
+| Function name | `FundedAmountLock.run` |
+| Parameter 1 | **PrimaryControl** |
+| Visibility | Show — Admin Center app access is the gate; the Custom API also rejects non-admins server-side |
 
 **Save** and **Publish** the command bar.
+
+The button behavior: press → confirm dialog states the *current* lock state
+("currently UNLOCKED — lock them?") → on confirm, calls
+`book_ToggleFundedAmountLock` → alert dialog reports the new state from the
+API's `IsLocked` response and refreshes the grid.
 
 ---
 
@@ -215,15 +186,16 @@ Notify(
 
 1. Toggle is OFF by default → open a Prioritization, change Funded Amount
    (TDP) directly, save. Should succeed.
-2. In the Admin Center, press **Lock Funding**. Toast: "…now LOCKED…".
-   Button label flips to **Unlock Funding**.
+2. In the Admin Center, press **Funding Lock**. Confirm dialog should read
+   "currently UNLOCKED" → confirm → alert: "…now LOCKED…".
 3. Repeat step 1 → save should fail with the guard's message
    ("Funded Amount (TDP) can only be changed through Turn-Ins…").
 4. Run a Turn-In / Realignment / State Swap approval that changes Funded
    Amount. Should succeed (ancestor-walk detects the authorized parent).
 5. Run `book_GenerateDistributions` (or trigger a distribution). Should
    succeed.
-6. Press **Unlock Funding** → back to step 1 behavior.
+6. Press **Funding Lock** again — confirm dialog should now read "currently
+   LOCKED" → confirm → back to step 1 behavior.
 7. As a non-admin, try to press the button. Custom API rejects with
    "You must have the 'Book - Checkbook Administrator' role…".
 
