@@ -9,30 +9,27 @@ using Checkbook.Plugins.Constants;
 namespace Checkbook.Plugins.Items
 {
     /// <summary>
-    /// Keeps book_itemizeddetails records in sync with the book_requirementdetails
-    /// defined on a Requirement.
+    /// Keeps a Prioritization's book_fundingmode and its book_itemizeddetails
+    /// children consistent with the book_requirementdetails defined on the
+    /// parent Requirement.
     ///
-    /// Workflow: Admins define book_item records; NPMs add them to a Requirement as
-    /// book_requirementdetails. Every Prioritization tied to that Requirement — matched
-    /// via its book_requirementfunding -> book_requirement — gets a matching
-    /// book_itemizeddetails record that points back to the source Requirement Detail
-    /// through book_requirementitem.
+    /// Itemized Details are user-selected: the ItemizedDetailsGrid control on the
+    /// Prioritization form lets the user pick which Requirement Details to add.
+    /// This plugin no longer creates Itemized Details — it only sets the funding
+    /// mode and cleans up rows that would otherwise be orphaned or stale.
     ///
     /// Steps handled (branches on message + primary entity):
-    /// - book_requirementdetails Create  (Post-Operation, Async):
-    ///       fan a new Itemized Detail out to every existing Prioritization of the Requirement.
     /// - book_requirementdetails Delete  (Pre-Operation, Sync):
     ///       remove every Itemized Detail that points back to the deleted Requirement Detail.
     /// - book_prioritization Create      (Post-Operation, Async):
-    ///       seed Itemized Details for the new Prioritization from the Requirement's details.
+    ///       set book_fundingmode to Itemized when the Requirement has Requirement
+    ///       Details (Requested is then owned by the rollup), otherwise leave Direct.
     /// - book_prioritization Update      (Post-Operation, Async, filtering book_requirementfunding):
     ///       when the user re-points a Prioritization to a different Requirement Funding
     ///       (and therefore a different Requirement), wipe the now-stale Itemized Details
-    ///       and reseed from the new Requirement's details.
+    ///       and reset the funding mode from the new Requirement's details.
     ///
-    /// Newly created Itemized Details carry only the two lookups (book_prioritization,
-    /// book_requirementitem); users populate the quantity and funding amounts afterward.
-    /// Each Itemized Detail create/delete here triggers <see cref="PrioritizationItemizedRollup"/>.
+    /// Each Itemized Detail delete here triggers <see cref="PrioritizationItemizedRollup"/>.
     /// </summary>
     public class ItemizedDetailsSynchronizer : PluginBase
     {
@@ -44,9 +41,7 @@ namespace Checkbook.Plugins.Items
             var message = context.MessageName;
             var entity = context.PrimaryEntityName;
 
-            if (message == "Create" && entity == EntityNames.RequirementDetails)
-                HandleRequirementDetailCreated(context, service, tracingService);
-            else if (message == "Delete" && entity == EntityNames.RequirementDetails)
+            if (message == "Delete" && entity == EntityNames.RequirementDetails)
                 HandleRequirementDetailDeleted(context, service, tracingService);
             else if (message == "Create" && entity == EntityNames.Prioritization)
                 HandlePrioritizationCreated(context, service, tracingService);
@@ -57,80 +52,9 @@ namespace Checkbook.Plugins.Items
         }
 
         /// <summary>
-        /// A Requirement Detail was added — create a matching Itemized Detail on every
-        /// Prioritization already tied to that Requirement.
-        /// </summary>
-        private void HandleRequirementDetailCreated(
-            IPluginExecutionContext context,
-            IOrganizationService service,
-            ITracingService tracingService)
-        {
-            var detail = GetTarget(context);
-            var detailId = context.PrimaryEntityId;
-
-            var requirement = detail.GetAttributeValue<EntityReference>(
-                RequirementDetailsAttributes.Requirement);
-            if (requirement == null)
-            {
-                tracingService.Trace("Requirement Detail has no Requirement; nothing to sync.");
-                return;
-            }
-
-            var prioritizations = GetPrioritizationsForRequirement(service, requirement.Id);
-            tracingService.Trace(
-                $"Found {prioritizations.Count} Itemized Prioritization(s) for Requirement {requirement.Id}.");
-
-            // Single fetch of every Itemized Detail already pointing at this RD,
-            // then diff against the Prio list in memory — was a top=1 RetrieveMultiple
-            // per Prioritization.
-            var existingPrioIds = GetExistingItemizedDetailPrioIds(service, detailId);
-
-            var created = 0;
-            foreach (var p in prioritizations)
-            {
-                if (existingPrioIds.Contains(p.Id))
-                {
-                    tracingService.Trace(
-                        $"Itemized Detail already exists for Prioritization {p.Id}; skipping.");
-                    continue;
-                }
-
-                var owningBu = p.GetAttributeValue<EntityReference>("owningbusinessunit");
-                CreateItemizedDetail(service, p.Id, detailId, owningBu);
-                created++;
-            }
-
-            tracingService.Trace($"Created {created} Itemized Detail(s).");
-        }
-
-        private static HashSet<Guid> GetExistingItemizedDetailPrioIds(
-            IOrganizationService service, Guid requirementDetailId)
-        {
-            var query = new QueryExpression(EntityNames.ItemizedDetails)
-            {
-                ColumnSet = new ColumnSet(ItemizedDetailsAttributes.Prioritization),
-                Criteria = new FilterExpression(LogicalOperator.And)
-                {
-                    Conditions =
-                    {
-                        new ConditionExpression(
-                            ItemizedDetailsAttributes.RequirementItem,
-                            ConditionOperator.Equal, requirementDetailId),
-                    },
-                },
-            };
-            var ids = new HashSet<Guid>();
-            foreach (var e in service.RetrieveMultiple(query).Entities)
-            {
-                var prio = e.GetAttributeValue<EntityReference>(ItemizedDetailsAttributes.Prioritization);
-                if (prio != null) ids.Add(prio.Id);
-            }
-            return ids;
-        }
-
-        /// <summary>
-        /// A new Prioritization was created — seed its Itemized Details from the
-        /// Requirement Details of its Requirement.
+        /// A new Prioritization was created — if its Requirement has Requirement
+        /// Details, flip the Prioritization to Itemized mode. Itemized Details
+        /// themselves are added by the user from the grid, not seeded here.
         ///
         /// FY27+ Prios carry the Requirement directly via book_requirement (the
         /// per-RF link moved to the book_prioritizationfunding junction).
@@ -152,8 +76,7 @@ namespace Checkbook.Plugins.Items
                 prioritizationId,
                 new ColumnSet(
                     PrioritizationAttributes.Requirement,
-                    PrioritizationAttributes.RequirementFunding,
-                    "owningbusinessunit"));
+                    PrioritizationAttributes.RequirementFunding));
 
             var requirement = prioritization.GetAttributeValue<EntityReference>(
                 PrioritizationAttributes.Requirement);
@@ -165,7 +88,7 @@ namespace Checkbook.Plugins.Items
                 if (requirementFunding == null)
                 {
                     tracingService.Trace(
-                        "Prioritization has neither Requirement nor Requirement Funding; nothing to sync.");
+                        "Prioritization has neither Requirement nor Requirement Funding; nothing to do.");
                     return;
                 }
 
@@ -178,45 +101,40 @@ namespace Checkbook.Plugins.Items
                     RequirementFundingAttributes.Requirement);
                 if (requirement == null)
                 {
-                    tracingService.Trace("Requirement Funding has no Requirement; nothing to sync.");
+                    tracingService.Trace("Requirement Funding has no Requirement; nothing to do.");
                     return;
                 }
             }
 
-            var detailIds = GetRequirementDetails(service, requirement.Id);
+            var detailCount = GetRequirementDetails(service, requirement.Id).Count;
             tracingService.Trace(
-                $"Found {detailIds.Count} Requirement Detail(s) for Requirement {requirement.Id}.");
+                $"Found {detailCount} Requirement Detail(s) for Requirement {requirement.Id}.");
 
-            if (detailIds.Count == 0)
+            if (detailCount == 0)
             {
                 tracingService.Trace(
                     "Requirement has no Requirement Details; leaving Prioritization in Direct funding mode.");
                 return;
             }
 
-            var owningBu = prioritization.GetAttributeValue<EntityReference>("owningbusinessunit");
-
-            // The Requirement already itemizes its funding, so this Prioritization
-            // adopts Itemized mode. Flip the flag before seeding so the rollup that
-            // fires on each Itemized Detail create sees the Prioritization as Itemized.
+            // The Requirement itemizes its funding, so this Prioritization adopts
+            // Itemized mode: Requested is locked on the form and only ever written
+            // by the rollup once the user adds Itemized Details from the grid.
             service.Update(new Entity(EntityNames.Prioritization, prioritizationId)
             {
                 [PrioritizationAttributes.FundingMode] =
                     new OptionSetValue(FundingModeValues.Itemized)
             });
 
-            foreach (var detailId in detailIds)
-                CreateItemizedDetail(service, prioritizationId, detailId, owningBu);
-
-            tracingService.Trace(
-                $"Set Prioritization to Itemized and created {detailIds.Count} Itemized Detail(s).");
+            tracingService.Trace("Set Prioritization to Itemized.");
         }
 
         /// <summary>
         /// The Prioritization's book_requirementfunding lookup changed. If the new RF
         /// points to a different Requirement than the old one, the existing Itemized
         /// Details are now linked to Requirement Details of the wrong Requirement —
-        /// delete them all and reseed from the new Requirement's Requirement Details.
+        /// delete them all and reset the funding mode from the new Requirement.
+        /// The user re-selects Itemized Details from the grid afterwards.
         /// </summary>
         private void HandlePrioritizationRequirementFundingChanged(
             IPluginExecutionContext context,
@@ -271,42 +189,22 @@ namespace Checkbook.Plugins.Items
             foreach (var id in existing)
                 service.Delete(EntityNames.ItemizedDetails, id);
 
-            var detailIds = GetRequirementDetails(service, newRequirementId);
+            var detailCount = GetRequirementDetails(service, newRequirementId).Count;
             tracingService.Trace(
-                $"Found {detailIds.Count} Requirement Detail(s) for new Requirement {newRequirementId}.");
+                $"Found {detailCount} Requirement Detail(s) for new Requirement {newRequirementId}.");
 
-            if (detailIds.Count == 0)
-            {
-                // No items to itemize against — drop the Prioritization back to Direct
-                // so the user can hand-enter funding instead of being stranded in
-                // Itemized mode with nothing to roll up from.
-                service.Update(new Entity(EntityNames.Prioritization, prioritizationId)
-                {
-                    [PrioritizationAttributes.FundingMode] =
-                        new OptionSetValue(FundingModeValues.Direct)
-                });
-                tracingService.Trace(
-                    "New Requirement has no Requirement Details; set Prioritization to Direct.");
-                return;
-            }
-
-            var owningBu = service.Retrieve(
-                    EntityNames.Prioritization,
-                    prioritizationId,
-                    new ColumnSet("owningbusinessunit"))
-                .GetAttributeValue<EntityReference>("owningbusinessunit");
-
+            // Itemized when the new Requirement itemizes (user re-selects details
+            // from the grid); Direct when it doesn't, so the user can hand-enter
+            // funding instead of being stranded in Itemized mode with nothing to
+            // roll up from.
             service.Update(new Entity(EntityNames.Prioritization, prioritizationId)
             {
-                [PrioritizationAttributes.FundingMode] =
-                    new OptionSetValue(FundingModeValues.Itemized)
+                [PrioritizationAttributes.FundingMode] = new OptionSetValue(
+                    detailCount > 0 ? FundingModeValues.Itemized : FundingModeValues.Direct)
             });
 
-            foreach (var detailId in detailIds)
-                CreateItemizedDetail(service, prioritizationId, detailId, owningBu);
-
             tracingService.Trace(
-                $"Set Prioritization to Itemized and created {detailIds.Count} Itemized Detail(s).");
+                $"Set Prioritization to {(detailCount > 0 ? "Itemized" : "Direct")}.");
         }
 
         /// <summary>
@@ -343,44 +241,6 @@ namespace Checkbook.Plugins.Items
 
             foreach (var record in itemizedDetails)
                 service.Delete(EntityNames.ItemizedDetails, record.Id);
-        }
-
-        /// <summary>
-        /// Returns the ids of every active, Itemized-mode Prioritization on the
-        /// given Requirement. Direct-mode Prioritizations are intentionally
-        /// excluded so adding a Requirement Detail never fans an Itemized Detail
-        /// onto a manually-funded Prioritization (which would let
-        /// <see cref="PrioritizationItemizedRollup"/> zero its funding).
-        ///
-        /// Matches via the Prio's direct book_requirement lookup (FY27+) OR via
-        /// the legacy book_requirementfunding lookup → RF.Requirement, so both
-        /// shapes of Prio are found.
-        /// </summary>
-        private static List<Entity> GetPrioritizationsForRequirement(
-            IOrganizationService service, Guid requirementId)
-        {
-            // Single distinct FetchXml with outer-joined RF and an OR over the
-            // direct Requirement lookup (FY27+) and the via-RF Requirement
-            // (legacy) — was two RetrieveMultiples + in-memory union + dedup.
-            var fetch = $@"
-                <fetch distinct='true'>
-                    <entity name='{EntityNames.Prioritization}'>
-                        <attribute name='{PrioritizationAttributes.Id}'/>
-                        <attribute name='owningbusinessunit'/>
-                        <filter type='and'>
-                            <condition attribute='{PrioritizationAttributes.StateCode}' operator='eq' value='{StateCodeValues.Active}'/>
-                            <condition attribute='{PrioritizationAttributes.FundingMode}' operator='eq' value='{FundingModeValues.Itemized}'/>
-                            <filter type='or'>
-                                <condition attribute='{PrioritizationAttributes.Requirement}' operator='eq' value='{requirementId}'/>
-                                <condition entityname='rf' attribute='{RequirementFundingAttributes.Requirement}' operator='eq' value='{requirementId}'/>
-                            </filter>
-                        </filter>
-                        <link-entity name='{EntityNames.RequirementFunding}' from='{RequirementFundingAttributes.Id}'
-                                     to='{PrioritizationAttributes.RequirementFunding}' alias='rf' link-type='outer'/>
-                    </entity>
-                </fetch>";
-
-            return service.RetrieveMultiple(new FetchExpression(fetch)).Entities.ToList();
         }
 
         /// <summary>
@@ -448,28 +308,6 @@ namespace Checkbook.Plugins.Items
             return service.RetrieveMultiple(query).Entities
                 .Select(e => e.Id)
                 .ToList();
-        }
-
-        /// <summary>
-        /// Creates an Itemized Detail carrying only the two lookups (and the parent
-        /// Prioritization's owning BU, so state users can see it). Quantity and the
-        /// Requested/Validated/Funded amounts are left for the user to populate.
-        /// </summary>
-        private static void CreateItemizedDetail(
-            IOrganizationService service, Guid prioritizationId, Guid requirementDetailId,
-            EntityReference owningBu)
-        {
-            var itemizedDetail = new Entity(EntityNames.ItemizedDetails)
-            {
-                [ItemizedDetailsAttributes.Prioritization] =
-                    new EntityReference(EntityNames.Prioritization, prioritizationId),
-                [ItemizedDetailsAttributes.RequirementItem] =
-                    new EntityReference(EntityNames.RequirementDetails, requirementDetailId)
-            };
-            if (owningBu != null)
-                itemizedDetail["owningbusinessunit"] = owningBu;
-
-            service.Create(itemizedDetail);
         }
     }
 }

@@ -8,7 +8,11 @@ without a local build.
 The **unmanaged** delivery solution (publisher `ARNGCheckbook`, prefix `book`)
 containing the PCF controls:
 
-- `book_ARNGCheckbook.ItemizedDetailsGrid`
+- `book_ARNGCheckbook.ItemizedDetailsGrid` — v0.2.0: Itemized Details are now
+  **user-selected** — an Add Items dialog lists the parent Requirement's
+  Details, plus per-row Remove. Auto-populate from Requirement Details is
+  retired (see the migration note in
+  [`../Plugins/PLUGIN-REGISTRATION.md`](../Plugins/PLUGIN-REGISTRATION.md))
 - `book_ARNGCheckbook.PrioritizationFundingGrid`
 - `book_ARNGCheckbook.PrioritizationsForRequirement`
 - `book_ARNGCheckbook.RequirementDetailFundingGrid`

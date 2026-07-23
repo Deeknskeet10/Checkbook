@@ -105,7 +105,6 @@ Required in the maker portal before enabling the State Swap steps:
 
 | Custom API                          | Plugin Type                                                     | Notes |
 |-------------------------------------|------------------------------------------------------------------|-------|
-| `book_ReconcileItemizedDetails`     | `Checkbook.Plugins.Items.ItemizedDetailsReconciler`              | See **Items — `ItemizedDetailsReconciler`** below. |
 | `book_GenerateLOAs`                 | `Checkbook.Plugins.LOAs.LOAGenerator`                            | See [`LOAs/REGISTRATION.md`](LOAs/REGISTRATION.md). |
 | `book_GenerateDistributions`        | `Checkbook.Plugins.Distributions.GenerateDistributionsPlugin`    | See [`Distributions/REGISTRATION.md`](Distributions/REGISTRATION.md). |
 | `book_ToggleFundedAmountLock`       | `Checkbook.Plugins.Admin.ToggleFundedAmountLockPlugin`           | Global, no inputs, output `IsLocked` (Boolean). Full spec in [`../docs/FundedAmountLock-Setup.md`](../docs/FundedAmountLock-Setup.md). |
@@ -287,100 +286,31 @@ Depth-guarded so the deactivation Update at the end doesn't re-enter.
 
 ### `Checkbook.Plugins.Items.ItemizedDetailsSynchronizer`
 
-Keeps `book_itemizeddetails` rows in lockstep with the `book_requirementdetails`
-defined on a Requirement. Without these steps, removing a Requirement Detail
-leaves orphaned Itemized Details on every child Prioritization.
+Sets a Prioritization's `book_fundingmode` from whether the parent Requirement
+has `book_requirementdetails`, and cleans up Itemized Details that would
+otherwise be orphaned (RD deleted) or stale (Prio re-pointed at a different
+Requirement). Itemized Details are **user-selected** via the
+`ItemizedDetailsGrid` control's Add Items dialog — this plugin never creates
+them.
 
 | # | Message | Primary entity         | Stage          | Mode  | Filtering attributes      | Notes |
 |---|---------|------------------------|----------------|-------|---------------------------|-------|
 | 1 | Delete  | `book_requirementdetails` | Pre-Operation  | Sync  | *(none)*                  | Wipes children before the parent row goes. **Sync** so failure rolls back the Delete. |
-| 2 | Create  | `book_requirementdetails` | Post-Operation | Async | *(none)*                  | Fans the new detail out to every existing Prioritization of the parent Requirement. |
-| 3 | Create  | `book_prioritization`     | Post-Operation | Async | *(none)*                  | Seeds Itemized Details on a new Prioritization from the Requirement's existing details. |
-| 4 | Update  | `book_prioritization`     | Post-Operation | Async | `book_requirementfunding` | Re-points Itemized Details when the user swaps the RF. **Requires PreImage** (`book_requirementfunding`). |
+| 2 | Create  | `book_prioritization`     | Post-Operation | Async | *(none)*                  | Sets FundingMode = Itemized when the Requirement has Requirement Details; leaves Direct otherwise. No Itemized Details are created. |
+| 3 | Update  | `book_prioritization`     | Post-Operation | Async | `book_requirementfunding` | On RF swap to a different Requirement: deletes the now-stale Itemized Details and resets FundingMode (Itemized if the new Requirement has RDs, else Direct). **Requires PreImage** (`book_requirementfunding`). |
 
-### `Checkbook.Plugins.Items.ItemizedDetailsReconciler`
-
-Custom API handler that backfills Itemized Details on a Prioritization that
-fell out of sync (e.g., a user toggled Direct ↔ Itemized mid-year). Idempotent
-— only adds missing rows, never deletes or modifies existing ones, and never
-flips `book_fundingmode`.
-
-| # | Message                          | Primary entity | Stage          | Mode | Filtering attributes | Notes |
-|---|----------------------------------|----------------|----------------|------|----------------------|-------|
-| 1 | `book_ReconcileItemizedDetails`  | *(none)*       | Post-Operation | Sync | *(none)*             | Bound to the Custom API — Stage/Mode are fixed by the Custom API record. |
-
-**Custom API record** (create under **Power Apps → … → Custom APIs**):
-
-| Field                             | Value                                                  |
-|-----------------------------------|--------------------------------------------------------|
-| Unique Name                       | `book_ReconcileItemizedDetails`                        |
-| Name                              | `book_ReconcileItemizedDetails`                        |
-| Display Name                      | Reconcile Itemized Details                             |
-| Description                       | Backfills missing Itemized Details on a Prioritization. |
-| Binding Type                      | Global                                                 |
-| Is Function                       | No                                                     |
-| Enabled For Workflow              | No                                                     |
-| Allowed Custom Processing Step Type | None                                                 |
-| Execute Privilege Name            | *(leave blank — caller's privileges apply)*            |
-| Plugin Type                       | `Checkbook.Plugins.Items.ItemizedDetailsReconciler`    |
-
-**Custom API request parameters:**
-
-| Name              | Display Name      | Type   | Logical Entity Name | Is Optional |
-|-------------------|-------------------|--------|---------------------|-------------|
-| `PrioritizationId`| Prioritization Id | Guid   | *(blank)*           | No          |
-
-**Custom API response properties:**
-
-| Name         | Display Name | Type    |
-|--------------|--------------|---------|
-| `AddedCount` | Added Count  | Integer |
-| `Message`    | Message      | String  |
-
-**Ribbon button JS** — drop into a JS web resource (e.g.
-`book_/scripts/prioritization_ribbon.js`) and wire a "Sync Itemized Details"
-command on the Prioritization form to call
-`Prioritization.Ribbon.syncItemizedDetails(primaryControl)`:
-
-```js
-var Prioritization = Prioritization || {};
-Prioritization.Ribbon = Prioritization.Ribbon || {};
-
-Prioritization.Ribbon.syncItemizedDetails = function (formContext) {
-    var id = formContext.data.entity.getId().replace(/[{}]/g, "");
-    var request = {
-        PrioritizationId: id,
-        getMetadata: function () {
-            return {
-                boundParameter: null,
-                operationType: 0,
-                operationName: "book_ReconcileItemizedDetails",
-                parameterTypes: {
-                    PrioritizationId: { typeName: "Edm.Guid", structuralProperty: 1 }
-                }
-            };
-        }
-    };
-
-    Xrm.Utility.showProgressIndicator("Reconciling Itemized Details…");
-    Xrm.WebApi.online.execute(request)
-        .then(function (response) { return response.json(); })
-        .then(function (result) {
-            Xrm.Utility.closeProgressIndicator();
-            Xrm.Navigation.openAlertDialog({ text: result.Message });
-            var grid = formContext.getControl("ItemizedDetailsGrid")
-                || formContext.getControl("itemizeddetailsSubgrid");
-            if (grid && grid.refresh) grid.refresh();
-        })
-        .catch(function (err) {
-            Xrm.Utility.closeProgressIndicator();
-            Xrm.Navigation.openErrorDialog({ message: err.message || String(err) });
-        });
-};
-```
-
-The button can always be visible — the plugin returns a friendly message for
-the "not Itemized" case rather than throwing.
+> **Migration note (auto-populate retired, 2026-07):** in PRT, after updating
+> `Checkbook_Plugins.dll`:
+> 1. **Unregister** the old `Create` step on `book_requirementdetails`
+>    (Post-Operation, Async — the RD fan-out).
+> 2. **Delete** the `book_ReconcileItemizedDetails` Custom API record and the
+>    `Checkbook.Plugins.Items.ItemizedDetailsReconciler` plugin type (the class
+>    was removed from the assembly, so the stale type must go before the
+>    assembly update will register cleanly). Remove any "Sync Itemized
+>    Details" ribbon command that called the API if one was wired up.
+> 3. The `book_prioritization` Create/Update steps and the
+>    `book_requirementdetails` Delete step keep their existing registrations —
+>    only behavior changed.
 
 ### `Checkbook.Plugins.Items.PrioritizationItemizedRollup`
 
@@ -867,7 +797,7 @@ a step or changing a rank: the ordering constraints live here.
 | 3 | Pre-Op (rank 20) | Sync | `RequirementDetailFundingGuard` | XOR guard; before NameSetter so rejected Prios skip the naming retrieves. |
 | 4 | Pre-Op (rank 30) | Sync | `PrioritizationNameSetter` | Reads `book_fundcenter` from Target — MUST run after the backfill. |
 | 5 | Post-Op | Sync | `PrioritizationRollupToRequirementFunding` | Rolls new Prio into parent RF totals. |
-| 6 | Post-Op | **Async** | `ItemizedDetailsSynchronizer` | Seeds Itemized Details; async, so it lands after the transaction. |
+| 6 | Post-Op | **Async** | `ItemizedDetailsSynchronizer` | Sets FundingMode from the Requirement's RDs (no seeding — Itemized Details are user-selected); async, so it lands after the transaction. |
 
 **Update** (in order):
 
@@ -877,7 +807,7 @@ a step or changing a rank: the ordering constraints live here.
 | 2 | Pre-Op | Sync | `PrioritizationFundingValidator` | `book_newfundedamounttdp, book_requirementfunding, book_approvalstatus, statecode` |
 | 3 | Pre-Op | Sync | `PrioritizationNameSetter` | `book_state, book_requirementfunding, book_requirement, book_statepriority, book_fundcenter, book_newfiscalyear` |
 | 4 | Post-Op | Sync | `PrioritizationRollupToRequirementFunding` | `book_newfundedamounttdp, book_validatedamount, book_requirementfunding, statecode` |
-| 5 | Post-Op | **Async** | `ItemizedDetailsSynchronizer` | `book_requirementfunding` (RF swap re-points details) |
+| 5 | Post-Op | **Async** | `ItemizedDetailsSynchronizer` | `book_requirementfunding` (RF swap deletes stale details + resets FundingMode) |
 
 **Delete**: Post-Op Sync `PrioritizationRollupToRequirementFunding` (recalcs the pre-image parent RF).
 
@@ -939,13 +869,9 @@ to sort the right pane by **Message** then by **Primary Entity**.
 ### Items
 - [ ] `Checkbook.Plugins.Items.ItemizedDetailsSynchronizer`
   - [ ] Delete of `book_requirementdetails` — Pre-Op, Sync
-  - [ ] Create of `book_requirementdetails` — Post-Op, Async
   - [ ] Create of `book_prioritization` — Post-Op, Async
   - [ ] Update of `book_prioritization` — Post-Op, Async, filter `book_requirementfunding`, PreImage `book_requirementfunding`
-- [ ] `Checkbook.Plugins.Items.ItemizedDetailsReconciler`
-  - [ ] Custom API `book_ReconcileItemizedDetails` exists with input `PrioritizationId` and outputs `AddedCount` + `Message`
-  - [ ] Plugin Type on the Custom API = `Checkbook.Plugins.Items.ItemizedDetailsReconciler`
-  - [ ] Ribbon button on the Prioritization form invokes the Custom API and shows `Message` in an alert dialog
+  - [ ] **No** Create step on `book_requirementdetails` and **no** `book_ReconcileItemizedDetails` Custom API remain (retired 2026-07 — see the migration note in the Items section)
 - [ ] `Checkbook.Plugins.Items.PrioritizationItemizedRollup`
   - [ ] Create / Update / Delete of `book_itemizeddetails` — Post-Op Sync; Update + Delete have PreImage
 - [ ] `Checkbook.Plugins.Items.PrioritizationFundCenterBackfill`
@@ -1051,8 +977,8 @@ to sort the right pane by **Message** then by **Primary Entity**.
 Each subfolder doc carries a domain-specific smoke test sequence:
 
 - **Itemized Details sync** — see "Smoke test" further down in the
-  ItemizedDetailsSynchronizer section above (steps 1–6 deleting/adding
-  Requirement Details and swapping RF).
+  ItemizedDetailsSynchronizer section above (deleting Requirement Details,
+  user-adding Itemized Details from the grid, and swapping RF).
 - **Funding Event + Turn-In financial flow** — see the existing
   "Smoke tests (financial flow)" section below.
 - **LOA generation** — see [`LOAs/REGISTRATION.md`](LOAs/REGISTRATION.md) §
@@ -1063,22 +989,25 @@ Each subfolder doc carries a domain-specific smoke test sequence:
 
 ### ItemizedDetailsSynchronizer smoke test
 
-1. Pick a Requirement with at least one active child Prioritization that has
-   Itemized Details.
-2. Note the number of Itemized Detail rows on that Prioritization
-   (`book_itemizeddetails` filtered by the Prioritization).
-3. Delete one Requirement Detail (`book_requirementdetails`) from the
-   Requirement.
-4. Re-query Itemized Details — the count should drop by exactly one, and the
-   row that pointed at the deleted Requirement Detail should be gone.
-5. Add a new Requirement Detail to the same Requirement; within ~30 seconds
-   (async step), a matching Itemized Detail should appear on each child
-   Prioritization.
+1. Create a Prioritization under a Requirement that **has** Requirement
+   Details. Within ~30 seconds (async step) `book_fundingmode` should flip to
+   Itemized; **no** Itemized Details are created, and Requested Amount stays
+   locked and empty on the form.
+2. On that Prioritization, use the ItemizedDetailsGrid's **Add Items** dialog
+   to select two Requirement Details — two `book_itemizeddetails` rows appear.
+   Enter Requested amounts; the Prio's Requested Amount becomes their sum
+   (rollup).
+3. Remove one row with the grid's per-row remove — the rollup drops
+   accordingly.
+4. Delete one Requirement Detail (`book_requirementdetails`) that has linked
+   Itemized Details — the linked rows should be gone and the rollup recalced.
+5. Create a Prioritization under a Requirement **without** Requirement
+   Details — FundingMode stays Direct and Requested Amount is editable.
 6. On a Prioritization currently itemized against Requirement **A**, change
    `book_requirementfunding` to an RF that points to Requirement **B**. Within
-   ~30 seconds the Itemized Details linked to A's RDs should be gone and a new
-   set seeded from B's RDs. If B has zero RDs, the Prioritization should drop
-   to `FundingMode = Direct`.
+   ~30 seconds the Itemized Details linked to A's RDs should be gone; the
+   FundingMode should be Itemized if B has RDs (user re-selects from the
+   grid) or Direct if it has none.
 
 If step 4 leaves an orphan, the **Delete / Pre-Operation / Sync** step is
 missing or mis-registered. If step 6 leaves stale Itemized Details, the

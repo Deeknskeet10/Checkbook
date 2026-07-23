@@ -18,6 +18,13 @@ import {
   Button,
   Tooltip,
   Link,
+  Dialog,
+  DialogSurface,
+  DialogBody,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Checkbox,
 } from "@fluentui/react-components";
 
 type DataSet = ComponentFramework.PropertyTypes.DataSet;
@@ -30,6 +37,8 @@ export interface ItemizedDetailsGridProps {
   navigation: Navigation;
   isDisabled: boolean;
   width: number;
+  /** Id of the parent Prioritization record (the form's record). */
+  prioritizationId: string | null;
 }
 
 /** Property-set aliases declared in ControlManifest.Input.xml. */
@@ -47,6 +56,16 @@ const ITEMIZED_DETAILS_ENTITY = "book_itemizeddetails";
 const REQUIREMENT_DETAILS_ENTITY = "book_requirementdetails";
 const ITEM_ENTITY = "book_item";
 const TDC_ENTITY = "book_tdc";
+const PRIORITIZATION_ENTITY = "book_prioritization";
+const REQUIREMENT_FUNDING_ENTITY = "book_requirementfunding";
+
+/** A Requirement Detail on the parent Requirement that is not yet itemized. */
+interface CandidateRd {
+  id: string;
+  name: string;
+  item: string;
+  tdc: string;
+}
 
 type NumericField = "quantity" | "requestedAmount" | "validatedAmount" | "fundedAmount";
 type TextField = "npmComment" | "stateComment";
@@ -176,6 +195,29 @@ const useStyles = makeStyles({
     ...shorthands.padding("16px"),
     color: tokens.colorNeutralForeground3,
   },
+  toolbarButtons: {
+    display: "flex",
+    columnGap: "8px",
+  },
+  addList: {
+    display: "flex",
+    flexDirection: "column",
+    rowGap: "4px",
+    maxHeight: "320px",
+    overflowY: "auto",
+  },
+  candidateMeta: {
+    display: "block",
+    fontSize: tokens.fontSizeBase200,
+    color: tokens.colorNeutralForeground3,
+    marginLeft: "28px",
+  },
+  dialogError: {
+    color: tokens.colorPaletteRedForeground1,
+  },
+  actionCol: {
+    width: "80px",
+  },
 });
 
 /** Strips braces and lower-cases a GUID from a dataset lookup value. */
@@ -206,6 +248,9 @@ export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
 ) => {
   const { dataset, webAPI, navigation, isDisabled } = props;
   const styles = useStyles();
+  const prioritizationId = props.prioritizationId
+    ? props.prioritizationId.replace(/[{}]/g, "").toLowerCase()
+    : null;
 
   // alias (property-set name) -> real column logical name, e.g. "book_requestedamount".
   const aliasToLogical = React.useMemo(() => {
@@ -403,6 +448,160 @@ export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
       });
   };
 
+  // ----- Add from Requirement Details (user-selected itemization) -----
+  const [addOpen, setAddOpen] = React.useState(false);
+  const [candidates, setCandidates] = React.useState<CandidateRd[] | null>(
+    null
+  );
+  const [candidateError, setCandidateError] = React.useState<string | null>(
+    null
+  );
+  const [selected, setSelected] = React.useState<Set<string>>(new Set());
+  const [addBusy, setAddBusy] = React.useState(false);
+
+  const existingRdIds = React.useMemo(() => {
+    const ids = new Set<string>();
+    datasetRows.forEach((r) => {
+      if (r.requirementItemId) ids.add(r.requirementItemId);
+    });
+    return ids;
+  }, [datasetRows]);
+
+  const loadCandidates = React.useCallback((): void => {
+    if (!prioritizationId) {
+      setCandidateError(
+        "Save the Prioritization first, then add items from its Requirement."
+      );
+      return;
+    }
+    const fv = "@OData.Community.Display.V1.FormattedValue";
+    webAPI
+      .retrieveRecord(
+        PRIORITIZATION_ENTITY,
+        prioritizationId,
+        "?$select=_book_requirement_value,_book_requirementfunding_value"
+      )
+      .then((prio: ComponentFramework.WebApi.Entity) => {
+        const direct = prio._book_requirement_value as string | undefined;
+        if (direct) return direct;
+        const rfId = prio._book_requirementfunding_value as string | undefined;
+        if (!rfId) return null;
+        return webAPI
+          .retrieveRecord(
+            REQUIREMENT_FUNDING_ENTITY,
+            rfId,
+            "?$select=_book_requirement_value"
+          )
+          .then(
+            (rf: ComponentFramework.WebApi.Entity) =>
+              (rf._book_requirement_value as string | undefined) ?? null
+          );
+      })
+      .then((requirementId: string | null) => {
+        if (!requirementId) {
+          setCandidateError(
+            "This Prioritization has no Requirement — there are no Requirement Details to add."
+          );
+          return null;
+        }
+        return webAPI.retrieveMultipleRecords(
+          REQUIREMENT_DETAILS_ENTITY,
+          "?$select=book_name,_book_item_value,_book_tdc_value" +
+            `&$filter=_book_requirement_value eq ${requirementId} and statecode eq 0` +
+            "&$orderby=book_name asc"
+        );
+      })
+      .then((result) => {
+        if (!result) return;
+        setCandidates(
+          result.entities.map((e) => ({
+            id: (e.book_requirementdetailsid as string) ?? "",
+            name: (e.book_name as string) || "(unnamed)",
+            item: (e[`_book_item_value${fv}`] as string) || "",
+            tdc: (e[`_book_tdc_value${fv}`] as string) || "",
+          }))
+        );
+        return;
+      })
+      .catch(() => {
+        setCandidateError(
+          "Could not load the Requirement's Details — close and try again."
+        );
+      });
+  }, [prioritizationId, webAPI]);
+
+  const openAddDialog = (): void => {
+    setCandidates(null);
+    setCandidateError(null);
+    setSelected(new Set());
+    setAddOpen(true);
+    loadCandidates();
+  };
+
+  const toggleSelected = (rdId: string, checked: boolean): void => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (checked) next.add(rdId);
+      else next.delete(rdId);
+      return next;
+    });
+  };
+
+  const addSelected = (): void => {
+    if (!prioritizationId || selected.size === 0) return;
+    setAddBusy(true);
+    Promise.all(
+      Array.from(selected).map((rdId) =>
+        webAPI.createRecord(ITEMIZED_DETAILS_ENTITY, {
+          "book_Prioritization@odata.bind": `/book_prioritizations(${prioritizationId})`,
+          "book_RequirementItem@odata.bind": `/book_requirementdetailses(${rdId})`,
+        })
+      )
+    )
+      .then(() => {
+        setAddBusy(false);
+        setAddOpen(false);
+        dataset.refresh();
+        return;
+      })
+      .catch(() => {
+        setAddBusy(false);
+        setCandidateError(
+          "Some items could not be added — close the dialog and check the grid."
+        );
+      });
+  };
+
+  // ----- Per-row remove -----
+  const [pendingRemove, setPendingRemove] = React.useState<GridRow | null>(
+    null
+  );
+  const [removeBusy, setRemoveBusy] = React.useState(false);
+
+  const confirmRemove = (): void => {
+    if (!pendingRemove) return;
+    const recordId = pendingRemove.recordId;
+    setRemoveBusy(true);
+    webAPI
+      .deleteRecord(ITEMIZED_DETAILS_ENTITY, recordId)
+      .then(() => {
+        setRemoveBusy(false);
+        setPendingRemove(null);
+        dataset.refresh();
+        return;
+      })
+      .catch(() => {
+        setRemoveBusy(false);
+        setPendingRemove(null);
+        setSaveState((prev) => ({ ...prev, [recordId]: "error" }));
+      });
+  };
+
+  const availableCandidates = React.useMemo(
+    () => (candidates ?? []).filter((c) => !existingRdIds.has(c.id)),
+    [candidates, existingRdIds]
+  );
+
   const totals = React.useMemo(() => {
     return datasetRows.reduce(
       (acc, row) => ({
@@ -476,22 +675,34 @@ export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
           <Text weight="semibold">
             Itemized Details ({datasetRows.length})
           </Text>
-          <Button
-            size="small"
-            appearance="subtle"
-            disabled={dataset.loading}
-            onClick={() => dataset.refresh()}
-          >
-            Refresh
-          </Button>
+          <div className={styles.toolbarButtons}>
+            {!isDisabled && (
+              <Button
+                size="small"
+                appearance="primary"
+                disabled={dataset.loading}
+                onClick={openAddDialog}
+              >
+                Add Items
+              </Button>
+            )}
+            <Button
+              size="small"
+              appearance="subtle"
+              disabled={dataset.loading}
+              onClick={() => dataset.refresh()}
+            >
+              Refresh
+            </Button>
+          </div>
         </div>
 
         {dataset.loading ? (
           <Spinner label="Loading Itemized Details…" />
         ) : datasetRows.length === 0 ? (
           <div className={styles.empty}>
-            No Itemized Details yet. They are created automatically when
-            Requirement Details are added to the Requirement.
+            No Itemized Details yet. Use Add Items to select which of the
+            Requirement&apos;s Details to itemize on this Prioritization.
           </div>
         ) : (
           <div className={styles.scrollContainer}>
@@ -506,6 +717,9 @@ export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
                   <TableHeaderCell className={styles.amount}>Funded</TableHeaderCell>
                   <TableHeaderCell>NPM Comment</TableHeaderCell>
                   <TableHeaderCell>State Comment</TableHeaderCell>
+                  {!isDisabled && (
+                    <TableHeaderCell className={styles.actionCol} />
+                  )}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -562,6 +776,17 @@ export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
                         {row.npmComment}
                       </TableCell>
                       <TableCell>{commentCell(row, "stateComment")}</TableCell>
+                      {!isDisabled && (
+                        <TableCell className={styles.actionCol}>
+                          <Button
+                            size="small"
+                            appearance="subtle"
+                            onClick={() => setPendingRemove(row)}
+                          >
+                            Remove
+                          </Button>
+                        </TableCell>
+                      )}
                     </TableRow>
                   );
                 })}
@@ -580,6 +805,7 @@ export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
                   </TableCell>
                   <TableCell />
                   <TableCell />
+                  {!isDisabled && <TableCell />}
                 </TableRow>
               </TableBody>
             </Table>
@@ -595,6 +821,108 @@ export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
             Load more
           </Button>
         )}
+
+        <Dialog
+          open={addOpen}
+          onOpenChange={(_e, data) => {
+            if (!addBusy) setAddOpen(data.open);
+          }}
+        >
+          <DialogSurface>
+            <DialogBody>
+              <DialogTitle>Add Items from Requirement Details</DialogTitle>
+              <DialogContent>
+                {candidateError ? (
+                  <Text className={styles.dialogError}>{candidateError}</Text>
+                ) : candidates === null ? (
+                  <Spinner label="Loading Requirement Details…" />
+                ) : availableCandidates.length === 0 ? (
+                  <Text>
+                    Every Requirement Detail on this Requirement is already
+                    itemized on this Prioritization.
+                  </Text>
+                ) : (
+                  <div className={styles.addList}>
+                    {availableCandidates.map((c) => (
+                      <div key={c.id}>
+                        <Checkbox
+                          checked={selected.has(c.id)}
+                          onChange={(_e, data) =>
+                            toggleSelected(c.id, data.checked === true)
+                          }
+                          label={c.item || c.name}
+                        />
+                        {c.tdc && (
+                          <span className={styles.candidateMeta}>
+                            TDC: {c.tdc}
+                          </span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </DialogContent>
+              <DialogActions>
+                <Button
+                  appearance="secondary"
+                  disabled={addBusy}
+                  onClick={() => setAddOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  appearance="primary"
+                  disabled={addBusy || selected.size === 0}
+                  onClick={addSelected}
+                >
+                  {addBusy
+                    ? "Adding…"
+                    : `Add ${selected.size > 0 ? selected.size + " " : ""}selected`}
+                </Button>
+              </DialogActions>
+            </DialogBody>
+          </DialogSurface>
+        </Dialog>
+
+        <Dialog
+          open={pendingRemove !== null}
+          onOpenChange={(_e, data) => {
+            if (!removeBusy && !data.open) setPendingRemove(null);
+          }}
+        >
+          <DialogSurface>
+            <DialogBody>
+              <DialogTitle>Remove Itemized Detail</DialogTitle>
+              <DialogContent>
+                <Text>
+                  Remove &quot;
+                  {pendingRemove
+                    ? contexts[pendingRemove.requirementItemId ?? ""]?.item ||
+                      pendingRemove.requirementItemName
+                    : ""}
+                  &quot; from this Prioritization? Its Requested amount will no
+                  longer count toward the total.
+                </Text>
+              </DialogContent>
+              <DialogActions>
+                <Button
+                  appearance="secondary"
+                  disabled={removeBusy}
+                  onClick={() => setPendingRemove(null)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  appearance="primary"
+                  disabled={removeBusy}
+                  onClick={confirmRemove}
+                >
+                  {removeBusy ? "Removing…" : "Remove"}
+                </Button>
+              </DialogActions>
+            </DialogBody>
+          </DialogSurface>
+        </Dialog>
       </div>
     </FluentProvider>
   );
