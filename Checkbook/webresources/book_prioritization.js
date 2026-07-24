@@ -216,6 +216,16 @@ Book.Prioritization = (function () {
         }
     }
 
+    // ----- Fiscal Year lock -----
+    // FY is user-selectable on create, then locked once the row exists so it
+    // can't drift after downstream records (RFs, LOAs, ledger) are tied to it.
+
+    function applyFiscalYearLock(formContext) {
+        var ctrl = formContext.getControl(FISCAL_YEAR);
+        if (!ctrl) return;
+        ctrl.setDisabled(formContext.ui.getFormType() !== 1);
+    }
+
     // ----- Unique state-priority enforcement -----
 
     async function verifyUniquePriority(executionContext) {
@@ -272,6 +282,7 @@ Book.Prioritization = (function () {
             applyFundCenterLock(formContext);
             applyItemizedVisibilityOnLoad(formContext);
             applyDocsReminderBanner(formContext);
+            applyFiscalYearLock(formContext);
 
             // After an in-place save, the platform refreshes the form to Update mode
             // and discards our JS-set visibility/disabled/required overrides. The
