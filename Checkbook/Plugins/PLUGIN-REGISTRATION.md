@@ -443,14 +443,64 @@ or its LOA/Resource Amount changes.
 
 | # | Message | Primary entity        | Stage           | Mode | Filtering attributes                                            | Notes |
 |---|---------|-----------------------|-----------------|------|-----------------------------------------------------------------|-------|
-| 1 | Create  | `book_fundingtrack`   | Post-Operation  | Sync | *(none)*                                                        | Recalc LOA. |
-| 2 | Update  | `book_fundingtrack`   | Post-Operation  | Sync | `book_resourceamount, book_lineofaccounting, statecode`         | Recalc current + old LOA on re-link. **Requires PreImage** (`book_lineofaccounting`). |
-| 3 | Delete  | `book_fundingtrack`   | Post-Operation  | Sync | *(none)*                                                        | Recalc pre-image LOA. **Requires PreImage** (`book_lineofaccounting`). |
+| 1 | Create  | `book_fundingtrack`   | Post-Operation  | Sync | *(none)*                                                                        | Recalc LOA. |
+| 2 | Update  | `book_fundingtrack`   | Post-Operation  | Sync | `book_beginningbalancereadonly, book_lineofaccountingloa, book_newresourceamount, statecode` | Recalc current + old LOA on re-link. **Requires PreImage** (`book_lineofaccountingloa`). |
+| 3 | Delete  | `book_fundingtrack`   | Post-Operation  | Sync | *(none)*                                                                        | Recalc pre-image LOA. **Requires PreImage** (`book_lineofaccountingloa`). |
 
 > See [`LOAs/REGISTRATION.md`](LOAs/REGISTRATION.md) for the ordering
 > contract with `FundingTrackLOASynchronizer` (the synchronizer runs pre-op,
 > this recalc runs post-op — together they let the recalc see both the
 > pre-image's old LOA and the synchronizer's new LOA).
+
+> **Filtering-attribute gotcha.** `book_newresourceamount` (Resource Amount) is
+> a **Power Fx formula column** (`= Sum(book_beginningbalancereadonly,
+> book_newdecisiontotal)`) — it is computed on read, never appears in an Update
+> `Target`, and so can **never** fire this step. It is listed for documentation
+> only; the real writable triggers are `book_beginningbalancereadonly` and
+> `statecode`. Decision-driven amount changes roll up via the separate
+> `book_decision` step (see `DecisionRollupRecalculator`), not through this one.
+
+> **Bulk load / import caveat.** Edit-in-Excel and the Import Wizard write each
+> row *nested under a data-import job*, so their Funding Track updates run at
+> **Depth 2** — where this recalc's `Depth > 1` guard (in `LOATouchPropagator`)
+> skips them. A bulk Beginning-Balance load therefore does **not** roll up to
+> LOA TDP. Run the **`book_RecalculateLOATDP`** Custom API afterward to
+> reconcile (see below). Day-to-day form / app / flow edits run at Depth 1 and
+> are unaffected.
+
+### `Checkbook.Plugins.Recalculations.LOATDPReconciler`
+
+Custom API `book_RecalculateLOATDP` — bulk-reconciles LOA TDP by recomputing
+each active LOA from scratch (`Σ active-FT book_newresourceamount + Ledger net
+− allocated`) via `TDPCalculationHelper.BatchRecalculateLOATDP`. Run it after
+the annual bulk Funding Track load (or any bulk change that lands at Depth ≥ 2
+and is skipped by `FundingTrackTDPRecalculator`). Invoked directly it runs at
+Depth 1; the LOA writes it issues land at Depth 2 where
+`FundingLineTDPRemainingUpdater` allows them. The recompute is idempotent, so
+partial runs are safe to re-run.
+
+- Unique name: `book_RecalculateLOATDP`
+- Binding type: **Global** (unbound).
+- Is function: **No**.
+- Allowed custom processing step type: **Async + Sync** (run **Async** for
+  large scopes to dodge the 2-minute sync-sandbox limit).
+- Plugin type: **`Checkbook.Plugins.Recalculations.LOATDPReconciler`** (set after the assembly is registered).
+- Request parameters:
+  | Name | Type | Optional | Notes |
+  |---|---|---|---|
+  | `FiscalYear` | Integer | Yes | LOA `book_fiscalyear` option-set value. `0` or omitted = all FYs. |
+  | `BatchSize`  | Integer | Yes | Max LOAs to reconcile this invocation. `0` or omitted = every LOA in scope in one shot. When `> 0`, page with `PageNumber` until `HasMore` is false. |
+  | `PageNumber` | Integer | Yes | 1-based page for sliced runs; default `1`. Only meaningful with `BatchSize > 0`; keep `BatchSize` constant across the loop. |
+- Response properties:
+  | Name | Type | Notes |
+  |---|---|---|
+  | `TotalInScope` | Integer | Active LOAs matching the scope. |
+  | `Processed`    | Integer | LOAs reconciled this invocation. |
+  | `HasMore`      | Boolean | More LOAs remain beyond this page (BatchSize runs only). |
+
+> No filtering step — this is a Custom API message handler, not an entity step.
+> Per-LOA failures are caught, traced, and skipped inside
+> `BatchRecalculateLOATDP`; re-run to pick up any that failed.
 
 ### `Checkbook.Plugins.Recalculations.LedgerCreateFundingLineUpdater`
 
