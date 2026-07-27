@@ -198,6 +198,42 @@ foreign-publisher web resource).
 
 ---
 
+## 8. book_recalculateLoaTdp  (file: `book_recalculateLoaTdp.js`)
+
+**New command, no retirement.** Calls the `book_RecalculateLOATDP` Custom API
+(plugin `Checkbook.Plugins.Recalculations.LOATDPReconciler`) to bulk-reconcile
+LOA TDP after a bulk Funding Track load (Edit-in-Excel / Import Wizard writes at
+Depth 2, where `FundingTrackTDPRecalculator` skips the roll-up). See
+[`../Plugins/PLUGIN-REGISTRATION.md`](../Plugins/PLUGIN-REGISTRATION.md) →
+`LOATDPReconciler` for the Custom API definition and params.
+
+- Prerequisite: register the assembly and create the `book_RecalculateLOATDP`
+  Custom API. The step type must allow **Sync** — this loop reads `HasMore`
+  from each response, and async runs return no body.
+- Create WR `book_recalculateLoaTdp`, type **JavaScript (JS)**, publish.
+- Recommended home: a **Funding Line (LOA) view command** in the admin app
+  (e.g. label "Reconcile TDP"). Edit the command bar → Run JavaScript:
+
+| Library | Function | Parameters (in order) |
+|---|---|---|
+| `book_recalculateLoaTdp` | `LoaTdpReconciler.run` | `PrimaryControl` (`[{"type":5}]`); optionally add an Integer literal for `FiscalYear`, then one for `BatchSize` |
+
+With only `PrimaryControl` wired, it reconciles **all FYs** at the default page
+size (200). Add an Integer `FiscalYear` (the `book_fiscalyear` option value) to
+scope one year, and/or an Integer `BatchSize` to override the page size.
+
+Verify: run the button, watch the progress indicator page through, confirm the
+completion dialog reports `Processed` of `TotalInScope`, and spot-check that an
+imported LOA's `book_newtdp` now equals Σ its active Funding Track Resource
+Amounts (+ Ledger net). Re-running is idempotent — counts stay the same, values
+don't drift.
+
+> No-code alternative: a cloud flow *Perform an unbound action* →
+> `book_RecalculateLOATDP` needs no web resource. Loop it with a Do-Until on
+> `HasMore` for large scopes, or run the API **Async** for fire-and-forget.
+
+---
+
 ## Cross-reference: already-dead web resources
 
 Safe to delete without any rewiring (verify the delete isn't blocked by a
