@@ -89,6 +89,8 @@ interface RequirementItemContext {
   tdcId: string | null;
   tdcLongName: string;
   category: string;
+  lin: string;
+  country: string;
 }
 
 interface GridRow {
@@ -307,9 +309,12 @@ export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
     // Quantity Type and Category live on book_item now, not on the
     // Requirement Detail — so we fetch the RD for Item/TDC/name, then chain
     // a second retrieve on the linked Item for quantitytype/category.
-    const rdSelect = "?$select=book_name,_book_item_value,_book_tdc_value";
+    const rdSelect =
+      "?$select=book_name,_book_item_value,_book_tdc_value,_book_lin_value,_book_country_value";
     const itemSelect = "?$select=_book_quantitytype_value,book_category";
     const tdcSelect = "?$select=book_tdcname";
+    const countrySelect = "?$select=book_name";
+    const linSelect = "?$select=book_name";
     const fv = "@OData.Community.Display.V1.FormattedValue";
 
     missing.forEach((id) => {
@@ -325,6 +330,8 @@ export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
               item: (rd[`_book_item_value${fv}`] as string) || "",
               quantityType: "",
               tdc: (rd[`_book_tdc_value${fv}`] as string) || "",
+              lin: (rd[`_book_lin_value${fv}`] as string) || "",
+              country: (rd[`_book_country_value${fv}`] as string) || "",
               tdcId,
               tdcLongName: "",
               category: "",
@@ -506,7 +513,7 @@ export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
         }
         return webAPI.retrieveMultipleRecords(
           REQUIREMENT_DETAILS_ENTITY,
-          "?$select=book_name,_book_item_value,_book_tdc_value" +
+          "?$select=book_name,_book_item_value,_book_tdc_value,_book_lin_value,_book_country_value" +
             `&$filter=_book_requirement_value eq ${requirementId} and statecode eq 0` +
             "&$orderby=book_name asc"
         );
@@ -731,9 +738,14 @@ export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
                     <TableRow key={row.recordId}>
                       <TableCell className={styles.firstCol}>
                         <div className={styles.firstColName}>
-                          <span>{ctx?.item?.trim() ? ctx.item : row.requirementItemName}</span>
+                          <span>{ctx?.item?.trim() ? ctx.item : row.requirementItemName}{ctx?.country ? " - " + ctx?.country: ""}</span>
                           {renderStatus(row.recordId)}
                         </div>
+                        {ctx?.lin ? (
+                          <span className={styles.firstColMeta}>
+                            LIN: {ctx?.lin ?? ""}
+                          </span> 
+                        ) : ""}
                         <span className={styles.firstColMeta}>
                           Category: {ctx?.category ?? ""}
                         </span>
