@@ -54,5 +54,21 @@ namespace Checkbook.Plugins.Helpers
 
             return pre != toValue && post == toValue;
         }
+
+        /// <summary>
+        /// True when <paramref name="attribute"/> is in the target payload with
+        /// exactly <paramref name="value"/>, regardless of the pre-image.
+        /// Callers must pair this with their own idempotency check (e.g.
+        /// "record still active") — it will match again on every save that
+        /// carries the value, which is the point: a decision written while
+        /// processing was unavailable can be re-driven by a later save instead
+        /// of being permanently invisible to a transition check.
+        /// </summary>
+        public static bool PayloadHasOptionSetValue(Entity target, string attribute, int value)
+        {
+            if (target == null || !target.Contains(attribute)) return false;
+
+            return target.GetAttributeValue<OptionSetValue>(attribute)?.Value == value;
+        }
     }
 }

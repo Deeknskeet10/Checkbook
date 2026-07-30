@@ -17,6 +17,10 @@ namespace Checkbook.Plugins.Realignments
     /// • RF.Funded is left unchanged for RFs without children (per Option B alignment).
     /// • Prioritization rollup plugin recalculates RF.Funded after prioritization moves.
     /// • Processor only performs execution, not validation.
+    /// • Idempotent trigger: fires when the payload carries a decision value and
+    ///   the record is still active (deactivation marks "processed"), so bulk
+    ///   saves and re-saves of a stuck approval both work. Self re-entry is
+    ///   detected via ParentContext, not a Depth guard.
     /// </summary>
     public class RealignmentProcessor : PluginBase
     {
@@ -29,8 +33,18 @@ namespace Checkbook.Plugins.Realignments
                 return;
             if (context.MessageName != "Update")
                 return;
-            if (context.Depth > 1)
+
+            // Skip only when this Update is nested inside another
+            // book_realignments Update (our own FinalizeRealignment, or a
+            // future cascade). A blanket Depth > 1 guard is wrong here: bulk
+            // approvals (Excel Online publish, ExecuteMultiple grid edits)
+            // arrive nested inside a wrapper operation and were silently
+            // dropped — the decision value committed but nothing processed.
+            if (IsNestedRealignmentUpdate(context))
+            {
+                tracing.Trace("Nested book_realignments Update (self re-entry) — skipping.");
                 return;
+            }
 
             var target = GetTarget(context);
             var preImage = TryGetPreImage(context);
@@ -52,21 +66,40 @@ namespace Checkbook.Plugins.Realignments
 
 
             // =============================================================
-            // APPROVAL & DENIAL TRANSITION LOGIC (Choice-Based)
+            // APPROVAL & DENIAL DETECTION (Choice-Based, value + active)
             // =============================================================
+            // Every processed realignment is deactivated in
+            // FinalizeRealignment, so an *active* record whose payload carries
+            // a decision value is by definition unprocessed. Pre-image
+            // edge-detection proved fragile: a decision written while the step
+            // was disabled (or the update dropped at depth) sticks, and every
+            // later approval is Approved→Approved — invisible to a transition
+            // check, with no way out short of deny/reactivate/re-approve.
+            // Value + still-active lets any save carrying the value re-drive
+            // the stuck record.
 
-            bool stateApprovedTransition = ApprovalTransitionDetector.DetectOptionSetTransition(
-                target, preImage, RealignmentsAttributes.StateApproved, RealignmentBEDecisionValues.Approved);
-            bool stateDeniedTransition = ApprovalTransitionDetector.DetectOptionSetTransition(
-                target, preImage, RealignmentsAttributes.StateApproved, RealignmentBEDecisionValues.Denied);
+            bool recordActive =
+                (preImage?.GetAttributeValue<OptionSetValue>("statecode")?.Value
+                 ?? StateCodeValues.Active) == StateCodeValues.Active;
 
-            bool beApprovedTransition = ApprovalTransitionDetector.DetectOptionSetTransition(
-                target, preImage, RealignmentsAttributes.BEDecision, RealignmentBEDecisionValues.Approved);
-            bool beDeniedTransition = ApprovalTransitionDetector.DetectOptionSetTransition(
-                target, preImage, RealignmentsAttributes.BEDecision, RealignmentBEDecisionValues.Denied);
+            if (!recordActive)
+            {
+                tracing.Trace("Realignment already inactive (processed) — skipping.");
+                return;
+            }
+
+            bool stateApprovedInPayload = ApprovalTransitionDetector.PayloadHasOptionSetValue(
+                target, RealignmentsAttributes.StateApproved, RealignmentBEDecisionValues.Approved);
+            bool stateDeniedInPayload = ApprovalTransitionDetector.PayloadHasOptionSetValue(
+                target, RealignmentsAttributes.StateApproved, RealignmentBEDecisionValues.Denied);
+
+            bool beApprovedInPayload = ApprovalTransitionDetector.PayloadHasOptionSetValue(
+                target, RealignmentsAttributes.BEDecision, RealignmentBEDecisionValues.Approved);
+            bool beDeniedInPayload = ApprovalTransitionDetector.PayloadHasOptionSetValue(
+                target, RealignmentsAttributes.BEDecision, RealignmentBEDecisionValues.Denied);
 
             // ---- Denial → Immediate deactivation ----
-            if (stateDeniedTransition || beDeniedTransition)
+            if (stateDeniedInPayload || beDeniedInPayload)
             {
                 tracing.Trace("Realignment explicitly denied — auto-deactivating.");
                 FinalizeRealignment(service, tracing, context.PrimaryEntityId);
@@ -77,17 +110,17 @@ namespace Checkbook.Plugins.Realignments
             bool newlyApproved;
             if (sameFundSAG && isPriorPath)
             {
-                newlyApproved = stateApprovedTransition;
+                newlyApproved = stateApprovedInPayload;
             }
             else
             {
-                newlyApproved = beApprovedTransition;
+                newlyApproved = beApprovedInPayload;
             }
 
-            // If no approval transition → user is saving/editing → do nothing
+            // If no approval value in the payload → user is saving/editing → do nothing
             if (!newlyApproved)
             {
-                tracing.Trace("No approval transition — skipping processing.");
+                tracing.Trace("No approval value in payload — skipping processing.");
                 return;
             }
 
@@ -291,6 +324,26 @@ namespace Checkbook.Plugins.Realignments
             service.Update(upd);
 
             tracing.Trace($"RF Credit: TDP increased by {amount:N2} on RF {creditRFRef.Id}.");
+        }
+
+        // True when an ancestor pipeline is itself an Update on
+        // book_realignments — i.e. this Update was issued by our own
+        // processing (FinalizeRealignment) rather than by a user or a bulk
+        // wrapper (ExecuteMultiple/ExecuteTransaction ancestors are fine and
+        // walk through). Same ancestor-walk pattern as
+        // RequirementFundingTDPValidator.IsTriggeredByRealignment.
+        private static bool IsNestedRealignmentUpdate(IPluginExecutionContext context)
+        {
+            var ancestor = context.ParentContext;
+            while (ancestor != null)
+            {
+                if (ancestor.MessageName == "Update" &&
+                    ancestor.PrimaryEntityName == EntityNames.Realignments)
+                    return true;
+
+                ancestor = ancestor.ParentContext;
+            }
+            return false;
         }
 
         private void FinalizeRealignment(IOrganizationService service, ITracingService tracing, Guid id)

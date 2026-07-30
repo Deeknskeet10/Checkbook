@@ -291,14 +291,25 @@ users can't bypass the form by populating fields bottom-up.
 
 ### `Checkbook.Plugins.Realignments.RealignmentProcessor`
 
-Post-op executor that fires on the approval transition. Creates the Ledger
+Post-op executor that fires on approval/denial. Creates the Ledger
 debit/credit pair, applies the RF (and Prio, on Prior→Prior) funding
 movements, recalculates touched LOAs, and deactivates the Realignment.
-Depth-guarded so the deactivation Update at the end doesn't re-enter.
+
+Trigger semantics (hardened Jul 2026 after 4 approvals committed without
+processing): the plugin fires when the Update **payload carries a decision
+value** (`book_bedecision` / `book_newstateapproved` = Approved or Denied)
+**and the pre-image shows the record still active**. Deactivation-on-completion
+is the "already processed" marker, so this is idempotent — a stuck approval
+(value written while the step was disabled) can be re-driven by any save that
+carries the value again, instead of being invisible to a pre-image transition
+check. There is **no Depth guard**: bulk approvals (Excel Online publish,
+ExecuteMultiple grid edits) arrive nested and must still process. Self
+re-entry from the finalize Update is detected by walking `ParentContext` for
+an ancestor `book_realignments` Update.
 
 | # | Message | Primary entity      | Stage           | Mode | Filtering attributes                     | Notes |
 |---|---------|---------------------|-----------------|------|------------------------------------------|-------|
-| 1 | Update  | `book_realignments` | Post-Operation  | Sync | `book_newstateapproved, book_bedecision` | Triggers on approval/denial transitions. **Requires PreImage** (full image — reads many attrs via `GetEffective*` and `TryGetPreImage`). |
+| 1 | Update  | `book_realignments` | Post-Operation  | Sync | `book_newstateapproved, book_bedecision` | Fires when a decision value is in the payload and the record is active. **Requires PreImage** (full image — must include `statecode`; reads many attrs via `GetEffective*` and `TryGetPreImage`). |
 
 ---
 
