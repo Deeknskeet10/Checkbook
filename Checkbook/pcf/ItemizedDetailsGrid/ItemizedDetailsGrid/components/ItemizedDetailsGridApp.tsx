@@ -747,10 +747,10 @@ export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
                           </span> 
                         ) : ""}
                         <span className={styles.firstColMeta}>
-                          Category: {ctx?.category ?? ""}
+                          Cat: {ctx?.category ?? ""}
                         </span>
                         <span className={styles.firstColMeta}>
-                          Quantity Type: {ctx?.quantityType ?? ""}
+                          Qty Type: {ctx?.quantityType ?? ""}
                         </span>
                       </TableCell>
                       <TableCell className={styles.contextCell}>
