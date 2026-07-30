@@ -57,17 +57,18 @@ var FundedAmountLock = (function () {
     var text;
     if (isLocked === true) {
       text =
-        "Funded Amount (TDP) edits are currently LOCKED.\n\n" +
-        "Unlock to allow direct manual edits again?";
+        "Funded Amount reductions are currently LOCKED.\n\n" +
+        "Unlock to allow direct manual reductions again?";
     } else if (isLocked === false) {
       text =
-        "Funded Amount (TDP) edits are currently UNLOCKED.\n\n" +
-        "Lock them so funding can only change through Turn-Ins, " +
-        "Realignments, State Swaps, or the Distribution generator?";
+        "Funded Amount reductions are currently UNLOCKED.\n\n" +
+        "Lock them so funding can only be reduced through Turn-Ins, " +
+        "Realignments, State Swaps, or the Distribution generator? " +
+        "Increases stay allowed either way.";
     } else {
       text =
         "Could not read the current lock state.\n\n" +
-        "Toggle the Funded Amount (TDP) lock anyway?";
+        "Toggle the Funded Amount lock anyway?";
     }
 
     Xrm.Navigation.openConfirmDialog(
@@ -114,9 +115,10 @@ var FundedAmountLock = (function () {
   function showCompleted(primaryControl, isLocked) {
     Xrm.Navigation.openAlertDialog({
       text: isLocked
-        ? "Funded Amount edits are now LOCKED.\n\nUsers must change funding " +
-          "through Turn-Ins, Realignments, State Swaps, or the Distribution generator."
-        : "Funded Amount edits are now UNLOCKED.\n\nDirect manual edits are allowed."
+        ? "Funded Amount reductions are now LOCKED.\n\nUsers can still raise " +
+          "funded amounts, but reductions must come through Turn-Ins, " +
+          "Realignments, State Swaps, or the Distribution generator."
+        : "Funded Amount reductions are now UNLOCKED.\n\nDirect manual edits are allowed."
     }).then(function () {
       if (primaryControl && typeof primaryControl.refresh === "function") {
         primaryControl.refresh();

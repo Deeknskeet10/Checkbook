@@ -1,15 +1,26 @@
-# Funded Amount (TDP) Lock — Maker Portal Setup
+# Funded Amount Lock — Maker Portal Setup
+
+When the lock is on, users cannot manually **reduce** a funded amount —
+increases and unchanged saves always go through. Reductions must come from
+the authorized tools (Turn-Ins, Realignments, State Swaps, the Distribution
+generator) or the roll-up plugins that recompute funded totals. Two fields
+are guarded:
+
+- `book_prioritization.book_newfundedamounttdp` — Funded Amount (TDP)
+- `book_requirementfunding.book_newfundedamount` — Funded Amount
 
 Backend for this feature is in the Checkbook plugin project:
 
 - `Plugins/Helpers/EnvironmentVariableHelper.cs` — added `GetBool(...)` overload
-- `Plugins/Validation/PrioritizationFundedAmountLock.cs` — the guard plugin
+- `Plugins/Validation/FundedAmountLockBase.cs` — shared reduction-lock logic
+- `Plugins/Validation/PrioritizationFundedAmountLock.cs` — Prioritization guard
+- `Plugins/Validation/RequirementFundingFundedAmountLock.cs` — Requirement Funding guard
 - `Plugins/Admin/ToggleFundedAmountLockPlugin.cs` — the toggle Custom API
 - `webresources/book_fundedAmountLock.js` — the command bar button script
 
 This doc lists **every name you need** and the maker-portal steps that are
 not doable from the repo — the environment variable, the Custom API metadata,
-the two plugin step registrations, and the command bar button.
+the guard plugin step registrations, and the command bar button.
 
 ---
 
@@ -31,8 +42,11 @@ the two plugin step registrations, and the command bar button.
 | Custom API AllowedCustomProcessingStepType | **None** (server enforces role internally) |
 | Custom API plugin type | `Checkbook.Plugins.Admin.ToggleFundedAmountLockPlugin` |
 | Custom API output param | `IsLocked` (Boolean) |
-| Guard plugin type | `Checkbook.Plugins.Validation.PrioritizationFundedAmountLock` |
-| Locked field | `book_newfundedamounttdp` on `book_prioritization` |
+| Guard plugin type (Prioritization) | `Checkbook.Plugins.Validation.PrioritizationFundedAmountLock` |
+| Locked field (Prioritization) | `book_newfundedamounttdp` on `book_prioritization` |
+| Guard plugin type (Requirement Funding) | `Checkbook.Plugins.Validation.RequirementFundingFundedAmountLock` |
+| Locked field (Requirement Funding) | `book_newfundedamount` on `book_requirementfunding` |
+| Lock behavior | Reductions blocked; increases and no-op saves allowed |
 | Authorized role for toggle | `Book - Checkbook Administrator` |
 | Command web resource | `book_fundedAmountLock` (source: `webresources/book_fundedAmountLock.js`) |
 | Command function | `FundedAmountLock.run` |
@@ -53,10 +67,14 @@ with) → New → More → **Environment variable**.
 
 Description (paste verbatim — no apostrophes per the `no-apostrophes-in-solution-xml` memory):
 
-> When Yes, blocks direct edits to Prioritization Funded Amount (TDP). Users
-> must change funding through Turn-Ins, Realignments, State Swaps, or the
+> When Yes, blocks direct reductions of Prioritization Funded Amount (TDP)
+> and Requirement Funding Funded Amount. Increases are always allowed;
+> reductions must come through Turn-Ins, Realignments, State Swaps, or the
 > Distribution generator. Toggle from the Admin Center via the Lock/Unlock
 > Funding command bar button.
+
+If the variable already exists from the first rollout, just update its
+description — the schema name and type are unchanged.
 
 ---
 
@@ -64,11 +82,17 @@ Description (paste verbatim — no apostrophes per the `no-apostrophes-in-soluti
 
 Register `Plugins/bin/Debug/net462/Checkbook_Plugins.dll` (or Release, per your
 usual workflow) with the Plugin Registration Tool if this is a fresh assembly.
-If the assembly is already registered, just update it — both new types will
+If the assembly is already registered, just update it — the new types will
 appear once you re-select the assembly:
 
 - `Checkbook.Plugins.Validation.PrioritizationFundedAmountLock`
+- `Checkbook.Plugins.Validation.RequirementFundingFundedAmountLock`
 - `Checkbook.Plugins.Admin.ToggleFundedAmountLockPlugin`
+
+(`FundedAmountLockBase` is abstract and never appears as a registrable type.)
+The Prioritization guard keeps its original type name, so an environment with
+the first rollout only needs the assembly **updated** — its existing step and
+pre-image stay valid; the reduction-only behavior ships with the DLL.
 
 ---
 
@@ -109,10 +133,11 @@ values as above.
 
 ---
 
-## 5. Plugin step — register the guard
+## 5. Plugin steps — register the guards
 
 In the Plugin Registration Tool, on the assembly, right-click the
-`PrioritizationFundedAmountLock` type → **Register New Step**:
+`PrioritizationFundedAmountLock` type → **Register New Step** (skip if the
+step already exists from the first rollout):
 
 | Field | Value |
 |---|---|
@@ -132,6 +157,28 @@ Then on the new step → **Register New Image**:
 | Name | `PreImage` |
 | Entity Alias | `PreImage` |
 | Attributes | `book_newfundedamounttdp` |
+
+Repeat for the `RequirementFundingFundedAmountLock` type → **Register New
+Step**:
+
+| Field | Value |
+|---|---|
+| Message | `Update` |
+| Primary Entity | `book_requirementfunding` |
+| Filtering Attributes | `book_newfundedamount` |
+| Event Pipeline Stage | **Pre-Operation** |
+| Execution Mode | Synchronous |
+| Execution Order (Rank) | `10` (run before `RequirementFundingTDPValidator`) |
+| Deployment | Server |
+
+Then on the new step → **Register New Image**:
+
+| Field | Value |
+|---|---|
+| Image Type | Pre-Image |
+| Name | `PreImage` |
+| Entity Alias | `PreImage` |
+| Attributes | `book_newfundedamount` |
 
 ---
 
@@ -166,7 +213,7 @@ bar** on the **Prioritization** table → **Main grid** → **New command**:
 |---|---|
 | Label | `Funding Lock` |
 | Icon | `LockSolid` (static — pick from the icon library) |
-| Tooltip | `Lock or unlock direct edits to Funded Amount (TDP)` |
+| Tooltip | `Lock or unlock direct reductions of Funded Amount` |
 | Action | **Run JavaScript** |
 | Library | `book_fundedAmountLock` |
 | Function name | `FundedAmountLock.run` |
@@ -184,20 +231,30 @@ API's `IsLocked` response and refreshes the grid.
 
 ## 7. Smoke test
 
-1. Toggle is OFF by default → open a Prioritization, change Funded Amount
+1. Toggle is OFF by default → open a Prioritization, lower Funded Amount
    (TDP) directly, save. Should succeed.
 2. In the Admin Center, press **Funding Lock**. Confirm dialog should read
    "currently UNLOCKED" → confirm → alert: "…now LOCKED…".
 3. Repeat step 1 → save should fail with the guard's message
-   ("Funded Amount (TDP) can only be changed through Turn-Ins…").
-4. Run a Turn-In / Realignment / State Swap approval that changes Funded
-   Amount. Should succeed (ancestor-walk detects the authorized parent).
-5. Run `book_GenerateDistributions` (or trigger a distribution). Should
+   ("Funded Amount (TDP) cannot be reduced directly…").
+4. Still locked: **raise** Funded Amount (TDP) and save. Should succeed —
+   only reductions are blocked. Saving the form without touching the field
+   should also succeed.
+5. Still locked: open a Requirement Funding record, lower Funded Amount,
+   save. Should fail with the same style of message. Raising it should
    succeed.
-6. Press **Funding Lock** again — confirm dialog should now read "currently
+6. Run a Turn-In / Realignment / State Swap approval that lowers Funded
+   Amount. Should succeed (ancestor-walk detects the authorized parent).
+7. Run `book_GenerateDistributions` (or trigger a distribution). Should
+   succeed.
+8. Still locked: delete a Prioritization Funding row or an Itemized Details
+   row under a Prioritization, and delete an RD funding row under an RF.
+   The roll-ups should lower the parent funded amounts without being blocked
+   (roll-up source entities are authorized ancestors).
+9. Press **Funding Lock** again — confirm dialog should now read "currently
    LOCKED" → confirm → back to step 1 behavior.
-7. As a non-admin, try to press the button. Custom API rejects with
-   "You must have the 'Book - Checkbook Administrator' role…".
+10. As a non-admin, try to press the button. Custom API rejects with
+    "You must have the 'Book - Checkbook Administrator' role…".
 
 ---
 
@@ -206,20 +263,31 @@ API's `IsLocked` response and refreshes the grid.
 - **Team-derived admin role** — the toggle uses `UserRoleHelper.HasAnyRole`
   which already unions direct + team-inherited role assignments (per the
   `pcf-role-query-team-derived` memory). No extra setup.
-- **Quick create form** — the field is still enabled on the Prioritization
-  quick create form (audit noted this). When the lock is on, quick-create
-  saves that set the field will hit the guard's error. Consider disabling
-  the field on the quick form too if you want a cleaner UX. Belt-and-
-  suspenders only — not required for correctness.
+- **Reductions only** — the guards never block increases or unchanged saves,
+  so form save-all payloads and quick-create saves that merely include the
+  field pass through. Only a value strictly lower than the stored value is
+  checked. Clearing the field counts as reducing it to 0.
+- **Create is not guarded** — a brand-new record has no stored value to
+  reduce, so Create passes. The guards register on Update only.
+- **Roll-ups stay live under the lock** — deleting or editing a
+  Prioritization Funding row, an Itemized Details row, an RD funding row, or
+  a Prioritization itself will still lower the parent roll-up totals. The
+  guards authorize those writes by their ancestor entity
+  (`book_prioritizationfunding` / `book_itemizeddetails` for the Prio guard;
+  `book_prioritization` / `book_requirementdetailfunding` for the RF guard).
+  If a new roll-up writer is ever added, add its trigger entity to the
+  matching guard's `IsAuthorizedAncestor` override.
 - **Bulk edit** — model-driven bulk edit sends per-record Updates without a
-  `ParentContext`. Under the lock they will fail one-by-one with the guard
-  message. Intended behavior.
-- **Excel / Dataflow imports** — same as bulk edit: no parent context, will
-  be blocked when the lock is on. If you need a one-shot import while the
-  lock is on, flip it off, run the import, flip it back on.
-- **`book_GenerateDistributions` message name** — the guard's ancestor walk
-  checks for that exact string. If you ever rename the Custom API, update
-  `PrioritizationFundedAmountLock.IsInsideAuthorizedOperation`.
+  `ParentContext`. Under the lock, rows whose new value is lower will fail
+  one-by-one with the guard message. Intended behavior.
+- **Excel / Dataflow imports** — same as bulk edit: no parent context, so
+  reductions will be blocked when the lock is on. If you need a one-shot
+  corrective import while the lock is on, flip it off, run the import, flip
+  it back on.
+- **`book_GenerateDistributions` message name** — the ancestor walk checks
+  for that exact string. If you ever rename the Custom API, update
+  `FundedAmountLockBase.IsAuthorizedAncestor`.
 - **No manual float-twin handling** — the float `book_fundedamounttdp` was
-  deleted in the maker portal, so the guard filters only the decimal
-  `book_newfundedamounttdp`.
+  deleted in the maker portal, so the Prio guard filters only the decimal
+  `book_newfundedamounttdp`; the RF guard likewise filters only
+  `book_newfundedamount`.

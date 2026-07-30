@@ -10,9 +10,10 @@ namespace Checkbook.Plugins.Admin
     ///
     /// Flips the <c>book_LockManualFundedEdits</c> environment variable value
     /// record. When it's on, <see cref="Validation.PrioritizationFundedAmountLock"/>
-    /// blocks direct edits to Prioritization Funded Amount (TDP); when it's
-    /// off, direct edits are allowed. Backs the "Lock Funding" / "Unlock
-    /// Funding" command bar button in the Admin Center MDA.
+    /// and <see cref="Validation.RequirementFundingFundedAmountLock"/> block
+    /// direct reductions of the funded amount fields (increases stay allowed);
+    /// when it's off, direct edits are unrestricted. Backs the "Lock Funding" /
+    /// "Unlock Funding" command bar button in the Admin Center MDA.
     ///
     /// Only users holding <see cref="RoleNames.CheckbookAdministrator"/>
     /// (directly or via a team) may execute this API — enforced here rather
