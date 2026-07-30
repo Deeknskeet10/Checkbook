@@ -114,6 +114,8 @@ interface ItemRow {
   id: string;
   prioritizationId: string;
   label: string;
+  /** "TDC · LIN · Country" of the linked Requirement Detail; absent codes omitted. */
+  codes: string;
   requested: number;
   validated: number;
   funded: number;
@@ -286,6 +288,12 @@ const useStyles = makeStyles({
   itemsTd: {
     ...shorthands.padding("6px", "12px", "6px", "28px"),
     borderTop: `1px solid ${tokens.colorNeutralStroke2}`,
+  },
+  itemCodes: {
+    marginLeft: "8px",
+    color: tokens.colorNeutralForeground3,
+    fontSize: tokens.fontSizeBase100,
+    whiteSpace: "nowrap",
   },
   rowActions: {
     display: "flex",
@@ -642,7 +650,7 @@ export const PrioritizationFundingGridApp: React.FC<PrioritizationFundingGridPro
     const options =
       "?$select=_book_prioritization_value,_book_requirementitem_value," +
       `book_requestedamount,${ITEM_VALIDATED},${ITEM_FUNDED},${ITEM_NPM_COMMENT}` +
-      "&$expand=book_RequirementItem($select=_book_item_value)" +
+      "&$expand=book_RequirementItem($select=_book_item_value,_book_tdc_value,_book_lin_value,_book_country_value)" +
       `&$filter=(${filter})`;
 
     void (async () => {
@@ -658,6 +666,13 @@ export const PrioritizationFundingGridApp: React.FC<PrioritizationFundingGridPro
             | undefined;
           const itemName =
             (rd?.[`_book_item_value${FV}`] as string | undefined) ?? null;
+          const codes = [
+            rd?.[`_book_tdc_value${FV}`],
+            rd?.[`_book_lin_value${FV}`],
+            rd?.[`_book_country_value${FV}`],
+          ]
+            .filter((v): v is string => typeof v === "string" && v.trim() !== "")
+            .join(" · ");
           return {
           id: e.book_itemizeddetailsid as string,
           prioritizationId: ((e._book_prioritization_value as string) ?? "")
@@ -667,6 +682,7 @@ export const PrioritizationFundingGridApp: React.FC<PrioritizationFundingGridPro
             itemName ??
             (e[`_book_requirementitem_value${FV}`] as string | undefined) ??
             "(unnamed line item)",
+          codes,
           requested: num(e.book_requestedamount),
           validated: num(e[ITEM_VALIDATED]),
           funded: num(e[ITEM_FUNDED]),
@@ -1628,7 +1644,12 @@ export const PrioritizationFundingGridApp: React.FC<PrioritizationFundingGridPro
                               <tbody>
                                 {items.map((it) => (
                                   <tr key={it.id}>
-                                    <td className={styles.itemsTd}>{it.label}</td>
+                                    <td className={styles.itemsTd}>
+                                      {it.label}
+                                      {it.codes && (
+                                        <span className={styles.itemCodes}>{it.codes}</span>
+                                      )}
+                                    </td>
                                     <td className={`${styles.itemsTd} ${styles.tdNum}`}>
                                       {formatCurrency(it.requested)}
                                     </td>
