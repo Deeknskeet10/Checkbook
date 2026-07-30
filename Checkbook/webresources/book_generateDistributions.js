@@ -94,10 +94,13 @@ var DistributionGenerator = (function () {
         text:
           "Generate Distributions for " + fundingTypeLabel + " (" + fyLabel + ")?\n\n" +
           "This will:\n" +
-          "  • Deactivate active Distributions not yet entered into GFEBS.\n" +
-          "  • Create debit/credit Distribution pairs to reach the target funded amount.\n" +
-          "  • Create overage Turn-Ins where existing credits exceed the target " +
+          "  • Update pending (not yet entered into GFEBS) Distribution amounts in place.\n" +
+          "  • Create debit/credit Distribution pairs where none are pending.\n" +
+          "  • Deactivate pending Distributions that are no longer needed.\n" +
+          "  • Create overage Turn-Ins where committed credits exceed the target " +
           "(unless an open Turn-In already exists for that bucket).\n\n" +
+          "Distributions already entered into GFEBS, manual entries, and Turn-In / " +
+          "State Swap distributions are never modified.\n\n" +
           "The job runs in passes of up to ~2 minutes each. Leave the window " +
           "open until you see the completion dialog."
       },
@@ -113,7 +116,7 @@ var DistributionGenerator = (function () {
   // Custom API previously used ContinuationToken but that name is locked out
   // of the org by an orphaned Boolean-typed sdkmessageresponsefield.)
   function execute(primaryControl, fundingType, fiscalYear) {
-    var totals = { Deactivated: 0, Created: 0, TurnInsCreated: 0, Skipped: 0 };
+    var totals = { Deactivated: 0, Created: 0, Updated: 0, TurnInsCreated: 0, Skipped: 0 };
     var passes = 0;
     showProgress(passes, totals);
 
@@ -128,6 +131,7 @@ var DistributionGenerator = (function () {
         .then(function (body) {
           totals.Deactivated    += body.Deactivated    || 0;
           totals.Created        += body.Created        || 0;
+          totals.Updated        += body.Updated        || 0;
           totals.TurnInsCreated += body.TurnInsCreated || 0;
           totals.Skipped        += body.Skipped        || 0;
           passes++;
@@ -161,8 +165,9 @@ var DistributionGenerator = (function () {
     // so collapse the counters onto one line with separators.
     Xrm.Utility.showProgressIndicator(
       "Generating Distributions (pass " + (passes + 1) + ")  •  " +
-      "Deactivated " + totals.Deactivated + "  •  " +
       "Created " + totals.Created + "  •  " +
+      "Updated " + totals.Updated + "  •  " +
+      "Deactivated " + totals.Deactivated + "  •  " +
       "Turn-Ins " + totals.TurnInsCreated + "  •  " +
       "Skipped " + totals.Skipped
     );
@@ -209,8 +214,9 @@ var DistributionGenerator = (function () {
     Xrm.Navigation.openAlertDialog({
       text:
         "Distribution generation complete (" + passes + " pass" + (passes === 1 ? "" : "es") + ").\n\n" +
-        "Deactivated: " + totals.Deactivated + "\n" +
         "Created (debits + credits): " + totals.Created + "\n" +
+        "Updated (pending rows amended): " + totals.Updated + "\n" +
+        "Deactivated (no longer needed): " + totals.Deactivated + "\n" +
         "Turn-Ins created: " + totals.TurnInsCreated + "\n" +
         "Skipped (no FundingDetails): " + totals.Skipped
     }).then(function () {

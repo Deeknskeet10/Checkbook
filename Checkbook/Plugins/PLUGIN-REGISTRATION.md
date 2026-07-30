@@ -85,6 +85,7 @@ Required in the maker portal before enabling the State Swap steps:
 | `book_stateswap` table (new) | Full attribute list in the schema doc §1. |
 | `book_swapitem` table (new) | Full attribute list §2. Configure the 1:N from `book_stateswap` with **Share cascade = Cascade All** (§4) so item sharing follows the parent. |
 | `book_ledger` (existing) | Add lookup `book_stateswap` → `book_stateswap` (peer of `book_turnin`, `book_realignment`). |
+| `book_distributions` (existing) | Add lookup `book_stateswap` → `book_stateswap` (peer of `book_turnin`). Written by `SwapDistributionCreator` on BE approval; the swap-related Distribution views filter on it, and the `book_GenerateDistributions` reconcile treats swap-linked rows as immutable. |
 | `book_ledgertype` option set (existing) | Relabel value `2` from **Add** to **Swap** (values stay Realignment=0, Turn-in=1, Swap=2, Cut=3). This corrects a pre-existing constants bug — `LedgerTypeValues` in this build now uses 0/1/2. Historical ledger rows previously written with `book_ledgertype = 100000001` / `100000002` should be backfilled to `0` / `1` if reporting on ledger type matters. |
 | Owner teams per state | Names `{StateAbbr} - State Approver` and `{StateAbbr} - State Administrator` (e.g. `AL - State Approver`). One pair per state. `SwapAutoSharePlugin` looks them up by name and shares each swap with both teams. Missing teams are logged and skipped, not fatal. |
 | Role privileges | Grant User-level Create/Read/Write/Delete/Append/AppendTo/Share on `book_stateswap` + `book_swapitem` to `Book - State Approver` and `Book - State Administrator`; Org-level Read to `Book - Budget Executor` and `Book - Read Only`; Org-level everything to `Book - Checkbook Administrator`. See schema doc §5.1. |
@@ -739,8 +740,22 @@ re-entry is detected via `ParentContext`). Resolves each item's debit/credit
 LOA + parent RF via `SwapLOAResolver`, writes ledger pairs (skipping
 same-LOA net-zero items), recalcs touched LOA TDPs, applies net Prio
 `FundedAmount` and parent RF `TDP` deltas via `SwapPrioritizationUpdater`,
-recalcs LOA TDPs again as a catch-all, and deactivates the swap (statecode
+recalcs LOA TDPs again as a catch-all, creates AFP/Allotment Distributions
+via `SwapDistributionCreator`, and deactivates the swap (statecode
 Inactive, statuscode 2 = BE Approved).
+
+**Swap Distributions** (added Jul 2026): a swap is modeled as both states
+performing a turn-in to A18, with A18 then distributing the agreed amounts
+back out. Items are grouped by (giving state FC, receiving state FC, Fund,
+PG) — state-level FCs resolved by walking each Prio's FC up to the child of
+the holding FC — and each group emits, per funding type with an active
+Funding Event, TWO debit/credit pairs: giving state → A18 ("State Swap
+Turn-In") and A18 → receiving state ("State Swap Distribution"), amount =
+Σ TDP × FundingDetails percentage. All rows carry the `book_stateswap`
+lookup (the swap-related Distribution views key off it) and are treated as
+immutable by the `book_GenerateDistributions` reconcile. Prerequisites: the
+`book_stateswap` lookup on `book_distributions` (maker portal) and the
+`book_DistributionHoldingFundCenter` env var.
 
 When a credit pushes a Prio's `FundedAmount` above its `RequestedAmount`,
 `SwapPrioritizationUpdater` raises `RequestedAmount` to match **in the same
@@ -847,11 +862,16 @@ output); FY27+ `{Name}-{FundedProgram}`.
 
 ### `Checkbook.Plugins.Distributions.GenerateDistributionsPlugin`
 
-Custom API handler `book_GenerateDistributions`. Phase 1 deactivates stale
-Distributions; Phases 2 + 3 reconcile Prio + Requirement buckets against
-their target `funded × pct` and create debit/credit pairs (or overage
-Sweep Turn-Ins). Wired via the Custom API's **Plugin Type** field — no
-separate Step registration required beyond that.
+Custom API handler `book_GenerateDistributions`. Amend-in-place reconcile
+(reworked Jul 2026 — the deactivate-all-and-recreate Phase 1 is retired):
+Phases 2 + 3 reconcile Prio + Requirement buckets against their target
+`funded × pct`, updating each destination's PENDING credit (no entry
+document number) in place, creating it when missing, and deactivating it
+when no longer needed; Phase 4 cleans up pending rows whose bucket vanished
+and re-syncs the consolidated holding-FC debits. GFEBS-entered, manual, and
+Turn-In / State Swap–linked rows are never modified. Overage Sweep Turn-In
+machinery is unchanged. Wired via the Custom API's **Plugin Type** field —
+no separate Step registration required beyond that.
 
 **Runs Sync** (Allowed custom processing step type: Sync only). The plugin
 self-budgets to ~105s of the 120s sandbox ceiling and returns a `NextToken`

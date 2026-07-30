@@ -25,6 +25,9 @@ namespace Checkbook.Plugins.StateSwaps
     ///   4. Recalc LOA TDP for every LOA that got a ledger row
     ///   5. Apply Prio.FundedAmount + parent RF.TDP deltas (aggregated per Prio / RF)
     ///   6. Recalc LOA TDP again as a catch-all (mirrors Realignment)
+    ///      then create AFP/Allotment Distributions (SwapDistributionCreator:
+    ///      per direction, giving state → A18 pair + A18 → receiving state pair,
+    ///      all linked to the swap via book_stateswap)
     ///   7. Deactivate the swap (statecode Inactive, statuscode 2 = BE Approved)
     ///
     /// Validation (role gating, balance, overdraw) is owned by SwapValidator
@@ -137,6 +140,11 @@ namespace Checkbook.Plugins.StateSwaps
             // ---- 6. Recalc LOA TDP once more (catch-all, matches Realignment) ----
             foreach (var loaId in touchedLOAs)
                 TDPCalculationHelper.RecalculateLOATDP(service, loaId, tracing);
+
+            // ---- 6b. AFP/Allotment Distributions (state → A18 → state) ----
+            // Linked to the swap via book_stateswap; the swap-related
+            // Distribution views and GFEBS entry work off these rows.
+            SwapDistributionCreator.CreateDistributions(service, tracing, swapId, items);
 
             // ---- 7. Deactivate ----
             // statuscode 2 = BE Approved (mapped Inactive in the schema).

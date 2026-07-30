@@ -38,8 +38,9 @@ Replaces (deactivate, don't delete):
    - Response properties:
      | Name | Type | Notes |
      |---|---|---|
-     | `Deactivated`       | Integer | Per-invocation count (caller sums across passes). |
+     | `Deactivated`       | Integer | Pending sweep rows deactivated (no longer needed / duplicate / orphaned). Per-invocation count (caller sums across passes). |
      | `Created`           | Integer | Per-invocation count. |
+     | `Updated`           | Integer | Pending sweep rows amended in place (amount / FE retag / re-pairing). Per-invocation count. **Added Jul 2026** — create this response property when deploying the amend-in-place build. |
      | `TurnInsCreated`    | Integer | Per-invocation count. |
      | `Skipped`           | Integer | Per-invocation count. |
      | `NextToken`         | String  | Empty → done. Non-empty → call again with this value as input. |
@@ -71,46 +72,76 @@ output parameters and break the loop.
 
 ## What the plugin does
 
-1. **Phase 1** — Deactivate every active `book_distributions` row where
-   `book_newenteredintogfebs = "No"`. Batched per 500-row page into one
-   `ExecuteMultipleRequest`. Skipped on resume (when the input
-   `ContinuationToken` indicates we're already past Phase 1).
-2. **Resolve active Funding Events** — Filtered by `FundingType` input if supplied,
+**Amend-in-place model (Jul 2026 rework).** The original design deactivated
+every pending (`book_newenteredintogfebs = "No"`) row up front and recreated
+reconcile rows from scratch — destroying pending Turn-In / State Swap / manual
+rows and churning row GUIDs for the GFEBS clerks working the queue. The
+reworked plugin instead classifies every active row in a (Fund, PG) group:
+
+- **Immutable** — already entered into GFEBS (`book_entrydocumentnumber`
+  set), manual entries (`book_manualentry`), Turn-In or State Swap–linked
+  rows (`book_turnin` / `book_stateswap`), and credits whose paired debit is
+  already entered. Counted toward each FC's committed net; never modified.
+- **Pending sweep rows** — everything else (no entry document number, not
+  manual, not linked). Owned by the reconcile: amounts are updated in place,
+  rows are created when missing and deactivated when no longer needed.
+
+Phases:
+
+1. **Resolve active Funding Events** — Filtered by `FundingType` input if supplied,
    else both. An event qualifies when `book_startdate ≤ today ≤ book_enddate` AND
    `statecode = 0`. Phases 2 + 3 run once per matching event. Re-resolved each
    invocation so list changes between passes don't break resumption (the cursor
    stores the FE Guid, not its index).
-3. **Phase 2 — Prioritizations** — FetchXML aggregate of active non-national
-   Prioritizations with `book_newfundedamounttdp > 0`, grouped by
-   `(parent_fc, state, PG, fund, FY)`. FY filter (when `FiscalYear` input is set)
-   constrains on `book_fund.book_fiscalyear`. Per bucket:
+2. **Phase 2 — Prioritizations** — FetchXML aggregate of active
+   Prioritizations with `book_newfundedamounttdp > 0`, collapsed by
+   destination `(fund, state-level FC, PG, FY)` (FC = the Prio's FC walked up
+   the parent chain to the child of the holding FC). FY filter (when
+   `FiscalYear` input is set) constrains on `book_fund.book_fiscalyear`.
+   Per destination:
    - target = `Σ funded × book_fundingdetails.book_distributionpercentage / 100`,
      where the FundingDetails row is keyed by `(FundingEvent, PG, Fund)`.
-   - existing = `Σ active credit distros` for `(Fund, parent_fc, PG)`.
-   - shortfall → create debit/credit pair (debit FC = holding FC, credit FC = parent FC).
-   - overage AND no open Turn-In → create overage Turn-In on the parent FC.
-4. **Phase 3 — Requirements** — Same reconciliation against BE-approved
-   Requirements (`book_approvalstatus = 7`) of types TARC (1) + ARNGExternal (4),
-   or national State-type (`book_national = 1 AND book_type = 0`). FC resolved
-   as parent-or-self via `parent ∈ {holding_fc, null} → self`. Same FY filter
-   applies.
+   - delta = target − committed immutable net (credits − debits) at the FC.
+   - delta > 0 → the FC's pending credit is amended to carry exactly delta
+     (created if missing; duplicate pending credits deactivated).
+   - delta < 0 → pending credit deactivated; overage flows to the per-FC
+     Sweep Turn-In (AFP / Allotment columns tracked independently).
+   - delta = 0 → pending credit deactivated; Sweep Turn-In per-type amount zeroed.
+   After the destinations, the ONE pending debit at the holding FC is synced
+   to Σ of all live pending credits in the (Fund, PG) group (created /
+   amended / deactivated accordingly); credits point at it via
+   `book_debiteddistribution`.
+3. **Phase 3 — Requirements** — Same reconciliation against BE-approved
+   Requirements (`book_approvalstatus = 7`) of types TARC (1) + ARNGExternal (4)
+   that have no active Prioritizations. Same FC walk and FY filter apply.
+4. **Phase 4 — Orphan cleanup** — Pending sweep credits whose
+   `(Fund, FC, PG)` matches no current bucket (funded dropped to zero, FC
+   re-parented, FY filtered out) are deactivated, and every pending
+   holding-FC debit is re-synced to the sum of its surviving credits
+   (deactivated when none remain). A pending credit paired to an already
+   GFEBS-entered debit is left alone. Honors the `FundingType` and
+   `FiscalYear` input filters so an AFP-only run never touches Allotment rows.
 
 ## Continuation & time budget
 
 The plugin tracks a `Stopwatch` with a 105-second wall-clock budget (below the
 120 s sandbox kill). Between buckets it checks the budget; if exceeded it
-returns a `ContinuationToken` of the form `phase=<2|3>;fe=<guid>;idx=<n>` and
-stops. The caller pumps the API in a loop, passing the previous token in until
-the response token is empty.
+returns a `NextToken` of the form `phase=<2|3>;fe=<guid>;idx=<n>` (or `phase=4`
+for the cleanup phase) and stops. The caller pumps the API in a loop, passing
+the previous token in until the response token is empty. Legacy `phase=1`
+tokens (from the retired deactivation sweep) parse as a fresh start.
 
-- Output counters (`Deactivated`, `Created`, `TurnInsCreated`, `Skipped`) are
-  **per-invocation**, not cumulative — the JS caller sums them across passes.
+- Output counters (`Deactivated`, `Created`, `Updated`, `TurnInsCreated`,
+  `Skipped`) are **per-invocation**, not cumulative — the JS caller sums them
+  across passes.
 - Bucket processing is idempotent (re-running an already-balanced bucket
-  creates no new rows: target ≤ existing → no new pair; open Turn-In already
-  exists → no new Turn-In). The cursor's bucket index is best-effort — if
-  aggregate row order shifts between invocations, a re-pass may re-process a
-  few buckets or miss a few; missed buckets get picked up on the next full
-  button press.
+  changes nothing: the pending credit already carries delta → no update; open
+  Turn-In already carries the overage → no update), and steady-state runs
+  keep pending row GUIDs stable. The cursor's bucket index is best-effort —
+  if aggregate row order shifts between invocations, a re-pass may re-process
+  a few buckets (harmless, idempotent) or miss a few; missed buckets get
+  picked up on the next full button press. Phase 4 restarts from scratch on
+  resume — its queries exclude already-deactivated rows.
 
 ## Open Turn-In definition
 
@@ -125,25 +156,42 @@ exists, the plugin skips Turn-In creation for that bucket (avoids duplicates).
 - No matching FundingDetails for `(event, PG, fund)` → bucket counted in
   `Skipped`, trace explains why.
 - No active Funding Event(s) for the requested FundingType → Phases 2 + 3 are
-  skipped, but Phase 1 still runs.
+  skipped, but Phase 4 (orphan cleanup) still runs — it only deactivates
+  pending rows whose bucket vanished, so rows waiting on an expired Funding
+  Event survive as long as their bucket still exists.
 
 ## Smoke test sequence
 
-1. Set `book_DistributionHoldingFundCenter` to the A18 record's GUID.
-2. Mark one existing active Distribution `book_newenteredintogfebs = "No"`.
-3. Invoke `book_GenerateDistributions` (no params):
-   - That Distribution should now be `statecode = 1`.
-   - `Deactivated ≥ 1`.
+1. Set `book_DistributionHoldingFundCenter` to the A18 record's GUID and add
+   the `Updated` response property to the Custom API (see table above).
+2. Invoke `book_GenerateDistributions` (no params) on a quiet environment:
    - For a known bucket missing its credits, expect a fresh debit/credit pair.
-4. Re-invoke immediately → `Created = 0` (idempotent: target now equals existing).
-5. Increase a Prioritization's funded TDP, re-invoke → expect a top-up pair.
-6. Decrease it below the existing credits, re-invoke → expect an overage Turn-In
-   (only if none is open for the bucket).
-7. Invoke with `FundingType = 1` → confirm only the Allotment Funding Event
-   contributes (AFP event ignored, even if active).
-8. Invoke with `FiscalYear = <FY26 option value>` → confirm only FY26 buckets
+3. Re-invoke immediately → `Created = 0`, `Updated = 0`, `Deactivated = 0`
+   (idempotent), and the pending rows keep the SAME record ids (note a credit's
+   GUID before/after).
+4. Increase a Prioritization's funded TDP, re-invoke → the existing pending
+   credit's **amount changes in place** (`Updated ≥ 2` — credit + debit
+   re-sync); no new row.
+5. Set `book_entrydocumentnumber` on that credit (and its debit), re-invoke →
+   both rows untouched; a further funded-TDP increase now produces a NEW
+   pending pair for the delta only.
+6. Decrease funded TDP below the committed credits, re-invoke → pending credit
+   deactivated and/or an overage Turn-In appears (only if none is open for the
+   bucket).
+7. Zero out a bucket entirely (funded TDP → 0), re-invoke → its pending credit
+   is deactivated by Phase 4 and the holding-FC debit shrinks (or deactivates
+   when it was the last credit).
+8. Approve a Turn-In, then re-invoke → the Turn-In's pending Distributions
+   survive untouched (the retired Phase 1 used to deactivate them).
+9. BE-approve a 2-leg State Swap (A→B and B→A) → per funding type with an
+   active event, 8 swap-linked rows appear (2 pairs per direction through
+   A18); re-invoke the API → they are treated as committed (no churn).
+10. Invoke with `FundingType = 1` → confirm only the Allotment Funding Event
+   contributes (AFP event ignored, even if active) and Phase 4 leaves AFP
+   pending rows alone.
+11. Invoke with `FiscalYear = <FY26 option value>` → confirm only FY26 buckets
    are touched; bucket counts in the trace drop accordingly.
-9. With a workload large enough to exceed ~105 s in one pass, invoke from the
+12. With a workload large enough to exceed ~105 s in one pass, invoke from the
    command-bar button → the JS loop should pump 2+ passes, the progress
    indicator should tick `pass 1, 2, …`, and the completion dialog should
    report the summed counters across passes.

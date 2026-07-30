@@ -28,7 +28,9 @@ namespace Checkbook.Plugins.Distributions.Helpers
 
     public sealed class BucketResult
     {
-        public int DistributionsCreated;  // counts pairs as 2 (debit + credit)
+        public int DistributionsCreated;      // rows created (each debit / credit counts 1)
+        public int DistributionsUpdated;      // pending sweep rows amended in place
+        public int DistributionsDeactivated;  // pending sweep rows no longer needed
         public int TurnInsCreated;
         public int TurnInsUpdated;
         public int TurnInsDeactivated;
@@ -39,20 +41,32 @@ namespace Checkbook.Plugins.Distributions.Helpers
     /// Processes a group of buckets that all share the same (Fund, PG). Each bucket in
     /// the group represents one destination FC's slice of the group's funding.
     ///
-    /// For each destination, compares its <c>target</c> (TotalFunding × pct / 100)
-    /// against the sum of existing TYPE-FILTERED credit Distributions at (Fund, dest FC, PG):
-    ///   • target &gt; existing → shortfall; this destination gets a credit.
-    ///                          Any lingering per-type overage on its open Sweep Turn-In
-    ///                          is cleared.
-    ///   • target &lt; existing → overage; per-destination Sweep Turn-In carries the
-    ///                          per-type amount (one record per (Fund, FC, PG), both
-    ///                          AFP and Allotment columns tracked independently).
-    ///   • target == existing → if a Sweep Turn-In's per-type amount is non-zero, zero
-    ///                          it out; deactivate if both type amounts hit 0.
+    /// Amend-in-place model: rows are split into
+    ///   • IMMUTABLE — already entered into GFEBS (book_entrydocumentnumber set),
+    ///     manual entries, Turn-In / State Swap–linked rows, credits whose paired
+    ///     debit is already entered (preserves entered pairings), and any stray
+    ///     amendable-looking debit not at the holding FC. These count toward each
+    ///     FC's committed net and are never touched.
+    ///   • SWEEP-OWNED AMENDABLE — pending reconcile rows (no entry document
+    ///     number, not manual, not linked). The sweep updates their amounts in
+    ///     place, creates them when missing, and deactivates them when no longer
+    ///     needed — keeping row GUIDs stable for GFEBS clerks working the queue.
     ///
-    /// All shortfalls in the group are consolidated into ONE debit at the holding FC
-    /// carrying the sum, and one credit per shortfall destination pointing at that
-    /// shared debit via <c>book_debiteddistribution</c>.
+    /// For each destination: <c>delta = target − immutableNet</c> where
+    /// target = TotalFunding × pct / 100:
+    ///   • delta &gt; 0 → the destination's pending credit is amended/created to
+    ///                  carry exactly delta. Any lingering per-type overage on its
+    ///                  open Sweep Turn-In is cleared.
+    ///   • delta &lt; 0 → pending credit(s) deactivated; the overage flows through
+    ///                  the per-destination Sweep Turn-In (one record per
+    ///                  (Fund, FC, PG), AFP and Allotment tracked independently).
+    ///   • delta == 0 → pending credit(s) deactivated; a non-zero Sweep Turn-In
+    ///                  per-type amount is zeroed (deactivated when both types hit 0).
+    ///
+    /// The single pending debit at the holding FC is then synced to the sum of ALL
+    /// live pending credits in the (Fund, PG) group — including credits owned by the
+    /// other phase's buckets — so Phase 2 and Phase 3 passes over the same (Fund, PG)
+    /// share one consolidated debit. Credits point at it via book_debiteddistribution.
     /// </summary>
     public static class DistributionBucketProcessor
     {
@@ -83,61 +97,40 @@ namespace Checkbook.Plugins.Distributions.Helpers
                 return result;
             }
 
-            // Read batching: two group-wide queries instead of 2N per destination.
-            // Existing NET Distributions (credits − debits) are aggregated by FC
-            // in one FetchXml; open Sweep Turn-Ins are pulled in one
-            // RetrieveMultiple keyed by (Fund, PG). Destinations not present in
-            // either map fall back to 0 / null, matching the per-destination
-            // behavior of the old queries.
-            var existingByFc = SumExistingNetDistributionsByFc(service, fundId, pgId, fundingType);
+            var state = LoadGroupState(service, fundId, pgId, fundingType, holdingFundCenterId);
             var openTurnInByFc = FindOpenSweepTurnInsByFc(service, fundId, pgId);
 
-            var shortfalls = new List<(DistributionBucket bucket, decimal amount)>();
+            var toCreate = new List<(DistributionBucket bucket, decimal amount)>();
 
             foreach (var bucket in groupBuckets)
             {
-                var target   = Math.Round(bucket.TotalFunding * resolution.Percentage / 100m, 2);
-                var existing = existingByFc.TryGetValue(bucket.FundCenterId, out var e) ? e : 0m;
+                var target = Math.Round(bucket.TotalFunding * resolution.Percentage / 100m, 2);
+                state.ImmutableNetByFc.TryGetValue(bucket.FundCenterId, out var immutableNet);
+                var delta = target - immutableNet;
+
+                state.AmendableCreditsByFc.TryGetValue(bucket.FundCenterId, out var credits);
 
                 tracing.Trace(
                     $"  Dest FC={bucket.FundCenterId} (FY={bucket.FiscalYear}, type={fundingType}): " +
-                    $"funded={bucket.TotalFunding:C}, pct={resolution.Percentage}, " +
-                    $"target={target:C}, existingNet={existing:C}.");
+                    $"funded={bucket.TotalFunding:C}, pct={resolution.Percentage}, target={target:C}, " +
+                    $"immutableNet={immutableNet:C}, delta={delta:C}, pending={(credits?.Count ?? 0)}.");
 
                 openTurnInByFc.TryGetValue(bucket.FundCenterId, out var openTurnIn);
 
-                if (target > existing)
+                if (delta > 0m)
                 {
-                    shortfalls.Add((bucket, target - existing));
-
-                    if (openTurnIn != null && GetTypeAmount(openTurnIn, fundingType) > 0m)
+                    var keeper = credits?.FirstOrDefault(c => !c.Deactivated);
+                    if (keeper == null)
                     {
-                        if (ZeroTypeAmount(service, tracing, openTurnIn, fundingType))
-                            result.TurnInsDeactivated++;
-                        else
-                            result.TurnInsUpdated++;
-                    }
-                }
-                else if (existing > target)
-                {
-                    var overage = existing - target;
-                    if (openTurnIn == null)
-                    {
-                        CreateOverageTurnIn(service, tracing, bucket, overage, fundingType, bucket.OwningBusinessUnit);
-                        result.TurnInsCreated++;
+                        toCreate.Add((bucket, delta));
                     }
                     else
                     {
-                        var currentAmount = GetTypeAmount(openTurnIn, fundingType);
-                        if (currentAmount != overage)
-                        {
-                            UpdateTypeAmount(service, tracing, openTurnIn, fundingType, overage);
-                            result.TurnInsUpdated++;
-                        }
+                        AmendRowIfNeeded(service, tracing, keeper, delta, resolution.FundingEvent, result);
+                        foreach (var extra in credits.Where(c => c != keeper && !c.Deactivated))
+                            DeactivateRow(service, tracing, extra, result, "duplicate pending credit");
                     }
-                }
-                else // even
-                {
+
                     if (openTurnIn != null && GetTypeAmount(openTurnIn, fundingType) > 0m)
                     {
                         if (ZeroTypeAmount(service, tracing, openTurnIn, fundingType))
@@ -146,69 +139,303 @@ namespace Checkbook.Plugins.Distributions.Helpers
                             result.TurnInsUpdated++;
                     }
                 }
+                else
+                {
+                    if (credits != null)
+                        foreach (var c in credits.Where(c => !c.Deactivated))
+                            DeactivateRow(service, tracing, c, result, "target met by committed rows");
+
+                    if (delta < 0m)
+                    {
+                        var overage = -delta;
+                        if (openTurnIn == null)
+                        {
+                            CreateOverageTurnIn(service, tracing, bucket, overage, fundingType, bucket.OwningBusinessUnit);
+                            result.TurnInsCreated++;
+                        }
+                        else
+                        {
+                            var currentAmount = GetTypeAmount(openTurnIn, fundingType);
+                            if (currentAmount != overage)
+                            {
+                                UpdateTypeAmount(service, tracing, openTurnIn, fundingType, overage);
+                                result.TurnInsUpdated++;
+                            }
+                        }
+                    }
+                    else // even
+                    {
+                        if (openTurnIn != null && GetTypeAmount(openTurnIn, fundingType) > 0m)
+                        {
+                            if (ZeroTypeAmount(service, tracing, openTurnIn, fundingType))
+                                result.TurnInsDeactivated++;
+                            else
+                                result.TurnInsUpdated++;
+                        }
+                    }
+                }
             }
 
-            if (shortfalls.Count > 0)
-            {
-                var totalDebit = shortfalls.Sum(s => s.amount);
-                CreateConsolidatedDebitAndCredits(
-                    service, tracing, fundId, pgId, shortfalls, totalDebit,
-                    fundingEvent, holdingFundCenterId, holdingOwningBu);
-                result.DistributionsCreated += 1 + shortfalls.Count;
-            }
+            SyncHoldingDebit(service, tracing, state, toCreate, resolution.FundingEvent,
+                fundId, pgId, holdingFundCenterId, holdingOwningBu, result);
 
             return result;
         }
 
         // -----------------------------------------------------------------
-        // Existing NET Distributions (credits − debits), batched: one FetchXml
-        // aggregate per group, grouped by (book_fundcenter, direction). Returns
-        // a dictionary keyed by destination FC id so ProcessGroup's
-        // per-destination lookup is O(1). Distributions whose FundingEvent is
-        // missing or of a different type are excluded via the inner join —
-        // this includes approved-turn-in debits, which carry a FundingEvent
-        // (TurnInDistributionCreator), so they correctly count against the FC's
-        // balance and prevent turn-ins from being regenerated each run.
-        // FCs with no matching activity simply won't appear in the map —
-        // callers fall back to 0m.
+        // Holding-FC debit sync: the ONE pending debit for this (Fund, PG, type)
+        // must carry Σ of all live pending credits (kept + newly created + any
+        // owned by the other phase's pass over the same Fund/PG). Extra pending
+        // debits are deactivated; kept credits are re-pointed at the keeper when
+        // their book_debiteddistribution drifted (legacy multi-debit rows).
         // -----------------------------------------------------------------
-        private static Dictionary<Guid, decimal> SumExistingNetDistributionsByFc(
-            IOrganizationService service, Guid fundId, Guid pgId, int fundingType)
+        private static void SyncHoldingDebit(
+            IOrganizationService service,
+            ITracingService tracing,
+            GroupState state,
+            IList<(DistributionBucket bucket, decimal amount)> toCreate,
+            EntityReference fundingEventRef,
+            Guid fundId,
+            Guid pgId,
+            Guid holdingFundCenterId,
+            EntityReference holdingOwningBu,
+            BucketResult result)
         {
-            var fetchXml = $@"
-<fetch aggregate='true' no-lock='true'>
-  <entity name='{EntityNames.Distributions}'>
-    <attribute name='{DistributionsAttributes.FundCenter}'            alias='fc'    groupby='true' />
-    <attribute name='{DistributionsAttributes.DisbursementDirection}' alias='dir'   groupby='true' />
-    <attribute name='{DistributionsAttributes.Amount}'                alias='total' aggregate='sum' />
-    <filter type='and'>
-      <condition attribute='{DistributionsAttributes.Fund}'      operator='eq' value='{fundId}' />
-      <condition attribute='{DistributionsAttributes.PGSAG}'     operator='eq' value='{pgId}' />
-      <condition attribute='{DistributionsAttributes.StateCode}' operator='eq' value='{StateCodeValues.Active}' />
-    </filter>
-    <link-entity name='{EntityNames.FundingEvent}' from='{FundingEventAttributes.Id}' to='{DistributionsAttributes.FundingEvent}' link-type='inner'>
-      <filter type='and'>
-        <condition attribute='{FundingEventAttributes.FundingType}' operator='eq' value='{fundingType}' />
-      </filter>
-    </link-entity>
-  </entity>
-</fetch>";
+            var liveCredits = state.AmendableCreditsByFc.Values
+                .SelectMany(l => l)
+                .Where(c => !c.Deactivated)
+                .ToList();
+            var totalDebit = liveCredits.Sum(c => c.Amount) + toCreate.Sum(t => t.amount);
 
-            var rows = service.RetrieveMultiple(new FetchExpression(fetchXml)).Entities;
-            var byFc = new Dictionary<Guid, decimal>();
+            var keeper = state.AmendableHoldingDebits.FirstOrDefault(d => !d.Deactivated);
+            foreach (var extra in state.AmendableHoldingDebits.Where(d => d != keeper && !d.Deactivated))
+                DeactivateRow(service, tracing, extra, result, "duplicate pending holding-FC debit");
+
+            if (totalDebit <= 0m)
+            {
+                if (keeper != null)
+                    DeactivateRow(service, tracing, keeper, result, "no pending credits remain");
+                return;
+            }
+
+            Guid debitId;
+            if (keeper == null)
+            {
+                var debit = new Entity(EntityNames.Distributions);
+                debit[DistributionsAttributes.Amount]                = totalDebit;
+                debit[DistributionsAttributes.Fund]                  = new EntityReference(EntityNames.Fund, fundId);
+                debit[DistributionsAttributes.FundCenter]            = new EntityReference(EntityNames.FundCenter, holdingFundCenterId);
+                debit[DistributionsAttributes.PGSAG]                 = new EntityReference(EntityNames.PG, pgId);
+                debit[DistributionsAttributes.DisbursementDirection] = new OptionSetValue(DisbursementDirectionValues.Debit);
+                debit[DistributionsAttributes.FundingEvent]          = fundingEventRef;
+                debit[DistributionsAttributes.ManualEntry]           = false;
+                if (holdingOwningBu != null) debit["owningbusinessunit"] = holdingOwningBu;
+                debitId = service.Create(debit);
+                result.DistributionsCreated++;
+                tracing.Trace($"  → Created consolidated Debit {debitId} at holding FC for {totalDebit:C}.");
+            }
+            else
+            {
+                debitId = keeper.Id;
+                AmendRowIfNeeded(service, tracing, keeper, totalDebit, fundingEventRef, result);
+            }
+            var debitRef = new EntityReference(EntityNames.Distributions, debitId);
+
+            foreach (var s in toCreate)
+            {
+                var credit = new Entity(EntityNames.Distributions);
+                credit[DistributionsAttributes.Amount]                = s.amount;
+                credit[DistributionsAttributes.Fund]                  = new EntityReference(EntityNames.Fund, fundId);
+                credit[DistributionsAttributes.FundCenter]            = new EntityReference(EntityNames.FundCenter, s.bucket.FundCenterId);
+                credit[DistributionsAttributes.PGSAG]                 = new EntityReference(EntityNames.PG, pgId);
+                credit[DistributionsAttributes.DisbursementDirection] = new OptionSetValue(DisbursementDirectionValues.Credit);
+                credit[DistributionsAttributes.FundingEvent]          = fundingEventRef;
+                credit[DistributionsAttributes.DebitedDistribution]   = debitRef;
+                credit[DistributionsAttributes.ManualEntry]           = false;
+                if (s.bucket.OwningBusinessUnit != null) credit["owningbusinessunit"] = s.bucket.OwningBusinessUnit;
+                var creditId = service.Create(credit);
+                result.DistributionsCreated++;
+                tracing.Trace($"    → Credit {creditId} to FC {s.bucket.FundCenterId} for {s.amount:C}.");
+            }
+
+            foreach (var c in liveCredits.Where(c => c.DebitedDistributionId != debitId))
+            {
+                service.Update(new Entity(EntityNames.Distributions, c.Id)
+                {
+                    [DistributionsAttributes.DebitedDistribution] = debitRef,
+                });
+                c.DebitedDistributionId = debitId;
+                result.DistributionsUpdated++;
+                tracing.Trace($"    → Re-pointed pending credit {c.Id} at debit {debitId}.");
+            }
+        }
+
+        // -----------------------------------------------------------------
+        // Row-level load + classification of the group's active Distributions,
+        // FE-type filtered via the FundingEvent inner join (rows without a
+        // FundingEvent, or of the other type, are invisible to this pass —
+        // same scoping the old aggregate query used). Ordered by createdon so
+        // "keep the oldest" is deterministic.
+        // -----------------------------------------------------------------
+        private sealed class AmendableRow
+        {
+            public Guid Id;
+            public Guid FundCenterId;
+            public decimal Amount;
+            public Guid? DebitedDistributionId;
+            public Guid FundingEventId;
+            public bool Deactivated;
+        }
+
+        private sealed class GroupState
+        {
+            public readonly Dictionary<Guid, decimal> ImmutableNetByFc = new Dictionary<Guid, decimal>();
+            public readonly Dictionary<Guid, List<AmendableRow>> AmendableCreditsByFc = new Dictionary<Guid, List<AmendableRow>>();
+            public readonly List<AmendableRow> AmendableHoldingDebits = new List<AmendableRow>();
+        }
+
+        private static GroupState LoadGroupState(
+            IOrganizationService service, Guid fundId, Guid pgId, int fundingType, Guid holdingFundCenterId)
+        {
+            var query = new QueryExpression(EntityNames.Distributions)
+            {
+                ColumnSet = new ColumnSet(
+                    DistributionsAttributes.Id,
+                    DistributionsAttributes.FundCenter,
+                    DistributionsAttributes.DisbursementDirection,
+                    DistributionsAttributes.Amount,
+                    DistributionsAttributes.EntryDocumentNumber,
+                    DistributionsAttributes.ManualEntry,
+                    DistributionsAttributes.TurnIn,
+                    DistributionsAttributes.StateSwap,
+                    DistributionsAttributes.DebitedDistribution,
+                    DistributionsAttributes.FundingEvent),
+                Criteria = new FilterExpression(LogicalOperator.And)
+                {
+                    Conditions =
+                    {
+                        new ConditionExpression(DistributionsAttributes.Fund,      ConditionOperator.Equal, fundId),
+                        new ConditionExpression(DistributionsAttributes.PGSAG,     ConditionOperator.Equal, pgId),
+                        new ConditionExpression(DistributionsAttributes.StateCode, ConditionOperator.Equal, StateCodeValues.Active),
+                    },
+                },
+                PageInfo = new PagingInfo { Count = 5000, PageNumber = 1, ReturnTotalRecordCount = false },
+                NoLock = true,
+            };
+            var feLink = query.AddLink(EntityNames.FundingEvent, DistributionsAttributes.FundingEvent, FundingEventAttributes.Id);
+            feLink.LinkCriteria.AddCondition(FundingEventAttributes.FundingType, ConditionOperator.Equal, fundingType);
+            query.AddOrder("createdon", OrderType.Ascending);
+
+            var rows = new List<Entity>();
+            while (true)
+            {
+                var page = service.RetrieveMultiple(query);
+                rows.AddRange(page.Entities);
+                if (!page.MoreRecords) break;
+                query.PageInfo.PageNumber++;
+                query.PageInfo.PagingCookie = page.PagingCookie;
+            }
+
+            // First pass: which debits are already entered into GFEBS — a credit
+            // paired to one is treated immutable even if itself still pending.
+            var enteredDebitIds = new HashSet<Guid>(rows
+                .Where(r => GetDirection(r) == DisbursementDirectionValues.Debit && IsEntered(r))
+                .Select(r => r.Id));
+
+            var state = new GroupState();
             foreach (var row in rows)
             {
-                var fcId = AliasedValueHelper.GetGuid(row, "fc");
-                if (fcId == Guid.Empty) continue;
-                var dir    = AliasedValueHelper.GetInt(row, "dir");
-                var amount = AliasedValueHelper.GetDecimal(row, "total");
-                byFc.TryGetValue(fcId, out var running);
-                if (dir == DisbursementDirectionValues.Credit)
-                    byFc[fcId] = running + amount;
-                else if (dir == DisbursementDirectionValues.Debit)
-                    byFc[fcId] = running - amount;
+                var fcRef = row.GetAttributeValue<EntityReference>(DistributionsAttributes.FundCenter);
+                if (fcRef == null) continue;
+                var direction = GetDirection(row);
+                // Direction-less rows were invisible to the old aggregate math;
+                // keep ignoring them rather than guessing a side.
+                if (direction != DisbursementDirectionValues.Credit &&
+                    direction != DisbursementDirectionValues.Debit) continue;
+                var amount = NumericHelper.ToDecimal(row, DistributionsAttributes.Amount) ?? 0m;
+                var debitedRef = row.GetAttributeValue<EntityReference>(DistributionsAttributes.DebitedDistribution);
+
+                var amendable =
+                    !IsEntered(row)
+                    && !(row.GetAttributeValue<bool?>(DistributionsAttributes.ManualEntry) ?? false)
+                    && row.GetAttributeValue<EntityReference>(DistributionsAttributes.TurnIn) == null
+                    && row.GetAttributeValue<EntityReference>(DistributionsAttributes.StateSwap) == null
+                    && !(direction == DisbursementDirectionValues.Credit
+                         && debitedRef != null && enteredDebitIds.Contains(debitedRef.Id))
+                    // A pending sweep debit only ever lives at the holding FC;
+                    // anything else is not ours to amend.
+                    && !(direction == DisbursementDirectionValues.Debit && fcRef.Id != holdingFundCenterId);
+
+                if (!amendable)
+                {
+                    state.ImmutableNetByFc.TryGetValue(fcRef.Id, out var running);
+                    if (direction == DisbursementDirectionValues.Credit)
+                        state.ImmutableNetByFc[fcRef.Id] = running + amount;
+                    else if (direction == DisbursementDirectionValues.Debit)
+                        state.ImmutableNetByFc[fcRef.Id] = running - amount;
+                    continue;
+                }
+
+                var amendableRow = new AmendableRow
+                {
+                    Id = row.Id,
+                    FundCenterId = fcRef.Id,
+                    Amount = amount,
+                    DebitedDistributionId = debitedRef?.Id,
+                    FundingEventId = row.GetAttributeValue<EntityReference>(DistributionsAttributes.FundingEvent)?.Id ?? Guid.Empty,
+                };
+
+                if (direction == DisbursementDirectionValues.Debit)
+                {
+                    state.AmendableHoldingDebits.Add(amendableRow);
+                }
+                else
+                {
+                    if (!state.AmendableCreditsByFc.TryGetValue(fcRef.Id, out var list))
+                        state.AmendableCreditsByFc[fcRef.Id] = list = new List<AmendableRow>();
+                    list.Add(amendableRow);
+                }
             }
-            return byFc;
+            return state;
+        }
+
+        private static bool IsEntered(Entity row) =>
+            !string.IsNullOrWhiteSpace(row.GetAttributeValue<string>(DistributionsAttributes.EntryDocumentNumber));
+
+        private static int GetDirection(Entity row) =>
+            row.GetAttributeValue<OptionSetValue>(DistributionsAttributes.DisbursementDirection)?.Value ?? -1;
+
+        private static void AmendRowIfNeeded(
+            IOrganizationService service, ITracingService tracing,
+            AmendableRow row, decimal newAmount, EntityReference fundingEventRef, BucketResult result)
+        {
+            var amountChanged = row.Amount != newAmount;
+            var feChanged = row.FundingEventId != fundingEventRef.Id;
+            if (!amountChanged && !feChanged) return;
+
+            var update = new Entity(EntityNames.Distributions, row.Id);
+            if (amountChanged) update[DistributionsAttributes.Amount] = newAmount;
+            if (feChanged)     update[DistributionsAttributes.FundingEvent] = fundingEventRef;
+            service.Update(update);
+
+            tracing.Trace($"  → Amended pending row {row.Id}: amount {row.Amount:C} → {newAmount:C}" +
+                          (feChanged ? " (+ FundingEvent retag)." : "."));
+            row.Amount = newAmount;
+            row.FundingEventId = fundingEventRef.Id;
+            result.DistributionsUpdated++;
+        }
+
+        private static void DeactivateRow(
+            IOrganizationService service, ITracingService tracing,
+            AmendableRow row, BucketResult result, string reason)
+        {
+            service.Update(new Entity(EntityNames.Distributions, row.Id)
+            {
+                [DistributionsAttributes.StateCode] = new OptionSetValue(StateCodeValues.Inactive),
+            });
+            row.Deactivated = true;
+            result.DistributionsDeactivated++;
+            tracing.Trace($"  → Deactivated pending row {row.Id} ({reason}).");
         }
 
         // -----------------------------------------------------------------
@@ -316,59 +543,6 @@ namespace Checkbook.Plugins.Distributions.Helpers
             turnIn[attr] = 0m;
             tracing.Trace($"  → Zeroed Sweep Turn-In {turnIn.Id} {attr} (other type still > 0).");
             return false;
-        }
-
-        // -----------------------------------------------------------------
-        // One debit at the holding FC carrying the sum of all shortfall credits;
-        // one credit per shortfall destination pointing at that shared debit.
-        // Debit's owningbusinessunit is the holding FC's BU (since that's where
-        // the debit lives); each credit's owningbusinessunit is its destination
-        // FC's BU. All tagged with the active FundingEvent so book_fundingtype
-        // resolves for each row.
-        // -----------------------------------------------------------------
-        private static void CreateConsolidatedDebitAndCredits(
-            IOrganizationService service,
-            ITracingService tracing,
-            Guid fundId,
-            Guid pgId,
-            IList<(DistributionBucket bucket, decimal amount)> shortfalls,
-            decimal totalDebit,
-            EntityReference fundingEvent,
-            Guid holdingFundCenterId,
-            EntityReference holdingOwningBu)
-        {
-            var debit = new Entity(EntityNames.Distributions);
-            debit[DistributionsAttributes.Amount]                = totalDebit;
-            debit[DistributionsAttributes.Fund]                  = new EntityReference(EntityNames.Fund, fundId);
-            debit[DistributionsAttributes.FundCenter]            = new EntityReference(EntityNames.FundCenter, holdingFundCenterId);
-            debit[DistributionsAttributes.PGSAG]                 = new EntityReference(EntityNames.PG, pgId);
-            debit[DistributionsAttributes.DisbursementDirection] = new OptionSetValue(DisbursementDirectionValues.Debit);
-            debit[DistributionsAttributes.FundingEvent]          = fundingEvent;
-            debit[DistributionsAttributes.ManualEntry]           = false;
-            if (holdingOwningBu != null) debit["owningbusinessunit"] = holdingOwningBu;
-            var debitId = service.Create(debit);
-            var debitRef = new EntityReference(EntityNames.Distributions, debitId);
-
-            tracing.Trace(
-                $"  → Created consolidated Debit {debitId} at holding FC for {totalDebit:C} " +
-                $"({shortfalls.Count} credit(s) to follow).");
-
-            foreach (var s in shortfalls)
-            {
-                var credit = new Entity(EntityNames.Distributions);
-                credit[DistributionsAttributes.Amount]                = s.amount;
-                credit[DistributionsAttributes.Fund]                  = new EntityReference(EntityNames.Fund, fundId);
-                credit[DistributionsAttributes.FundCenter]            = new EntityReference(EntityNames.FundCenter, s.bucket.FundCenterId);
-                credit[DistributionsAttributes.PGSAG]                 = new EntityReference(EntityNames.PG, pgId);
-                credit[DistributionsAttributes.DisbursementDirection] = new OptionSetValue(DisbursementDirectionValues.Credit);
-                credit[DistributionsAttributes.FundingEvent]          = fundingEvent;
-                credit[DistributionsAttributes.DebitedDistribution]   = debitRef;
-                credit[DistributionsAttributes.ManualEntry]           = false;
-                if (s.bucket.OwningBusinessUnit != null) credit["owningbusinessunit"] = s.bucket.OwningBusinessUnit;
-                var creditId = service.Create(credit);
-
-                tracing.Trace($"    → Credit {creditId} to FC {s.bucket.FundCenterId} for {s.amount:C}.");
-            }
         }
 
         // -----------------------------------------------------------------

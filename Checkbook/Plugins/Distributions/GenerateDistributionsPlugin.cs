@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using Microsoft.Xrm.Sdk;
-using Microsoft.Xrm.Sdk.Messages;
 using Microsoft.Xrm.Sdk.Query;
 using Checkbook.Plugins.Base;
 using Checkbook.Plugins.Constants;
@@ -16,29 +15,32 @@ namespace Checkbook.Plugins.Distributions
     /// Custom API handler for <c>book_GenerateDistributions</c>. Replaces the
     /// <c>Distribution-GenerateAFPDistributions</c> Power Automate flow.
     ///
-    /// Three phases (mirroring the original flow):
+    /// Amend-in-place model (the original design deactivated every pending row
+    /// up front and recreated from scratch; this destroyed pending Turn-In /
+    /// State Swap / manual rows and churned row GUIDs for GFEBS clerks):
     /// <list type="number">
-    ///   <item>Deactivate every active <c>book_distributions</c> whose
-    ///         <c>book_newenteredintogfebs = "No"</c>.</item>
     ///   <item>Aggregate active Prioritizations into (dest_fc, PG, fund, FY) buckets,
-    ///         then group buckets by (Fund, PG). Per group: compute per-destination
-    ///         target vs existing credits, then emit ONE consolidated debit at the
-    ///         holding FC (sum of shortfalls) plus one credit per shortfall destination
-    ///         pointing at that debit; per-destination overages/evens roll through the
-    ///         Sweep Turn-In machinery unchanged. Destination FC is the Prio's own FC
-    ///         when the Requirement is centrally managed (book_national = 1; FC is
-    ///         backfilled from Req by <c>PrioritizationFundCenterBackfill</c>) and the
-    ///         Prio's parent FC otherwise.</item>
+    ///         then group buckets by (Fund, PG). Per destination the processor
+    ///         compares target (funded × pct) against the committed IMMUTABLE net
+    ///         (GFEBS-entered, manual, Turn-In/Swap-linked rows) and amends the
+    ///         destination's PENDING sweep credit in place — update its amount,
+    ///         create it when missing, deactivate it when no longer needed. One
+    ///         consolidated pending debit at the holding FC carries the sum of the
+    ///         group's pending credits; overages/evens roll through the Sweep
+    ///         Turn-In machinery unchanged. Destination FC is resolved by walking
+    ///         the FC parent chain up to state level (parent = holding FC).</item>
     ///   <item>Same reconciliation for BE-approved Requirements that have no
-    ///         Prioritizations (types TARC + ARNGExternal, or national State-type),
-    ///         grouped on (fundcenter, PG, fund, FY); the bucket FC is resolved as
-    ///         parent-or-self relative to the holding FC.</item>
+    ///         Prioritizations (types TARC + ARNGExternal), grouped on
+    ///         (fundcenter, PG, fund, FY).</item>
+    ///   <item>Orphan cleanup (Phase 4): pending sweep rows whose (Fund, FC, PG)
+    ///         no longer matches any bucket are deactivated, and each pending
+    ///         holding-FC debit is re-synced to the sum of its surviving credits.</item>
     /// </list>
     ///
     /// Input parameters:
     ///   <c>FundingType</c>        (int, optional)    — 0 = AFP only, 1 = Allotment only, omitted = both.
     ///   <c>FiscalYear</c>         (int, optional)    — option-set value on book_fund.book_fiscalyear;
-    ///                                                  filters Phase 2 + 3 buckets. Omitted = all FYs.
+    ///                                                  filters buckets + Phase 4. Omitted = all FYs.
     ///   <c>NextToken</c>          (string, optional) — opaque resume marker returned by a prior call.
     ///                                                  Empty/missing = fresh start. (The wire-level
     ///                                                  name is <c>NextToken</c>; internally the
@@ -48,10 +50,11 @@ namespace Checkbook.Plugins.Distributions
     ///                                                  row in the target org.)
     ///
     /// Output parameters:
-    ///   <c>Deactivated</c>        (int) — Phase 1 distributions set inactive in THIS invocation.
-    ///   <c>Created</c>            (int) — Distribution rows created in Phases 2 + 3 (each
-    ///                                     consolidated debit counts 1, plus 1 per credit).
-    ///   <c>TurnInsCreated</c>     (int) — Overage Turn-Ins created in Phases 2 + 3.
+    ///   <c>Deactivated</c>        (int) — pending sweep rows deactivated in THIS invocation
+    ///                                     (no longer needed, duplicate, or orphaned).
+    ///   <c>Created</c>            (int) — Distribution rows created (each debit / credit counts 1).
+    ///   <c>Updated</c>            (int) — pending sweep rows amended in place (amount / FE / pairing).
+    ///   <c>TurnInsCreated</c>     (int) — Overage Turn-Ins created.
     ///   <c>Skipped</c>            (int) — Destinations skipped (missing FundingDetails percentage, etc).
     ///   <c>NextToken</c>          (string) — empty = done; non-empty = caller should re-invoke
     ///                                        passing this back as input <c>NextToken</c>.
@@ -103,203 +106,394 @@ namespace Checkbook.Plugins.Distributions
             tracing.Trace($"Holding Fund Center (env var {HoldingFundCenterEnvVar}) = {holdingFundCenterId}.");
 
             // Per-invocation caches (both need to be alive by the time we build
-            // buckets, since bucket construction now resolves owning BU).
+            // buckets, since bucket construction resolves owning BU).
             var fcCache  = new Dictionary<Guid, FundCenterMeta>();
             var pctCache = new Dictionary<string, FundingPercentageHelper.FundingResolution>();
 
             // Debit rows live at the holding FC — own them by the holding FC's BU.
-            var holdingOwningBu = GetFundCenterMeta(service, fcCache, holdingFundCenterId)?.OwningBusinessUnit;
+            var holdingOwningBu = FundCenterWalkHelper.GetFundCenterMeta(service, fcCache, holdingFundCenterId)?.OwningBusinessUnit;
 
             var stopwatch = Stopwatch.StartNew();
 
-            var deactivated = 0;
+            var totalDeactivated = 0;
             var totalCreated = 0;
+            var totalUpdated = 0;
             var totalTurnIns = 0;
             var totalSkipped = 0;
-            Cursor outCursor = null;
 
-            // ---- Phase 1 (skip if resuming past it) --------------------------
-            if (cursor == null || cursor.Phase <= 1)
+            // ---- Phases 2 + 3 — per-FE bucket reconciliation ------------------
+            // Skipped entirely when resuming into Phase 4.
+            if (cursor == null || cursor.Phase < 4)
             {
-                deactivated = DeactivateUnactionedDistributions(
-                    service, tracing, stopwatch, TimeBudget, out var phase1Complete);
-                if (!phase1Complete)
+                var fundingEvents = ResolveActiveFundingEvents(service, tracing, fundingTypeFilter);
+                if (fundingEvents.Count == 0)
                 {
-                    tracing.Trace("Phase 1 incomplete — returning continuation (phase=1).");
-                    WriteOutputs(context, deactivated, 0, 0, 0, new Cursor { Phase = 1 });
-                    return;
+                    tracing.Trace("No active Funding Events match the filter — Phases 2 + 3 skipped.");
+                }
+
+                // Determine starting (fe-index, phase, bucket-idx) from the cursor.
+                var startFeIdx   = 0;
+                var startPhase   = 2;
+                var startBucket  = 0;
+                if (cursor != null && cursor.Phase >= 2 && cursor.Phase <= 3)
+                {
+                    var idx = fundingEvents.FindIndex(e => e.Id == cursor.FundingEventId);
+                    if (idx >= 0)
+                    {
+                        startFeIdx  = idx;
+                        startPhase  = cursor.Phase;
+                        startBucket = cursor.BucketIdx;
+                    }
+                    else
+                    {
+                        tracing.Trace($"Cursor FE {cursor.FundingEventId} no longer active — restarting at FE 0 / Phase 2.");
+                    }
+                }
+
+                for (var feIdx = startFeIdx; feIdx < fundingEvents.Count; feIdx++)
+                {
+                    var fundingEvent = fundingEvents[feIdx];
+                    var fundingType = fundingEvent.GetAttributeValue<OptionSetValue>(FundingEventAttributes.FundingType)?.Value ?? -1;
+                    var fundingEventRef = fundingEvent.ToEntityReference();
+                    tracing.Trace($"Processing FundingEvent {fundingEvent.Id} (type = {fundingType}, idx = {feIdx}).");
+
+                    // ---- Phase 2 — Prioritizations -------------------------------
+                    if (startPhase <= 2)
+                    {
+                        var phase2Buckets = QueryPrioritizationBuckets(service, tracing, holdingFundCenterId, fcCache, fiscalYearFilter);
+                        var phase2Groups  = GroupByFundAndPg(phase2Buckets);
+                        tracing.Trace($"Phase 2: {phase2Groups.Count} (Fund, PG) group(s) to process.");
+                        var groupStart = (feIdx == startFeIdx && startPhase == 2) ? startBucket : 0;
+                        for (var i = groupStart; i < phase2Groups.Count; i++)
+                        {
+                            if (stopwatch.Elapsed > TimeBudget)
+                            {
+                                var outCursor = new Cursor { Phase = 2, FundingEventId = fundingEvent.Id, BucketIdx = i };
+                                tracing.Trace($"Time budget reached at FE {fundingEvent.Id} Phase 2 group {i} — returning continuation.");
+                                WriteOutputs(context, totalDeactivated, totalCreated, totalUpdated, totalTurnIns, totalSkipped, outCursor);
+                                return;
+                            }
+                            var r = DistributionBucketProcessor.ProcessGroup(
+                                service, tracing, phase2Groups[i], fundingEventRef, fundingType,
+                                holdingFundCenterId, holdingOwningBu, pctCache);
+                            totalCreated     += r.DistributionsCreated;
+                            totalUpdated     += r.DistributionsUpdated;
+                            totalDeactivated += r.DistributionsDeactivated;
+                            totalTurnIns     += r.TurnInsCreated;
+                            totalSkipped     += r.Skipped;
+                        }
+                    }
+
+                    // ---- Phase 3 — Requirements ----------------------------------
+                    {
+                        var phase3Buckets = QueryRequirementBuckets(service, tracing, holdingFundCenterId, fcCache, fiscalYearFilter);
+                        var phase3Groups  = GroupByFundAndPg(phase3Buckets);
+                        tracing.Trace($"Phase 3: {phase3Groups.Count} (Fund, PG) group(s) to process.");
+                        var groupStart = (feIdx == startFeIdx && startPhase == 3) ? startBucket : 0;
+                        for (var i = groupStart; i < phase3Groups.Count; i++)
+                        {
+                            if (stopwatch.Elapsed > TimeBudget)
+                            {
+                                var outCursor = new Cursor { Phase = 3, FundingEventId = fundingEvent.Id, BucketIdx = i };
+                                tracing.Trace($"Time budget reached at FE {fundingEvent.Id} Phase 3 group {i} — returning continuation.");
+                                WriteOutputs(context, totalDeactivated, totalCreated, totalUpdated, totalTurnIns, totalSkipped, outCursor);
+                                return;
+                            }
+                            var r = DistributionBucketProcessor.ProcessGroup(
+                                service, tracing, phase3Groups[i], fundingEventRef, fundingType,
+                                holdingFundCenterId, holdingOwningBu, pctCache);
+                            totalCreated     += r.DistributionsCreated;
+                            totalUpdated     += r.DistributionsUpdated;
+                            totalDeactivated += r.DistributionsDeactivated;
+                            totalTurnIns     += r.TurnInsCreated;
+                            totalSkipped     += r.Skipped;
+                        }
+                    }
+
+                    // Once we've finished an FE, subsequent ones start from Phase 2 / group 0.
+                    startPhase = 2;
+                    startBucket = 0;
                 }
             }
 
-            // ---- Resolve Funding Events (re-resolved each invocation) --------
-            var fundingEvents = ResolveActiveFundingEvents(service, tracing, fundingTypeFilter);
-            if (fundingEvents.Count == 0)
+            // ---- Phase 4 — orphan cleanup --------------------------------------
+            if (stopwatch.Elapsed > TimeBudget)
             {
-                tracing.Trace("No active Funding Events match the filter — Phases 2 + 3 skipped.");
-                WriteOutputs(context, deactivated, 0, 0, 0, null);
+                tracing.Trace("Time budget reached before Phase 4 — returning continuation (phase=4).");
+                WriteOutputs(context, totalDeactivated, totalCreated, totalUpdated, totalTurnIns, totalSkipped, new Cursor { Phase = 4 });
                 return;
             }
 
-            // Determine starting (fe-index, phase, bucket-idx) from the cursor.
-            var startFeIdx   = 0;
-            var startPhase   = 2;
-            var startBucket  = 0;
-            if (cursor != null && cursor.Phase >= 2)
+            var cleanup = OrphanCleanup(
+                service, tracing, holdingFundCenterId, fcCache,
+                fundingTypeFilter, fiscalYearFilter, stopwatch, TimeBudget);
+            totalDeactivated += cleanup.Deactivated;
+            totalUpdated     += cleanup.Updated;
+            if (!cleanup.Complete)
             {
-                var idx = fundingEvents.FindIndex(e => e.Id == cursor.FundingEventId);
-                if (idx >= 0)
-                {
-                    startFeIdx  = idx;
-                    startPhase  = cursor.Phase;
-                    startBucket = cursor.BucketIdx;
-                }
-                else
-                {
-                    tracing.Trace($"Cursor FE {cursor.FundingEventId} no longer active — restarting at FE 0 / Phase 2.");
-                }
+                tracing.Trace("Phase 4 incomplete — returning continuation (phase=4).");
+                WriteOutputs(context, totalDeactivated, totalCreated, totalUpdated, totalTurnIns, totalSkipped, new Cursor { Phase = 4 });
+                return;
             }
 
-            for (var feIdx = startFeIdx; feIdx < fundingEvents.Count; feIdx++)
-            {
-                var fundingEvent = fundingEvents[feIdx];
-                var fundingType = fundingEvent.GetAttributeValue<OptionSetValue>(FundingEventAttributes.FundingType)?.Value ?? -1;
-                var fundingEventRef = fundingEvent.ToEntityReference();
-                tracing.Trace($"Processing FundingEvent {fundingEvent.Id} (type = {fundingType}, idx = {feIdx}).");
-
-                // ---- Phase 2 — Prioritizations -------------------------------
-                if (startPhase <= 2)
-                {
-                    var phase2Buckets = QueryPrioritizationBuckets(service, tracing, holdingFundCenterId, fcCache, fiscalYearFilter);
-                    var phase2Groups  = GroupByFundAndPg(phase2Buckets);
-                    tracing.Trace($"Phase 2: {phase2Groups.Count} (Fund, PG) group(s) to process.");
-                    var groupStart = (feIdx == startFeIdx && startPhase == 2) ? startBucket : 0;
-                    for (var i = groupStart; i < phase2Groups.Count; i++)
-                    {
-                        if (stopwatch.Elapsed > TimeBudget)
-                        {
-                            outCursor = new Cursor { Phase = 2, FundingEventId = fundingEvent.Id, BucketIdx = i };
-                            tracing.Trace($"Time budget reached at FE {fundingEvent.Id} Phase 2 group {i} — returning continuation.");
-                            WriteOutputs(context, deactivated, totalCreated, totalTurnIns, totalSkipped, outCursor);
-                            return;
-                        }
-                        var r = DistributionBucketProcessor.ProcessGroup(
-                            service, tracing, phase2Groups[i], fundingEventRef, fundingType,
-                            holdingFundCenterId, holdingOwningBu, pctCache);
-                        totalCreated += r.DistributionsCreated;
-                        totalTurnIns += r.TurnInsCreated;
-                        totalSkipped += r.Skipped;
-                    }
-                }
-
-                // ---- Phase 3 — Requirements ----------------------------------
-                {
-                    var phase3Buckets = QueryRequirementBuckets(service, tracing, holdingFundCenterId, fcCache, fiscalYearFilter);
-                    var phase3Groups  = GroupByFundAndPg(phase3Buckets);
-                    tracing.Trace($"Phase 3: {phase3Groups.Count} (Fund, PG) group(s) to process.");
-                    var groupStart = (feIdx == startFeIdx && startPhase == 3) ? startBucket : 0;
-                    for (var i = groupStart; i < phase3Groups.Count; i++)
-                    {
-                        if (stopwatch.Elapsed > TimeBudget)
-                        {
-                            outCursor = new Cursor { Phase = 3, FundingEventId = fundingEvent.Id, BucketIdx = i };
-                            tracing.Trace($"Time budget reached at FE {fundingEvent.Id} Phase 3 group {i} — returning continuation.");
-                            WriteOutputs(context, deactivated, totalCreated, totalTurnIns, totalSkipped, outCursor);
-                            return;
-                        }
-                        var r = DistributionBucketProcessor.ProcessGroup(
-                            service, tracing, phase3Groups[i], fundingEventRef, fundingType,
-                            holdingFundCenterId, holdingOwningBu, pctCache);
-                        totalCreated += r.DistributionsCreated;
-                        totalTurnIns += r.TurnInsCreated;
-                        totalSkipped += r.Skipped;
-                    }
-                }
-
-                // Once we've finished an FE, subsequent ones start from Phase 2 / group 0.
-                startPhase = 2;
-                startBucket = 0;
-            }
-
-            WriteOutputs(context, deactivated, totalCreated, totalTurnIns, totalSkipped, null);
+            WriteOutputs(context, totalDeactivated, totalCreated, totalUpdated, totalTurnIns, totalSkipped, null);
         }
 
         // -----------------------------------------------------------------
-        // Phase 1: deactivate every active Distribution flagged not-entered-into-GFEBS.
-        // Batches each 100-row page into a single ExecuteMultipleRequest. Cascading
-        // plugins/workflows on book_distributions can make each deactivation slow,
-        // so we check the time budget between pages and bail with a Phase 1 cursor
-        // if needed — on resume the query re-runs (its filter excludes already-
-        // inactive rows, so the work is idempotent and just picks up where we left off).
+        // Phase 4: deactivate pending sweep rows whose (Fund, FC, PG) matches no
+        // current bucket (funded dropped to zero, FC re-parented, FY closed out),
+        // then re-sync each pending holding-FC debit to the sum of its group's
+        // surviving pending credits. Idempotent — a resumed invocation restarts
+        // the phase from scratch and the queries exclude already-deactivated rows.
+        //
+        // Pending sweep rows = active + no entry document number + not manual +
+        // no Turn-In / State Swap link + carrying a FundingEvent of a processed
+        // type; a pending credit paired (book_debiteddistribution) to an already
+        // GFEBS-entered debit is left alone to preserve the entered pairing.
         // -----------------------------------------------------------------
-        private static int DeactivateUnactionedDistributions(
-            IOrganizationService service, ITracingService tracing,
-            Stopwatch stopwatch, TimeSpan budget, out bool complete)
+        private sealed class CleanupResult
         {
-            tracing.Trace("Phase 1: starting deactivation sweep.");
+            public int Deactivated;
+            public int Updated;
+            public bool Complete = true;
+        }
 
+        private static CleanupResult OrphanCleanup(
+            IOrganizationService service, ITracingService tracing,
+            Guid holdingFundCenterId, Dictionary<Guid, FundCenterMeta> fcCache,
+            int? fundingTypeFilter, int? fiscalYearFilter,
+            Stopwatch stopwatch, TimeSpan budget)
+        {
+            var result = new CleanupResult();
+            tracing.Trace("Phase 4: orphan cleanup starting.");
+
+            // Live bucket keys, re-derived from the same aggregations Phases 2+3 use.
+            var bucketKeys = new HashSet<string>(
+                QueryPrioritizationBuckets(service, tracing, holdingFundCenterId, fcCache, fiscalYearFilter)
+                    .Concat(QueryRequirementBuckets(service, tracing, holdingFundCenterId, fcCache, fiscalYearFilter))
+                    .Select(b => $"{b.FundId}|{b.FundCenterId}|{b.PgId}"));
+            tracing.Trace($"Phase 4: {bucketKeys.Count} live bucket key(s).");
+
+            var pending = RetrievePendingSweepRows(service, fundingTypeFilter, fiscalYearFilter);
+            tracing.Trace($"Phase 4: {pending.Count} pending sweep row(s) in scope.");
+
+            var credits = pending.Where(p => p.Direction == DisbursementDirectionValues.Credit).ToList();
+            var holdingDebits = pending
+                .Where(p => p.Direction == DisbursementDirectionValues.Debit && p.FundCenterId == holdingFundCenterId)
+                .ToList();
+
+            // Orphan credits: no live bucket for their (Fund, FC, PG).
+            var orphanCandidates = credits
+                .Where(c => !bucketKeys.Contains($"{c.FundId}|{c.FundCenterId}|{c.PgId}"))
+                .ToList();
+
+            // Preserve entered pairings: a candidate whose paired debit already has
+            // an entry document number is immutable. Those debits are outside the
+            // pending set (they're entered), so look them up in one batch.
+            var pairedDebitIds = orphanCandidates
+                .Where(c => c.DebitedDistributionId.HasValue)
+                .Select(c => c.DebitedDistributionId.Value)
+                .Distinct()
+                .Where(id => pending.All(p => p.Id != id))
+                .ToList();
+            var enteredDebitIds = RetrieveEnteredDistributionIds(service, pairedDebitIds);
+
+            foreach (var orphan in orphanCandidates)
+            {
+                if (orphan.DebitedDistributionId.HasValue && enteredDebitIds.Contains(orphan.DebitedDistributionId.Value))
+                {
+                    tracing.Trace($"  Orphan credit {orphan.Id} paired to entered debit {orphan.DebitedDistributionId} — leaving alone.");
+                    continue;
+                }
+                if (stopwatch.Elapsed > budget)
+                {
+                    tracing.Trace("Phase 4: time budget reached during orphan deactivation.");
+                    result.Complete = false;
+                    return result;
+                }
+                service.Update(new Entity(EntityNames.Distributions, orphan.Id)
+                {
+                    [DistributionsAttributes.StateCode] = new OptionSetValue(StateCodeValues.Inactive),
+                });
+                orphan.Deactivated = true;
+                result.Deactivated++;
+                tracing.Trace($"  → Deactivated orphan pending credit {orphan.Id} (Fund={orphan.FundId}, FC={orphan.FundCenterId}, PG={orphan.PgId}).");
+            }
+
+            // Debit re-sync: each pending holding-FC debit must equal the sum of the
+            // surviving pending credits sharing its (Fund, PG, FundingEvent).
+            var creditSums = credits
+                .Where(c => !c.Deactivated)
+                .GroupBy(c => $"{c.FundId}|{c.PgId}|{c.FundingEventId}")
+                .ToDictionary(g => g.Key, g => g.Sum(c => c.Amount));
+
+            foreach (var debitGroup in holdingDebits.GroupBy(d => $"{d.FundId}|{d.PgId}|{d.FundingEventId}"))
+            {
+                if (stopwatch.Elapsed > budget)
+                {
+                    tracing.Trace("Phase 4: time budget reached during debit re-sync.");
+                    result.Complete = false;
+                    return result;
+                }
+
+                // Retrieval is createdon-ordered — keep the oldest, drop duplicates.
+                var keeper = debitGroup.First();
+                foreach (var extra in debitGroup.Skip(1))
+                {
+                    service.Update(new Entity(EntityNames.Distributions, extra.Id)
+                    {
+                        [DistributionsAttributes.StateCode] = new OptionSetValue(StateCodeValues.Inactive),
+                    });
+                    result.Deactivated++;
+                    tracing.Trace($"  → Deactivated duplicate pending debit {extra.Id}.");
+                }
+
+                creditSums.TryGetValue(debitGroup.Key, out var creditSum);
+                if (creditSum <= 0m)
+                {
+                    service.Update(new Entity(EntityNames.Distributions, keeper.Id)
+                    {
+                        [DistributionsAttributes.StateCode] = new OptionSetValue(StateCodeValues.Inactive),
+                    });
+                    result.Deactivated++;
+                    tracing.Trace($"  → Deactivated pending debit {keeper.Id} (no surviving pending credits).");
+                }
+                else if (keeper.Amount != creditSum)
+                {
+                    service.Update(new Entity(EntityNames.Distributions, keeper.Id)
+                    {
+                        [DistributionsAttributes.Amount] = creditSum,
+                    });
+                    result.Updated++;
+                    tracing.Trace($"  → Re-synced pending debit {keeper.Id}: {keeper.Amount:C} → {creditSum:C}.");
+                }
+            }
+
+            tracing.Trace($"Phase 4: complete — {result.Deactivated} deactivated, {result.Updated} re-synced.");
+            return result;
+        }
+
+        private sealed class PendingSweepRow
+        {
+            public Guid Id;
+            public Guid FundCenterId;
+            public Guid FundId;
+            public Guid PgId;
+            public Guid FundingEventId;
+            public int Direction;
+            public decimal Amount;
+            public Guid? DebitedDistributionId;
+            public bool Deactivated;
+        }
+
+        private static List<PendingSweepRow> RetrievePendingSweepRows(
+            IOrganizationService service, int? fundingTypeFilter, int? fiscalYearFilter)
+        {
             var query = new QueryExpression(EntityNames.Distributions)
             {
-                ColumnSet = new ColumnSet(DistributionsAttributes.Id),
+                ColumnSet = new ColumnSet(
+                    DistributionsAttributes.Id,
+                    DistributionsAttributes.FundCenter,
+                    DistributionsAttributes.Fund,
+                    DistributionsAttributes.PGSAG,
+                    DistributionsAttributes.FundingEvent,
+                    DistributionsAttributes.DisbursementDirection,
+                    DistributionsAttributes.Amount,
+                    DistributionsAttributes.DebitedDistribution),
                 Criteria = new FilterExpression(LogicalOperator.And)
                 {
                     Conditions =
                     {
-                        new ConditionExpression(DistributionsAttributes.EnteredIntoGFEBS, ConditionOperator.Equal, "No"),
-                        new ConditionExpression(DistributionsAttributes.StateCode,        ConditionOperator.Equal, StateCodeValues.Active),
+                        new ConditionExpression(DistributionsAttributes.StateCode,           ConditionOperator.Equal, StateCodeValues.Active),
+                        new ConditionExpression(DistributionsAttributes.EntryDocumentNumber, ConditionOperator.Null),
+                        new ConditionExpression(DistributionsAttributes.TurnIn,              ConditionOperator.Null),
+                        new ConditionExpression(DistributionsAttributes.StateSwap,           ConditionOperator.Null),
                     },
                 },
-                // Smaller pages = more chances to check the time budget. Each
-                // statecode update can fan out to cascading plugins, so 100 is a
-                // reasonable bound for a 2-min sandbox.
-                PageInfo = new PagingInfo { Count = 100, PageNumber = 1, ReturnTotalRecordCount = false },
+                PageInfo = new PagingInfo { Count = 5000, PageNumber = 1, ReturnTotalRecordCount = false },
                 NoLock = true,
             };
 
-            var count = 0;
-            var pageNum = 0;
+            var manualFilter = new FilterExpression(LogicalOperator.Or);
+            manualFilter.AddCondition(DistributionsAttributes.ManualEntry, ConditionOperator.Equal, false);
+            manualFilter.AddCondition(DistributionsAttributes.ManualEntry, ConditionOperator.Null);
+            query.Criteria.AddFilter(manualFilter);
+
+            // The FE inner join both scopes to the requested type and excludes
+            // FE-less rows — matching the group-pass scoping.
+            var feLink = query.AddLink(EntityNames.FundingEvent, DistributionsAttributes.FundingEvent, FundingEventAttributes.Id);
+            if (fundingTypeFilter.HasValue)
+                feLink.LinkCriteria.AddCondition(FundingEventAttributes.FundingType, ConditionOperator.Equal, fundingTypeFilter.Value);
+
+            if (fiscalYearFilter.HasValue)
+            {
+                var fundLink = query.AddLink(EntityNames.Fund, DistributionsAttributes.Fund, FundAttributes.Id);
+                fundLink.LinkCriteria.AddCondition(FundAttributes.FiscalYear, ConditionOperator.Equal, fiscalYearFilter.Value);
+            }
+
+            query.AddOrder("createdon", OrderType.Ascending);
+
+            var rows = new List<PendingSweepRow>();
             while (true)
             {
                 var page = service.RetrieveMultiple(query);
-                pageNum++;
-                if (page.Entities.Count > 0)
+                foreach (var r in page.Entities)
                 {
-                    var req = new ExecuteMultipleRequest
+                    var fcRef = r.GetAttributeValue<EntityReference>(DistributionsAttributes.FundCenter);
+                    var fundRef = r.GetAttributeValue<EntityReference>(DistributionsAttributes.Fund);
+                    var pgRef = r.GetAttributeValue<EntityReference>(DistributionsAttributes.PGSAG);
+                    if (fcRef == null || fundRef == null || pgRef == null) continue;
+                    rows.Add(new PendingSweepRow
                     {
-                        Settings = new ExecuteMultipleSettings { ContinueOnError = false, ReturnResponses = false },
-                        Requests = new OrganizationRequestCollection(),
-                    };
-                    foreach (var d in page.Entities)
-                    {
-                        var update = new Entity(EntityNames.Distributions, d.Id);
-                        update[DistributionsAttributes.StateCode] = new OptionSetValue(StateCodeValues.Inactive);
-                        req.Requests.Add(new UpdateRequest { Target = update });
-                    }
-                    service.Execute(req);
-                    count += page.Entities.Count;
-                    tracing.Trace(
-                        $"Phase 1: page {pageNum} deactivated {page.Entities.Count} rows " +
-                        $"(running total {count}; elapsed {(int)stopwatch.Elapsed.TotalSeconds}s).");
+                        Id = r.Id,
+                        FundCenterId = fcRef.Id,
+                        FundId = fundRef.Id,
+                        PgId = pgRef.Id,
+                        FundingEventId = r.GetAttributeValue<EntityReference>(DistributionsAttributes.FundingEvent)?.Id ?? Guid.Empty,
+                        Direction = r.GetAttributeValue<OptionSetValue>(DistributionsAttributes.DisbursementDirection)?.Value ?? -1,
+                        Amount = NumericHelper.ToDecimal(r, DistributionsAttributes.Amount) ?? 0m,
+                        DebitedDistributionId = r.GetAttributeValue<EntityReference>(DistributionsAttributes.DebitedDistribution)?.Id,
+                    });
                 }
-
-                if (!page.MoreRecords)
-                {
-                    tracing.Trace($"Phase 1: complete — deactivated {count} unactioned Distribution(s).");
-                    complete = true;
-                    return count;
-                }
-
-                if (stopwatch.Elapsed > budget)
-                {
-                    tracing.Trace(
-                        $"Phase 1: time budget reached after page {pageNum} " +
-                        $"({count} deactivated so far) — will resume on next invocation.");
-                    complete = false;
-                    return count;
-                }
-
+                if (!page.MoreRecords) break;
                 query.PageInfo.PageNumber++;
                 query.PageInfo.PagingCookie = page.PagingCookie;
             }
+            return rows;
+        }
+
+        // -----------------------------------------------------------------
+        // Which of the given Distribution ids carry an entry document number.
+        // Retrieved regardless of statecode — an entered debit anchors its
+        // credits whether or not it is still active.
+        // -----------------------------------------------------------------
+        private static HashSet<Guid> RetrieveEnteredDistributionIds(
+            IOrganizationService service, IList<Guid> ids)
+        {
+            var entered = new HashSet<Guid>();
+            if (ids == null || ids.Count == 0) return entered;
+
+            const int chunkSize = 500;
+            for (var offset = 0; offset < ids.Count; offset += chunkSize)
+            {
+                var chunk = ids.Skip(offset).Take(chunkSize).Cast<object>().ToArray();
+                var query = new QueryExpression(EntityNames.Distributions)
+                {
+                    ColumnSet = new ColumnSet(DistributionsAttributes.Id),
+                    Criteria = new FilterExpression(LogicalOperator.And)
+                    {
+                        Conditions =
+                        {
+                            new ConditionExpression(DistributionsAttributes.Id, ConditionOperator.In, chunk),
+                            new ConditionExpression(DistributionsAttributes.EntryDocumentNumber, ConditionOperator.NotNull),
+                        },
+                    },
+                    NoLock = true,
+                };
+                foreach (var row in service.RetrieveMultiple(query).Entities)
+                    entered.Add(row.Id);
+            }
+            return entered;
         }
 
         // -----------------------------------------------------------------
@@ -412,7 +606,7 @@ namespace Checkbook.Plugins.Distributions
                 // Walk up to the state-level FC (parent == holding). Same rule
                 // as Phase 3; handles centrally-managed Prios that sit several
                 // hops below state (Prio.FC = Req.FC, e.g. A1834 → A18NG → A18).
-                var destFcId = ResolveStateFundCenter(service, fcCache, tracing, prioFcId, holdingFundCenterId);
+                var destFcId = FundCenterWalkHelper.ResolveStateFundCenter(service, fcCache, tracing, prioFcId, holdingFundCenterId);
                 if (destFcId == Guid.Empty)
                     continue;
 
@@ -433,7 +627,7 @@ namespace Checkbook.Plugins.Distributions
                         FundCenterId       = destFcId,
                         FiscalYear         = fy,
                         TotalFunding       = funded,
-                        OwningBusinessUnit = GetFundCenterMeta(service, fcCache, destFcId)?.OwningBusinessUnit,
+                        OwningBusinessUnit = FundCenterWalkHelper.GetFundCenterMeta(service, fcCache, destFcId)?.OwningBusinessUnit,
                     };
                 }
             }
@@ -523,7 +717,7 @@ namespace Checkbook.Plugins.Distributions
                 // holding FC). Stops early if the chain runs out or metadata
                 // is missing, and has a hard hop cap to guard against a cyclic
                 // parent-of graph.
-                var destFc = ResolveStateFundCenter(service, fcCache, tracing, fcId, holdingFundCenterId);
+                var destFc = FundCenterWalkHelper.ResolveStateFundCenter(service, fcCache, tracing, fcId, holdingFundCenterId);
 
                 var fy     = AliasedValueHelper.GetInt(row, "fy");
                 var funded = AliasedValueHelper.GetDecimal(row, "total_funding");
@@ -542,7 +736,7 @@ namespace Checkbook.Plugins.Distributions
                         FundCenterId       = destFc,
                         FiscalYear         = fy,
                         TotalFunding       = funded,
-                        OwningBusinessUnit = GetFundCenterMeta(service, fcCache, destFc)?.OwningBusinessUnit,
+                        OwningBusinessUnit = FundCenterWalkHelper.GetFundCenterMeta(service, fcCache, destFc)?.OwningBusinessUnit,
                     };
                 }
             }
@@ -552,8 +746,8 @@ namespace Checkbook.Plugins.Distributions
         }
 
         // -----------------------------------------------------------------
-        // Group collapsed buckets by (FundId, PgId) — one group becomes one
-        // consolidated debit at the holding FC plus N credits to destinations.
+        // Group collapsed buckets by (FundId, PgId) — one group amends one
+        // consolidated pending debit at the holding FC plus N pending credits.
         // Deterministic ordering (by FundId then PgId as GUID strings) so the
         // continuation cursor's group index is stable across invocations of
         // the same run. Within a group, destinations are ordered by FC GUID
@@ -569,90 +763,15 @@ namespace Checkbook.Plugins.Distributions
         }
 
         // -----------------------------------------------------------------
-        // FundCenter metadata. Both phases need a FC's parent + owning BU.
-        // Caller supplies the cache so its scope is bounded by one invocation.
-        // -----------------------------------------------------------------
-        private sealed class FundCenterMeta
-        {
-            public Guid? ParentFundCenterId;
-            public EntityReference OwningBusinessUnit;
-        }
-
-        private static FundCenterMeta GetFundCenterMeta(
-            IOrganizationService service,
-            Dictionary<Guid, FundCenterMeta> cache,
-            Guid fundCenterId)
-        {
-            if (cache.TryGetValue(fundCenterId, out var cached))
-                return cached;
-
-            try
-            {
-                var fc = service.Retrieve(EntityNames.FundCenter, fundCenterId,
-                    new ColumnSet(FundCenterAttributes.ParentFundCenter, "owningbusinessunit"));
-
-                var meta = new FundCenterMeta
-                {
-                    ParentFundCenterId = fc.GetAttributeValue<EntityReference>(FundCenterAttributes.ParentFundCenter)?.Id,
-                    OwningBusinessUnit = fc.GetAttributeValue<EntityReference>("owningbusinessunit"),
-                };
-                cache[fundCenterId] = meta;
-                return meta;
-            }
-            catch
-            {
-                cache[fundCenterId] = null;
-                return null;
-            }
-        }
-
-        // -----------------------------------------------------------------
-        // Walk the FundCenter parent chain until we reach the FC whose parent
-        // is the holding FC (state level). Fallbacks match the legacy one-hop
-        // rule: an FC that is itself the holding FC, has no parent, or lacks
-        // metadata resolves to itself; an FC already at state (parent = holding)
-        // resolves to itself in the first loop turn. MaxHops caps the walk at
-        // a sane depth to defend against a cyclic parent-of graph.
-        // -----------------------------------------------------------------
-        private const int MaxFundCenterWalkHops = 16;
-
-        private static Guid ResolveStateFundCenter(
-            IOrganizationService service,
-            Dictionary<Guid, FundCenterMeta> cache,
-            ITracingService tracing,
-            Guid fcId,
-            Guid holdingFundCenterId)
-        {
-            if (fcId == Guid.Empty || fcId == holdingFundCenterId) return fcId;
-
-            var current = fcId;
-            for (var hop = 0; hop < MaxFundCenterWalkHops; hop++)
-            {
-                var meta = GetFundCenterMeta(service, cache, current);
-                var parent = meta?.ParentFundCenterId;
-
-                // No parent, or metadata missing → stop here.
-                if (parent == null) return current;
-                // Parent is the holding FC → current is state-level; done.
-                if (parent.Value == holdingFundCenterId) return current;
-
-                current = parent.Value;
-            }
-
-            tracing.Trace(
-                $"  ResolveStateFundCenter: hop cap ({MaxFundCenterWalkHops}) reached starting at " +
-                $"FC {fcId}; returning {current}. Check for a cyclic parent-of chain.");
-            return current;
-        }
-
-        // -----------------------------------------------------------------
         // Continuation cursor — tiny key=value text, no escaping needed since
         // values are int / Guid only. Three states:
-        //   phase=1                        → Phase 1 incomplete, resume the sweep
         //   phase=2;fe=<guid>;idx=<n>      → mid-Phase-2 of FE <guid>, (Fund,PG) group <n>
         //   phase=3;fe=<guid>;idx=<n>      → mid-Phase-3 of FE <guid>, (Fund,PG) group <n>
+        //   phase=4                        → Phase 4 (orphan cleanup) incomplete
         // idx is a group index (see GroupByFundAndPg) — never within a group, so
-        // a group's consolidated debit+credits are always emitted atomically.
+        // a group's pending debit+credits are always reconciled atomically.
+        // Legacy phase=1 tokens (from the retired deactivation sweep) parse as
+        // a fresh start.
         // -----------------------------------------------------------------
         private sealed class Cursor
         {
@@ -661,7 +780,7 @@ namespace Checkbook.Plugins.Distributions
             public int BucketIdx;
 
             public string Serialize() =>
-                Phase == 1 ? "phase=1" : $"phase={Phase};fe={FundingEventId};idx={BucketIdx}";
+                Phase == 4 ? "phase=4" : $"phase={Phase};fe={FundingEventId};idx={BucketIdx}";
 
             public static Cursor Parse(string s)
             {
@@ -684,20 +803,21 @@ namespace Checkbook.Plugins.Distributions
                             break;
                     }
                 }
-                if (c.Phase == 1) return c;
-                if (c.Phase >= 2 && c.FundingEventId != Guid.Empty) return c;
+                if (c.Phase == 4) return c;
+                if ((c.Phase == 2 || c.Phase == 3) && c.FundingEventId != Guid.Empty) return c;
                 return null;
             }
         }
 
         private static void WriteOutputs(IPluginExecutionContext context,
-            int deactivated, int created, int turnIns, int skipped, Cursor cursor)
+            int deactivated, int created, int updated, int turnIns, int skipped, Cursor cursor)
         {
-            context.OutputParameters["Deactivated"]       = deactivated;
-            context.OutputParameters["Created"]           = created;
-            context.OutputParameters["TurnInsCreated"]    = turnIns;
-            context.OutputParameters["Skipped"]           = skipped;
-            context.OutputParameters["NextToken"] = cursor != null ? cursor.Serialize() : string.Empty;
+            context.OutputParameters["Deactivated"]    = deactivated;
+            context.OutputParameters["Created"]        = created;
+            context.OutputParameters["Updated"]        = updated;
+            context.OutputParameters["TurnInsCreated"] = turnIns;
+            context.OutputParameters["Skipped"]        = skipped;
+            context.OutputParameters["NextToken"]      = cursor != null ? cursor.Serialize() : string.Empty;
         }
     }
 }

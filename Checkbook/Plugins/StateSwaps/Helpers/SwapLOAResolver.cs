@@ -24,6 +24,16 @@ namespace Checkbook.Plugins.StateSwaps.Helpers
         public EntityReference CreditLOA;
         public EntityReference DebitRF;
         public EntityReference CreditRF;
+        // Prio-level Fund Centers (may sit below state level — walk up with
+        // FundCenterWalkHelper before using as a Distribution FC) and the
+        // item's denormalized Fund / PG (SwapItemDerivedFieldsPlugin keeps
+        // these in sync with the debit Prio; per-row Fund/PG match across
+        // both sides is validated at item save). Consumed by
+        // SwapDistributionCreator.
+        public EntityReference DebitFundCenter;
+        public EntityReference CreditFundCenter;
+        public EntityReference Fund;
+        public EntityReference PG;
     }
 
     /// <summary>
@@ -48,6 +58,8 @@ namespace Checkbook.Plugins.StateSwaps.Helpers
                         <attribute name='{SwapItemAttributes.Amount}'/>
                         <attribute name='{SwapItemAttributes.DebitPrioritization}'/>
                         <attribute name='{SwapItemAttributes.CreditPrioritization}'/>
+                        <attribute name='{SwapItemAttributes.Fund}'/>
+                        <attribute name='{SwapItemAttributes.PG}'/>
                         <filter type='and'>
                             <condition attribute='{SwapItemAttributes.StateSwap}' operator='eq' value='{swapId}'/>
                             <condition attribute='{SwapItemAttributes.StateCode}' operator='eq' value='{StateCodeValues.Active}'/>
@@ -58,6 +70,7 @@ namespace Checkbook.Plugins.StateSwaps.Helpers
                                      link-type='inner' alias='dp'>
                             <attribute name='{PrioritizationAttributes.LineOfAccounting}'/>
                             <attribute name='{PrioritizationAttributes.RequirementFunding}'/>
+                            <attribute name='{PrioritizationAttributes.FundCenter}'/>
                         </link-entity>
                         <link-entity name='{EntityNames.Prioritization}'
                                      from='{PrioritizationAttributes.Id}'
@@ -65,6 +78,7 @@ namespace Checkbook.Plugins.StateSwaps.Helpers
                                      link-type='inner' alias='cp'>
                             <attribute name='{PrioritizationAttributes.LineOfAccounting}'/>
                             <attribute name='{PrioritizationAttributes.RequirementFunding}'/>
+                            <attribute name='{PrioritizationAttributes.FundCenter}'/>
                         </link-entity>
                     </entity>
                 </fetch>";
@@ -85,6 +99,10 @@ namespace Checkbook.Plugins.StateSwaps.Helpers
                     CreditLOA  = AliasedValueHelper.GetReference(row, "cp." + PrioritizationAttributes.LineOfAccounting),
                     DebitRF    = AliasedValueHelper.GetReference(row, "dp." + PrioritizationAttributes.RequirementFunding),
                     CreditRF   = AliasedValueHelper.GetReference(row, "cp." + PrioritizationAttributes.RequirementFunding),
+                    DebitFundCenter  = AliasedValueHelper.GetReference(row, "dp." + PrioritizationAttributes.FundCenter),
+                    CreditFundCenter = AliasedValueHelper.GetReference(row, "cp." + PrioritizationAttributes.FundCenter),
+                    Fund       = row.GetAttributeValue<EntityReference>(SwapItemAttributes.Fund),
+                    PG         = row.GetAttributeValue<EntityReference>(SwapItemAttributes.PG),
                 };
 
                 if (item.DebitLOA == null || item.CreditLOA == null)
