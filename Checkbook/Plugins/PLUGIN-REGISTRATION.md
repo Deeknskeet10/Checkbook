@@ -598,18 +598,26 @@ renamed. The PCF process-bar control mirrors these lists on the UI side.
 
 | # | Message | Primary entity | Stage         | Mode | Filtering attributes                  | Notes |
 |---|---------|----------------|---------------|------|---------------------------------------|-------|
-| 1 | Update  | `book_turnin`  | Pre-Operation | Sync | `book_stateapproved, book_beapproved` | Only fires on approval transitions. **Requires PreImage** (`book_stateapproved, book_beapproved, book_newamount, book_origin, book_afpamount, book_allotmentamount`) — origin + AFP/Allotment amounts are needed to evaluate the sweep-origin AFP-only path. |
+| 1 | Update  | `book_turnin`  | Pre-Operation | Sync | `book_stateapproved, book_beapproved` | Fires when the payload carries an approval flag = true (value-based, not transition-based — so a re-save that re-drives a stuck approval is validated + role-gated like the original). **Requires PreImage** (`book_stateapproved, book_beapproved, book_newamount, book_origin, book_afpamount, book_allotmentamount`) — origin + AFP/Allotment amounts are needed to evaluate the sweep-origin AFP-only path. |
 
 ### `Checkbook.Plugins.TurnIns.TurnInApprovalPlugin`
 
 Post-op orchestrator that executes the approved Turn-In: resolves credit
 LOA, creates Ledger debit/credit pair, creates AFP/Allotment Distributions,
 updates Prios and (for RF-only items) RFs, rolls up parent RFs, recalcs
-touched LOAs, and deactivates the Turn-In. Depth-guarded.
+touched LOAs, and deactivates the Turn-In.
+
+Trigger semantics (hardened Jul 2026, same pattern as `RealignmentProcessor`):
+fires when the payload carries an approval flag = true **and the pre-image
+shows the record still active** (deactivation-on-completion is the "processed"
+marker; ledger existence is the durable double-processing barrier). No Depth
+guard — bulk approvals via Excel Online / ExecuteMultiple arrive nested and
+must process; self re-entry is detected by walking `ParentContext` for an
+ancestor `book_turnin` Update.
 
 | # | Message | Primary entity | Stage           | Mode | Filtering attributes                  | Notes |
 |---|---------|----------------|-----------------|------|---------------------------------------|-------|
-| 1 | Update  | `book_turnin`  | Post-Operation  | Sync | `book_stateapproved, book_beapproved` | Fires on approval transition with idempotency guard. **Requires PreImage** (full image — reads `book_stateapproved, book_beapproved, book_newamount, book_fund, book_pg, book_fundcenter, book_origin, book_afpamount, book_allotmentamount`). |
+| 1 | Update  | `book_turnin`  | Post-Operation  | Sync | `book_stateapproved, book_beapproved` | Fires when an approval flag is in the payload and the record is active; idempotency-guarded via ledger existence. **Requires PreImage** (full image — must include `statecode`; reads `book_stateapproved, book_beapproved, book_newamount, book_fund, book_pg, book_fundcenter, book_origin, book_afpamount, book_allotmentamount`). |
 
 > See [`TurnIns/REGISTRATION.md`](TurnIns/REGISTRATION.md) for the
 > `book_TurnInCreditOPR` env var that this plugin reads via
@@ -620,8 +628,10 @@ touched LOAs, and deactivates the Turn-In. Depth-guarded.
 Post-op handler for the **denied** path: when `book_stateapproved` flips
 true → false, deactivates the Turn-In (statecode = Inactive). No financial
 side effects — `TurnInValidator`'s idempotency guarantees no ledgers exist
-when this path runs. Depth-guarded so its own deactivation Update doesn't
-re-enter.
+when this path runs. Denial detection stays transition-based (a bare false
+can't distinguish "denied" from "never approved"); self re-entry (its own
+deactivation Update, or the orchestrator's) is detected via `ParentContext`
+rather than a Depth guard, so bulk denials via Excel / ExecuteMultiple work.
 
 | # | Message | Primary entity | Stage           | Mode | Filtering attributes      | Notes |
 |---|---------|----------------|-----------------|------|---------------------------|-------|
@@ -680,7 +690,11 @@ Handles reparent (recomputes both old and new parent on Update).
 
 ### `Checkbook.Plugins.StateSwaps.SwapValidator`
 
-Pre-op gate on `book_stateswap` approval / denial transitions. Enforces
+Pre-op gate on `book_stateswap` approvals / denials. Approval detection is
+value-based (fires when the payload carries an approval flag = true, not
+only on false → true) so a re-save that re-drives a stuck approval is
+validated and role-gated like the original; denial detection stays
+transition-based. Enforces
 idempotency (no re-processing if ledgers exist), role gating with
 **per-state BU scoping** via `StateScopeHelper` (a State A Approver in the
 wrong BU cannot approve the State A side), balance (recomputed live from
@@ -696,7 +710,7 @@ Role checks map:
 
 | # | Message | Primary entity   | Stage         | Mode | Filtering attributes                                                                | Notes |
 |---|---------|------------------|---------------|------|--------------------------------------------------------------------------------------|-------|
-| 1 | Update  | `book_stateswap` | Pre-Operation | Sync | `book_stateaapproved, book_statebapproved, book_beapproved, book_denied`             | Only fires on approval / denial transitions. **Requires PreImage** (`book_stateaapproved, book_statebapproved, book_beapproved, book_denied, book_statea, book_stateb`). |
+| 1 | Update  | `book_stateswap` | Pre-Operation | Sync | `book_stateaapproved, book_statebapproved, book_beapproved, book_denied`             | Fires when an approval flag is in the payload (value-based) or on a denial transition. **Requires PreImage** (`book_stateaapproved, book_statebapproved, book_beapproved, book_denied, book_statea, book_stateb`). |
 
 ### `Checkbook.Plugins.StateSwaps.SwapAutoSharePlugin`
 
@@ -715,13 +729,18 @@ parent 1:N's Share = Cascade All.
 
 ### `Checkbook.Plugins.StateSwaps.SwapApprovalPlugin`
 
-Post-op orchestrator for a BE-approved State Swap. Fires only on
-`book_beapproved` false → true. Resolves each item's debit/credit LOA +
-parent RF via `SwapLOAResolver`, writes ledger pairs (skipping same-LOA
-net-zero items), recalcs touched LOA TDPs, applies net Prio `FundedAmount`
-and parent RF `TDP` deltas via `SwapPrioritizationUpdater`, recalcs LOA
-TDPs again as a catch-all, and deactivates the swap (statecode Inactive,
-statuscode 2 = BE Approved). Depth-guarded.
+Post-op orchestrator for a BE-approved State Swap. Fires when the payload
+carries `book_beapproved` = true **and the pre-image shows the swap still
+active** (hardened Jul 2026, same pattern as `RealignmentProcessor`:
+deactivation-on-completion is the "processed" marker, ledger existence is
+the durable double-processing barrier, and no Depth guard — bulk approvals
+via Excel Online / ExecuteMultiple arrive nested and must process; self
+re-entry is detected via `ParentContext`). Resolves each item's debit/credit
+LOA + parent RF via `SwapLOAResolver`, writes ledger pairs (skipping
+same-LOA net-zero items), recalcs touched LOA TDPs, applies net Prio
+`FundedAmount` and parent RF `TDP` deltas via `SwapPrioritizationUpdater`,
+recalcs LOA TDPs again as a catch-all, and deactivates the swap (statecode
+Inactive, statuscode 2 = BE Approved).
 
 When a credit pushes a Prio's `FundedAmount` above its `RequestedAmount`,
 `SwapPrioritizationUpdater` raises `RequestedAmount` to match **in the same
@@ -735,19 +754,23 @@ RF delta application would otherwise trip the TDP-vs-Funded check.
 
 | # | Message | Primary entity   | Stage           | Mode | Filtering attributes | Notes |
 |---|---------|------------------|-----------------|------|----------------------|-------|
-| 1 | Update  | `book_stateswap` | Post-Operation  | Sync | `book_beapproved`    | Fires on BE approval transition; idempotency-guarded. **Requires PreImage** (full image: `book_beapproved, book_stateaapproved, book_statebapproved, book_statea, book_stateb, book_newfiscalyear`). |
+| 1 | Update  | `book_stateswap` | Post-Operation  | Sync | `book_beapproved`    | Fires when `book_beapproved` = true is in the payload and the swap is active; idempotency-guarded. **Requires PreImage** (full image — must include `statecode`; reads `book_beapproved, book_stateaapproved, book_statebapproved, book_statea, book_stateb, book_newfiscalyear`). |
 
 ### `Checkbook.Plugins.StateSwaps.SwapDenialPlugin`
 
-Pre-op denial-lifecycle writer. Three cases on the same Update, all at
-Depth 1 only:
+Pre-op denial-lifecycle writer. Three cases on the same Update, all for
+user-initiated updates only:
 
 - **A. Denial transition** (`book_denied` false → true): clears all three approval flags + their by/on lookups; preserves `book_denialreason` as history.
 - **B. Next save after denial** (`preImage.book_denied = true` + no denial change this update): clears `book_denied` so the swap leaves the denied state.
 - **C. Resubmission approval** (state A or state B false → true + `preImage.book_denialreason` had a value): clears `book_denialreason`.
 
-Depth guard prevents `SwapRollupPlugin`'s nested parent Update from clearing
-denied on the drafter's behalf.
+"User-initiated" is detected wrapper-aware (same pattern as
+`DeactivationRoleGuard`): bulk wrappers (ExecuteMultiple / Excel Online /
+SetState) walk through and count as user-initiated, while any other ancestor
+context (e.g. `SwapRollupPlugin`'s nested parent Update, the orchestrator's
+self-deactivate) is automated and skipped — so a rollup can't clear
+`book_denied` on the drafter's behalf, but a bulk denial still works.
 
 | # | Message | Primary entity   | Stage         | Mode | Filtering attributes                                                     | Notes |
 |---|---------|------------------|---------------|------|--------------------------------------------------------------------------|-------|

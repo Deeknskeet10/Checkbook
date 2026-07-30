@@ -97,15 +97,5 @@ namespace Checkbook.Plugins.Validation
                 $"{context.PrimaryEntityId} by user {context.InitiatingUserId}.");
             throw new InvalidPluginExecutionException(BlockedMessage);
         }
-
-        // Messages that merely wrap a direct user action — seeing one of these
-        // as the parent does NOT mean the deactivation is automated.
-        private static bool IsPlatformWrapper(string messageName)
-        {
-            return messageName == "SetState" ||
-                   messageName == "SetStateDynamicEntity" ||
-                   messageName == "ExecuteMultiple" ||
-                   messageName == "ExecuteTransaction";
-        }
     }
 }

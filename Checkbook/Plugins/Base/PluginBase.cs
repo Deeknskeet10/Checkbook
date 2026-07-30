@@ -105,6 +105,57 @@ namespace Checkbook.Plugins.Base
         }
 
         /// <summary>
+        /// True when an ancestor pipeline is an Update on <paramref name="entityName"/> —
+        /// i.e. this Update was issued by a plugin's own nested Update on the same
+        /// table (self re-entry). Bulk wrappers (ExecuteMultiple / ExecuteTransaction)
+        /// and unrelated parent pipelines walk through and do NOT count, so
+        /// Excel Online publishes and grid bulk edits still process. Use this in
+        /// approval orchestrators instead of a blanket Depth &gt; 1 guard, which
+        /// silently drops those bulk saves.
+        /// </summary>
+        protected static bool IsNestedUpdateOf(IPluginExecutionContext context, string entityName)
+        {
+            var ancestor = context.ParentContext;
+            while (ancestor != null)
+            {
+                if (ancestor.MessageName == "Update" &&
+                    ancestor.PrimaryEntityName == entityName)
+                    return true;
+
+                ancestor = ancestor.ParentContext;
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// True when, after walking past platform wrapper messages (SetState,
+        /// ExecuteMultiple, ExecuteTransaction), any ancestor context remains —
+        /// i.e. the operation was issued by server-side automation (another
+        /// plugin, a workflow, a Custom API) rather than directly by a user or
+        /// a bulk wrapper. Use for "user-initiated only" lifecycle plugins.
+        /// Same pattern as DeactivationRoleGuard.
+        /// </summary>
+        protected static bool HasNonWrapperAncestor(IPluginExecutionContext context)
+        {
+            var ancestor = context.ParentContext;
+            while (ancestor != null && IsPlatformWrapper(ancestor.MessageName))
+                ancestor = ancestor.ParentContext;
+            return ancestor != null;
+        }
+
+        /// <summary>
+        /// Messages that merely wrap a direct user action — seeing one as a
+        /// parent context does NOT mean the operation is automated.
+        /// </summary>
+        protected static bool IsPlatformWrapper(string messageName)
+        {
+            return messageName == "SetState" ||
+                   messageName == "SetStateDynamicEntity" ||
+                   messageName == "ExecuteMultiple" ||
+                   messageName == "ExecuteTransaction";
+        }
+
+        /// <summary>
         /// Gets an entity with attributes merged from target and pre-image.
         /// Target attributes take precedence over pre-image attributes.
         /// Useful for getting the "effective" state of a record during an Update.

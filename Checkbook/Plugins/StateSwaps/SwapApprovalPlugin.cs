@@ -12,8 +12,12 @@ namespace Checkbook.Plugins.StateSwaps
     /// <summary>
     /// Post-operation orchestrator for a BE-approved State Swap.
     ///
-    /// Fires on book_stateswap Update. Detects a BE approval transition
-    /// (book_beapproved false → true) and runs the financial side effects:
+    /// Fires on book_stateswap Update when the payload carries
+    /// book_beapproved = true and the swap is still active — deactivation at
+    /// step 7 marks "processed", the ledger-existence guard is the durable
+    /// double-processing barrier, and self re-entry is detected via
+    /// ParentContext (not a Depth guard, which dropped Excel/bulk approvals).
+    /// Runs the financial side effects:
     ///   1. Idempotency guard (existing ledger blocks re-processing)
     ///   2. Resolve LOAs + parent RFs for every active item
     ///   3. Ledger pairs: one debit + one credit per item, skipping items where
@@ -39,21 +43,43 @@ namespace Checkbook.Plugins.StateSwaps
         {
             if (context.PrimaryEntityName != EntityNames.StateSwap) return;
             if (context.MessageName != "Update") return;
-            if (context.Depth > 1)
+
+            // Self re-entry only (our own deactivation Update at step 7). A
+            // blanket Depth > 1 guard silently dropped bulk approvals — Excel
+            // Online publish / ExecuteMultiple grid edits arrive nested inside
+            // a wrapper and must still process.
+            if (IsNestedUpdateOf(context, EntityNames.StateSwap))
             {
-                tracing.Trace($"SwapApprovalPlugin: depth {context.Depth} > 1; skipping.");
+                tracing.Trace("SwapApprovalPlugin: nested book_stateswap Update (self re-entry) — skipping.");
                 return;
             }
 
             var target = GetTarget(context);
             var preImage = TryGetPreImage(context);
 
-            bool beApprovalTransition = ApprovalTransitionDetector.DetectBoolTransition(
-                target, preImage, StateSwapAttributes.BEApproved);
+            // Value + active detection: processed swaps are always deactivated
+            // at step 7, so an *active* swap whose payload carries
+            // book_beapproved = true is unprocessed — even if the flag was
+            // already true (a stuck approval that committed without processing
+            // is re-driven by re-saving the flag; a transition check would
+            // skip it). The ledger-existence guard below is the durable
+            // double-processing barrier.
+            bool recordActive =
+                (preImage?.GetAttributeValue<OptionSetValue>("statecode")?.Value
+                 ?? StateCodeValues.Active) == StateCodeValues.Active;
 
-            if (!beApprovalTransition)
+            if (!recordActive)
             {
-                tracing.Trace("SwapApprovalPlugin: no BE approval transition; nothing to do.");
+                tracing.Trace("SwapApprovalPlugin: swap already inactive (processed) — skipping.");
+                return;
+            }
+
+            bool beApprovedInPayload = ApprovalTransitionDetector.PayloadHasBoolValue(
+                target, StateSwapAttributes.BEApproved);
+
+            if (!beApprovedInPayload)
+            {
+                tracing.Trace("SwapApprovalPlugin: no BE approval value in payload; nothing to do.");
                 return;
             }
 

@@ -11,8 +11,10 @@ using Checkbook.Plugins.StateSwaps.Helpers;
 namespace Checkbook.Plugins.StateSwaps
 {
     /// <summary>
-    /// Pre-operation validator for book_stateswap Update. Only fires when an
-    /// approval or denial transition is in progress.
+    /// Pre-operation validator for book_stateswap Update. Only fires when the
+    /// payload carries an approval flag = true (value-based, so a re-save that
+    /// re-drives a stuck approval is validated like the original) or a denial
+    /// transition is in progress.
     ///
     /// Enforces:
     ///   1. Idempotency — block re-approval if any ledger already links back to this swap.
@@ -50,23 +52,28 @@ namespace Checkbook.Plugins.StateSwaps
             var target = GetTarget(context);
             var preImage = TryGetPreImage(context);
 
-            bool stateATx = ApprovalTransitionDetector.DetectBoolTransition(
-                target, preImage, StateSwapAttributes.StateAApproved);
-            bool stateBTx = ApprovalTransitionDetector.DetectBoolTransition(
-                target, preImage, StateSwapAttributes.StateBApproved);
-            bool beTx = ApprovalTransitionDetector.DetectBoolTransition(
-                target, preImage, StateSwapAttributes.BEApproved);
+            // Approval flags are value-based (payload carries true) so a re-save
+            // that re-drives a stuck approval (see SwapApprovalPlugin) is
+            // validated and role-gated like the original. Denial stays
+            // transition-based — a bare false can't distinguish "denied" from
+            // "never approved", and SwapDenialPlugin owns that lifecycle.
+            bool stateATx = ApprovalTransitionDetector.PayloadHasBoolValue(
+                target, StateSwapAttributes.StateAApproved);
+            bool stateBTx = ApprovalTransitionDetector.PayloadHasBoolValue(
+                target, StateSwapAttributes.StateBApproved);
+            bool beTx = ApprovalTransitionDetector.PayloadHasBoolValue(
+                target, StateSwapAttributes.BEApproved);
             bool deniedTx = ApprovalTransitionDetector.DetectBoolTransition(
                 target, preImage, StateSwapAttributes.Denied);
 
             if (!stateATx && !stateBTx && !beTx && !deniedTx)
             {
-                tracing.Trace("SwapValidator: no approval / denial transition — skipping.");
+                tracing.Trace("SwapValidator: no approval value / denial transition — skipping.");
                 return;
             }
 
             tracing.Trace(
-                $"SwapValidator: transitions detected. stateA={stateATx}, stateB={stateBTx}, " +
+                $"SwapValidator: approval/denial detected. stateA={stateATx}, stateB={stateBTx}, " +
                 $"be={beTx}, denied={deniedTx}.");
 
             // ---- 1. Idempotency ----

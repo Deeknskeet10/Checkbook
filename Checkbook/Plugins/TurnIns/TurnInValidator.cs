@@ -13,8 +13,10 @@ namespace Checkbook.Plugins.TurnIns
     /// <summary>
     /// Pre-operation validator for Turn-In approval.
     ///
-    /// Runs on book_turnin Update. Only fires when an approval transition is in progress
-    /// (book_stateapproved going false→true, or book_beapproved going false→true).
+    /// Runs on book_turnin Update. Only fires when the Update payload carries an
+    /// approval flag = true (book_stateapproved or book_beapproved). Value-based
+    /// rather than transition-based so a re-save that re-drives a stuck approval
+    /// (see TurnInApprovalPlugin) is validated and role-gated like the original.
     ///
     /// Responsibilities (validation only — execution is in TurnInApprovalPlugin post-op):
     ///   1. Idempotency — block re-approval if ledger entries already exist for this Turn-In.
@@ -46,35 +48,38 @@ namespace Checkbook.Plugins.TurnIns
             var target = GetTarget(context);
             var preImage = TryGetPreImage(context);
 
-            // ---- Approval-transition detection ----
-            bool stateApprovalTransition = ApprovalTransitionDetector.DetectBoolTransition(
-                target, preImage, TurninAttributes.StateApproved);
-            bool beApprovalTransition = ApprovalTransitionDetector.DetectBoolTransition(
-                target, preImage, TurninAttributes.BEApproved);
+            // ---- Approval detection (value-based, matches the orchestrator) ----
+            // Gate on the payload *carrying* an approval flag = true rather than on
+            // a false → true transition. A stuck approval (flag committed while the
+            // orchestrator step was disabled or the update was dropped nested) is
+            // healed by re-saving the flag — that save must run this validation
+            // too, and a transition check would skip it (true → true).
+            bool stateApprovedInPayload = ApprovalTransitionDetector.PayloadHasBoolValue(
+                target, TurninAttributes.StateApproved);
+            bool beApprovedInPayload = ApprovalTransitionDetector.PayloadHasBoolValue(
+                target, TurninAttributes.BEApproved);
 
-            if (!stateApprovalTransition && !beApprovalTransition)
+            if (!stateApprovedInPayload && !beApprovedInPayload)
             {
-                tracing.Trace("TurnInValidator: no approval transition — skipping.");
+                tracing.Trace("TurnInValidator: no approval value in payload — skipping.");
                 return;
             }
 
             tracing.Trace(
-                $"TurnInValidator: approval transition detected " +
-                $"(stateTx={stateApprovalTransition}, beTx={beApprovalTransition})");
+                $"TurnInValidator: approval value in payload " +
+                $"(state={stateApprovedInPayload}, be={beApprovedInPayload})");
 
-            // Recompute the effective post-update value of both flags — needed for
-            // the approval-routing check at the end of this method.
-            bool newStateApproved = (preImage?.GetAttributeValue<bool?>(TurninAttributes.StateApproved) ?? false)
-                || stateApprovalTransition;
-            bool newBeApproved = (preImage?.GetAttributeValue<bool?>(TurninAttributes.BEApproved) ?? false)
-                || beApprovalTransition;
+            // Effective post-update value of both flags — needed for the
+            // approval-routing check at the end of this method.
+            bool newStateApproved = GetEffectiveBool(target, preImage, TurninAttributes.StateApproved);
+            bool newBeApproved = GetEffectiveBool(target, preImage, TurninAttributes.BEApproved);
 
             // ---- Role gating ----
             // Table-level privileges let a few State roles (PM, FC Reviewer) update
             // Turn-Ins for editing purposes, but only Approvers/Administrators may
-            // actually flip the approval flags. Checkbook Administrators always pass.
+            // actually carry the approval flags. Checkbook Administrators always pass.
             EnforceApprovalRoles(
-                service, tracing, context.UserId, stateApprovalTransition, beApprovalTransition);
+                service, tracing, context.UserId, stateApprovedInPayload, beApprovedInPayload);
 
             // ---- Idempotency: have we already created ledgers for this Turn-In? ----
             // Per design choice (Q2 = option C), existence of ledger rows linked back to
@@ -204,19 +209,19 @@ namespace Checkbook.Plugins.TurnIns
         }
 
         /// <summary>
-        /// Blocks approval transitions when the caller doesn't hold an appropriate
-        /// role. Checkbook Administrators always pass on both sides. State transitions
-        /// require State Approver or State Administrator; BE transitions require the
-        /// Budget Executor role.
+        /// Blocks approval saves when the caller doesn't hold an appropriate role.
+        /// Checkbook Administrators always pass on both sides. A payload-carried
+        /// state flag requires State Approver or State Administrator; a
+        /// payload-carried BE flag requires the Budget Executor role.
         /// </summary>
         private static void EnforceApprovalRoles(
             IOrganizationService service,
             ITracingService tracing,
             Guid userId,
-            bool stateTransition,
-            bool beTransition)
+            bool stateFlagInPayload,
+            bool beFlagInPayload)
         {
-            if (stateTransition)
+            if (stateFlagInPayload)
             {
                 bool allowed = UserRoleHelper.HasAnyRole(
                     service, tracing, userId,
@@ -229,7 +234,7 @@ namespace Checkbook.Plugins.TurnIns
                 }
             }
 
-            if (beTransition)
+            if (beFlagInPayload)
             {
                 bool allowed = UserRoleHelper.HasAnyRole(
                     service, tracing, userId,

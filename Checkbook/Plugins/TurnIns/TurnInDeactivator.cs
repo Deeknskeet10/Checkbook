@@ -26,7 +26,13 @@ namespace Checkbook.Plugins.TurnIns
         {
             if (context.PrimaryEntityName != EntityNames.Turnin) return;
             if (context.MessageName != "Update") return;
-            if (context.Depth > 1) return; // our own deactivation Update fires this step again
+
+            // Self re-entry only (our own deactivation Update, or the approval
+            // orchestrator's). Not a Depth guard — bulk denials via Excel /
+            // ExecuteMultiple arrive nested and must still deactivate.
+            // Denial detection stays transition-based (true → false): a bare
+            // false value can't distinguish "denied" from "never approved".
+            if (IsNestedUpdateOf(context, EntityNames.Turnin)) return;
 
             var target = GetTarget(context);
             var preImage = TryGetPreImage(context);

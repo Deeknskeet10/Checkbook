@@ -70,5 +70,18 @@ namespace Checkbook.Plugins.Helpers
 
             return target.GetAttributeValue<OptionSetValue>(attribute)?.Value == value;
         }
+
+        /// <summary>
+        /// Boolean flavor of <see cref="PayloadHasOptionSetValue"/>: true when
+        /// <paramref name="attribute"/> is in the target payload with
+        /// <paramref name="value"/>. Same idempotency caveat — pair with a
+        /// "record still active" (or ledger-existence) check.
+        /// </summary>
+        public static bool PayloadHasBoolValue(Entity target, string attribute, bool value = true)
+        {
+            if (target == null || !target.Contains(attribute)) return false;
+
+            return (target.GetAttributeValue<bool?>(attribute) ?? false) == value;
+        }
     }
 }

@@ -40,7 +40,7 @@ namespace Checkbook.Plugins.Realignments
             // approvals (Excel Online publish, ExecuteMultiple grid edits)
             // arrive nested inside a wrapper operation and were silently
             // dropped — the decision value committed but nothing processed.
-            if (IsNestedRealignmentUpdate(context))
+            if (IsNestedUpdateOf(context, EntityNames.Realignments))
             {
                 tracing.Trace("Nested book_realignments Update (self re-entry) — skipping.");
                 return;
@@ -324,26 +324,6 @@ namespace Checkbook.Plugins.Realignments
             service.Update(upd);
 
             tracing.Trace($"RF Credit: TDP increased by {amount:N2} on RF {creditRFRef.Id}.");
-        }
-
-        // True when an ancestor pipeline is itself an Update on
-        // book_realignments — i.e. this Update was issued by our own
-        // processing (FinalizeRealignment) rather than by a user or a bulk
-        // wrapper (ExecuteMultiple/ExecuteTransaction ancestors are fine and
-        // walk through). Same ancestor-walk pattern as
-        // RequirementFundingTDPValidator.IsTriggeredByRealignment.
-        private static bool IsNestedRealignmentUpdate(IPluginExecutionContext context)
-        {
-            var ancestor = context.ParentContext;
-            while (ancestor != null)
-            {
-                if (ancestor.MessageName == "Update" &&
-                    ancestor.PrimaryEntityName == EntityNames.Realignments)
-                    return true;
-
-                ancestor = ancestor.ParentContext;
-            }
-            return false;
         }
 
         private void FinalizeRealignment(IOrganizationService service, ITracingService tracing, Guid id)

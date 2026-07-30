@@ -12,8 +12,12 @@ namespace Checkbook.Plugins.TurnIns
     /// <summary>
     /// Post-operation orchestrator for an approved Turn-In.
     ///
-    /// Fires on book_turnin Update. Detects an approval transition (state or BE going
-    /// false → true) and runs the financial side effects in order:
+    /// Fires on book_turnin Update. Fires when the payload carries an approval flag
+    /// (book_stateapproved / book_beapproved = true) and the record is still active —
+    /// deactivation-on-completion marks "processed", the ledger-existence guard is
+    /// the durable double-processing barrier, and self re-entry is detected via
+    /// ParentContext (not a Depth guard, which dropped Excel/bulk approvals).
+    /// Runs the financial side effects in order:
     ///   1. Idempotency guard (existence of any ledger linked to this Turn-In)
     ///   2. Load items (LOA Fund + PG carried on each item for distribution grouping)
     ///   3. Resolve credit LOA
@@ -37,24 +41,46 @@ namespace Checkbook.Plugins.TurnIns
 
             if (context.PrimaryEntityName != EntityNames.Turnin) return;
             if (context.MessageName != "Update") return;
-            if (context.Depth > 1)
+
+            // Self re-entry only (our own deactivation Update at the end, or
+            // TurnInDeactivator's). A blanket Depth > 1 guard silently dropped
+            // bulk approvals — Excel Online publish / ExecuteMultiple grid
+            // edits arrive nested inside a wrapper and must still process.
+            if (IsNestedUpdateOf(context, EntityNames.Turnin))
             {
-                tracing.Trace($"Depth {context.Depth} > 1; skipping to avoid recursion.");
+                tracing.Trace("Nested book_turnin Update (self re-entry) — skipping.");
                 return;
             }
 
             var target = GetTarget(context);
             var preImage = TryGetPreImage(context);
 
-            // ---- Approval-transition detection (same logic as the validator) ----
-            bool stateApprovalTransition = ApprovalTransitionDetector.DetectBoolTransition(
-                target, preImage, TurninAttributes.StateApproved);
-            bool beApprovalTransition = ApprovalTransitionDetector.DetectBoolTransition(
-                target, preImage, TurninAttributes.BEApproved);
+            // ---- Approval detection (value + active, same logic as the validator) ----
+            // Processed Turn-Ins are always deactivated (approved here in step 7,
+            // denied via TurnInDeactivator), so an *active* record whose payload
+            // carries an approval flag is unprocessed. Pre-image edge-detection
+            // left approvals that committed without processing permanently stuck
+            // (true → true is invisible to a transition check); value + active
+            // lets a re-save of the flag re-drive them. The ledger-existence
+            // guard below stays as the durable double-processing barrier.
+            bool recordActive =
+                (preImage?.GetAttributeValue<OptionSetValue>("statecode")?.Value
+                 ?? StateCodeValues.Active) == StateCodeValues.Active;
 
-            if (!stateApprovalTransition && !beApprovalTransition)
+            if (!recordActive)
             {
-                tracing.Trace("No approval transition — orchestrator does nothing.");
+                tracing.Trace("Turn-In already inactive (processed) — skipping.");
+                return;
+            }
+
+            bool stateApprovedInPayload = ApprovalTransitionDetector.PayloadHasBoolValue(
+                target, TurninAttributes.StateApproved);
+            bool beApprovedInPayload = ApprovalTransitionDetector.PayloadHasBoolValue(
+                target, TurninAttributes.BEApproved);
+
+            if (!stateApprovedInPayload && !beApprovedInPayload)
+            {
+                tracing.Trace("No approval value in payload — orchestrator does nothing.");
                 return;
             }
 
@@ -69,7 +95,7 @@ namespace Checkbook.Plugins.TurnIns
                 return;
             }
 
-            tracing.Trace("Approval transition + clean ledger state — beginning Turn-In processing.");
+            tracing.Trace("Approval value + active record + clean ledger state — beginning Turn-In processing.");
 
             var merged = GetMergedEntity(target, preImage);
             Guid turnInId = merged.Id;
@@ -180,8 +206,9 @@ namespace Checkbook.Plugins.TurnIns
             // ---- 7. Deactivate the Turn-In to keep the work queue clean ----
             // Mirrors TurnInDeactivator's statecode/statuscode for the denial path so
             // both completion outcomes (approved or denied) land in the same inactive
-            // state. This nested Update re-enters at Depth 2, where the orchestrator's
-            // own depth guard and TurnInDeactivator's depth guard both short-circuit.
+            // state. This nested Update re-enters with a book_turnin Update ancestor,
+            // which the orchestrator's and TurnInDeactivator's self re-entry checks
+            // both short-circuit on.
             tracing.Trace($"Deactivating completed Turn-In {turnInId}.");
             service.Update(new Entity(EntityNames.Turnin, turnInId)
             {

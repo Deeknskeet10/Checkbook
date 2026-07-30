@@ -25,10 +25,12 @@ namespace Checkbook.Plugins.StateSwaps
     ///    Clear book_denialreason — the swap has been resubmitted and someone
     ///    is approving again, so the historical reason is no longer relevant.
     ///
-    /// Depth guard: only user-initiated updates (Depth == 1) drive this
-    /// lifecycle. Nested updates from SwapRollupPlugin (post-op on item change)
-    /// or from the orchestrator (SwapApprovalPlugin's self-deactivate) enter at
-    /// Depth &gt;= 2 and must not clear book_denied on the drafter's behalf.
+    /// Only user-initiated updates drive this lifecycle — detected by the
+    /// absence of a non-wrapper ancestor context (bulk wrappers like
+    /// ExecuteMultiple / Excel Online walk through). Nested updates from
+    /// SwapRollupPlugin (post-op on item change) or from the orchestrator
+    /// (SwapApprovalPlugin's self-deactivate) carry an ancestor pipeline and
+    /// must not clear book_denied on the drafter's behalf.
     ///
     /// Register PreImage 'PreImage' with the approval / denial fields so
     /// transitions are detectable.
@@ -42,9 +44,15 @@ namespace Checkbook.Plugins.StateSwaps
         {
             if (context.PrimaryEntityName != EntityNames.StateSwap) return;
             if (context.MessageName != "Update") return;
-            if (context.Depth > 1)
+
+            // User-initiated updates only — nested updates from SwapRollupPlugin
+            // (post-op on item change) or the orchestrator's self-deactivate
+            // must not clear book_denied on the drafter's behalf. Wrapper-aware
+            // rather than Depth-based so bulk denials via Excel Online /
+            // ExecuteMultiple (which arrive nested in a wrapper) still work.
+            if (HasNonWrapperAncestor(context))
             {
-                tracing.Trace($"SwapDenialPlugin: depth {context.Depth}; skipping (not a user-initiated update).");
+                tracing.Trace("SwapDenialPlugin: automated ancestor context; skipping (not a user-initiated update).");
                 return;
             }
 
