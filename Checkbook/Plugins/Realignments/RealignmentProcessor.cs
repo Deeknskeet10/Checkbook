@@ -19,8 +19,13 @@ namespace Checkbook.Plugins.Realignments
     /// • Processor only performs execution, not validation.
     /// • Idempotent trigger: fires when the payload carries a decision value and
     ///   the record is still active (deactivation marks "processed"), so bulk
-    ///   saves and re-saves of a stuck approval both work. Self re-entry is
-    ///   detected via ParentContext, not a Depth guard.
+    ///   saves and re-saves of a stuck approval both work. No nesting/Depth
+    ///   guard: real-time Business Rules on this table (SetStateApproval,
+    ///   LockSameSAGFundField) update the record, so the decision save runs
+    ///   nested under a book_realignments Update — an ancestor-walk guard would
+    ///   silently drop every approval. Idempotency comes from value+active, and
+    ///   the payload-only decision check means only the actual decision write
+    ///   processes (see note in ExecutePlugin).
     /// </summary>
     public class RealignmentProcessor : PluginBase
     {
@@ -34,17 +39,24 @@ namespace Checkbook.Plugins.Realignments
             if (context.MessageName != "Update")
                 return;
 
-            // Skip only when this Update is nested inside another
-            // book_realignments Update (our own FinalizeRealignment, or a
-            // future cascade). A blanket Depth > 1 guard is wrong here: bulk
-            // approvals (Excel Online publish, ExecuteMultiple grid edits)
-            // arrive nested inside a wrapper operation and were silently
-            // dropped — the decision value committed but nothing processed.
-            if (IsNestedUpdateOf(context, EntityNames.Realignments))
-            {
-                tracing.Trace("Nested book_realignments Update (self re-entry) — skipping.");
-                return;
-            }
+            // NOTE: Do NOT skip when nested inside another book_realignments
+            // Update. Real-time Business Rules on this table (Realignments -
+            // SetStateApproval, Realignments - LockSameSAGFundField, Mode=1) set
+            // fields server-side, which issues a nested book_realignments
+            // Update; the user's decision-bearing save runs *inside* that
+            // nesting. An IsNestedUpdateOf(...) guard here silently dropped every
+            // approval (symptom: "self re-entry — skipping" with nothing else
+            // logged and the record never deactivating).
+            //
+            // No self re-entry guard is needed. FinalizeRealignment writes only
+            // statecode/statuscode and this step is filtered on
+            // book_newstateapproved/book_bedecision, so Finalize cannot
+            // re-trigger the processor. Idempotency is provided by the
+            // value-in-payload + record-active checks below; because the
+            // decision check reads the Target payload only, the nested
+            // business-rule updates (which carry other attributes, not the
+            // user's decision write) fall through to "No approval value in
+            // payload" without double-processing.
 
             var target = GetTarget(context);
             var preImage = TryGetPreImage(context);

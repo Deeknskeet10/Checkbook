@@ -303,10 +303,17 @@ value** (`book_bedecision` / `book_newstateapproved` = Approved or Denied)
 is the "already processed" marker, so this is idempotent — a stuck approval
 (value written while the step was disabled) can be re-driven by any save that
 carries the value again, instead of being invisible to a pre-image transition
-check. There is **no Depth guard**: bulk approvals (Excel Online publish,
-ExecuteMultiple grid edits) arrive nested and must still process. Self
-re-entry from the finalize Update is detected by walking `ParentContext` for
-an ancestor `book_realignments` Update.
+check. There is **no Depth guard and no nesting guard**: bulk approvals (Excel
+Online publish, ExecuteMultiple grid edits) arrive nested and must still
+process, and — critically — the real-time Business Rules on this table
+(`Realignments - SetStateApproval`, `Realignments - LockSameSAGFundField`,
+Mode=1) set fields server-side, which issues a nested `book_realignments`
+Update the decision save runs *inside*. An ancestor-walk `IsNestedUpdateOf`
+guard silently dropped every approval (trace showed "self re-entry — skipping"
+with nothing processed). No self re-entry guard is needed: `FinalizeRealignment`
+writes only `statecode`/`statuscode`, and this step is filtered on the decision
+attributes, so Finalize cannot re-trigger the processor. The payload-only
+decision check ensures only the actual decision write processes.
 
 | # | Message | Primary entity      | Stage           | Mode | Filtering attributes                     | Notes |
 |---|---------|---------------------|-----------------|------|------------------------------------------|-------|
