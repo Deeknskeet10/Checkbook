@@ -420,16 +420,21 @@ updates.
 
 ### `Checkbook.Plugins.Recalculations.PrioritizationFundingRollup`
 
-Rolls `book_prioritizationfunding` junction amounts up onto the parent
-Prioritization's `book_newfundedamounttdp` + `book_validatedamount`. The
-aggregate fetch + Prio update lives in
-`Helpers/PrioritizationFundingRollupHelper.RecalculatePrioritizationFunded`.
+Rolls `book_prioritizationfunding` junction amounts up onto **both** the parent
+Prioritization's `book_newfundedamounttdp` + `book_validatedamount` **and** the
+parent Requirement Funding's `book_fundedamount` + `book_validatedamount`. The
+Prio aggregate + update lives in
+`Helpers/PrioritizationFundingRollupHelper.RecalculatePrioritizationFunded`; the
+RF leg calls `Helpers/PrioritizationRollupHelper.RecalculateRFFunded` directly
+(the Prio update this plugin issues runs at depth+1, where the depth-guarded
+`PrioritizationRollupToRequirementFunding` early-returns, so it never fires to
+refresh the RF). On re-parent it recalcs both the old and new RF.
 
 | # | Message | Primary entity                | Stage           | Mode | Filtering attributes                                                                | Notes |
 |---|---------|-------------------------------|-----------------|------|-------------------------------------------------------------------------------------|-------|
-| 1 | Create  | `book_prioritizationfunding`  | Post-Operation  | Sync | *(none)*                                                                            | Recalc new parent Prio. |
-| 2 | Update  | `book_prioritizationfunding`  | Post-Operation  | Sync | `book_fundedamount, book_validatedamount, book_prioritization, statecode`           | Recalc current parent; recalc old parent on re-parent. **Requires PreImage** (`book_fundedamount, book_validatedamount, book_prioritization`). |
-| 3 | Delete  | `book_prioritizationfunding`  | Post-Operation  | Sync | *(none)*                                                                            | Recalc pre-image parent. **Requires PreImage** (`book_prioritization`). |
+| 1 | Create  | `book_prioritizationfunding`  | Post-Operation  | Sync | *(none)*                                                                            | Recalc new parent Prio + new parent RF. |
+| 2 | Update  | `book_prioritizationfunding`  | Post-Operation  | Sync | `book_fundedamount, book_validatedamount, book_prioritization, book_requirementfunding, statecode` | Recalc current parent Prio + RF; recalc old parent Prio/RF on re-parent. **Requires PreImage** (`book_fundedamount, book_validatedamount, book_prioritization, book_requirementfunding`). |
+| 3 | Delete  | `book_prioritizationfunding`  | Post-Operation  | Sync | *(none)*                                                                            | Recalc pre-image parent Prio + RF. **Requires PreImage** (`book_prioritization, book_requirementfunding`). |
 
 ### `Checkbook.Plugins.Recalculations.PrioritizationRollupToRequirementFunding`
 
@@ -1035,7 +1040,7 @@ to sort the right pane by **Message** then by **Primary Entity**.
 
 ### Recalculations
 - [ ] `Checkbook.Plugins.Recalculations.PrioritizationFundingRollup`
-  - [ ] Create / Update / Delete of `book_prioritizationfunding` — Post-Op Sync; Update + Delete have PreImage
+  - [ ] Create / Update / Delete of `book_prioritizationfunding` — Post-Op Sync; Update + Delete PreImage include `book_requirementfunding` (rolls up to both parent Prio and parent RF)
 - [ ] `Checkbook.Plugins.Recalculations.PrioritizationRollupToRequirementFunding`
   - [ ] Create / Update / Delete of `book_prioritization` — Post-Op Sync; Update + Delete have PreImage
 - [ ] `Checkbook.Plugins.Recalculations.RequirementDetailFundingRollup`

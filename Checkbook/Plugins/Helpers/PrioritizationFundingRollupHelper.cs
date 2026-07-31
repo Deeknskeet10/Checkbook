@@ -77,5 +77,55 @@ namespace Checkbook.Plugins.Helpers
             update[PrioritizationAttributes.ValidatedAmount] = validatedTotal;
             service.Update(update);
         }
+
+        /// <summary>
+        /// Sums active book_prioritizationfunding junction rows allocated to a
+        /// given Requirement Funding, restricted to junctions whose parent
+        /// Prioritization is FinalApproved + Active (mirrors the approval gating
+        /// of the direct-lookup Prio path in
+        /// <see cref="PrioritizationRollupHelper.RecalculateRFFunded"/>).
+        ///
+        /// This is the FY27+ path: a single Prioritization (per Requirement/FY)
+        /// splits its funded total across RFs via the junction, so the RF total
+        /// is driven by these rows — not by the legacy Prio.book_requirementfunding
+        /// direct lookup, which FY27 Prios leave empty. Safe to UNION with the
+        /// direct-lookup path: FY26 Prios have no junctions and FY27 Prios have
+        /// no direct-lookup RF, so exactly one source is non-zero per RF.
+        /// </summary>
+        public static (decimal funded, decimal validated) SumForRequirementFunding(
+            IOrganizationService service,
+            Guid rfId)
+        {
+            var fetch = $@"
+                <fetch aggregate='true'>
+                    <entity name='{EntityNames.PrioritizationFunding}'>
+                        <attribute name='{PrioritizationFundingAttributes.FundedAmount}' alias='total_funded' aggregate='sum'/>
+                        <attribute name='{PrioritizationFundingAttributes.ValidatedAmount}' alias='total_validated' aggregate='sum'/>
+                        <filter type='and'>
+                            <condition attribute='{PrioritizationFundingAttributes.StateCode}' operator='eq' value='{StateCodeValues.Active}'/>
+                            <condition attribute='{PrioritizationFundingAttributes.RequirementFunding}' operator='eq' value='{rfId}'/>
+                        </filter>
+                        <link-entity name='{EntityNames.Prioritization}' from='{PrioritizationAttributes.Id}' to='{PrioritizationFundingAttributes.Prioritization}' link-type='inner'>
+                            <filter type='and'>
+                                <condition attribute='{PrioritizationAttributes.ApprovalStatus}' operator='eq' value='{ApprovalStatusValues.FinalApproved}'/>
+                                <condition attribute='{PrioritizationAttributes.StateCode}' operator='eq' value='{StateCodeValues.Active}'/>
+                            </filter>
+                        </link-entity>
+                    </entity>
+                </fetch>";
+
+            var result = service.RetrieveMultiple(new FetchExpression(fetch));
+
+            decimal fundedTotal = 0m;
+            decimal validatedTotal = 0m;
+
+            if (result.Entities.Count > 0)
+            {
+                fundedTotal = AliasedValueHelper.GetDecimal(result.Entities[0], "total_funded");
+                validatedTotal = AliasedValueHelper.GetDecimal(result.Entities[0], "total_validated");
+            }
+
+            return (fundedTotal, validatedTotal);
+        }
     }
 }

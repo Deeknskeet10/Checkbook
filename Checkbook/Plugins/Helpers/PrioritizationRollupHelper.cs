@@ -8,12 +8,16 @@ namespace Checkbook.Plugins.Helpers
     /// <summary>
     /// Shared rollup math for Requirement Funding totals.
     ///
-    /// UNIONs two sources for the RF's FundedAmount / ValidatedAmount:
-    ///   • child Prioritizations (the Prio path), and
+    /// UNIONs three sources for the RF's FundedAmount / ValidatedAmount:
+    ///   • child Prioritizations via the legacy FY26 Prio.book_requirementfunding
+    ///     direct lookup (the Prio path),
+    ///   • child book_prioritizationfunding junctions (the FY27+ path, where one
+    ///     Prioritization per Requirement/FY splits its funded total across RFs
+    ///     and leaves the direct lookup empty), and
     ///   • child book_requirementdetailfunding junctions (the no-Prio direct
     ///     funding path, where the parent Requirement has no Prioritization).
-    /// A given Requirement is XOR-gated to exactly one path by
-    /// RequirementDetailFundingGuard, so only one source is non-zero per RF.
+    /// The three are mutually exclusive per RF (FY26 vs FY27, Prio vs no-Prio),
+    /// so at most one source is non-zero for any given RF.
     ///
     /// Both the PrioritizationRollupToRequirementFunding plugin (Prio
     /// Create/Update/Delete trigger), RealignmentProcessor, and the new
@@ -28,8 +32,10 @@ namespace Checkbook.Plugins.Helpers
         /// <summary>
         /// Recalculates FundedAmount and ValidatedAmount on the given
         /// Requirement Funding by summing approved + active child
-        /// Prioritizations and active book_requirementdetailfunding rows.
-        /// Writes the totals to the RF synchronously.
+        /// Prioritizations (direct-lookup path), active book_prioritizationfunding
+        /// junctions under approved + active Prios (FY27 split path), and active
+        /// book_requirementdetailfunding rows. Writes the totals to the RF
+        /// synchronously.
         /// </summary>
         public static void RecalculateRFFunded(
             IOrganizationService service,
@@ -69,13 +75,20 @@ namespace Checkbook.Plugins.Helpers
             var (rdFunded, rdValidated) =
                 RequirementDetailFundingRollupHelper.SumForRequirementFunding(service, rfId);
 
-            decimal fundedTotal = prioFunded + rdFunded;
-            decimal validatedTotal = prioValidated + rdValidated;
+            // UNION the FY27 junction split (book_prioritizationfunding): a single
+            // Prioritization spreads its funded total across RFs via the junction,
+            // leaving Prio.book_requirementfunding empty, so the direct-lookup path
+            // above contributes nothing for FY27 RFs and this term supplies it.
+            var (pfFunded, pfValidated) =
+                PrioritizationFundingRollupHelper.SumForRequirementFunding(service, rfId);
+
+            decimal fundedTotal = prioFunded + rdFunded + pfFunded;
+            decimal validatedTotal = prioValidated + rdValidated + pfValidated;
 
             tracing.Trace(
                 $"RF {rfId} rollup: " +
-                $"Funded={fundedTotal} (Prio={prioFunded} + RD={rdFunded}), " +
-                $"Validated={validatedTotal} (Prio={prioValidated} + RD={rdValidated})");
+                $"Funded={fundedTotal} (Prio={prioFunded} + RD={rdFunded} + PF={pfFunded}), " +
+                $"Validated={validatedTotal} (Prio={prioValidated} + RD={rdValidated} + PF={pfValidated})");
 
             var update = new Entity(EntityNames.RequirementFunding, rfId);
             update[RequirementFundingAttributes.FundedAmount] = fundedTotal;
