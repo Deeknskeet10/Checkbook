@@ -112,10 +112,22 @@ main form** "Information" `{bd6e50da-e765-4cbb-bbd4-d419e58c55f2}`:
 | Form OnSave | `Book.RequirementFunding.onFormSave` (book_requirementFundingValidation) | **nothing** — the RequirementFundingTDPValidator plugin is the enforcement | — | — |
 | `book_requirement` OnChange | `lockAmountFields` (book_reqFundLockFields) | `Book.RequirementFunding.onRequirementChange` | yes | (none) |
 | `book_lineofaccounting` OnChange | `onFundingLineChange` (registered under the book_reqFundLockFields library, but the code lives in book_reqFundOnLOAChange) | `Book.RequirementFunding.onLOAChange` | yes | (none) |
+| `book_newfiscalyear` OnChange | (none — new) | `Book.RequirementFunding.onFiscalYearChange` | yes | (none) |
 
 Also remove the now-unused form libraries `book_reqFundLockFields`,
 `book_requirementFundingValidation`, `book_reqFundOnLOAChange` and add
 `book_requirementfunding`.
+
+**FY27+ form changes (do these on the Requirement Funding main form):**
+- Make **Fiscal Year** (`book_newfiscalyear`) **Business Required** on the
+  form (field properties → Required, or a business rule if you want it scoped
+  to new records only). It was recently un-hidden for FY27. The script locks
+  it after creation (editable on create, read-only on update) — no form
+  designer setting needed for that.
+- Register the new `book_newfiscalyear` OnChange handler above.
+- No LOA lookup config is needed in the form designer — the FY→LOA filter is
+  applied in script (`addPreSearch`/`addCustomFilter`), because option-set-keyed
+  lookup filtering has no native form-designer setting.
 
 Behavior changes (intentional):
 - Save is **never blocked client-side** and there is no more synchronous
@@ -123,14 +135,22 @@ Behavior changes (intentional):
   save server-side.
 - No more field-level `setNotification` on TDP (a field notification blocks
   save — that was enforcement, not advice).
+- **FY now drives LOA (FY27+ direction flip).** The `book_lineofaccounting`
+  lookup is filtered to `book_fundingline` rows whose `book_fiscalyear`
+  matches the selected FY. Changing FY drops a now-mismatched LOA so the user
+  re-picks. The old LOA→FY auto-default (`defaultFiscalYearFromLOA`) is
+  **retired** to avoid a circular dependency — `onLOAChange` no longer touches
+  the FY field.
 - Everything else is preserved: debounced advisory TDP check with
-  INFO/WARNING banners, amount-lock UI from the Requirement type, fiscal-year
-  defaulting when the LOA changes.
+  INFO/WARNING banners, amount-lock UI from the Requirement type.
 
-Verify: open an RF record — amounts lock/unlock per Requirement type; change
-LOA — fiscal year defaults and the advisory banner re-runs; enter an over-cap
-TDP — WARNING banner appears but the save reaches the server, where the
-plugin rejects it.
+Verify: on a **new** RF record Fiscal Year is editable; reopen a **saved** RF
+record — Fiscal Year is read-only. Amounts lock/unlock per Requirement type; pick a
+Fiscal Year, then open the LOA lookup — only that FY's funding lines appear;
+change FY to another year — a mismatched LOA clears and the lookup re-filters;
+change LOA — the advisory banner re-runs (and FY is left untouched); enter an
+over-cap TDP — WARNING banner appears but the save reaches the server, where
+the plugin rejects it. FY cannot be left blank on save (Business Required).
 
 Delete when done: `book_requirementFundingValidation`,
 `book_reqFundLockFields`, `book_reqFundOnLOAChange`.
@@ -257,3 +277,33 @@ adopt `book_security` later), `book_turnInFilterForm`, `book_resetStateUFR`,
 `book_Prioritizations`, `book_Requirements`, `book_reqDetailFieldRequired`,
 `book_allocation`, `book_ledger`, `book_fund`, `book_recertification`,
 `cr2f7_documentBook`.
+
+---
+
+## 9. book_Prioritizations update — FY27 Spend Plan tab + FC lock (Jul 2026)
+
+File: `book_prioritization.js` → paste into the existing WR
+**`book_Prioritizations`** (already wired to the Prioritization main form:
+OnLoad `Book.Prioritization.onLoad`, OnSave `.onSave`, OnChange handlers on
+`book_requirementfunding` / `book_requirement`). No handler rewiring needed —
+this is a content update + publish.
+
+What the update adds:
+
+- `applySpendPlanTabVisibility` (called from onLoad) — shows the new
+  **Spend Plan** tab (`tab_spendplan`, hosts
+  `book_ARNGCheckbook.PrioritizationSpendPlanGrid`) only when
+  `book_newfiscalyear` >= 2027. FY26 and earlier keep the legacy Spend Plan
+  command-bar page.
+- `applyFundCenterLock` now also disables `book_fundcenter` when the Prio has
+  **active Itemized Details** — mirroring the new server-side lock
+  (`PrioritizationFundCenterLockGuard`; the plugin remains authoritative).
+
+Verify after publish:
+
+- FY26 Prio → no Spend Plan tab; FY27 Prio → tab visible.
+- Prio with Itemized Details → Fund Center disabled on load; Prio without →
+  behavior unchanged (national lock still applies).
+
+Full feature deployment (schema, plugins, PCF wiring):
+[`../dist/IMPLEMENTATION-FY27SpendPlan.md`](../dist/IMPLEMENTATION-FY27SpendPlan.md).

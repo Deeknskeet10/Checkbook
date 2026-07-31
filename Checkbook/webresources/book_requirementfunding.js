@@ -10,10 +10,21 @@ var Book = Book || {};
 //   book_reqFundOnLOAChange            onFundingLineChange                → Book.RequirementFunding.onLOAChange
 //
 // Public handlers (register with "pass execution context" checked):
-//   Book.RequirementFunding.onLoad              — form OnLoad
-//   Book.RequirementFunding.onRequirementChange — book_requirement OnChange
-//   Book.RequirementFunding.onLOAChange         — book_lineofaccounting OnChange
+//   Book.RequirementFunding.onLoad               — form OnLoad
+//   Book.RequirementFunding.onRequirementChange  — book_requirement OnChange
+//   Book.RequirementFunding.onLOAChange          — book_lineofaccounting OnChange
+//   Book.RequirementFunding.onFiscalYearChange   — book_newfiscalyear OnChange
 // (book_newtdp OnChange is wired programmatically inside onLoad, as before.)
+//
+// FY27+ direction change (fiscal year now drives LOA, not the reverse):
+//   - book_newfiscalyear is now a user-selected, Business-Required field,
+//     editable on create and locked on update (applyFiscalYearLock) so it
+//     can't drift after the LOA/TDP are tied to it.
+//   - The book_lineofaccounting lookup is filtered to book_fundingline rows
+//     whose book_fiscalyear matches the selected FY (addPreSearch +
+//     addCustomFilter — option-set-keyed filtering has no native config).
+//   - The old LOA→FY auto-default (book_reqFundOnLOAChange /
+//     defaultFiscalYearFromLOA) is RETIRED to avoid a circular dependency.
 //
 // Intentionally dropped from the old scripts:
 //   - The OnSave blocking validation and its synchronous XHR helpers. The
@@ -210,29 +221,70 @@ Book.RequirementFunding = (function () {
         }
     }
 
-    // ----- Fiscal-year defaulting (from book_reqFundOnLOAChange) -----
+    // ----- FY-driven LOA lookup filter (FY27+) -----
     // book_fiscalyear/book_newfiscalyear are the goal_fiscalyear option set;
-    // the raw numeric value copies straight across.
+    // the raw numeric value is the same on both sides, so we filter the
+    // book_lineofaccounting lookup (target: book_fundingline) to rows whose
+    // book_fiscalyear equals the selected FY. No native config exists for
+    // option-set-keyed lookup filtering, hence addPreSearch/addCustomFilter.
+    //
+    // Registered once (idempotent). The preSearch callback re-reads the FY on
+    // every dropdown open, so it stays live without re-registration; when FY
+    // is empty the lookup is left unfiltered.
 
-    function defaultFiscalYearFromLOA(formContext) {
+    var loaFilterWired = false;
+
+    function wireLOAFilter(formContext) {
+        if (loaFilterWired) return;
+        var loaCtrl = formContext.getControl(LOA);
+        var fyAttr  = formContext.getAttribute(FISCAL_YEAR);
+        if (!loaCtrl || !fyAttr) return;
+
+        loaCtrl.addPreSearch(function () {
+            var fy = fyAttr.getValue();
+            if (fy === null || fy === undefined) return; // no FY → no filter
+            loaCtrl.addCustomFilter(
+                "<filter type='and'>" +
+                "<condition attribute='book_fiscalyear' operator='eq' value='" + fy + "' />" +
+                "</filter>",
+                "book_fundingline"
+            );
+        });
+        loaFilterWired = true;
+    }
+
+    // ----- Fiscal Year lock -----
+    // FY is user-selectable on create, then locked once the row exists so it
+    // can't drift after the LOA/TDP are tied to it. Mirrors the Prioritization
+    // form's applyFiscalYearLock. (getFormType() === 1 is Create.)
+
+    function applyFiscalYearLock(formContext) {
+        var ctrl = formContext.getControl(FISCAL_YEAR);
+        if (!ctrl) return;
+        ctrl.setDisabled(formContext.ui.getFormType() !== 1);
+    }
+
+    // When FY changes, a previously-selected LOA may now belong to a different
+    // fiscal year. Clear it so the user re-picks from the (re-filtered) list.
+    function clearLOAIfFYMismatch(formContext) {
         var loaAttr = formContext.getAttribute(LOA);
         var fyAttr  = formContext.getAttribute(FISCAL_YEAR);
         if (!loaAttr || !fyAttr) return;
 
         var loaRef = loaAttr.getValue();
-        if (!loaRef) {
-            fyAttr.setValue(null);
-            return;
-        }
+        var fy     = fyAttr.getValue();
+        if (!loaRef || fy === null || fy === undefined) return;
 
         Xrm.WebApi.retrieveRecord(
             "book_fundingline",
             stripBraces(loaRef[0].id),
             "?$select=book_fiscalyear"
         ).then(function (result) {
-            fyAttr.setValue(result.book_fiscalyear);
+            if (result.book_fiscalyear !== fy) {
+                loaAttr.setValue(null);
+            }
         }).catch(function (error) {
-            console.error("Error retrieving fiscal year: " + error.message);
+            console.error("Error checking LOA fiscal year: " + error.message);
         });
     }
 
@@ -243,6 +295,8 @@ Book.RequirementFunding = (function () {
 
         clearAllNotifications(formContext);
         applyAmountLocks(formContext);
+        wireLOAFilter(formContext);
+        applyFiscalYearLock(formContext);
 
         // TDP changes revalidate; wired here (not in the designer) as before.
         var tdpAttr = formContext.getAttribute(TDP);
@@ -266,15 +320,22 @@ Book.RequirementFunding = (function () {
 
     function onLOAChange(executionContext) {
         var formContext = executionContext.getFormContext();
-        defaultFiscalYearFromLOA(formContext);
         loaTDPCache = { loaId: null, tdp: null };
         clearAllNotifications(formContext);
         debouncedValidation(formContext);
     }
 
+    function onFiscalYearChange(executionContext) {
+        var formContext = executionContext.getFormContext();
+        // FY drives LOA: drop a now-mismatched LOA so the user re-picks from
+        // the re-filtered list. The lookup filter itself reads FY live.
+        clearLOAIfFYMismatch(formContext);
+    }
+
     return {
         onLoad: onLoad,
         onRequirementChange: onRequirementChange,
-        onLOAChange: onLOAChange
+        onLOAChange: onLOAChange,
+        onFiscalYearChange: onFiscalYearChange
     };
 })();
