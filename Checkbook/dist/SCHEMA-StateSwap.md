@@ -66,7 +66,9 @@ Child of `book_stateswap`. One row = one paired exchange leg. Per-row
 constraint: debit Prio's Fund/PG must match credit Prio's Fund/PG.
 
 **Ownership model:** Inherit ownership from parent via cascade (§4).
-Sharing cascades from parent per Share = Cascade All.
+Sharing cascades from parent per Share = Cascade All for items present
+at share time; later-added items are shared per-row by
+`SwapItemAutoSharePlugin` (§5.2).
 
 **Publisher:** `book`.
 
@@ -199,8 +201,9 @@ State Abbreviation comes from `book_state.book_abbreviation`.
 
 ### What the auto-share plugin does
 
-Fires **post-op on Create** of `book_stateswap` (and post-op Update
-when `book_statea` or `book_stateb` changes):
+Fires **post-op on Create** of `book_stateswap` (and post-op Update —
+registered with no filter — for state-change rebalancing plus the
+item backfill sweep below):
 
 For each of the four teams (StateA-Approver, StateA-Administrator,
 StateB-Approver, StateB-Administrator):
@@ -211,9 +214,28 @@ StateB-Approver, StateB-Administrator):
    `GrantAccessRequest`.
 
 Share cascade to `book_swapitem` happens automatically via the
-relationship Share = Cascade All (§4). BE and Checkbook Admin roles
-have Organization-scope Read (see privilege table above) so they see
+relationship Share = Cascade All (§4) **for items that already exist
+when the swap is shared**. The cascade is point-in-time — it does NOT
+retroactively share items added *after* the parent share (e.g. the
+crediting state's leg entered later). `SwapItemAutoSharePlugin` covers
+that gap: it fires **post-op on Create of `book_swapitem`**, reads the
+parent swap's StateA/StateB, and grants the same four teams
+`ReadAccess | WriteAccess | AppendToAccess` on the new item. Because it
+runs as the calling user, the swap drafter's role needs User-scope
+**Share** on `book_swapitem` (§5.1) — they own the item they just created,
+so User scope suffices. BE and Checkbook Admin roles have
+Organization-scope Read (see privilege table above) so they see
 everything without needing shares.
+
+**Backfill sweep (Update):** on any user-initiated save of the swap,
+`SwapAutoSharePlugin` also re-shares every child `book_swapitem` with
+the current StateA/StateB teams (`ShareAllItemsForStates`). This repairs
+items that predate `SwapItemAutoSharePlugin` or were added after the
+parent's point-in-time cascade fired — so a plain re-save of a swap
+header fixes its items. Nested / orchestrated updates (e.g. the approval
+writer deactivating the swap) skip the sweep, and re-granting an existing
+share is a no-op, so it is safe to run on every save. To backfill existing
+swaps after deploying this change, re-save each swap header once.
 
 If a team is missing at share time, log a trace and continue —
 missing teams should not block record creation. Sharing can be

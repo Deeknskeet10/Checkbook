@@ -83,7 +83,7 @@ Required in the maker portal before enabling the State Swap steps:
 | Item | Change |
 |---|---|
 | `book_stateswap` table (new) | Full attribute list in the schema doc §1. |
-| `book_swapitem` table (new) | Full attribute list §2. Configure the 1:N from `book_stateswap` with **Share cascade = Cascade All** (§4) so item sharing follows the parent. |
+| `book_swapitem` table (new) | Full attribute list §2. Configure the 1:N from `book_stateswap` with **Share cascade = Cascade All** (§4) so item sharing follows the parent for items that exist when the swap is first shared. Items added *later* are shared per-row by `SwapItemAutoSharePlugin` (Cascade All is point-in-time and does not retroactively cover new children). |
 | `book_ledger` (existing) | Add lookup `book_stateswap` → `book_stateswap` (peer of `book_turnin`, `book_realignment`). |
 | `book_distributions` (existing) | Add lookup `book_stateswap` → `book_stateswap` (peer of `book_turnin`). Written by `SwapDistributionCreator` on BE approval; the swap-related Distribution views filter on it, and the `book_GenerateDistributions` reconcile treats swap-linked rows as immutable. |
 | `book_ledgertype` option set (existing) | Relabel value `2` from **Add** to **Swap** (values stay Realignment=0, Turn-in=1, Swap=2, Cut=3). This corrects a pre-existing constants bug — `LedgerTypeValues` in this build now uses 0/1/2. Historical ledger rows previously written with `book_ledgertype = 100000001` / `100000002` should be backfilled to `0` / `1` if reporting on ledger type matters. |
@@ -718,15 +718,38 @@ Role checks map:
 Post-op sharing writer. On Create, shares the swap with StateA + StateB's
 `{Abbr} - State Approver` and `{Abbr} - State Administrator` owner-teams
 (4 teams). On Update, revokes access from an old state's teams and grants
-to the new state's teams when `book_statea` or `book_stateb` changes.
-Missing teams are logged and skipped so environment misconfiguration does
-not block record creation. Item sharing follows automatically via the
-parent 1:N's Share = Cascade All.
+to the new state's teams when `book_statea` or `book_stateb` changes, and
+— on any user-initiated save — runs a **backfill sweep** that re-shares
+every child item with the current states (repairs items that predate
+per-item sharing or were added after the parent's point-in-time cascade;
+nested / orchestrated updates skip the sweep). Missing teams are logged and
+skipped so environment misconfiguration does not block record creation.
+
+Because the sweep must fire on a plain re-save, the Update step is
+registered with **no filtering attributes** (fires on any update); the
+internal same-value guard keeps the state revoke/grant a no-op when states
+did not change.
 
 | # | Message | Primary entity   | Stage           | Mode | Filtering attributes                | Notes |
 |---|---------|------------------|-----------------|------|-------------------------------------|-------|
 | 1 | Create  | `book_stateswap` | Post-Operation  | Sync | *(none)*                            | Initial share to StateA + StateB teams. |
-| 2 | Update  | `book_stateswap` | Post-Operation  | Sync | `book_statea, book_stateb`          | Rebalance shares when a state changes. **Requires PreImage** (`book_statea, book_stateb`). |
+| 2 | Update  | `book_stateswap` | Post-Operation  | Sync | *(none)*                            | Rebalance shares on a state change + backfill-sweep child items on any user save. **Requires PreImage** (`book_statea, book_stateb`). |
+
+### `Checkbook.Plugins.StateSwaps.SwapItemAutoSharePlugin`
+
+Post-op sharing writer on the child rows. On Create, reads the parent swap's
+`book_statea` + `book_stateb` and shares the new item with all four
+`{Abbr} - State Approver` / `{Abbr} - State Administrator` owner-teams.
+Closes the cascade gap: the parent 1:N's Share = Cascade All only shares child
+rows that exist when the parent is shared, so items a state adds *after* the
+swap was first shared (e.g. the crediting state's leg) would otherwise stay
+invisible to the counterparty under User-scope Read. Missing teams are logged
+and skipped. Runs as the calling user, so the swap drafter's role needs
+User-level **Share** on `book_swapitem`.
+
+| # | Message | Primary entity  | Stage           | Mode | Filtering attributes | Notes |
+|---|---------|-----------------|-----------------|------|----------------------|-------|
+| 1 | Create  | `book_swapitem` | Post-Operation  | Sync | *(none)*             | Share the new item with StateA + StateB teams. |
 
 ### `Checkbook.Plugins.StateSwaps.SwapApprovalPlugin`
 
@@ -958,7 +981,7 @@ Realignment updaters (funding moves), `book_GenerateDistributions` (reads).
 | 1 | Pre-Op (rank 10) | Sync | `SwapDenialPlugin` | `book_denied, book_stateaapproved, book_statebapproved` — MUST precede SwapValidator. |
 | 2 | Pre-Op (rank 20) | Sync | `SwapValidator` | `book_stateaapproved, book_statebapproved, book_beapproved, book_denied` |
 | 3 | Post-Op | Sync | `SwapApprovalPlugin` | `book_beapproved` — writes ledgers. |
-| 4 | Post-Op | Sync | `SwapAutoSharePlugin` | `book_statea, book_stateb` — re-shares with state teams. |
+| 4 | Post-Op | Sync | `SwapAutoSharePlugin` | *(no filter)* — re-shares with state teams on state change; backfill-sweeps child items on any user save. |
 
 ---
 
@@ -1054,7 +1077,9 @@ to sort the right pane by **Message** then by **Primary Entity**.
   - [ ] Update of `book_stateswap` — Pre-Op Sync, PreImage, filter `book_stateaapproved, book_statebapproved, book_beapproved, book_denied`
 - [ ] `Checkbook.Plugins.StateSwaps.SwapAutoSharePlugin`
   - [ ] Create of `book_stateswap` — Post-Op Sync
-  - [ ] Update of `book_stateswap` — Post-Op Sync, PreImage, filter `book_statea, book_stateb`
+  - [ ] Update of `book_stateswap` — Post-Op Sync, PreImage (`book_statea, book_stateb`), **no filtering attributes** (fires on any save for the backfill sweep)
+- [ ] `Checkbook.Plugins.StateSwaps.SwapItemAutoSharePlugin`
+  - [ ] Create of `book_swapitem` — Post-Op Sync
 - [ ] `Checkbook.Plugins.StateSwaps.SwapApprovalPlugin`
   - [ ] Update of `book_stateswap` — Post-Op Sync, full PreImage, filter `book_beapproved`
 - [ ] `Checkbook.Plugins.StateSwaps.SwapDenialPlugin`

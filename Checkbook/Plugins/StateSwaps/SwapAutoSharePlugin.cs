@@ -15,10 +15,16 @@ namespace Checkbook.Plugins.StateSwaps
     ///
     /// Create: grants access for the current StateA + StateB.
     /// Update: on a StateA or StateB change, revokes the old state's teams and
-    ///         grants the new state's teams. Other-attribute updates are ignored.
+    ///         grants the new state's teams. In addition, any user-initiated save
+    ///         runs a backfill sweep that re-shares every child item with the
+    ///         current states (see <see cref="Helpers.SwapTeamShareHelper.ShareAllItemsForStates"/>)
+    ///         — so re-saving a swap repairs items that predate per-item sharing.
+    ///         Nested / orchestrated updates skip the sweep.
     ///
     /// Register PreImage 'PreImage' on the Update step so old StateA / StateB
-    /// values are available when either lookup changes.
+    /// values are available when either lookup changes (and so the sweep can read
+    /// the current states on a save that doesn't touch them). The Update step must
+    /// fire on any save, so it is registered with no filtering attributes.
     /// </summary>
     public class SwapAutoSharePlugin : PluginBase
     {
@@ -81,6 +87,22 @@ namespace Checkbook.Plugins.StateSwaps
                             SwapTeamShareHelper.GrantAccessForState(
                                 service, tracing, swapRef, newStateB);
                         }
+                    }
+
+                    // Backfill sweep: on a user-initiated save, re-share every
+                    // child item with the CURRENT states. Repairs items created
+                    // before per-item sharing existed, or added after the parent's
+                    // point-in-time cascade fired — a plain re-save now fixes them.
+                    // Skipped for nested / orchestrated updates (e.g. the approval
+                    // writer's deactivation) so it doesn't re-sweep redundantly.
+                    if (!HasNonWrapperAncestor(context))
+                    {
+                        var currentA = GetEffectiveEntityReference(
+                            target, preImage, StateSwapAttributes.StateA);
+                        var currentB = GetEffectiveEntityReference(
+                            target, preImage, StateSwapAttributes.StateB);
+                        SwapTeamShareHelper.ShareAllItemsForStates(
+                            service, tracing, swapRef, currentA, currentB);
                     }
                     break;
                 }
