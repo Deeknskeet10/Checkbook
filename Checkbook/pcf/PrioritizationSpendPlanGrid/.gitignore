@@ -19,11 +19,5 @@
 # Visual Studio cache/options directory
 /.vs
 
-# devenv shell artifacts
-/.pac
-/solutions
-/src
-/dotnet-tools.json
-
 # macos
 .DS_Store

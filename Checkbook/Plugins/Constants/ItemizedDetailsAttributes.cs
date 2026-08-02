@@ -11,6 +11,7 @@ namespace Checkbook.Plugins.Constants
         public const string Name = "book_name";
         public const string Prioritization = "book_prioritization";
         public const string RequirementItem = "book_requirementitem"; // lookup -> book_requirementdetails
+        public const string FundCenter = "book_fundcenter";           // lookup -> book_fundcenter; blank = state level
         public const string RequestedAmount = "book_requestedamount"; // decimal
         public const string ValidatedAmount = "book_validatedamount"; // decimal
         public const string FundedAmount = "book_fundedamount";       // decimal

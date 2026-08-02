@@ -20,6 +20,7 @@ namespace Checkbook.Plugins.Constants
         public const string Requirements = "book_requirements";
         public const string Prioritization = "book_prioritization";
         public const string PrioritizationFunding = "book_prioritizationfunding";
+        public const string SpendPlan = "book_spendplan";
 
         // Budget Execution
         public const string Realignments = "book_realignments";

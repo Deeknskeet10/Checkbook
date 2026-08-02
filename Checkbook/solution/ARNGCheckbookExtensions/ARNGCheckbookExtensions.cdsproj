@@ -54,6 +54,7 @@
     <ProjectReference Include="../../pcf/RequirementDetailsRank/RequirementDetailsRank.pcfproj" />
     <ProjectReference Include="../../pcf/PrioritizationsForRequirement/PrioritizationsForRequirement.pcfproj" />
     <ProjectReference Include="../../pcf/PrioritizationFundingGrid/PrioritizationFundingGrid.pcfproj" />
+    <ProjectReference Include="../../pcf/PrioritizationSpendPlanGrid/PrioritizationSpendPlanGrid.pcfproj" />
     <ProjectReference Include="../../pcf/RequirementDetailFundingGrid/RequirementDetailFundingGrid.pcfproj" />
     <ProjectReference Include="../../pcf/RequirementFundingTab/RequirementFundingTab.pcfproj" />
     <ProjectReference Include="../../pcf/TurnInApprovalProcess/TurnInApprovalProcess.pcfproj" />

@@ -15,6 +15,11 @@ Book.Prioritization = (function () {
     var FUNDING_MODE_ITEMIZED       = 1;
     var APPROVAL_STATUS_STATE_INPUT = 0;
 
+    var SPEND_PLAN_TAB = "tab_spendplan";
+    // First FY that uses the PrioritizationSpendPlanGrid tab; earlier FYs keep
+    // the legacy Spend Plan page (command bar button).
+    var SPEND_PLAN_MIN_FY = 2027;
+
     var DOCS_REMINDER_ID = "docsReminder";
     var DOCS_REMINDER_MESSAGE =
         "Upload supporting Documentation and Analysis substantiating Resource " +
@@ -121,14 +126,38 @@ Book.Prioritization = (function () {
         return Promise.resolve(null);
     }
 
+    // While a Prio has active Itemized Details, its FC is server-locked to the
+    // state-level FC (PrioritizationFundCenterLockGuard) — mirror that lock on
+    // the form. Removing the last Itemized Detail releases the lock.
+    function hasActiveItemizedDetails(formContext) {
+        var prioId = formContext.data.entity.getId();
+        if (!prioId) return Promise.resolve(false);
+        return Xrm.WebApi.retrieveMultipleRecords(
+            "book_itemizeddetails",
+            "?$select=book_itemizeddetailsid" +
+            "&$filter=_book_prioritization_value eq " + stripBraces(prioId) +
+            " and statecode eq 0&$top=1"
+        ).then(function (result) { return result.entities.length > 0; });
+    }
+
     function applyFundCenterLock(formContext) {
         var fcAttr = formContext.getAttribute(FUND_CENTER);
         var fcCtrl = formContext.getControl(FUND_CENTER);
         if (!fcAttr || !fcCtrl) return;
 
-        readIsNational(formContext).then(
-            function (isNational) {
+        Promise.all([
+            readIsNational(formContext),
+            hasActiveItemizedDetails(formContext)
+        ]).then(
+            function (results) {
+                var isNational = results[0];
+                var itemizedLock = results[1];
                 fcCtrl.setVisible(true);
+                if (itemizedLock) {
+                    fcCtrl.setDisabled(true);
+                    fcAttr.setRequiredLevel("none");
+                    return;
+                }
                 if (isNational === null) {
                     // No parent set yet — user-editable, default required.
                     fcCtrl.setDisabled(false);
@@ -142,6 +171,18 @@ Book.Prioritization = (function () {
                 console.log("applyFundCenterLock retrieve failed: " + error.message);
             }
         );
+    }
+
+    // ----- Spend Plan tab visibility (FY27+) -----
+    // The Spend Plan tab hosts PrioritizationSpendPlanGrid; FY26 and earlier
+    // keep the legacy Spend Plan custom page, so hide the tab for them.
+
+    function applySpendPlanTabVisibility(formContext) {
+        var tab = formContext.ui.tabs.get(SPEND_PLAN_TAB);
+        if (!tab) return;
+        var fyAttr = formContext.getAttribute(FISCAL_YEAR);
+        var fy = fyAttr ? fyAttr.getValue() : null;
+        tab.setVisible(fy !== null && fy >= SPEND_PLAN_MIN_FY);
     }
 
     // ----- State auto-populate from user BU -----
@@ -283,6 +324,7 @@ Book.Prioritization = (function () {
             applyItemizedVisibilityOnLoad(formContext);
             applyDocsReminderBanner(formContext);
             applyFiscalYearLock(formContext);
+            applySpendPlanTabVisibility(formContext);
 
             // After an in-place save, the platform refreshes the form to Update mode
             // and discards our JS-set visibility/disabled/required overrides. The

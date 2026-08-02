@@ -116,6 +116,8 @@ interface ItemRow {
   label: string;
   /** "TDC · LIN · Country" of the linked Requirement Detail; absent codes omitted. */
   codes: string;
+  /** Fund Center name of the Itemized Detail; empty = state level. */
+  fundCenter: string;
   requested: number;
   validated: number;
   funded: number;
@@ -648,7 +650,7 @@ export const PrioritizationFundingGridApp: React.FC<PrioritizationFundingGridPro
       .map((id) => `_book_prioritization_value eq ${id}`)
       .join(" or ");
     const options =
-      "?$select=_book_prioritization_value,_book_requirementitem_value," +
+      "?$select=_book_prioritization_value,_book_requirementitem_value,_book_fundcenter_value," +
       `book_requestedamount,${ITEM_VALIDATED},${ITEM_FUNDED},${ITEM_NPM_COMMENT}` +
       "&$expand=book_RequirementItem($select=_book_item_value,_book_tdc_value,_book_lin_value,_book_country_value)" +
       `&$filter=(${filter})`;
@@ -683,6 +685,8 @@ export const PrioritizationFundingGridApp: React.FC<PrioritizationFundingGridPro
             (e[`_book_requirementitem_value${FV}`] as string | undefined) ??
             "(unnamed line item)",
           codes,
+          fundCenter:
+            (e[`_book_fundcenter_value${FV}`] as string | undefined) ?? "",
           requested: num(e.book_requestedamount),
           validated: num(e[ITEM_VALIDATED]),
           funded: num(e[ITEM_FUNDED]),
@@ -1634,6 +1638,7 @@ export const PrioritizationFundingGridApp: React.FC<PrioritizationFundingGridPro
                               <thead>
                                 <tr>
                                   <th className={styles.itemsTh}>Requirement Item</th>
+                                  <th className={styles.itemsTh}>Fund Center</th>
                                   <th className={`${styles.itemsTh} ${styles.itemsThNum}`}>Requested</th>
                                   <th className={`${styles.itemsTh} ${styles.itemsThNum}`}>Validated</th>
                                   <th className={`${styles.itemsTh} ${styles.itemsThNum}`}>Funded</th>
@@ -1649,6 +1654,9 @@ export const PrioritizationFundingGridApp: React.FC<PrioritizationFundingGridPro
                                       {it.codes && (
                                         <span className={styles.itemCodes}>{it.codes}</span>
                                       )}
+                                    </td>
+                                    <td className={styles.itemsTd}>
+                                      {it.fundCenter || "State level"}
                                     </td>
                                     <td className={`${styles.itemsTd} ${styles.tdNum}`}>
                                       {formatCurrency(it.requested)}

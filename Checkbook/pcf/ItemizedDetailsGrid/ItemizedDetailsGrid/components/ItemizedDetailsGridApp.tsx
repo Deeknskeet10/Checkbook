@@ -25,6 +25,8 @@ import {
   DialogContent,
   DialogActions,
   Checkbox,
+  Dropdown,
+  Option,
 } from "@fluentui/react-components";
 
 type DataSet = ComponentFramework.PropertyTypes.DataSet;
@@ -44,6 +46,7 @@ export interface ItemizedDetailsGridProps {
 /** Property-set aliases declared in ControlManifest.Input.xml. */
 const ALIAS = {
   requirementItem: "requirementItem",
+  fundCenter: "fundCenter",
   quantity: "quantity",
   requestedAmount: "requestedAmount",
   validatedAmount: "validatedAmount",
@@ -58,6 +61,13 @@ const ITEM_ENTITY = "book_item";
 const TDC_ENTITY = "book_tdc";
 const PRIORITIZATION_ENTITY = "book_prioritization";
 const REQUIREMENT_FUNDING_ENTITY = "book_requirementfunding";
+const FUND_CENTER_ENTITY = "book_fundcenter";
+
+/** A Fund Center belonging to the Prioritization's state. */
+interface FcOption {
+  id: string;
+  name: string;
+}
 
 /** A Requirement Detail on the parent Requirement that is not yet itemized. */
 interface CandidateRd {
@@ -97,6 +107,8 @@ interface GridRow {
   recordId: string;
   requirementItemId: string | null;
   requirementItemName: string;
+  fundCenterId: string | null;
+  fundCenterName: string;
   quantity: number | null;
   requestedAmount: number | null;
   validatedAmount: number | null;
@@ -165,6 +177,10 @@ const useStyles = makeStyles({
   commentInput: {
     minWidth: "160px",
     width: "160px",
+  },
+  fcDropdown: {
+    minWidth: "170px",
+    width: "170px",
   },
   totalsRow: {
     fontWeight: tokens.fontWeightSemibold,
@@ -273,6 +289,8 @@ export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
         requirementItemId: extractLookupId(lookupRaw),
         requirementItemName:
           record.getFormattedValue(ALIAS.requirementItem) || "(unnamed)",
+        fundCenterId: extractLookupId(record.getValue(ALIAS.fundCenter)),
+        fundCenterName: record.getFormattedValue(ALIAS.fundCenter) || "",
         quantity: toNumber(record.getValue(ALIAS.quantity)),
         requestedAmount: toNumber(record.getValue(ALIAS.requestedAmount)),
         validatedAmount: toNumber(record.getValue(ALIAS.validatedAmount)),
@@ -384,6 +402,90 @@ export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
         });
     });
   }, [datasetRows, contexts, webAPI]);
+
+  // ----- Fund Center column -----
+  // Options are the active FCs of the Prioritization's state; a blank FC on a
+  // row means "state level" (the Prio's own FC, which the server locks to the
+  // state-level FC while Itemized Details exist).
+  const [fcOptions, setFcOptions] = React.useState<FcOption[] | null>(null);
+  const [stateFcLabel, setStateFcLabel] = React.useState<string>("");
+  const [fcEdits, setFcEdits] = React.useState<
+    Record<string, string | null>
+  >({});
+
+  React.useEffect(() => {
+    if (!prioritizationId) return;
+    const fv = "@OData.Community.Display.V1.FormattedValue";
+    webAPI
+      .retrieveRecord(
+        PRIORITIZATION_ENTITY,
+        prioritizationId,
+        "?$select=_book_state_value,_book_fundcenter_value"
+      )
+      .then((prio: ComponentFramework.WebApi.Entity) => {
+        setStateFcLabel(
+          (prio[`_book_fundcenter_value${fv}`] as string) || ""
+        );
+        const stateId = prio._book_state_value as string | undefined;
+        if (!stateId) return null;
+        return webAPI.retrieveMultipleRecords(
+          FUND_CENTER_ENTITY,
+          "?$select=book_name" +
+            `&$filter=_book_state_value eq ${stateId} and statecode eq 0` +
+            "&$orderby=book_name asc"
+        );
+      })
+      .then((result) => {
+        if (!result) return;
+        setFcOptions(
+          result.entities.map((e) => ({
+            id: ((e.book_fundcenterid as string) ?? "").toLowerCase(),
+            name: (e.book_name as string) || "(unnamed)",
+          }))
+        );
+        return;
+      })
+      .catch(() => {
+        setFcOptions(null); // column falls back to read-only names
+      });
+  }, [prioritizationId, webAPI]);
+
+  /** Persists a Fund Center pick (or clear) immediately. */
+  const commitFundCenter = (row: GridRow, fcId: string | null): void => {
+    const current =
+      fcEdits[row.recordId] !== undefined
+        ? fcEdits[row.recordId]
+        : row.fundCenterId;
+    if (fcId === current) return;
+
+    setFcEdits((prev) => ({ ...prev, [row.recordId]: fcId }));
+    setSaveState((prev) => ({ ...prev, [row.recordId]: "saving" }));
+    webAPI
+      .updateRecord(ITEMIZED_DETAILS_ENTITY, row.recordId, {
+        "book_FundCenter@odata.bind": fcId
+          ? `/book_fundcenters(${fcId})`
+          : null,
+      })
+      .then(() => {
+        setSaveState((prev) => ({ ...prev, [row.recordId]: "saved" }));
+        window.setTimeout(() => {
+          setSaveState((prev) => {
+            const next = { ...prev };
+            if (next[row.recordId] === "saved") delete next[row.recordId];
+            return next;
+          });
+        }, 2500);
+        return;
+      })
+      .catch(() => {
+        setFcEdits((prev) => {
+          const next = { ...prev };
+          delete next[row.recordId];
+          return next;
+        });
+        setSaveState((prev) => ({ ...prev, [row.recordId]: "error" }));
+      });
+  };
 
   /** Effective string value shown in an editable cell. */
   const displayValue = (row: GridRow, field: EditableField): string => {
@@ -665,6 +767,51 @@ export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
     />
   );
 
+  const STATE_LEVEL_KEY = "__state__";
+
+  const fcCell = (row: GridRow): React.ReactNode => {
+    const effectiveId =
+      fcEdits[row.recordId] !== undefined
+        ? fcEdits[row.recordId]
+        : row.fundCenterId;
+    const selectedName = effectiveId
+      ? fcOptions?.find((o) => o.id === effectiveId)?.name ?? row.fundCenterName
+      : "";
+    const stateLabel = stateFcLabel
+      ? `State level (${stateFcLabel})`
+      : "State level";
+
+    if (isDisabled || !fcOptions) {
+      return (
+        <span className={styles.contextCell}>
+          {effectiveId ? selectedName : stateLabel}
+        </span>
+      );
+    }
+    return (
+      <Dropdown
+        appearance="filled-lighter"
+        className={styles.fcDropdown}
+        value={effectiveId ? selectedName : stateLabel}
+        selectedOptions={[effectiveId ?? STATE_LEVEL_KEY]}
+        onOptionSelect={(_e, data) => {
+          const v = data.optionValue;
+          if (v === undefined) return;
+          commitFundCenter(row, v === STATE_LEVEL_KEY ? null : v);
+        }}
+      >
+        <Option value={STATE_LEVEL_KEY} text={stateLabel}>
+          {stateLabel}
+        </Option>
+        {fcOptions.map((o) => (
+          <Option key={o.id} value={o.id} text={o.name}>
+            {o.name}
+          </Option>
+        ))}
+      </Dropdown>
+    );
+  };
+
   // Validated / Funded / NPM Comment are owned by the NPM on the Requirement
   // Funding side (ValidateAndFundGrid) — read-only here on the Prioritization form.
   const readOnlyAmount = (row: GridRow, field: NumericField): React.ReactNode => (
@@ -718,6 +865,7 @@ export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
                 <TableRow>
                   <TableHeaderCell className={styles.firstCol}>Item</TableHeaderCell>
                   <TableHeaderCell>TDC</TableHeaderCell>
+                  <TableHeaderCell>Fund Center</TableHeaderCell>
                   <TableHeaderCell className={styles.qtyCol}>Quantity</TableHeaderCell>
                   <TableHeaderCell className={styles.amount}>Requested</TableHeaderCell>
                   <TableHeaderCell className={styles.amount}>Validated</TableHeaderCell>
@@ -772,6 +920,7 @@ export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
                           ctx?.tdc ?? ""
                         )}
                       </TableCell>
+                      <TableCell>{fcCell(row)}</TableCell>
                       <TableCell className={styles.qtyCol}>
                         {numericCell(row, "quantity", styles.qtyInput)}
                       </TableCell>
@@ -804,6 +953,7 @@ export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
                 })}
                 <TableRow className={styles.totalsRow}>
                   <TableCell className={styles.firstCol}>Totals</TableCell>
+                  <TableCell />
                   <TableCell />
                   <TableCell />
                   <TableCell className={styles.amount}>

@@ -90,13 +90,28 @@ Required in the maker portal before enabling the State Swap steps:
 | Owner teams per state | Names `{StateAbbr} - State Approver` and `{StateAbbr} - State Administrator` (e.g. `AL - State Approver`). One pair per state. `SwapAutoSharePlugin` looks them up by name and shares each swap with both teams. Missing teams are logged and skipped, not fatal. |
 | Role privileges | Grant User-level Create/Read/Write/Delete/Append/AppendTo/Share on `book_stateswap` + `book_swapitem` to `Book - State Approver` and `Book - State Administrator`; Org-level Read to `Book - Budget Executor` and `Book - Read Only`; Org-level everything to `Book - Checkbook Administrator`. See schema doc §5.1. |
 
+### FY27 Spend Plan / Itemized Detail FC schema
+
+The Itemized-Detail Fund Center + FY27 spend plan work (source in
+`src/ARNGCheckbook`, also mirrored below for maker-portal deployment) adds:
+
+| Item | Change |
+|---|---|
+| `book_itemizeddetails` (existing) | Add optional lookup `book_fundcenter` → `book_fundcenter`. Blank = state-level FC. Read by the ItemizedDetailsGrid PCF and the FY27 spend plan grid; the FC lock plugins do **not** require it. |
+| `book_spendplan` (existing) | Add lookup `book_prioritizationfunding` → `book_prioritizationfunding` (FY27 row anchor; **leave `book_prioritization` empty on FY27 rows** — the `book_uniquestatespendplan` alternate key allows only one legacy row per Prio), lookup `book_fundcenter` → `book_fundcenter` (null on per-RF rollup rows), Choice `book_rowtype` (**Planned** = `0`, **Actual** = `1`), decimal twins `book_newoctober` … `book_newseptember` (12 columns, 2 decimals), calculated decimal `book_newspendplantotal` (sum of the 12 twins), and extend the `book_spendplantype` formula to treat PF-anchored rows as "Prioritization". |
+
+Register `PrioritizationItemizedFundCenterDefault` /
+`PrioritizationFundCenterLockGuard` (below) only after the
+`book_itemizeddetails` change is published; register the spend plan
+validator only after the `book_spendplan` changes are published.
+
 ---
 
 ## Environment variables required
 
 | Variable                              | Type | Read by                                                  | Notes |
 |---------------------------------------|------|----------------------------------------------------------|-------|
-| `book_DistributionHoldingFundCenter`  | Text | `GenerateDistributionsPlugin`                            | See [`Distributions/REGISTRATION.md`](Distributions/REGISTRATION.md). The A18 record's GUID. |
+| `book_DistributionHoldingFundCenter`  | Text | `GenerateDistributionsPlugin`, `PrioritizationItemizedFundCenterDefault`, `PrioritizationFundCenterLockGuard` | See [`Distributions/REGISTRATION.md`](Distributions/REGISTRATION.md). The A18 record's GUID. The FC lock pair uses it to define "state-level FC" (parent = holding FC). |
 | `book_TurnInCreditOPR`                | Text | `TurnInApprovalPlugin` (via `TurnInLOAResolver`)         | See [`TurnIns/REGISTRATION.md`](TurnIns/REGISTRATION.md). Required for FY27+ Turn-Ins. |
 | `book_LockManualFundedEdits`          | Yes/No | `PrioritizationFundedAmountLock` + `RequirementFundingFundedAmountLock`; written by `ToggleFundedAmountLockPlugin` | See [`../docs/FundedAmountLock-Setup.md`](../docs/FundedAmountLock-Setup.md). Ships default `false`; toggled via the Admin Center button. Blocks manual **reductions** only — increases stay allowed. |
 
@@ -187,6 +202,21 @@ detected by walking `context.ParentContext`). Shares its logic with
 |---|---------|-----------------------|----------------|------|------------------------------|-------|
 | 1 | Update  | `book_prioritization` | Pre-Operation  | Sync | `book_newfundedamounttdp`    | Rank **10** (runs before the other Pre-Op Update validators). **Requires PreImage** (`book_newfundedamounttdp`) — falls back to a Retrieve if the image is missing. |
 
+### `Checkbook.Plugins.Validation.PrioritizationFundCenterLockGuard`
+
+While a Prioritization has **active Itemized Details**, `book_fundcenter` is
+locked to the state-level FC (set by
+`Items.PrioritizationItemizedFundCenterDefault`). Blocks any Update that
+moves the FC anywhere else; the only accepted value is the resolved
+state-level FC itself (which is what lets the default plugin's own write
+through). No active Itemized Details → no lock. Reads env var
+`book_DistributionHoldingFundCenter`. If no state-level FC can be resolved
+the guard allows the write (with a trace) rather than bricking the record.
+
+| # | Message | Primary entity        | Stage          | Mode | Filtering attributes | Notes |
+|---|---------|-----------------------|----------------|------|----------------------|-------|
+| 1 | Update  | `book_prioritization` | Pre-Operation  | Sync | `book_fundcenter`    | **Requires PreImage** (`book_fundcenter, book_state`). |
+
 ### `Checkbook.Plugins.Validation.PrioritizationFundingValidator`
 
 Enforces RF TDP cap + LOA TDP allocation when a Prioritization's
@@ -273,6 +303,24 @@ LOA-allocation check when the update is mid-realignment (detected by walking
 |---|---------|---------------------------|----------------|------|-----------------------------------------------------------------------------------|-------|
 | 1 | Create  | `book_requirementfunding` | Pre-Operation  | Sync | *(none)*                                                                          | Validates new RF against its LOA. |
 | 2 | Update  | `book_requirementfunding` | Pre-Operation  | Sync | `book_tdp, book_fundedamount, book_lineofaccounting`                              | Re-validates on TDP / Funded / LOA change. **Requires PreImage** (`book_tdp, book_fundedamount, book_lineofaccounting`). |
+
+### `Checkbook.Plugins.Validation.SpendPlanFY27Validator`
+
+Guards FY27+ spend plan rows — the ones anchored on
+`book_prioritizationfunding`; legacy rows (Prio / Requirement / UFR anchored)
+pass through untouched. Enforces: (1) a PF-anchored row must not also set
+`book_prioritization`; (2) one active row per (PF, Fund Center, Row Type);
+(3) active **Planned** rows under a PF may not total more than the PF funded
+amount — equality is deliberately NOT required so plans can be entered
+incrementally, the grid badge surfaces completeness; (4) month locks — once a
+federal FY month has passed its Planned cell is frozen, and Actual cells only
+accept values for completed months (FY resolved PF → Prio →
+`book_newfiscalyear`; skipped with a trace when FY is unknown).
+
+| # | Message | Primary entity   | Stage          | Mode | Filtering attributes | Notes |
+|---|---------|------------------|----------------|------|----------------------|-------|
+| 1 | Create  | `book_spendplan` | Pre-Operation  | Sync | *(none)*             | Validates new FY27 rows; legacy creates return immediately. |
+| 2 | Update  | `book_spendplan` | Pre-Operation  | Sync | `book_prioritizationfunding, book_fundcenter, book_rowtype, book_prioritization, book_newoctober, book_newnovember, book_newdecember, book_newjanuary, book_newfebruary, book_newmarch, book_newapril, book_newmay, book_newjune, book_newjuly, book_newaugust, book_newseptember` | **Requires PreImage** (same attributes plus `statecode`). |
 
 ---
 
@@ -398,7 +446,26 @@ national → non-national leave existing Prio FCs in place.
 
 | # | Message | Primary entity      | Stage           | Mode | Filtering attributes              | Notes |
 |---|---------|---------------------|-----------------|------|-----------------------------------|-------|
-| 1 | Update  | `book_requirements` | Post-Operation  | Sync | `book_fundcenter, book_national`  | Cascades to linked Prios. **Requires PreImage** (`book_fundcenter, book_national`). |
+| 1 | Update  | `book_requirements` | Post-Operation  | Sync | `book_fundcenter, book_national`  | Cascades to linked Prios. **Requires PreImage** (`book_fundcenter, book_national`). Skips Prios with active Itemized Details — those are FC-locked to state level (see `PrioritizationItemizedFundCenterDefault`). |
+
+### `Checkbook.Plugins.Items.PrioritizationItemizedFundCenterDefault`
+
+When a Prioritization gains an active Itemized Detail, forces the Prio
+`book_fundcenter` to the **state-level FC** (the FC whose parent is the
+distribution holding FC, resolved via the Prio state first, then via the
+parent-chain walk of the current FC). Per-FC granularity lives on the
+Itemized Details themselves (`book_itemizeddetails.book_fundcenter`, blank =
+state level). Distribution-neutral: `GenerateDistributionsPlugin` already
+resolves Prio FCs up to state, so the forced value is exactly what the walk
+would have produced. Reads env var `book_DistributionHoldingFundCenter`.
+
+| # | Message | Primary entity         | Stage          | Mode | Filtering attributes | Notes |
+|---|---------|------------------------|----------------|------|----------------------|-------|
+| 1 | Create  | `book_itemizeddetails` | Post-Operation | Sync | *(none)*             | First active Itemized Detail engages the lock. |
+| 2 | Update  | `book_itemizeddetails` | Post-Operation | Sync | `statecode`          | Reactivation re-engages the lock. **Requires PreImage** (`book_prioritization`). |
+
+No Delete/Deactivate step by design: removing the last Itemized Detail only
+releases the lock (guard below stops matching); the Prio keeps the state FC.
 
 ---
 
