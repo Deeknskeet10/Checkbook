@@ -25,8 +25,6 @@ import {
   DialogContent,
   DialogActions,
   Checkbox,
-  Dropdown,
-  Option,
 } from "@fluentui/react-components";
 
 type DataSet = ComponentFramework.PropertyTypes.DataSet;
@@ -46,7 +44,6 @@ export interface ItemizedDetailsGridProps {
 /** Property-set aliases declared in ControlManifest.Input.xml. */
 const ALIAS = {
   requirementItem: "requirementItem",
-  fundCenter: "fundCenter",
   quantity: "quantity",
   requestedAmount: "requestedAmount",
   validatedAmount: "validatedAmount",
@@ -61,13 +58,6 @@ const ITEM_ENTITY = "book_item";
 const TDC_ENTITY = "book_tdc";
 const PRIORITIZATION_ENTITY = "book_prioritization";
 const REQUIREMENT_FUNDING_ENTITY = "book_requirementfunding";
-const FUND_CENTER_ENTITY = "book_fundcenter";
-
-/** A Fund Center belonging to the Prioritization's state. */
-interface FcOption {
-  id: string;
-  name: string;
-}
 
 /** A Requirement Detail on the parent Requirement that is not yet itemized. */
 interface CandidateRd {
@@ -75,6 +65,8 @@ interface CandidateRd {
   name: string;
   item: string;
   tdc: string;
+  lin: string;
+  country: string;
 }
 
 type NumericField = "quantity" | "requestedAmount" | "validatedAmount" | "fundedAmount";
@@ -107,8 +99,6 @@ interface GridRow {
   recordId: string;
   requirementItemId: string | null;
   requirementItemName: string;
-  fundCenterId: string | null;
-  fundCenterName: string;
   quantity: number | null;
   requestedAmount: number | null;
   validatedAmount: number | null;
@@ -178,10 +168,6 @@ const useStyles = makeStyles({
     minWidth: "160px",
     width: "160px",
   },
-  fcDropdown: {
-    minWidth: "170px",
-    width: "170px",
-  },
   totalsRow: {
     fontWeight: tokens.fontWeightSemibold,
     backgroundColor: tokens.colorNeutralBackground2,
@@ -217,21 +203,24 @@ const useStyles = makeStyles({
     display: "flex",
     columnGap: "8px",
   },
-  addList: {
-    display: "flex",
-    flexDirection: "column",
-    rowGap: "4px",
-    maxHeight: "320px",
+  dialogSearch: {
+    width: "100%",
+    marginBottom: "8px",
+  },
+  addListScroll: {
+    maxHeight: "360px",
     overflowY: "auto",
   },
   candidateMeta: {
     display: "block",
     fontSize: tokens.fontSizeBase200,
     color: tokens.colorNeutralForeground3,
-    marginLeft: "28px",
   },
   dialogError: {
     color: tokens.colorPaletteRedForeground1,
+  },
+  addDialogSurface: {
+    maxWidth: "640px",
   },
   actionCol: {
     width: "80px",
@@ -289,8 +278,6 @@ export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
         requirementItemId: extractLookupId(lookupRaw),
         requirementItemName:
           record.getFormattedValue(ALIAS.requirementItem) || "(unnamed)",
-        fundCenterId: extractLookupId(record.getValue(ALIAS.fundCenter)),
-        fundCenterName: record.getFormattedValue(ALIAS.fundCenter) || "",
         quantity: toNumber(record.getValue(ALIAS.quantity)),
         requestedAmount: toNumber(record.getValue(ALIAS.requestedAmount)),
         validatedAmount: toNumber(record.getValue(ALIAS.validatedAmount)),
@@ -403,90 +390,6 @@ export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
     });
   }, [datasetRows, contexts, webAPI]);
 
-  // ----- Fund Center column -----
-  // Options are the active FCs of the Prioritization's state; a blank FC on a
-  // row means "state level" (the Prio's own FC, which the server locks to the
-  // state-level FC while Itemized Details exist).
-  const [fcOptions, setFcOptions] = React.useState<FcOption[] | null>(null);
-  const [stateFcLabel, setStateFcLabel] = React.useState<string>("");
-  const [fcEdits, setFcEdits] = React.useState<
-    Record<string, string | null>
-  >({});
-
-  React.useEffect(() => {
-    if (!prioritizationId) return;
-    const fv = "@OData.Community.Display.V1.FormattedValue";
-    webAPI
-      .retrieveRecord(
-        PRIORITIZATION_ENTITY,
-        prioritizationId,
-        "?$select=_book_state_value,_book_fundcenter_value"
-      )
-      .then((prio: ComponentFramework.WebApi.Entity) => {
-        setStateFcLabel(
-          (prio[`_book_fundcenter_value${fv}`] as string) || ""
-        );
-        const stateId = prio._book_state_value as string | undefined;
-        if (!stateId) return null;
-        return webAPI.retrieveMultipleRecords(
-          FUND_CENTER_ENTITY,
-          "?$select=book_name" +
-            `&$filter=_book_state_value eq ${stateId} and statecode eq 0` +
-            "&$orderby=book_name asc"
-        );
-      })
-      .then((result) => {
-        if (!result) return;
-        setFcOptions(
-          result.entities.map((e) => ({
-            id: ((e.book_fundcenterid as string) ?? "").toLowerCase(),
-            name: (e.book_name as string) || "(unnamed)",
-          }))
-        );
-        return;
-      })
-      .catch(() => {
-        setFcOptions(null); // column falls back to read-only names
-      });
-  }, [prioritizationId, webAPI]);
-
-  /** Persists a Fund Center pick (or clear) immediately. */
-  const commitFundCenter = (row: GridRow, fcId: string | null): void => {
-    const current =
-      fcEdits[row.recordId] !== undefined
-        ? fcEdits[row.recordId]
-        : row.fundCenterId;
-    if (fcId === current) return;
-
-    setFcEdits((prev) => ({ ...prev, [row.recordId]: fcId }));
-    setSaveState((prev) => ({ ...prev, [row.recordId]: "saving" }));
-    webAPI
-      .updateRecord(ITEMIZED_DETAILS_ENTITY, row.recordId, {
-        "book_FundCenter@odata.bind": fcId
-          ? `/book_fundcenters(${fcId})`
-          : null,
-      })
-      .then(() => {
-        setSaveState((prev) => ({ ...prev, [row.recordId]: "saved" }));
-        window.setTimeout(() => {
-          setSaveState((prev) => {
-            const next = { ...prev };
-            if (next[row.recordId] === "saved") delete next[row.recordId];
-            return next;
-          });
-        }, 2500);
-        return;
-      })
-      .catch(() => {
-        setFcEdits((prev) => {
-          const next = { ...prev };
-          delete next[row.recordId];
-          return next;
-        });
-        setSaveState((prev) => ({ ...prev, [row.recordId]: "error" }));
-      });
-  };
-
   /** Effective string value shown in an editable cell. */
   const displayValue = (row: GridRow, field: EditableField): string => {
     const pending = edits[row.recordId]?.[field];
@@ -567,6 +470,7 @@ export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
   );
   const [selected, setSelected] = React.useState<Set<string>>(new Set());
   const [addBusy, setAddBusy] = React.useState(false);
+  const [candidateSearch, setCandidateSearch] = React.useState("");
 
   const existingRdIds = React.useMemo(() => {
     const ids = new Set<string>();
@@ -628,6 +532,8 @@ export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
             name: (e.book_name as string) || "(unnamed)",
             item: (e[`_book_item_value${fv}`] as string) || "",
             tdc: (e[`_book_tdc_value${fv}`] as string) || "",
+            lin: (e[`_book_lin_value${fv}`] as string) || "",
+            country: (e[`_book_country_value${fv}`] as string) || "",
           }))
         );
         return;
@@ -643,6 +549,7 @@ export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
     setCandidates(null);
     setCandidateError(null);
     setSelected(new Set());
+    setCandidateSearch("");
     setAddOpen(true);
     loadCandidates();
   };
@@ -711,6 +618,16 @@ export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
     [candidates, existingRdIds]
   );
 
+  const filteredCandidates = React.useMemo(() => {
+    const q = candidateSearch.trim().toLowerCase();
+    if (!q) return availableCandidates;
+    return availableCandidates.filter((c) =>
+      [c.item || c.name, c.tdc, c.lin, c.country].some((v) =>
+        v.toLowerCase().includes(q)
+      )
+    );
+  }, [availableCandidates, candidateSearch]);
+
   const totals = React.useMemo(() => {
     return datasetRows.reduce(
       (acc, row) => ({
@@ -767,51 +684,6 @@ export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
     />
   );
 
-  const STATE_LEVEL_KEY = "__state__";
-
-  const fcCell = (row: GridRow): React.ReactNode => {
-    const effectiveId =
-      fcEdits[row.recordId] !== undefined
-        ? fcEdits[row.recordId]
-        : row.fundCenterId;
-    const selectedName = effectiveId
-      ? fcOptions?.find((o) => o.id === effectiveId)?.name ?? row.fundCenterName
-      : "";
-    const stateLabel = stateFcLabel
-      ? `State level (${stateFcLabel})`
-      : "State level";
-
-    if (isDisabled || !fcOptions) {
-      return (
-        <span className={styles.contextCell}>
-          {effectiveId ? selectedName : stateLabel}
-        </span>
-      );
-    }
-    return (
-      <Dropdown
-        appearance="filled-lighter"
-        className={styles.fcDropdown}
-        value={effectiveId ? selectedName : stateLabel}
-        selectedOptions={[effectiveId ?? STATE_LEVEL_KEY]}
-        onOptionSelect={(_e, data) => {
-          const v = data.optionValue;
-          if (v === undefined) return;
-          commitFundCenter(row, v === STATE_LEVEL_KEY ? null : v);
-        }}
-      >
-        <Option value={STATE_LEVEL_KEY} text={stateLabel}>
-          {stateLabel}
-        </Option>
-        {fcOptions.map((o) => (
-          <Option key={o.id} value={o.id} text={o.name}>
-            {o.name}
-          </Option>
-        ))}
-      </Dropdown>
-    );
-  };
-
   // Validated / Funded / NPM Comment are owned by the NPM on the Requirement
   // Funding side (ValidateAndFundGrid) — read-only here on the Prioritization form.
   const readOnlyAmount = (row: GridRow, field: NumericField): React.ReactNode => (
@@ -865,7 +737,6 @@ export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
                 <TableRow>
                   <TableHeaderCell className={styles.firstCol}>Item</TableHeaderCell>
                   <TableHeaderCell>TDC</TableHeaderCell>
-                  <TableHeaderCell>Fund Center</TableHeaderCell>
                   <TableHeaderCell className={styles.qtyCol}>Quantity</TableHeaderCell>
                   <TableHeaderCell className={styles.amount}>Requested</TableHeaderCell>
                   <TableHeaderCell className={styles.amount}>Validated</TableHeaderCell>
@@ -920,7 +791,6 @@ export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
                           ctx?.tdc ?? ""
                         )}
                       </TableCell>
-                      <TableCell>{fcCell(row)}</TableCell>
                       <TableCell className={styles.qtyCol}>
                         {numericCell(row, "quantity", styles.qtyInput)}
                       </TableCell>
@@ -953,7 +823,6 @@ export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
                 })}
                 <TableRow className={styles.totalsRow}>
                   <TableCell className={styles.firstCol}>Totals</TableCell>
-                  <TableCell />
                   <TableCell />
                   <TableCell />
                   <TableCell className={styles.amount}>
@@ -990,7 +859,7 @@ export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
             if (!addBusy) setAddOpen(data.open);
           }}
         >
-          <DialogSurface>
+          <DialogSurface className={styles.addDialogSurface}>
             <DialogBody>
               <DialogTitle>Add Items from Requirement Details</DialogTitle>
               <DialogContent>
@@ -1004,24 +873,51 @@ export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
                     itemized on this Prioritization.
                   </Text>
                 ) : (
-                  <div className={styles.addList}>
-                    {availableCandidates.map((c) => (
-                      <div key={c.id}>
-                        <Checkbox
-                          checked={selected.has(c.id)}
-                          onChange={(_e, data) =>
-                            toggleSelected(c.id, data.checked === true)
-                          }
-                          label={c.item || c.name}
-                        />
-                        {c.tdc && (
-                          <span className={styles.candidateMeta}>
-                            TDC: {c.tdc}
-                          </span>
-                        )}
+                  <>
+                    <Input
+                      className={styles.dialogSearch}
+                      appearance="outline"
+                      placeholder="Search by Item Name, TDC, LIN or Country"
+                      value={candidateSearch}
+                      onChange={(_e, data) => setCandidateSearch(data.value)}
+                    />
+                    {filteredCandidates.length === 0 ? (
+                      <Text className={styles.candidateMeta}>
+                        No Requirement Details match that search.
+                      </Text>
+                    ) : (
+                      <div className={styles.addListScroll}>
+                        <Table size="small" aria-label="Requirement Details">
+                          <TableHeader>
+                            <TableRow>
+                              <TableHeaderCell>Item Name</TableHeaderCell>
+                              <TableHeaderCell>TDC</TableHeaderCell>
+                              <TableHeaderCell>LIN</TableHeaderCell>
+                              <TableHeaderCell>Country</TableHeaderCell>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {filteredCandidates.map((c) => (
+                              <TableRow key={c.id}>
+                                <TableCell>
+                                  <Checkbox
+                                    checked={selected.has(c.id)}
+                                    onChange={(_e, data) =>
+                                      toggleSelected(c.id, data.checked === true)
+                                    }
+                                    label={c.item || c.name}
+                                  />
+                                </TableCell>
+                                <TableCell>{c.tdc}</TableCell>
+                                <TableCell>{c.lin}</TableCell>
+                                <TableCell>{c.country}</TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
                       </div>
-                    ))}
-                  </div>
+                    )}
+                  </>
                 )}
               </DialogContent>
               <DialogActions>
