@@ -14,9 +14,12 @@ namespace Checkbook.Plugins.TurnIns
     ///
     /// Fires on book_turnin Update. Fires when the payload carries an approval flag
     /// (book_stateapproved / book_beapproved = true) and the record is still active —
-    /// deactivation-on-completion marks "processed", the ledger-existence guard is
-    /// the durable double-processing barrier, and self re-entry is detected via
-    /// ParentContext (not a Depth guard, which dropped Excel/bulk approvals).
+    /// deactivation-on-completion marks "processed" and the ledger-existence guard
+    /// is the durable double-processing barrier. No nesting/Depth guard: server-side
+    /// field setters (real-time Business Rules) can nest the decision-bearing save
+    /// under another book_turnin Update, and an ancestor-walk guard would silently
+    /// drop every approval — the exact failure RealignmentProcessor and
+    /// SwapApprovalPlugin had (see the note in ExecutePlugin).
     /// Runs the financial side effects in order:
     ///   1. Idempotency guard (existence of any ledger linked to this Turn-In)
     ///   2. Load items (LOA Fund + PG carried on each item for distribution grouping)
@@ -42,15 +45,20 @@ namespace Checkbook.Plugins.TurnIns
             if (context.PrimaryEntityName != EntityNames.Turnin) return;
             if (context.MessageName != "Update") return;
 
-            // Self re-entry only (our own deactivation Update at the end, or
-            // TurnInDeactivator's). A blanket Depth > 1 guard silently dropped
-            // bulk approvals — Excel Online publish / ExecuteMultiple grid
-            // edits arrive nested inside a wrapper and must still process.
-            if (IsNestedUpdateOf(context, EntityNames.Turnin))
-            {
-                tracing.Trace("Nested book_turnin Update (self re-entry) — skipping.");
-                return;
-            }
+            // NOTE: Do NOT skip when nested inside another book_turnin Update.
+            // Real-time Business Rules / server-side field setters on this
+            // table would nest the user's approval save under another
+            // book_turnin Update, and an IsNestedUpdateOf(...) guard here
+            // silently dropped every approval on book_realignments and
+            // book_stateswap when exactly that happened (removed here
+            // preemptively, Aug 2026 — same fix as commit 23aef51).
+            //
+            // No self re-entry guard is needed. This step is filtered on
+            // book_stateapproved / book_beapproved, and the deactivation
+            // Updates (step 7 below and TurnInDeactivator's) write only
+            // statecode/statuscode, so they cannot re-trigger the
+            // orchestrator. Idempotency comes from the record-active check
+            // plus the ledger-existence guard below.
 
             var target = GetTarget(context);
             var preImage = TryGetPreImage(context);
@@ -206,9 +214,9 @@ namespace Checkbook.Plugins.TurnIns
             // ---- 7. Deactivate the Turn-In to keep the work queue clean ----
             // Mirrors TurnInDeactivator's statecode/statuscode for the denial path so
             // both completion outcomes (approved or denied) land in the same inactive
-            // state. This nested Update re-enters with a book_turnin Update ancestor,
-            // which the orchestrator's and TurnInDeactivator's self re-entry checks
-            // both short-circuit on.
+            // state. This nested Update carries statecode/statuscode only, so it
+            // matches neither this step's filter (book_stateapproved/book_beapproved)
+            // nor TurnInDeactivator's (book_stateapproved) — no re-entry.
             tracing.Trace($"Deactivating completed Turn-In {turnInId}.");
             service.Update(new Entity(EntityNames.Turnin, turnInId)
             {

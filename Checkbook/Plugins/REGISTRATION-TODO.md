@@ -44,7 +44,10 @@ code-only** — two deploy actions, no step or schema changes:
 1. **Assembly**: re-register `Checkbook_Plugins.dll` in PRT (section **D**).
    Carries: `SwapApprovalPlugin` nesting-guard removal, `SwapValidator`
    Approved By/On stamping + one-sided-swap rule, `SwapRollupPlugin`
-   ready-to-approve semantics.
+   ready-to-approve semantics, and the **preemptive** nesting-guard removal
+   in `TurnInApprovalPlugin` + `TurnInDeactivator` (same latent bug — would
+   have silently dropped turn-in approvals/denials the moment a real-time
+   BR landed on `book_turnin`).
 2. **PCF**: import [`../dist/ARNGCheckbookExtensions.zip`](../dist/README.md)
    (rebuilt; `StateSwapApprovalProcess` **v0.2.2** — updated
    readiness message) and publish.
@@ -98,7 +101,12 @@ code-only** — two deploy actions, no step or schema changes:
   `book_*approvedby/on` on each false→true approval transition (existing
   step filter + pre-image already cover it), and the one-sided-swap rule
   (`SwapValidator` both-sides-contribute check removed; `SwapRollupPlugin`
-  isbalanced = at least one side sends + all items paired).
+  isbalanced = at least one side sends + all items paired). 🔧 And the
+  **preemptive Turn-In guard removal**: `TurnInApprovalPlugin` +
+  `TurnInDeactivator` no longer carry the `IsNestedUpdateOf` guard (their
+  step filters + statecode-only deactivation writes make self re-entry
+  impossible; a future real-time BR on `book_turnin` would have silently
+  killed all approvals, exactly as on realignments/swaps).
 
 ## E. New plugin STEPS to register
 
@@ -182,6 +190,9 @@ wire the forms (details in
 - [ ] **One-sided swap**: a swap where only one state adds items becomes
   ready to approve, passes validation, and on BE approval moves funds /
   writes ledgers / distributions in that single direction.
+- [ ] **Turn-In regression check** (guard removed preemptively): a normal
+  Turn-In approval still processes exactly once (ledgers + distributions,
+  record deactivates), and a State-Approval denial still deactivates.
 - [ ] A `book_prioritizationfunding` edit updates **both** the parent Prio and
   parent RF funded/validated amounts.
 

@@ -105,13 +105,17 @@ namespace Checkbook.Plugins.Base
         }
 
         /// <summary>
-        /// True when an ancestor pipeline is an Update on <paramref name="entityName"/> —
-        /// i.e. this Update was issued by a plugin's own nested Update on the same
-        /// table (self re-entry). Bulk wrappers (ExecuteMultiple / ExecuteTransaction)
-        /// and unrelated parent pipelines walk through and do NOT count, so
-        /// Excel Online publishes and grid bulk edits still process. Use this in
-        /// approval orchestrators instead of a blanket Depth &gt; 1 guard, which
-        /// silently drops those bulk saves.
+        /// True when an ancestor pipeline is an Update on <paramref name="entityName"/>.
+        /// ⚠ Do NOT use this to guard approval orchestrators: real-time Business
+        /// Rules and other server-side field setters nest the user's
+        /// decision-bearing save under a same-table Update, so this guard
+        /// silently dropped every approval on book_realignments and
+        /// book_stateswap (all such guards were removed Aug 2026 — see
+        /// RealignmentProcessor / SwapApprovalPlugin / TurnInApprovalPlugin).
+        /// Prefer step filters that the plugin's own nested writes cannot
+        /// match (e.g. deactivate via statecode only), plus value+active and
+        /// ledger-existence idempotency checks. Currently unused; retained
+        /// for diagnostic use.
         /// </summary>
         protected static bool IsNestedUpdateOf(IPluginExecutionContext context, string entityName)
         {

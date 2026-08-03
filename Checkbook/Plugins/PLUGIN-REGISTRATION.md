@@ -690,10 +690,13 @@ touched LOAs, and deactivates the Turn-In.
 Trigger semantics (hardened Jul 2026, same pattern as `RealignmentProcessor`):
 fires when the payload carries an approval flag = true **and the pre-image
 shows the record still active** (deactivation-on-completion is the "processed"
-marker; ledger existence is the durable double-processing barrier). No Depth
-guard — bulk approvals via Excel Online / ExecuteMultiple arrive nested and
-must process; self re-entry is detected by walking `ParentContext` for an
-ancestor `book_turnin` Update.
+marker; ledger existence is the durable double-processing barrier). **No
+nesting or Depth guard** (removed Aug 2026, preemptively — the ancestor-walk
+guard silently dropped every approval on `book_realignments` and
+`book_stateswap` once server-side field setters nested the decision save).
+The guard protected nothing: the step is filtered on the approval flags, and
+both deactivation Updates (step 7's and `TurnInDeactivator`'s) write only
+statecode/statuscode, so neither can re-trigger it.
 
 | # | Message | Primary entity | Stage           | Mode | Filtering attributes                  | Notes |
 |---|---------|----------------|-----------------|------|---------------------------------------|-------|
@@ -709,9 +712,12 @@ Post-op handler for the **denied** path: when `book_stateapproved` flips
 true → false, deactivates the Turn-In (statecode = Inactive). No financial
 side effects — `TurnInValidator`'s idempotency guarantees no ledgers exist
 when this path runs. Denial detection stays transition-based (a bare false
-can't distinguish "denied" from "never approved"); self re-entry (its own
-deactivation Update, or the orchestrator's) is detected via `ParentContext`
-rather than a Depth guard, so bulk denials via Excel / ExecuteMultiple work.
+can't distinguish "denied" from "never approved"). **No nesting or Depth
+guard** (removed Aug 2026, preemptively — same rationale as
+`TurnInApprovalPlugin` above): the step is filtered on `book_stateapproved`
+and the deactivation Updates write only statecode/statuscode, so self
+re-entry is impossible; the transition check + already-inactive check are
+the idempotency barrier.
 
 | # | Message | Primary entity | Stage           | Mode | Filtering attributes      | Notes |
 |---|---------|----------------|-----------------|------|---------------------------|-------|
