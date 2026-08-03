@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using Microsoft.Xrm.Sdk;
 using Microsoft.Xrm.Sdk.Query;
 using Checkbook.Plugins.Base;
@@ -25,16 +24,21 @@ namespace Checkbook.Plugins.StateSwaps
     ///      Prio populated. (Debit-first drafting is allowed via
     ///      [[SwapItemDerivedFieldsPlugin]]; the pairing must be finished before
     ///      any approval.)
-    ///   4. Both sides contribute — book_totalsentbya and book_totalsentbyb must
-    ///      each be > 0. Amounts do NOT have to be equal (a state can trade 2-for-1
-    ///      if both sides agree). Recomputed live from active items — the stored
-    ///      book_isbalanced flag is not trusted here (belt and suspenders).
+    ///   4. At least one active item — one-sided swaps are allowed (a state may
+    ///      send money one way with nothing coming back; both states still have
+    ///      to approve), so there is NO both-sides-contribute requirement.
     ///   5. Overdraw — the sum of item amounts debited from each Prio must not exceed
     ///      that Prio's book_newfundedamounttdp.
     ///   6. BE approval requires both state approvals to be effectively true post-update.
     ///
-    /// Denial transitions bypass completeness / balance / overdraw checks — a
-    /// denied swap can be incomplete or one-sided.
+    /// After validation passes, stamps the audit fields for each approval flag
+    /// that transitions false → true in this Update: book_state[a|b]approvedby/
+    /// on and book_beapprovedby/on = initiating user + UtcNow. Transition-based
+    /// (not value-based) so a re-save that re-drives a stuck approval keeps the
+    /// original stamp. SwapDenialPlugin clears the stamps on denial.
+    ///
+    /// Denial transitions bypass completeness / overdraw checks — a denied
+    /// swap can be incomplete.
     ///
     /// Register PreImage 'PreImage' with the full entity (need pre-update values of
     /// all approval + denied flags to detect transitions).
@@ -103,11 +107,11 @@ namespace Checkbook.Plugins.StateSwaps
                 stateATx, stateBTx, beTx, deniedTx,
                 stateA, stateB);
 
-            // Denials skip the remaining balance / overdraw / BE-prereq checks —
-            // a denial is allowed even on an incomplete swap.
+            // Denials skip the remaining completeness / overdraw / BE-prereq
+            // checks — a denial is allowed even on an incomplete swap.
             if (deniedTx && !stateATx && !stateBTx && !beTx)
             {
-                tracing.Trace("SwapValidator: denial-only transition; balance/overdraw checks skipped.");
+                tracing.Trace("SwapValidator: denial-only transition; completeness/overdraw checks skipped.");
                 return;
             }
 
@@ -122,30 +126,17 @@ namespace Checkbook.Plugins.StateSwaps
                     "Every Swap Item must have both a Debit and a Credit Prioritization before approval.");
             }
 
-            // ---- 4. Both-sides-contribute + 5. Overdraw ----
-            // Recompute totals live from Active items — do not trust the stored
-            // book_isbalanced flag in case items were changed via a path that
-            // bypassed SwapRollupPlugin.
+            // ---- 4. At least one item + 5. Overdraw ----
+            // One-sided swaps are allowed (a pure transfer with nothing coming
+            // back), so there is no both-sides-contribute check — only "the
+            // swap actually moves something". Recomputed live from Active
+            // items rather than trusting the stored totals/flag in case items
+            // were changed via a path that bypassed SwapRollupPlugin.
 
             var perDebitPrio = SumActiveItemsByDebitPrio(service, context.PrimaryEntityId);
             if (perDebitPrio.Count == 0)
                 throw new InvalidPluginExecutionException(
                     "State Swap has no active Swap Items. Add at least one item before approving.");
-
-            var perDebitState = perDebitPrio
-                .GroupBy(x => x.Value.DebitStateId)
-                .ToDictionary(g => g.Key, g => g.Sum(x => x.Value.Amount));
-
-            perDebitState.TryGetValue(stateA.Id, out var totalA);
-            perDebitState.TryGetValue(stateB.Id, out var totalB);
-
-            if (totalA <= 0m || totalB <= 0m)
-            {
-                throw new InvalidPluginExecutionException(
-                    $"State Swap requires both states to contribute. State A sends {totalA:C}, " +
-                    $"State B sends {totalB:C}. Add at least one item on each side before approval. " +
-                    "(Totals do not have to be equal — a state may trade unevenly.)");
-            }
 
             ValidateAggregatedOverdraw(service, tracing, perDebitPrio);
 
@@ -163,6 +154,41 @@ namespace Checkbook.Plugins.StateSwaps
             }
 
             tracing.Trace("SwapValidator: all validations passed.");
+
+            // ---- Stamp Approved By / On (pre-op target mutation) ----
+            // Transition-based so a re-save that re-drives a stuck approval
+            // (value-based detection above) keeps the original stamp; the
+            // stamp and the flag commit in the same transaction.
+            StampApproval(context, target, preImage, tracing,
+                StateSwapAttributes.StateAApproved,
+                StateSwapAttributes.StateAApprovedBy,
+                StateSwapAttributes.StateAApprovedOn);
+            StampApproval(context, target, preImage, tracing,
+                StateSwapAttributes.StateBApproved,
+                StateSwapAttributes.StateBApprovedBy,
+                StateSwapAttributes.StateBApprovedOn);
+            StampApproval(context, target, preImage, tracing,
+                StateSwapAttributes.BEApproved,
+                StateSwapAttributes.BEApprovedBy,
+                StateSwapAttributes.BEApprovedOn);
+        }
+
+        private static void StampApproval(
+            IPluginExecutionContext context,
+            Entity target,
+            Entity preImage,
+            ITracingService tracing,
+            string flagAttribute,
+            string byAttribute,
+            string onAttribute)
+        {
+            if (!ApprovalTransitionDetector.DetectBoolTransition(target, preImage, flagAttribute))
+                return;
+
+            target[byAttribute] = new EntityReference(EntityNames.SystemUser, context.InitiatingUserId);
+            target[onAttribute] = DateTime.UtcNow;
+            tracing.Trace(
+                $"SwapValidator: stamped {byAttribute}/{onAttribute} for user {context.InitiatingUserId}.");
         }
 
         /// <summary>

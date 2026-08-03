@@ -31,7 +31,7 @@ access is granted via sharing (see §5).
 | `book_newfiscalyear` | Picklist → `goal_fiscalyear` global option set | Business Recommended | Same picklist used everywhere else (see [[fiscalyear-is-picklist]] convention) |
 | `book_totalsentbya` | Decimal (2) | System (plugin-maintained) | Σ item amounts where the debit Prio belongs to StateA |
 | `book_totalsentbyb` | Decimal (2) | System (plugin-maintained) | Σ item amounts where the debit Prio belongs to StateB |
-| `book_isbalanced` | Two Options (Yes/No), default No | System (plugin-maintained) | **Semantic: "ready to approve."** True iff both states contribute (`totalsentbya > 0 && totalsentbyb > 0`) AND every active item has both Debit and Credit Prio populated. The name is legacy; the equal-totals rule was retired — a state may trade 2-for-1 if both sides agree. |
+| `book_isbalanced` | Two Options (Yes/No), default No | System (plugin-maintained) | **Semantic: "ready to approve."** True iff at least one side sends something (`totalsentbya > 0 \|\| totalsentbyb > 0`) AND every active item has both Debit and Credit Prio populated. The name is legacy; the equal-totals rule and the both-sides-contribute rule were both retired — a state may trade unevenly (2-for-1) or one-way (a pure transfer, as long as both states approve). |
 | `book_stateaapproved` | Two Options (Yes/No), default No | Optional | StateA sign-off. Written by PCF / plugin only. |
 | `book_stateaapprovedby` | Lookup → `systemuser` | Optional | Plugin-set on transition |
 | `book_stateaapprovedon` | Date/Time | Optional | Plugin-set on transition |
@@ -273,11 +273,14 @@ Standard Active (`1`) / Inactive (`2`) only.
 ## 7. Business rules / calculated fields
 
 None at the entity layer for v1 — everything goes through plugins so the
-logic stays in one place. If you want a formula field on
-`book_stateswap` for `book_isbalanced`, it can be Yes/No calculated as
-`Equals(book_totalsentbya, book_totalsentbyb) && book_totalsentbya > 0`
-— but the plugin will maintain the physical field regardless, so the
-formula is optional convenience.
+logic stays in one place. Do **not** add real-time (Mode = 1) Business
+Rules that set fields on `book_stateswap`: server-side field setters nest
+the approval save under another `book_stateswap` Update, which is exactly
+the re-entry shape that silently broke approvals on `book_realignments`
+(and forced the nesting-guard removal in `SwapApprovalPlugin`, Aug 2026).
+`book_isbalanced` is plugin-maintained by `SwapRollupPlugin` ("ready to
+approve": at least one side sends, all items fully paired) — do not
+replace it with a formula field.
 
 ---
 

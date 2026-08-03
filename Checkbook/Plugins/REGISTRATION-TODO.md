@@ -34,6 +34,24 @@ Do these **in order**; each step points at the detail below:
 
 ---
 
+## 🔧 Fast path — State Swap approval fixes (Aug 2026)
+
+Fixes the reported swap issues: approvals silently skipped (same nesting
+re-entry bug as Realignments — no ledgers/distributions/deactivation),
+Approved By/On never populated, and one-sided swaps now allowed. **All
+code-only** — two deploy actions, no step or schema changes:
+
+1. **Assembly**: re-register `Checkbook_Plugins.dll` in PRT (section **D**).
+   Carries: `SwapApprovalPlugin` nesting-guard removal, `SwapValidator`
+   Approved By/On stamping + one-sided-swap rule, `SwapRollupPlugin`
+   ready-to-approve semantics.
+2. **PCF**: import [`../dist/ARNGCheckbookExtensions.zip`](../dist/README.md)
+   (rebuilt; `StateSwapApprovalProcess` **v0.2.2** — updated
+   readiness message) and publish.
+3. **Verify** → section **I** (State Swap items).
+
+---
+
 ## A. Schema first — maker portal, publish BEFORE registering dependent steps
 
 - [ ] **`book_distributions`** — add lookup **`book_stateswap`** -> `book_stateswap`
@@ -73,7 +91,14 @@ Do these **in order**; each step points at the detail below:
   Swap Distributions, GenerateDistributions amend-in-place, plus — from
   `794cac1` ⭐ — the three new plugin types below, the `StateFundCenterResolver`
   helper, and the **`RequirementFundCenterCascade` change** (now skips FC-locked
-  Prios; code-only, its existing step needs no edit).
+  Prios; code-only, its existing step needs no edit). 🔧 Also carries the
+  **State Swap approval fixes** (Aug 2026, all code-only, no step changes):
+  `SwapApprovalPlugin` nesting-guard removal (approvals were silently
+  skipped as "self re-entry"), `SwapValidator` now stamps
+  `book_*approvedby/on` on each false→true approval transition (existing
+  step filter + pre-image already cover it), and the one-sided-swap rule
+  (`SwapValidator` both-sides-contribute check removed; `SwapRollupPlugin`
+  isbalanced = at least one side sends + all items paired).
 
 ## E. New plugin STEPS to register
 
@@ -145,6 +170,18 @@ wire the forms (details in
   *(This is the bug that started this — needs the DLL re-registered, step D.)*
 - [ ] Swap approval creates the AFP/Allotment **Swap Distributions** and shares
   child items to both states.
+
+🔧 State Swap approval fixes (Aug 2026):
+
+- [ ] **BE approval processes end-to-end**: ledger pairs + Prio/RF funding
+  moves + Swap Distributions created, swap **deactivates** (statuscode
+  BE Approved). Trace shows `processing BE approval`, not
+  `self re-entry — skipping`.
+- [ ] Each approval (State A, State B, BE) stamps the matching
+  **Approved By / Approved On**; a denial clears all six fields.
+- [ ] **One-sided swap**: a swap where only one state adds items becomes
+  ready to approve, passes validation, and on BE approval moves funds /
+  writes ledgers / distributions in that single direction.
 - [ ] A `book_prioritizationfunding` edit updates **both** the parent Prio and
   parent RF funded/validated amounts.
 

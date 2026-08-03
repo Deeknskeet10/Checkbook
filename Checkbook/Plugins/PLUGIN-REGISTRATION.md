@@ -777,11 +777,19 @@ validated and role-gated like the original; denial detection stays
 transition-based. Enforces
 idempotency (no re-processing if ledgers exist), role gating with
 **per-state BU scoping** via `StateScopeHelper` (a State A Approver in the
-wrong BU cannot approve the State A side), balance (recomputed live from
-active items — the stored `book_isbalanced` is not trusted), overdraw per
-debit Prio, and the "BE requires both state approvals" prereq. Denial
-transitions skip balance / overdraw / BE-prereq checks so an incomplete
-swap can still be denied.
+wrong BU cannot approve the State A side), at-least-one-active-item
+(recomputed live from active items — the stored totals are not trusted;
+**one-sided swaps are allowed**, there is no both-sides-contribute check
+since Aug 2026), overdraw per debit Prio, and the "BE requires both state
+approvals" prereq. Denial transitions skip completeness / overdraw /
+BE-prereq checks so an incomplete swap can still be denied.
+
+After validation passes, the validator **stamps the audit fields** for each
+approval flag transitioning false → true in the Update:
+`book_state[a|b]approvedby/on`, `book_beapprovedby/on` = initiating user +
+UtcNow (pre-op target mutation, so the stamp commits with the flag; no extra
+registration needed — the existing step filter already covers the flags).
+`SwapDenialPlugin` clears the stamps on denial.
 
 Role checks map:
 - State A / State B approval: `Book - State Approver` or `Book - State Administrator` **and** user BU matches that state's owning BU. `Book - Checkbook Administrator` bypasses the BU scope.
@@ -836,9 +844,15 @@ Post-op orchestrator for a BE-approved State Swap. Fires when the payload
 carries `book_beapproved` = true **and the pre-image shows the swap still
 active** (hardened Jul 2026, same pattern as `RealignmentProcessor`:
 deactivation-on-completion is the "processed" marker, ledger existence is
-the durable double-processing barrier, and no Depth guard — bulk approvals
-via Excel Online / ExecuteMultiple arrive nested and must process; self
-re-entry is detected via `ParentContext`). Resolves each item's debit/credit
+the durable double-processing barrier). **No nesting or Depth guard**
+(Aug 2026, same fix as `RealignmentProcessor`): server-side field setters
+on `book_stateswap` can nest the BE-approval save under another
+`book_stateswap` Update, and the former `IsNestedUpdateOf` guard silently
+dropped every approval (trace showed only "self re-entry — skipping"; no
+ledgers/distributions, swap never deactivated). The guard protected
+nothing: the step is filtered on `book_beapproved`, and neither the
+self-deactivate (statecode/statuscode only) nor `SwapRollupPlugin`'s
+parent writes (totals + isbalanced) can re-trigger it. Resolves each item's debit/credit
 LOA + parent RF via `SwapLOAResolver`, writes ledger pairs (skipping
 same-LOA net-zero items), recalcs touched LOA TDPs, applies net Prio
 `FundedAmount` and parent RF `TDP` deltas via `SwapPrioritizationUpdater`,

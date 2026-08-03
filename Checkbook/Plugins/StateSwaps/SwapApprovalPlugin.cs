@@ -14,9 +14,13 @@ namespace Checkbook.Plugins.StateSwaps
     ///
     /// Fires on book_stateswap Update when the payload carries
     /// book_beapproved = true and the swap is still active — deactivation at
-    /// step 7 marks "processed", the ledger-existence guard is the durable
-    /// double-processing barrier, and self re-entry is detected via
-    /// ParentContext (not a Depth guard, which dropped Excel/bulk approvals).
+    /// step 7 marks "processed" and the ledger-existence guard is the durable
+    /// double-processing barrier. No nesting/Depth guard: server-side field
+    /// setters on this table (real-time Business Rules, pre-op target
+    /// mutation) can nest the decision-bearing save under another
+    /// book_stateswap Update, and an ancestor-walk guard silently dropped
+    /// every approval (same failure RealignmentProcessor had — see the note
+    /// in ExecutePlugin).
     /// Runs the financial side effects:
     ///   1. Idempotency guard (existing ledger blocks re-processing)
     ///   2. Resolve LOAs + parent RFs for every active item
@@ -47,15 +51,21 @@ namespace Checkbook.Plugins.StateSwaps
             if (context.PrimaryEntityName != EntityNames.StateSwap) return;
             if (context.MessageName != "Update") return;
 
-            // Self re-entry only (our own deactivation Update at step 7). A
-            // blanket Depth > 1 guard silently dropped bulk approvals — Excel
-            // Online publish / ExecuteMultiple grid edits arrive nested inside
-            // a wrapper and must still process.
-            if (IsNestedUpdateOf(context, EntityNames.StateSwap))
-            {
-                tracing.Trace("SwapApprovalPlugin: nested book_stateswap Update (self re-entry) — skipping.");
-                return;
-            }
+            // NOTE: Do NOT skip when nested inside another book_stateswap
+            // Update. Real-time Business Rules / server-side field setters on
+            // this table issue a nested book_stateswap Update, so the user's
+            // BE-approval save can run *inside* that nesting — an
+            // IsNestedUpdateOf(...) guard here silently dropped every approval
+            // (symptom: trace showed only "self re-entry — skipping"; no
+            // ledgers, no distributions, swap never deactivated). Same failure
+            // and same fix as RealignmentProcessor (commit 23aef51).
+            //
+            // No self re-entry guard is needed. The deactivation at step 7
+            // writes only statecode/statuscode and this step is filtered on
+            // book_beapproved, so it cannot re-trigger the orchestrator;
+            // SwapRollupPlugin's parent writes (totals + isbalanced) cannot
+            // either. Idempotency comes from the record-active check plus the
+            // ledger-existence guard below.
 
             var target = GetTarget(context);
             var preImage = TryGetPreImage(context);
