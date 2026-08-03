@@ -5,12 +5,32 @@ the Dataverse environment (Plugin Registration Tool + maker portal) to catch the
 environment up to `main`. Derived from [`PLUGIN-REGISTRATION.md`](PLUGIN-REGISTRATION.md)
 and the changes landed since the last merge (`d75d195`).
 
-> ⚠️ **Status tags.** The **FY27 Spend Plan** and **Fund-Center-lock** plugins
-> (3 classes) were still **untracked/uncommitted** (a parallel session's
-> in-progress work) when this list was written — their `.cs` files build locally
-> but schema/filters could still change. Confirm that work is finished before
-> registering their steps. Everything else is committed and stable. Each item is
-> tagged **[COMMITTED]** or **[PENDING – other session]**.
+> ✅ **Update (2026-08-02).** The **FY27 Spend Plan** and **Fund-Center-lock**
+> work formerly tagged *[PENDING – other session]* landed as commit `794cac1`
+> — schema, filters, and pre-images below are now final (source of truth:
+> [`PLUGIN-REGISTRATION.md`](PLUGIN-REGISTRATION.md) and
+> [`../dist/IMPLEMENTATION-FY27SpendPlan.md`](../dist/IMPLEMENTATION-FY27SpendPlan.md)).
+> Those items are tagged **[⭐ FY27 SpendPlan/FC]** and are the current focus.
+
+---
+
+## ⭐ Fast path — deploying commit `794cac1` (FY27 Spend Plan + Itemized-Detail FC)
+
+Do these **in order**; each step points at the detail below:
+
+1. **Schema** (maker portal, publish first): `book_itemizeddetails.book_fundcenter`
+   lookup + the six `book_spendplan` changes → section **A**.
+2. **Env var**: confirm `book_DistributionHoldingFundCenter` is set → section **C**.
+3. **Assembly**: re-register `Checkbook_Plugins.dll` in PRT → section **D**.
+4. **Steps**: register `PrioritizationItemizedFundCenterDefault`,
+   `PrioritizationFundCenterLockGuard`, `SpendPlanFY27Validator` → section **E**.
+   ⚠️ Only after step 1 is published — the FC pair needs the
+   `book_itemizeddetails` column, the validator needs the `book_spendplan` columns.
+5. **PCF**: import [`../dist/ARNGCheckbookExtensions.zip`](../dist/README.md)
+   (already rebuilt + version-bumped in the commit) → section **H**.
+6. **Form + script wiring** (maker portal): Spend Plan tab, `fundCenter`
+   mapping, `book_Prioritizations` web resource → section **H**.
+7. **Verify** → section **I** (FY27 items).
 
 ---
 
@@ -20,8 +40,8 @@ and the changes landed since the last merge (`d75d195`).
   (peer of `book_turnin`). Swap-linked Distribution views filter on it; reconcile
   treats these rows as immutable. **[COMMITTED — Swap Distributions]**
 - [ ] **`book_itemizeddetails`** — add optional lookup **`book_fundcenter`** ->
-  `book_fundcenter` (blank = state-level FC). **[PENDING – other session]**
-- [ ] **`book_spendplan`** — **[PENDING – other session]**
+  `book_fundcenter` (blank = state-level FC). **[⭐ FY27 SpendPlan/FC — `794cac1`]**
+- [ ] **`book_spendplan`** — **[⭐ FY27 SpendPlan/FC — `794cac1`]**
   - [ ] lookup **`book_prioritizationfunding`** -> `book_prioritizationfunding`
     (FY27 row anchor — leave `book_prioritization` empty on FY27 rows; the
     `book_uniquestatespendplan` alt-key allows only one legacy row per Prio)
@@ -44,24 +64,27 @@ and the changes landed since the last merge (`d75d195`).
 
 - [ ] **`book_DistributionHoldingFundCenter`** — confirm set to the A18 record
   GUID. Now *also* read by the FC-lock pair (defines "state-level FC" = child of
-  holding FC), not just Distributions. **[likely already set]**
+  holding FC), not just Distributions. **[likely already set — ⭐ verify before E]**
 
 ## D. Re-register the plugin assembly
 
 - [ ] Update **`Checkbook_Plugins.dll`** in PRT. This one assembly carries: the
   **RealignmentProcessor fix** (code-only, no step change), the RF-rollup change,
-  Swap Distributions, GenerateDistributions amend-in-place, plus the new plugin
-  types below.
+  Swap Distributions, GenerateDistributions amend-in-place, plus — from
+  `794cac1` ⭐ — the three new plugin types below, the `StateFundCenterResolver`
+  helper, and the **`RequirementFundCenterCascade` change** (now skips FC-locked
+  Prios; code-only, its existing step needs no edit).
 
 ## E. New plugin STEPS to register
 
-- [ ] **`Items.PrioritizationItemizedFundCenterDefault`** **[PENDING]**
+- [ ] **`Items.PrioritizationItemizedFundCenterDefault`** **[⭐ FY27 SpendPlan/FC — `794cac1`]**
   - Create `book_itemizeddetails` — Post-Op **Sync**, no filter
   - Update `book_itemizeddetails` — Post-Op **Sync**, filter **`statecode`**, **PreImage** (`book_prioritization`)
-  - *(no Delete/Deactivate step — by design)*
-- [ ] **`Validation.PrioritizationFundCenterLockGuard`** **[PENDING]**
+  - *(no Delete/Deactivate step — by design: removing the last Itemized Detail
+    only releases the lock, the Prio keeps the state FC)*
+- [ ] **`Validation.PrioritizationFundCenterLockGuard`** **[⭐ FY27 SpendPlan/FC — `794cac1`]**
   - Update `book_prioritization` — Pre-Op **Sync**, filter **`book_fundcenter`**, **PreImage** (`book_fundcenter, book_state`)
-- [ ] **`Validation.SpendPlanFY27Validator`** **[PENDING]**
+- [ ] **`Validation.SpendPlanFY27Validator`** **[⭐ FY27 SpendPlan/FC — `794cac1`]**
   - Create `book_spendplan` — Pre-Op **Sync**, no filter
   - Update `book_spendplan` — Pre-Op **Sync**, **PreImage** (all month/anchor attrs **+ `statecode`**),
     filter = `book_prioritizationfunding, book_fundcenter, book_rowtype, book_prioritization, book_newoctober…book_newseptember` (all 12 months)
@@ -87,12 +110,32 @@ and the changes landed since the last merge (`d75d195`).
 - [ ] *Verify* per-state owner teams exist (`{Abbr} - State Approver` /
   `{Abbr} - State Administrator`) and swap role grants from earlier swap work are in place.
 
-## H. PCF / Extensions delivery (separate from PRT)
+## H. PCF / Extensions delivery (separate from PRT) **[⭐ FY27 SpendPlan/FC — `794cac1`]**
 
-- [ ] `ItemizedDetailsGrid` and `PrioritizationFundingGrid` changed — rebuild the
-  `ARNGCheckbookExtensions` zip, **bump each manifest version**, import + publish,
-  and **re-point any canvas/custom pages** that host them (reimport alone won't
-  pick up the new version).
+The zip is **already rebuilt and version-bumped** in the commit — import
+[`../dist/ARNGCheckbookExtensions.zip`](../dist/README.md), publish all, then
+wire the forms (details in
+[`../dist/IMPLEMENTATION-FY27SpendPlan.md`](../dist/IMPLEMENTATION-FY27SpendPlan.md) §3–4):
+
+- [ ] Import the dist zip. Carries `ItemizedDetailsGrid` **v0.3.0** (new
+  editable Fund Center column), `PrioritizationFundingGrid` **v0.2.5** (FC on
+  sub-rows, no wiring change), and the **new** `PrioritizationSpendPlanGrid`
+  **v0.1.0**.
+- [ ] **Prioritization main form** — add a **Spend Plan** tab, name exactly
+  **`tab_spendplan`** (the form script keys on it), containing the
+  `book_prioritizationfunding` subgrid (relationship
+  `book_PrioritizationFunding_book_Prioritization_book_Prioritization`, view
+  "Active Prioritization Fundings"); replace its control with
+  `book_ARNGCheckbook.PrioritizationSpendPlanGrid` on all form factors.
+  Mappings: `requirementFunding` → `book_requirementfunding`, `fundedAmount` →
+  `book_fundedamount`, `validatedAmount` → `book_validatedamount`.
+- [ ] **ItemizedDetailsGrid on the Funding Details tab** — add the new mapping
+  `fundCenter` → `book_fundcenter` on all form factors (confirm the control
+  shows **v0.3.0** first — Dataverse caches PCF metadata by version).
+- [ ] **Web resource `book_Prioritizations`** — paste the updated
+  [`../webresources/book_prioritization.js`](../webresources/book_prioritization.js)
+  (FY-gated `tab_spendplan` visibility, FY ≥ 2027 + mirrors the FC lock on the
+  form while active Itemized Details exist), then publish.
 
 ## I. Verify after registering
 
@@ -104,3 +147,17 @@ and the changes landed since the last merge (`d75d195`).
   child items to both states.
 - [ ] A `book_prioritizationfunding` edit updates **both** the parent Prio and
   parent RF funded/validated amounts.
+
+⭐ FY27 Spend Plan / Itemized-Detail FC (`794cac1` — full list in
+[`../dist/IMPLEMENTATION-FY27SpendPlan.md`](../dist/IMPLEMENTATION-FY27SpendPlan.md) §5):
+
+- [ ] Add an Itemized Detail with a hand-picked FC → Prio FC flips to the
+  state-level FC and locks (form **and** API); setting the locked FC to the
+  state FC itself still succeeds, anything else is blocked.
+- [ ] Remove all Itemized Details → FC editable again (keeps the state FC).
+- [ ] National Requirement FC change → cascade skips FC-locked Prios, still
+  updates unlocked ones.
+- [ ] FY27 final-approved Prio → Spend Plan tab appears and the grid saves
+  Planned/Actual rows; FY26 Prio → tab hidden, legacy Spend Plan untouched.
+- [ ] Planned rows over the PF funded amount are blocked; past-month Planned
+  cells and future-month Actual cells are frozen.
