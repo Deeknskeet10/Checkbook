@@ -24,9 +24,14 @@ namespace Checkbook.Plugins.StateSwaps.Helpers
         /// <summary>
         /// Order-sensitive: increase credit RFs' TDP first (creates headroom for the
         /// credit-side Prio Funded increase), then apply Prio Funded deltas, then
-        /// reduce debit RFs' TDP. The intermediate states can transiently violate
-        /// Funded &lt;= TDP on individual RFs; RequirementFundingTDPValidator's
-        /// State-Swap ancestor bypass makes that safe.
+        /// roll up each touched RF's FundedAmount — folding a debit RF's TDP
+        /// reduction into the SAME Update as its rolled-down FundedAmount.
+        /// RequirementFundingTDPValidator has a State-Swap ancestor bypass, but the
+        /// "Req Funding - Funded vs TDP" real-time business rule (entity-scoped,
+        /// no bypass possible) also enforces Funded &lt;= TDP, so a TDP-only
+        /// reduction while the rollup FundedAmount is still stale-high would be
+        /// rejected. Mirrors RealignmentProcessor.ApplyDebitToRF, which writes
+        /// TDP and FundedAmount together for the same reason.
         /// </summary>
         public static void ApplyFundingDeltas(
             IOrganizationService service,
@@ -55,15 +60,22 @@ namespace Checkbook.Plugins.StateSwaps.Helpers
             foreach (var pair in prioDeltas)
                 AdjustPrioFunded(service, tracing, pair.Key, pair.Value);
 
-            // ---- 3. Debit RFs (TDP down) ----
-            foreach (var pair in rfDeltas.Where(p => p.Value < 0m))
-                AdjustRFTdp(service, tracing, pair.Key, pair.Value);
+            // ---- 3. Rollup RF.FundedAmount from children on every touched RF,
+            // with each debit RF's TDP reduction folded into the same Update ----
+            // The rollup is explicit for the same reason as in RealignmentProcessor:
+            // the nested Prio updates above run at depth > 1, so the rollup helper
+            // is skipped there.
+            foreach (var pair in rfDeltas)
+            {
+                var update = PrioritizationRollupHelper.BuildRFFundedUpdate(
+                    service, pair.Key, tracing);
 
-            // ---- 4. Rollup RF.FundedAmount from children on every touched RF ----
-            // Same reason RealignmentProcessor calls this explicitly: the nested
-            // Prio updates above run at depth > 1, so the rollup helper is skipped.
-            foreach (var rfId in rfDeltas.Keys)
-                PrioritizationRollupHelper.RecalculateRFFunded(service, rfId, tracing);
+                if (pair.Value < 0m)
+                    update[RequirementFundingAttributes.TDP] =
+                        ComputeAdjustedTdp(service, tracing, pair.Key, pair.Value);
+
+                service.Update(update);
+            }
         }
 
         private static void Accumulate(Dictionary<Guid, decimal> map, Guid key, decimal delta)
@@ -124,6 +136,19 @@ namespace Checkbook.Plugins.StateSwaps.Helpers
         {
             if (delta == 0m) return;
 
+            service.Update(new Entity(EntityNames.RequirementFunding, rfId)
+            {
+                [RequirementFundingAttributes.TDP] =
+                    ComputeAdjustedTdp(service, tracing, rfId, delta),
+            });
+        }
+
+        private static decimal ComputeAdjustedTdp(
+            IOrganizationService service,
+            ITracingService tracing,
+            Guid rfId,
+            decimal delta)
+        {
             var rf = service.Retrieve(
                 EntityNames.RequirementFunding,
                 rfId,
@@ -137,10 +162,7 @@ namespace Checkbook.Plugins.StateSwaps.Helpers
             tracing.Trace(
                 $"SwapPrioritizationUpdater: RF {rfId} TDP {oldTdp} → {newTdp} (delta {delta}).");
 
-            service.Update(new Entity(EntityNames.RequirementFunding, rfId)
-            {
-                [RequirementFundingAttributes.TDP] = newTdp,
-            });
+            return newTdp;
         }
     }
 }

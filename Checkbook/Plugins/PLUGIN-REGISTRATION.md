@@ -885,9 +885,21 @@ Update** — the entity-scoped "Requested vs Funded" business rule on
 Prioritization has no ancestor-context bypass and would otherwise block the
 swap (same pattern as `RealignmentProcessor`).
 
+The debit side has the mirror-image trap on RF: the "Req Funding - Funded
+vs TDP" real-time business rule (entity-scoped, no bypass possible) rejects
+any RF write where `FundedAmount` > `TDP`, and the RF's rollup
+`FundedAmount` stays stale-high until `SwapPrioritizationUpdater` recomputes
+it (the rollup plugins skip at depth > 1). So the updater writes each debit
+RF's reduced `TDP` **and** its rolled-down `FundedAmount`/`ValidatedAmount`
+in the same Update (via `PrioritizationRollupHelper.BuildRFFundedUpdate`),
+mirroring `RealignmentProcessor.ApplyDebitToRF`. A TDP-only debit write
+would be rejected by the business rule.
+
 Piggybacks on the `IsTriggeredByStateSwap` bypass added to
 `RequirementFundingTDPValidator` — RF intermediate states during Prio /
-RF delta application would otherwise trip the TDP-vs-Funded check.
+RF delta application would otherwise trip that plugin's TDP-vs-Funded
+check (the bypass covers the plugin only, hence the same-Update fold above
+for the business rule).
 
 | # | Message | Primary entity   | Stage           | Mode | Filtering attributes | Notes |
 |---|---------|------------------|-----------------|------|----------------------|-------|
