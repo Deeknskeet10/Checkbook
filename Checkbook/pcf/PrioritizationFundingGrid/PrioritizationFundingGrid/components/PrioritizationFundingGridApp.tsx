@@ -114,7 +114,9 @@ interface ItemRow {
   id: string;
   prioritizationId: string;
   label: string;
-  /** "TDC · LIN · Country" of the linked Requirement Detail; absent codes omitted. */
+  /** TDC name of the linked Requirement Detail; empty when not set. */
+  tdc: string;
+  /** "LIN · Country" of the linked Requirement Detail; absent codes omitted. */
   codes: string;
   /** Fund Center name of the Itemized Detail; empty = state level. */
   fundCenter: string;
@@ -668,8 +670,8 @@ export const PrioritizationFundingGridApp: React.FC<PrioritizationFundingGridPro
             | undefined;
           const itemName =
             (rd?.[`_book_item_value${FV}`] as string | undefined) ?? null;
+          const tdc = rd?.[`_book_tdc_value${FV}`];
           const codes = [
-            rd?.[`_book_tdc_value${FV}`],
             rd?.[`_book_lin_value${FV}`],
             rd?.[`_book_country_value${FV}`],
           ]
@@ -684,6 +686,7 @@ export const PrioritizationFundingGridApp: React.FC<PrioritizationFundingGridPro
             itemName ??
             (e[`_book_requirementitem_value${FV}`] as string | undefined) ??
             "(unnamed line item)",
+          tdc: typeof tdc === "string" ? tdc : "",
           codes,
           fundCenter:
             (e[`_book_fundcenter_value${FV}`] as string | undefined) ?? "",
@@ -1638,6 +1641,7 @@ export const PrioritizationFundingGridApp: React.FC<PrioritizationFundingGridPro
                               <thead>
                                 <tr>
                                   <th className={styles.itemsTh}>Requirement Item</th>
+                                  <th className={styles.itemsTh}>TDC</th>
                                   <th className={styles.itemsTh}>Fund Center</th>
                                   <th className={`${styles.itemsTh} ${styles.itemsThNum}`}>Requested</th>
                                   <th className={`${styles.itemsTh} ${styles.itemsThNum}`}>Validated</th>
@@ -1655,6 +1659,7 @@ export const PrioritizationFundingGridApp: React.FC<PrioritizationFundingGridPro
                                         <span className={styles.itemCodes}>{it.codes}</span>
                                       )}
                                     </td>
+                                    <td className={styles.itemsTd}>{it.tdc}</td>
                                     <td className={styles.itemsTd}>
                                       {it.fundCenter || "State level"}
                                     </td>
