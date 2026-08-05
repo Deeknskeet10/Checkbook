@@ -74,6 +74,53 @@ namespace Checkbook.Plugins.Helpers
             return null;
         }
 
+        /// <summary>
+        /// True when the Prioritization's parent Requirement is centrally
+        /// managed (book_national = 1). Centrally managed Prios are exempt
+        /// from the Itemized Details FC lock — their FC is owned by the
+        /// Requirement (PrioritizationFundCenterBackfill /
+        /// RequirementFundCenterCascade), not forced to state level.
+        /// The prio entity must have been retrieved with the
+        /// book_requirement and book_requirementfunding columns; the
+        /// Requirement is resolved from the direct lookup first (FY27+
+        /// shape), then via RF → Requirement (legacy shape).
+        /// </summary>
+        public static bool HasCentrallyManagedRequirement(
+            IOrganizationService service,
+            ITracingService tracing,
+            Entity prio)
+        {
+            var reqRef = prio.GetAttributeValue<EntityReference>(
+                PrioritizationAttributes.Requirement);
+
+            if (reqRef == null)
+            {
+                var rfRef = prio.GetAttributeValue<EntityReference>(
+                    PrioritizationAttributes.RequirementFunding);
+                if (rfRef != null)
+                {
+                    var rf = service.Retrieve(
+                        EntityNames.RequirementFunding,
+                        rfRef.Id,
+                        new ColumnSet(RequirementFundingAttributes.Requirement));
+                    reqRef = rf.GetAttributeValue<EntityReference>(
+                        RequirementFundingAttributes.Requirement);
+                }
+            }
+
+            if (reqRef == null)
+            {
+                tracing.Trace($"Prio {prio.Id} has no resolvable Requirement; treating as not centrally managed.");
+                return false;
+            }
+
+            var req = service.Retrieve(
+                EntityNames.Requirements,
+                reqRef.Id,
+                new ColumnSet(RequirementsAttributes.National));
+            return req.GetAttributeValue<bool>(RequirementsAttributes.National);
+        }
+
         /// <summary>True when the Prioritization has at least one active Itemized Detail.</summary>
         public static bool HasActiveItemizedDetails(IOrganizationService service, Guid prioritizationId)
         {

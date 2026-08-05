@@ -18,6 +18,12 @@ namespace Checkbook.Plugins.Items
     /// distribution destination. PrioritizationFundCenterLockGuard blocks user
     /// edits while the lock is engaged; removing the last Itemized Detail
     /// releases the lock but the state FC value stays.
+    ///
+    /// Exemption: when the parent Requirement is centrally managed
+    /// (book_national = 1) the Prio FC is owned by the Requirement
+    /// (PrioritizationFundCenterBackfill / RequirementFundCenterCascade) and
+    /// must NOT be forced to state level — this plugin skips those Prios
+    /// entirely, and the lock guard does not lock them.
     /// </summary>
     /// <remarks>
     /// Register: PostOperation, Sync, book_itemizeddetails —
@@ -67,7 +73,17 @@ namespace Checkbook.Plugins.Items
                 prioRef.Id,
                 new ColumnSet(
                     PrioritizationAttributes.FundCenter,
-                    PrioritizationAttributes.State));
+                    PrioritizationAttributes.State,
+                    PrioritizationAttributes.Requirement,
+                    PrioritizationAttributes.RequirementFunding));
+
+            if (StateFundCenterResolver.HasCentrallyManagedRequirement(service, tracing, prio))
+            {
+                tracing.Trace(
+                    $"Prio {prioRef.Id} belongs to a centrally managed Requirement; " +
+                    "FC stays Requirement-owned, not forced to state level.");
+                return;
+            }
 
             var currentFc = prio.GetAttributeValue<EntityReference>(PrioritizationAttributes.FundCenter);
             var state = prio.GetAttributeValue<EntityReference>(PrioritizationAttributes.State);

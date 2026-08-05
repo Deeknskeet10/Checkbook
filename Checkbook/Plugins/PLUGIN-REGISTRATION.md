@@ -209,7 +209,11 @@ locked to the state-level FC (set by
 `Items.PrioritizationItemizedFundCenterDefault`). Blocks any Update that
 moves the FC anywhere else; the only accepted value is the resolved
 state-level FC itself (which is what lets the default plugin's own write
-through). No active Itemized Details → no lock. Reads env var
+through). No active Itemized Details → no lock. Prios under a **centrally
+managed** Requirement (`book_national = 1`) are never locked — their FC is
+Requirement-owned (backfill/cascade), and blocking would reject
+`RequirementFundCenterCascade`'s own write (code-level check, no
+registration impact). Reads env var
 `book_DistributionHoldingFundCenter`. If no state-level FC can be resolved
 the guard allows the write (with a trace) rather than bricking the record.
 
@@ -446,7 +450,7 @@ national → non-national leave existing Prio FCs in place.
 
 | # | Message | Primary entity      | Stage           | Mode | Filtering attributes              | Notes |
 |---|---------|---------------------|-----------------|------|-----------------------------------|-------|
-| 1 | Update  | `book_requirements` | Post-Operation  | Sync | `book_fundcenter, book_national`  | Cascades to linked Prios. **Requires PreImage** (`book_fundcenter, book_national`). Skips Prios with active Itemized Details — those are FC-locked to state level (see `PrioritizationItemizedFundCenterDefault`). |
+| 1 | Update  | `book_requirements` | Post-Operation  | Sync | `book_fundcenter, book_national`  | Cascades to linked Prios. **Requires PreImage** (`book_fundcenter, book_national`). Cascades even to Prios with active Itemized Details — centrally managed Prios are exempt from the state-level FC lock (see `PrioritizationItemizedFundCenterDefault`). |
 
 ### `Checkbook.Plugins.Items.PrioritizationItemizedFundCenterDefault`
 
@@ -458,6 +462,13 @@ Itemized Details themselves (`book_itemizeddetails.book_fundcenter`, blank =
 state level). Distribution-neutral: `GenerateDistributionsPlugin` already
 resolves Prio FCs up to state, so the forced value is exactly what the walk
 would have produced. Reads env var `book_DistributionHoldingFundCenter`.
+
+**Centrally managed exemption:** if the Prio's parent Requirement has
+`book_national = 1` (resolved via direct `book_requirement`, falling back to
+RF → Requirement), the plugin skips entirely — the Prio FC stays
+Requirement-owned (`PrioritizationFundCenterBackfill` /
+`RequirementFundCenterCascade`) and is not forced to state level. The lock
+guard applies the same exemption. Code-level check, no registration impact.
 
 | # | Message | Primary entity         | Stage          | Mode | Filtering attributes | Notes |
 |---|---------|------------------------|----------------|------|----------------------|-------|

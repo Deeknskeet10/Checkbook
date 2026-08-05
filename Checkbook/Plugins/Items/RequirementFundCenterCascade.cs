@@ -71,17 +71,10 @@ namespace Checkbook.Plugins.Items
                 if (currentFc != null && currentFc.Id == newFc.Id)
                     continue;
 
-                // Prios with active Itemized Details are locked to their
-                // state-level FC (PrioritizationItemizedFundCenterDefault);
-                // cascading the Requirement FC onto them would fight the lock
-                // and trip PrioritizationFundCenterLockGuard mid-transaction.
-                if (Helpers.StateFundCenterResolver.HasActiveItemizedDetails(service, prio.Id))
-                {
-                    tracing.Trace(
-                        $"Prio {prio.Id} has active Itemized Details (FC locked to state level); skipping cascade.");
-                    continue;
-                }
-
+                // Itemized Details do not block the cascade: this plugin only
+                // runs for centrally managed Requirements, which are exempt
+                // from the state-level FC lock (the itemized default plugin
+                // and PrioritizationFundCenterLockGuard both skip them).
                 var update = new Entity(EntityNames.Prioritization, prio.Id)
                 {
                     [PrioritizationAttributes.FundCenter] = newFc,

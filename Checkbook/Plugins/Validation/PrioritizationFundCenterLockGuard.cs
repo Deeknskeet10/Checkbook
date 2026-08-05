@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Microsoft.Xrm.Sdk;
+using Microsoft.Xrm.Sdk.Query;
 using Checkbook.Plugins.Base;
 using Checkbook.Plugins.Constants;
 using Checkbook.Plugins.Helpers;
@@ -15,6 +16,12 @@ namespace Checkbook.Plugins.Validation
     /// which is also what lets the default plugin and a user re-selecting the
     /// correct value through. When the last Itemized Detail is removed the
     /// guard stops matching and the field is editable again.
+    ///
+    /// Exemption: Prios under a centrally managed Requirement
+    /// (book_national = 1) are never locked here — their FC is owned by the
+    /// Requirement (PrioritizationFundCenterBackfill /
+    /// RequirementFundCenterCascade), the itemized default plugin skips
+    /// them, and blocking would reject the cascade's own FC write.
     /// </summary>
     /// <remarks>
     /// Register: PreOperation, Sync, book_prioritization, Update.
@@ -52,6 +59,20 @@ namespace Checkbook.Plugins.Validation
             if (!StateFundCenterResolver.HasActiveItemizedDetails(service, target.Id))
             {
                 tracing.Trace("No active Itemized Details; FC is not locked.");
+                return;
+            }
+
+            var prioLookups = service.Retrieve(
+                EntityNames.Prioritization,
+                target.Id,
+                new ColumnSet(
+                    PrioritizationAttributes.Requirement,
+                    PrioritizationAttributes.RequirementFunding));
+            if (StateFundCenterResolver.HasCentrallyManagedRequirement(service, tracing, prioLookups))
+            {
+                tracing.Trace(
+                    "Prio belongs to a centrally managed Requirement; FC is Requirement-owned " +
+                    "and not locked to state level.");
                 return;
             }
 
