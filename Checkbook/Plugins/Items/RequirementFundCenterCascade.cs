@@ -71,10 +71,6 @@ namespace Checkbook.Plugins.Items
                 if (currentFc != null && currentFc.Id == newFc.Id)
                     continue;
 
-                // Itemized Details do not block the cascade: this plugin only
-                // runs for centrally managed Requirements, which are exempt
-                // from the state-level FC lock (the itemized default plugin
-                // and PrioritizationFundCenterLockGuard both skip them).
                 var update = new Entity(EntityNames.Prioritization, prio.Id)
                 {
                     [PrioritizationAttributes.FundCenter] = newFc,

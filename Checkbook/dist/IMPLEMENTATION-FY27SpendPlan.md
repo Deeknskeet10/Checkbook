@@ -2,8 +2,16 @@
 
 Design agreed Jul 2026. Two connected features:
 
-1. **Fund Center on Itemized Details** — per-line FC granularity, with the
-   Prioritization-level FC locked to the state-level FC while lines exist.
+> **Revised Aug 2026 — FC lock retired.** The original design forced and
+> locked the Prioritization-level FC to the state-level FC while Itemized
+> Details existed (`PrioritizationItemizedFundCenterDefault` +
+> `PrioritizationFundCenterLockGuard`). Both plugins were removed before ever
+> being registered: the submitting state sets the FC on its own
+> Prioritizations. The per-line FC on Itemized Details stays (likely unused
+> this FY), and centrally managed Requirements still push their FC onto
+> Prios (backfill + cascade).
+
+1. **Fund Center on Itemized Details** — per-line FC granularity.
 2. **FY27+ Spend Plans** — a new Prioritization form tab
    (`book_ARNGCheckbook.PrioritizationSpendPlanGrid`) with one section per
    Prioritization Funding row, Planned / Actual / Variance bands across the
@@ -56,13 +64,12 @@ Register `Checkbook_Plugins.dll` steps per
 
 | Plugin | What it does |
 |---|---|
-| `Items.PrioritizationItemizedFundCenterDefault` (new) | First active Itemized Detail forces Prio FC to the **state-level FC** (state FC whose parent is the holding FC; falls back to the parent-chain walk). Distribution-neutral — `GenerateDistributions` already resolves Prio FCs up to state. |
-| `Validation.PrioritizationFundCenterLockGuard` (new) | Blocks Prio FC edits while active Itemized Details exist (only the state-level FC value is accepted). Removing the last line releases the lock; the FC keeps its value. |
-| `Items.RequirementFundCenterCascade` (updated) | Now skips FC-locked Prios so the national-Requirement cascade cannot fight the lock. |
 | `Validation.SpendPlanFY27Validator` (new) | FY27 rows only: PF/Prio anchor exclusivity, one active row per (PF, FC, RowType), **Planned total ≤ PF funded** (equality intentionally not enforced so plans can be entered incrementally — the grid badge shows completeness), and month locks (Planned frozen once the month passes; Actual only for completed months). |
 
-Env var dependency: `book_DistributionHoldingFundCenter` (already defined for
-distributions) now also defines "state level" for the FC lock pair.
+*(The FC lock pair originally listed here — `PrioritizationItemizedFundCenterDefault`
+and `PrioritizationFundCenterLockGuard` — was retired Aug 2026 before
+registration; see the note at the top. `RequirementFundCenterCascade` is
+unchanged from its pre-FY27 behavior.)*
 
 ---
 
@@ -106,21 +113,18 @@ distributions) now also defines "state level" for the FC lock pair.
    control (Dataverse caches PCF metadata by version — confirm v0.3.0 shows).
 3. **Web resource `book_Prioritizations`**: paste the updated
    [`../webresources/book_prioritization.js`](../webresources/book_prioritization.js)
-   (adds the FY-gated Spend Plan tab visibility and extends the FC form lock
-   to Itemized-Detail-locked Prios), then publish.
+   (adds the FY-gated Spend Plan tab visibility; the FC form lock still
+   applies only to centrally managed Requirements), then publish.
 
 ---
 
 ## 5. Verification checklist
 
-- [ ] Add an Itemized Detail to a Prio with a hand-picked FC → Prio FC flips
-      to the state-level FC and the field locks (form + API).
-- [ ] Try to change the locked Prio FC via API → blocked with the lock
-      message; setting it to the state FC itself succeeds.
-- [ ] Remove all Itemized Details → FC editable again, still state FC.
-- [ ] National Requirement FC change → cascade skips FC-locked Prios,
-      still updates unlocked ones.
-- [ ] Generate Distributions before/after locking → identical buckets.
+- [ ] Add an Itemized Detail to a Prio → the Prio FC is untouched and stays
+      user-editable (form + API) for state-submitted work.
+- [ ] Prio under a centrally managed Requirement → FC still Requirement-owned
+      (backfilled on create, cascaded on Requirement FC change, disabled on
+      the form).
 - [ ] FY26 Prio: no Spend Plan tab; legacy Spend Plan button/page unchanged.
 - [ ] FY27 Prio (final approved): tab visible; enter Planned months, Save →
       rows created with PF anchor, no `book_prioritization`, type shows

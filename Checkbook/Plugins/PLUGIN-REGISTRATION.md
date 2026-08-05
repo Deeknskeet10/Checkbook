@@ -9,7 +9,7 @@ This file is the source of truth for **what steps should exist** in any env
 running these plugins. When you finish a registration session, walk the
 verification checklist at the bottom and confirm every row is present.
 
-The assembly currently ships **40 concrete plugin classes** (39 + the four
+The assembly currently ships **38 concrete plugin classes** (37 + the four
 `LOATouchPropagator` subclasses minus the abstract base), grouped under
 `Checkbook.Plugins.<folder>`. Deep-dive docs covering prerequisites, Custom
 APIs, and smoke tests:
@@ -46,7 +46,7 @@ If `Checkbook_Plugins.dll` has never been registered in this env:
 2. **Register → Register New Assembly**.
 3. Browse to `Plugins/bin/Release/net462/Checkbook_Plugins.dll`.
 4. Step 2 — **Specify the location**: **Database** (default).
-5. Step 2 — **Select the plugins** to register: leave all **40** checked.
+5. Step 2 — **Select the plugins** to register: leave all **38** checked.
 6. Click **Register Selected Plugins**.
 
 For subsequent code changes, use **Update Assembly** on the existing
@@ -97,13 +97,21 @@ The Itemized-Detail Fund Center + FY27 spend plan work (source in
 
 | Item | Change |
 |---|---|
-| `book_itemizeddetails` (existing) | Add optional lookup `book_fundcenter` → `book_fundcenter`. Blank = state-level FC. Read by the ItemizedDetailsGrid PCF and the FY27 spend plan grid; the FC lock plugins do **not** require it. |
+| `book_itemizeddetails` (existing) | Add optional lookup `book_fundcenter` → `book_fundcenter`. Blank = state-level FC. Read by the ItemizedDetailsGrid PCF and the FY27 spend plan grid; no plugin requires it. |
 | `book_spendplan` (existing) | Add lookup `book_prioritizationfunding` → `book_prioritizationfunding` (FY27 row anchor; **leave `book_prioritization` empty on FY27 rows** — the `book_uniquestatespendplan` alternate key allows only one legacy row per Prio), lookup `book_fundcenter` → `book_fundcenter` (null on per-RF rollup rows), Choice `book_rowtype` (**Planned** = `0`, **Actual** = `1`), decimal twins `book_newoctober` … `book_newseptember` (12 columns, 2 decimals), calculated decimal `book_newspendplantotal` (sum of the 12 twins), and extend the `book_spendplantype` formula to treat PF-anchored rows as "Prioritization". |
 
-Register `PrioritizationItemizedFundCenterDefault` /
-`PrioritizationFundCenterLockGuard` (below) only after the
-`book_itemizeddetails` change is published; register the spend plan
-validator only after the `book_spendplan` changes are published.
+Register the spend plan validator only after the `book_spendplan` changes
+are published.
+
+> **Retired (Aug 2026): the Itemized-Details FC lock.**
+> `PrioritizationItemizedFundCenterDefault` and
+> `PrioritizationFundCenterLockGuard` (which forced/locked the Prio FC to the
+> state-level FC while active Itemized Details existed) were removed before
+> ever being registered — states set the FC on their own Prioritizations;
+> only centrally managed Requirements still push their FC onto Prios
+> (`PrioritizationFundCenterBackfill` / `RequirementFundCenterCascade`).
+> If either plugin was registered in an env from an older build, unregister
+> its steps before updating the assembly.
 
 ---
 
@@ -111,7 +119,7 @@ validator only after the `book_spendplan` changes are published.
 
 | Variable                              | Type | Read by                                                  | Notes |
 |---------------------------------------|------|----------------------------------------------------------|-------|
-| `book_DistributionHoldingFundCenter`  | Text | `GenerateDistributionsPlugin`, `PrioritizationItemizedFundCenterDefault`, `PrioritizationFundCenterLockGuard` | See [`Distributions/REGISTRATION.md`](Distributions/REGISTRATION.md). The A18 record's GUID. The FC lock pair uses it to define "state-level FC" (parent = holding FC). |
+| `book_DistributionHoldingFundCenter`  | Text | `GenerateDistributionsPlugin` | See [`Distributions/REGISTRATION.md`](Distributions/REGISTRATION.md). The A18 record's GUID. |
 | `book_TurnInCreditOPR`                | Text | `TurnInApprovalPlugin` (via `TurnInLOAResolver`)         | See [`TurnIns/REGISTRATION.md`](TurnIns/REGISTRATION.md). Required for FY27+ Turn-Ins. |
 | `book_LockManualFundedEdits`          | Yes/No | `PrioritizationFundedAmountLock` + `RequirementFundingFundedAmountLock`; written by `ToggleFundedAmountLockPlugin` | See [`../docs/FundedAmountLock-Setup.md`](../docs/FundedAmountLock-Setup.md). Ships default `false`; toggled via the Admin Center button. Blocks manual **reductions** only — increases stay allowed. |
 
@@ -201,25 +209,6 @@ detected by walking `context.ParentContext`). Shares its logic with
 | # | Message | Primary entity        | Stage          | Mode | Filtering attributes         | Notes |
 |---|---------|-----------------------|----------------|------|------------------------------|-------|
 | 1 | Update  | `book_prioritization` | Pre-Operation  | Sync | `book_newfundedamounttdp`    | Rank **10** (runs before the other Pre-Op Update validators). **Requires PreImage** (`book_newfundedamounttdp`) — falls back to a Retrieve if the image is missing. |
-
-### `Checkbook.Plugins.Validation.PrioritizationFundCenterLockGuard`
-
-While a Prioritization has **active Itemized Details**, `book_fundcenter` is
-locked to the state-level FC (set by
-`Items.PrioritizationItemizedFundCenterDefault`). Blocks any Update that
-moves the FC anywhere else; the only accepted value is the resolved
-state-level FC itself (which is what lets the default plugin's own write
-through). No active Itemized Details → no lock. Prios under a **centrally
-managed** Requirement (`book_national = 1`) are never locked — their FC is
-Requirement-owned (backfill/cascade), and blocking would reject
-`RequirementFundCenterCascade`'s own write (code-level check, no
-registration impact). Reads env var
-`book_DistributionHoldingFundCenter`. If no state-level FC can be resolved
-the guard allows the write (with a trace) rather than bricking the record.
-
-| # | Message | Primary entity        | Stage          | Mode | Filtering attributes | Notes |
-|---|---------|-----------------------|----------------|------|----------------------|-------|
-| 1 | Update  | `book_prioritization` | Pre-Operation  | Sync | `book_fundcenter`    | **Requires PreImage** (`book_fundcenter, book_state`). |
 
 ### `Checkbook.Plugins.Validation.PrioritizationFundingValidator`
 
@@ -450,33 +439,7 @@ national → non-national leave existing Prio FCs in place.
 
 | # | Message | Primary entity      | Stage           | Mode | Filtering attributes              | Notes |
 |---|---------|---------------------|-----------------|------|-----------------------------------|-------|
-| 1 | Update  | `book_requirements` | Post-Operation  | Sync | `book_fundcenter, book_national`  | Cascades to linked Prios. **Requires PreImage** (`book_fundcenter, book_national`). Cascades even to Prios with active Itemized Details — centrally managed Prios are exempt from the state-level FC lock (see `PrioritizationItemizedFundCenterDefault`). |
-
-### `Checkbook.Plugins.Items.PrioritizationItemizedFundCenterDefault`
-
-When a Prioritization gains an active Itemized Detail, forces the Prio
-`book_fundcenter` to the **state-level FC** (the FC whose parent is the
-distribution holding FC, resolved via the Prio state first, then via the
-parent-chain walk of the current FC). Per-FC granularity lives on the
-Itemized Details themselves (`book_itemizeddetails.book_fundcenter`, blank =
-state level). Distribution-neutral: `GenerateDistributionsPlugin` already
-resolves Prio FCs up to state, so the forced value is exactly what the walk
-would have produced. Reads env var `book_DistributionHoldingFundCenter`.
-
-**Centrally managed exemption:** if the Prio's parent Requirement has
-`book_national = 1` (resolved via direct `book_requirement`, falling back to
-RF → Requirement), the plugin skips entirely — the Prio FC stays
-Requirement-owned (`PrioritizationFundCenterBackfill` /
-`RequirementFundCenterCascade`) and is not forced to state level. The lock
-guard applies the same exemption. Code-level check, no registration impact.
-
-| # | Message | Primary entity         | Stage          | Mode | Filtering attributes | Notes |
-|---|---------|------------------------|----------------|------|----------------------|-------|
-| 1 | Create  | `book_itemizeddetails` | Post-Operation | Sync | *(none)*             | First active Itemized Detail engages the lock. |
-| 2 | Update  | `book_itemizeddetails` | Post-Operation | Sync | `statecode`          | Reactivation re-engages the lock. **Requires PreImage** (`book_prioritization`). |
-
-No Delete/Deactivate step by design: removing the last Itemized Detail only
-releases the lock (guard below stops matching); the Prio keeps the state FC.
+| 1 | Update  | `book_requirements` | Post-Operation  | Sync | `book_fundcenter, book_national`  | Cascades to linked Prios. **Requires PreImage** (`book_fundcenter, book_national`). Cascades even to Prios with active Itemized Details — the Itemized-Details FC lock was retired Aug 2026 (see the retirement note in the FY27 schema section). |
 
 ---
 
