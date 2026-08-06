@@ -29,6 +29,9 @@ namespace Checkbook.Plugins.Constants
         public const string StateSwap = "book_stateswap";
         public const string SwapItem = "book_swapitem";
 
+        // Platform
+        public const string SystemUser = "systemuser";
+
         // Reference Data
         public const string State = "book_state";
         public const string APE = "book_ape";

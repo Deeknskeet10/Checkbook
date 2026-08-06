@@ -42,6 +42,22 @@ namespace Checkbook.Plugins.Helpers
             Guid rfId,
             ITracingService tracing)
         {
+            service.Update(BuildRFFundedUpdate(service, rfId, tracing));
+        }
+
+        /// <summary>
+        /// Computes the rollup totals and returns the unsaved Update entity so a
+        /// caller can merge additional attributes (e.g. a TDP change) into the
+        /// SAME Update. The "Req Funding - Funded vs TDP" real-time business
+        /// rule is entity-scoped and cannot be bypassed by ancestor-context
+        /// checks, so Funded and TDP must move together whenever an
+        /// intermediate write would leave Funded &gt; TDP.
+        /// </summary>
+        public static Entity BuildRFFundedUpdate(
+            IOrganizationService service,
+            Guid rfId,
+            ITracingService tracing)
+        {
             var fetch = $@"
                 <fetch aggregate='true'>
                     <entity name='{EntityNames.Prioritization}'>
@@ -93,7 +109,7 @@ namespace Checkbook.Plugins.Helpers
             var update = new Entity(EntityNames.RequirementFunding, rfId);
             update[RequirementFundingAttributes.FundedAmount] = fundedTotal;
             update[RequirementFundingAttributes.ValidatedAmount] = validatedTotal;
-            service.Update(update);
+            return update;
         }
     }
 }

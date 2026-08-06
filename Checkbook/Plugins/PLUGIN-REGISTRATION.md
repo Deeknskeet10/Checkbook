@@ -9,7 +9,7 @@ This file is the source of truth for **what steps should exist** in any env
 running these plugins. When you finish a registration session, walk the
 verification checklist at the bottom and confirm every row is present.
 
-The assembly currently ships **40 concrete plugin classes** (39 + the four
+The assembly currently ships **38 concrete plugin classes** (37 + the four
 `LOATouchPropagator` subclasses minus the abstract base), grouped under
 `Checkbook.Plugins.<folder>`. Deep-dive docs covering prerequisites, Custom
 APIs, and smoke tests:
@@ -46,7 +46,7 @@ If `Checkbook_Plugins.dll` has never been registered in this env:
 2. **Register → Register New Assembly**.
 3. Browse to `Plugins/bin/Release/net462/Checkbook_Plugins.dll`.
 4. Step 2 — **Specify the location**: **Database** (default).
-5. Step 2 — **Select the plugins** to register: leave all **40** checked.
+5. Step 2 — **Select the plugins** to register: leave all **38** checked.
 6. Click **Register Selected Plugins**.
 
 For subsequent code changes, use **Update Assembly** on the existing
@@ -97,13 +97,21 @@ The Itemized-Detail Fund Center + FY27 spend plan work (source in
 
 | Item | Change |
 |---|---|
-| `book_itemizeddetails` (existing) | Add optional lookup `book_fundcenter` → `book_fundcenter`. Blank = state-level FC. Read by the ItemizedDetailsGrid PCF and the FY27 spend plan grid; the FC lock plugins do **not** require it. |
+| `book_itemizeddetails` (existing) | Add optional lookup `book_fundcenter` → `book_fundcenter`. Blank = state-level FC. Read by the ItemizedDetailsGrid PCF and the FY27 spend plan grid; no plugin requires it. |
 | `book_spendplan` (existing) | Add lookup `book_prioritizationfunding` → `book_prioritizationfunding` (FY27 row anchor; **leave `book_prioritization` empty on FY27 rows** — the `book_uniquestatespendplan` alternate key allows only one legacy row per Prio), lookup `book_fundcenter` → `book_fundcenter` (null on per-RF rollup rows), Choice `book_rowtype` (**Planned** = `0`, **Actual** = `1`), decimal twins `book_newoctober` … `book_newseptember` (12 columns, 2 decimals), calculated decimal `book_newspendplantotal` (sum of the 12 twins), and extend the `book_spendplantype` formula to treat PF-anchored rows as "Prioritization". |
 
-Register `PrioritizationItemizedFundCenterDefault` /
-`PrioritizationFundCenterLockGuard` (below) only after the
-`book_itemizeddetails` change is published; register the spend plan
-validator only after the `book_spendplan` changes are published.
+Register the spend plan validator only after the `book_spendplan` changes
+are published.
+
+> **Retired (Aug 2026): the Itemized-Details FC lock.**
+> `PrioritizationItemizedFundCenterDefault` and
+> `PrioritizationFundCenterLockGuard` (which forced/locked the Prio FC to the
+> state-level FC while active Itemized Details existed) were removed before
+> ever being registered — states set the FC on their own Prioritizations;
+> only centrally managed Requirements still push their FC onto Prios
+> (`PrioritizationFundCenterBackfill` / `RequirementFundCenterCascade`).
+> If either plugin was registered in an env from an older build, unregister
+> its steps before updating the assembly.
 
 ---
 
@@ -111,7 +119,7 @@ validator only after the `book_spendplan` changes are published.
 
 | Variable                              | Type | Read by                                                  | Notes |
 |---------------------------------------|------|----------------------------------------------------------|-------|
-| `book_DistributionHoldingFundCenter`  | Text | `GenerateDistributionsPlugin`, `PrioritizationItemizedFundCenterDefault`, `PrioritizationFundCenterLockGuard` | See [`Distributions/REGISTRATION.md`](Distributions/REGISTRATION.md). The A18 record's GUID. The FC lock pair uses it to define "state-level FC" (parent = holding FC). |
+| `book_DistributionHoldingFundCenter`  | Text | `GenerateDistributionsPlugin` | See [`Distributions/REGISTRATION.md`](Distributions/REGISTRATION.md). The A18 record's GUID. |
 | `book_TurnInCreditOPR`                | Text | `TurnInApprovalPlugin` (via `TurnInLOAResolver`)         | See [`TurnIns/REGISTRATION.md`](TurnIns/REGISTRATION.md). Required for FY27+ Turn-Ins. |
 | `book_LockManualFundedEdits`          | Yes/No | `PrioritizationFundedAmountLock` + `RequirementFundingFundedAmountLock`; written by `ToggleFundedAmountLockPlugin` | See [`../docs/FundedAmountLock-Setup.md`](../docs/FundedAmountLock-Setup.md). Ships default `false`; toggled via the Admin Center button. Blocks manual **reductions** only — increases stay allowed. |
 
@@ -201,21 +209,6 @@ detected by walking `context.ParentContext`). Shares its logic with
 | # | Message | Primary entity        | Stage          | Mode | Filtering attributes         | Notes |
 |---|---------|-----------------------|----------------|------|------------------------------|-------|
 | 1 | Update  | `book_prioritization` | Pre-Operation  | Sync | `book_newfundedamounttdp`    | Rank **10** (runs before the other Pre-Op Update validators). **Requires PreImage** (`book_newfundedamounttdp`) — falls back to a Retrieve if the image is missing. |
-
-### `Checkbook.Plugins.Validation.PrioritizationFundCenterLockGuard`
-
-While a Prioritization has **active Itemized Details**, `book_fundcenter` is
-locked to the state-level FC (set by
-`Items.PrioritizationItemizedFundCenterDefault`). Blocks any Update that
-moves the FC anywhere else; the only accepted value is the resolved
-state-level FC itself (which is what lets the default plugin's own write
-through). No active Itemized Details → no lock. Reads env var
-`book_DistributionHoldingFundCenter`. If no state-level FC can be resolved
-the guard allows the write (with a trace) rather than bricking the record.
-
-| # | Message | Primary entity        | Stage          | Mode | Filtering attributes | Notes |
-|---|---------|-----------------------|----------------|------|----------------------|-------|
-| 1 | Update  | `book_prioritization` | Pre-Operation  | Sync | `book_fundcenter`    | **Requires PreImage** (`book_fundcenter, book_state`). |
 
 ### `Checkbook.Plugins.Validation.PrioritizationFundingValidator`
 
@@ -446,26 +439,7 @@ national → non-national leave existing Prio FCs in place.
 
 | # | Message | Primary entity      | Stage           | Mode | Filtering attributes              | Notes |
 |---|---------|---------------------|-----------------|------|-----------------------------------|-------|
-| 1 | Update  | `book_requirements` | Post-Operation  | Sync | `book_fundcenter, book_national`  | Cascades to linked Prios. **Requires PreImage** (`book_fundcenter, book_national`). Skips Prios with active Itemized Details — those are FC-locked to state level (see `PrioritizationItemizedFundCenterDefault`). |
-
-### `Checkbook.Plugins.Items.PrioritizationItemizedFundCenterDefault`
-
-When a Prioritization gains an active Itemized Detail, forces the Prio
-`book_fundcenter` to the **state-level FC** (the FC whose parent is the
-distribution holding FC, resolved via the Prio state first, then via the
-parent-chain walk of the current FC). Per-FC granularity lives on the
-Itemized Details themselves (`book_itemizeddetails.book_fundcenter`, blank =
-state level). Distribution-neutral: `GenerateDistributionsPlugin` already
-resolves Prio FCs up to state, so the forced value is exactly what the walk
-would have produced. Reads env var `book_DistributionHoldingFundCenter`.
-
-| # | Message | Primary entity         | Stage          | Mode | Filtering attributes | Notes |
-|---|---------|------------------------|----------------|------|----------------------|-------|
-| 1 | Create  | `book_itemizeddetails` | Post-Operation | Sync | *(none)*             | First active Itemized Detail engages the lock. |
-| 2 | Update  | `book_itemizeddetails` | Post-Operation | Sync | `statecode`          | Reactivation re-engages the lock. **Requires PreImage** (`book_prioritization`). |
-
-No Delete/Deactivate step by design: removing the last Itemized Detail only
-releases the lock (guard below stops matching); the Prio keeps the state FC.
+| 1 | Update  | `book_requirements` | Post-Operation  | Sync | `book_fundcenter, book_national`  | Cascades to linked Prios. **Requires PreImage** (`book_fundcenter, book_national`). Cascades even to Prios with active Itemized Details — the Itemized-Details FC lock was retired Aug 2026 (see the retirement note in the FY27 schema section). |
 
 ---
 
@@ -690,10 +664,13 @@ touched LOAs, and deactivates the Turn-In.
 Trigger semantics (hardened Jul 2026, same pattern as `RealignmentProcessor`):
 fires when the payload carries an approval flag = true **and the pre-image
 shows the record still active** (deactivation-on-completion is the "processed"
-marker; ledger existence is the durable double-processing barrier). No Depth
-guard — bulk approvals via Excel Online / ExecuteMultiple arrive nested and
-must process; self re-entry is detected by walking `ParentContext` for an
-ancestor `book_turnin` Update.
+marker; ledger existence is the durable double-processing barrier). **No
+nesting or Depth guard** (removed Aug 2026, preemptively — the ancestor-walk
+guard silently dropped every approval on `book_realignments` and
+`book_stateswap` once server-side field setters nested the decision save).
+The guard protected nothing: the step is filtered on the approval flags, and
+both deactivation Updates (step 7's and `TurnInDeactivator`'s) write only
+statecode/statuscode, so neither can re-trigger it.
 
 | # | Message | Primary entity | Stage           | Mode | Filtering attributes                  | Notes |
 |---|---------|----------------|-----------------|------|---------------------------------------|-------|
@@ -709,9 +686,12 @@ Post-op handler for the **denied** path: when `book_stateapproved` flips
 true → false, deactivates the Turn-In (statecode = Inactive). No financial
 side effects — `TurnInValidator`'s idempotency guarantees no ledgers exist
 when this path runs. Denial detection stays transition-based (a bare false
-can't distinguish "denied" from "never approved"); self re-entry (its own
-deactivation Update, or the orchestrator's) is detected via `ParentContext`
-rather than a Depth guard, so bulk denials via Excel / ExecuteMultiple work.
+can't distinguish "denied" from "never approved"). **No nesting or Depth
+guard** (removed Aug 2026, preemptively — same rationale as
+`TurnInApprovalPlugin` above): the step is filtered on `book_stateapproved`
+and the deactivation Updates write only statecode/statuscode, so self
+re-entry is impossible; the transition check + already-inactive check are
+the idempotency barrier.
 
 | # | Message | Primary entity | Stage           | Mode | Filtering attributes      | Notes |
 |---|---------|----------------|-----------------|------|---------------------------|-------|
@@ -777,11 +757,19 @@ validated and role-gated like the original; denial detection stays
 transition-based. Enforces
 idempotency (no re-processing if ledgers exist), role gating with
 **per-state BU scoping** via `StateScopeHelper` (a State A Approver in the
-wrong BU cannot approve the State A side), balance (recomputed live from
-active items — the stored `book_isbalanced` is not trusted), overdraw per
-debit Prio, and the "BE requires both state approvals" prereq. Denial
-transitions skip balance / overdraw / BE-prereq checks so an incomplete
-swap can still be denied.
+wrong BU cannot approve the State A side), at-least-one-active-item
+(recomputed live from active items — the stored totals are not trusted;
+**one-sided swaps are allowed**, there is no both-sides-contribute check
+since Aug 2026), overdraw per debit Prio, and the "BE requires both state
+approvals" prereq. Denial transitions skip completeness / overdraw /
+BE-prereq checks so an incomplete swap can still be denied.
+
+After validation passes, the validator **stamps the audit fields** for each
+approval flag transitioning false → true in the Update:
+`book_state[a|b]approvedby/on`, `book_beapprovedby/on` = initiating user +
+UtcNow (pre-op target mutation, so the stamp commits with the flag; no extra
+registration needed — the existing step filter already covers the flags).
+`SwapDenialPlugin` clears the stamps on denial.
 
 Role checks map:
 - State A / State B approval: `Book - State Approver` or `Book - State Administrator` **and** user BU matches that state's owning BU. `Book - Checkbook Administrator` bypasses the BU scope.
@@ -836,9 +824,15 @@ Post-op orchestrator for a BE-approved State Swap. Fires when the payload
 carries `book_beapproved` = true **and the pre-image shows the swap still
 active** (hardened Jul 2026, same pattern as `RealignmentProcessor`:
 deactivation-on-completion is the "processed" marker, ledger existence is
-the durable double-processing barrier, and no Depth guard — bulk approvals
-via Excel Online / ExecuteMultiple arrive nested and must process; self
-re-entry is detected via `ParentContext`). Resolves each item's debit/credit
+the durable double-processing barrier). **No nesting or Depth guard**
+(Aug 2026, same fix as `RealignmentProcessor`): server-side field setters
+on `book_stateswap` can nest the BE-approval save under another
+`book_stateswap` Update, and the former `IsNestedUpdateOf` guard silently
+dropped every approval (trace showed only "self re-entry — skipping"; no
+ledgers/distributions, swap never deactivated). The guard protected
+nothing: the step is filtered on `book_beapproved`, and neither the
+self-deactivate (statecode/statuscode only) nor `SwapRollupPlugin`'s
+parent writes (totals + isbalanced) can re-trigger it. Resolves each item's debit/credit
 LOA + parent RF via `SwapLOAResolver`, writes ledger pairs (skipping
 same-LOA net-zero items), recalcs touched LOA TDPs, applies net Prio
 `FundedAmount` and parent RF `TDP` deltas via `SwapPrioritizationUpdater`,
@@ -865,9 +859,21 @@ Update** — the entity-scoped "Requested vs Funded" business rule on
 Prioritization has no ancestor-context bypass and would otherwise block the
 swap (same pattern as `RealignmentProcessor`).
 
+The debit side has the mirror-image trap on RF: the "Req Funding - Funded
+vs TDP" real-time business rule (entity-scoped, no bypass possible) rejects
+any RF write where `FundedAmount` > `TDP`, and the RF's rollup
+`FundedAmount` stays stale-high until `SwapPrioritizationUpdater` recomputes
+it (the rollup plugins skip at depth > 1). So the updater writes each debit
+RF's reduced `TDP` **and** its rolled-down `FundedAmount`/`ValidatedAmount`
+in the same Update (via `PrioritizationRollupHelper.BuildRFFundedUpdate`),
+mirroring `RealignmentProcessor.ApplyDebitToRF`. A TDP-only debit write
+would be rejected by the business rule.
+
 Piggybacks on the `IsTriggeredByStateSwap` bypass added to
 `RequirementFundingTDPValidator` — RF intermediate states during Prio /
-RF delta application would otherwise trip the TDP-vs-Funded check.
+RF delta application would otherwise trip that plugin's TDP-vs-Funded
+check (the bypass covers the plugin only, hence the same-Update fold above
+for the business rule).
 
 | # | Message | Primary entity   | Stage           | Mode | Filtering attributes | Notes |
 |---|---------|------------------|-----------------|------|----------------------|-------|

@@ -144,7 +144,7 @@ Plugins live in `Plugins/` — the `Checkbook_Plugins` project (assembly
 `Checkbook_Plugins.dll`, namespace root `Checkbook.Plugins`), targeting
 **.NET Framework 4.6.2**, strong-named with `Checkbook_Plugins.snk`, and
 referencing `Microsoft.CrmSdk.CoreAssemblies`. It is **already implemented** —
-**40 concrete plugin classes**, all inheriting `Base/PluginBase.cs` (four via
+**38 concrete plugin classes**, all inheriting `Base/PluginBase.cs` (four via
 the intermediate `Recalculations/LOATouchPropagator` base):
 
 ```

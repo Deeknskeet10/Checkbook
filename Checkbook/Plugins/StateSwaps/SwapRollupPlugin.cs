@@ -13,12 +13,13 @@ namespace Checkbook.Plugins.StateSwaps
     /// Rolls up active items onto the parent book_stateswap:
     ///   - book_totalsentbya   = Σ items where debitState == parent.StateA
     ///   - book_totalsentbyb   = Σ items where debitState == parent.StateB
-    ///   - book_isbalanced     = "ready to approve" — both sides contribute
-    ///                           (totalA > 0 && totalB > 0) AND every active
-    ///                           item has both Debit and Credit Prio populated.
-    ///                           The name is legacy; the semantic is now
-    ///                           readiness, not equal-totals (per the removed
-    ///                           2-for-1 hard rule).
+    ///   - book_isbalanced     = "ready to approve" — at least one side sends
+    ///                           something (totalA > 0 || totalB > 0) AND every
+    ///                           active item has both Debit and Credit Prio
+    ///                           populated. The name is legacy; the semantic is
+    ///                           readiness — the equal-totals rule and the
+    ///                           both-sides-contribute rule were both retired
+    ///                           (one-sided transfers are allowed).
     ///
     /// Recomputes both the current parent and (on Update) the previous parent if
     /// the item was re-parented.
@@ -101,7 +102,7 @@ namespace Checkbook.Plugins.StateSwaps
                 totalB = SumActiveItemsForDebitState(service, swapId, stateB.Id);
 
             int unpairedItems = CountItemsMissingCreditPrio(service, swapId);
-            var isBalanced = totalA > 0m && totalB > 0m && unpairedItems == 0;
+            var isBalanced = (totalA > 0m || totalB > 0m) && unpairedItems == 0;
 
             tracing.Trace(
                 $"SwapRollupPlugin: swap {swapId} totals A={totalA}, B={totalB}, " +

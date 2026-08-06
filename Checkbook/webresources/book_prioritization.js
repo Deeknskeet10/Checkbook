@@ -126,38 +126,14 @@ Book.Prioritization = (function () {
         return Promise.resolve(null);
     }
 
-    // While a Prio has active Itemized Details, its FC is server-locked to the
-    // state-level FC (PrioritizationFundCenterLockGuard) — mirror that lock on
-    // the form. Removing the last Itemized Detail releases the lock.
-    function hasActiveItemizedDetails(formContext) {
-        var prioId = formContext.data.entity.getId();
-        if (!prioId) return Promise.resolve(false);
-        return Xrm.WebApi.retrieveMultipleRecords(
-            "book_itemizeddetails",
-            "?$select=book_itemizeddetailsid" +
-            "&$filter=_book_prioritization_value eq " + stripBraces(prioId) +
-            " and statecode eq 0&$top=1"
-        ).then(function (result) { return result.entities.length > 0; });
-    }
-
     function applyFundCenterLock(formContext) {
         var fcAttr = formContext.getAttribute(FUND_CENTER);
         var fcCtrl = formContext.getControl(FUND_CENTER);
         if (!fcAttr || !fcCtrl) return;
 
-        Promise.all([
-            readIsNational(formContext),
-            hasActiveItemizedDetails(formContext)
-        ]).then(
-            function (results) {
-                var isNational = results[0];
-                var itemizedLock = results[1];
+        readIsNational(formContext).then(
+            function (isNational) {
                 fcCtrl.setVisible(true);
-                if (itemizedLock) {
-                    fcCtrl.setDisabled(true);
-                    fcAttr.setRequiredLevel("none");
-                    return;
-                }
                 if (isNational === null) {
                     // No parent set yet — user-editable, default required.
                     fcCtrl.setDisabled(false);

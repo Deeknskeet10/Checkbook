@@ -280,7 +280,7 @@ adopt `book_security` later), `book_turnInFilterForm`, `book_resetStateUFR`,
 
 ---
 
-## 9. book_Prioritizations update — FY27 Spend Plan tab + FC lock (Jul 2026)
+## 9. book_Prioritizations update — FY27 Spend Plan tab (Jul 2026, FC lock retired Aug 2026)
 
 File: `book_prioritization.js` → paste into the existing WR
 **`book_Prioritizations`** (already wired to the Prioritization main form:
@@ -295,15 +295,19 @@ What the update adds:
   `book_ARNGCheckbook.PrioritizationSpendPlanGrid`) only when
   `book_newfiscalyear` >= 2027. FY26 and earlier keep the legacy Spend Plan
   command-bar page.
-- `applyFundCenterLock` now also disables `book_fundcenter` when the Prio has
-  **active Itemized Details** — mirroring the new server-side lock
-  (`PrioritizationFundCenterLockGuard`; the plugin remains authoritative).
+- *(Retired Aug 2026: a Jul 2026 revision also disabled `book_fundcenter`
+  while the Prio had active Itemized Details, mirroring the
+  `PrioritizationFundCenterLockGuard` plugin. Both the plugin and the mirror
+  were removed — the submitting state sets the FC on its own Prios — so
+  `applyFundCenterLock` is back to the centrally-managed (`book_national`)
+  lock only. If the itemized-lock version of the script was ever published,
+  paste the current file again.)*
 
 Verify after publish:
 
 - FY26 Prio → no Spend Plan tab; FY27 Prio → tab visible.
-- Prio with Itemized Details → Fund Center disabled on load; Prio without →
-  behavior unchanged (national lock still applies).
+- Prio with Itemized Details → Fund Center stays editable (only the national
+  lock disables it).
 
 Full feature deployment (schema, plugins, PCF wiring):
 [`../dist/IMPLEMENTATION-FY27SpendPlan.md`](../dist/IMPLEMENTATION-FY27SpendPlan.md).

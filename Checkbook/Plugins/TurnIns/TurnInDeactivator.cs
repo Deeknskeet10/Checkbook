@@ -27,12 +27,18 @@ namespace Checkbook.Plugins.TurnIns
             if (context.PrimaryEntityName != EntityNames.Turnin) return;
             if (context.MessageName != "Update") return;
 
-            // Self re-entry only (our own deactivation Update, or the approval
-            // orchestrator's). Not a Depth guard — bulk denials via Excel /
-            // ExecuteMultiple arrive nested and must still deactivate.
-            // Denial detection stays transition-based (true → false): a bare
-            // false value can't distinguish "denied" from "never approved".
-            if (IsNestedUpdateOf(context, EntityNames.Turnin)) return;
+            // NOTE: No nesting/Depth guard (removed Aug 2026, preemptively —
+            // same fix as RealignmentProcessor / SwapApprovalPlugin, commit
+            // 23aef51): a real-time Business Rule on this table would nest the
+            // user's denial save under another book_turnin Update, and an
+            // IsNestedUpdateOf(...) guard would silently drop it. The guard
+            // protected nothing: this step is filtered on book_stateapproved,
+            // and both deactivation Updates (this plugin's and the approval
+            // orchestrator's step 7) write only statecode/statuscode, so
+            // neither can re-trigger it. Idempotency comes from the
+            // transition check (true → false) + already-inactive check below.
+            // Denial detection stays transition-based: a bare false value
+            // can't distinguish "denied" from "never approved".
 
             var target = GetTarget(context);
             var preImage = TryGetPreImage(context);

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <manifest>
-  <control namespace="ARNGCheckbook" constructor="StateSwapApprovalProcess" version="0.2.1"
+  <control namespace="ARNGCheckbook" constructor="StateSwapApprovalProcess" version="0.2.2"
            display-name-key="StateSwapApprovalProcess"
            description-key="Header approval-process bar for book_stateswap. Renders four chevrons (State A, State B, BE, Approved) with role-gated Approve buttons per stage and a Deny button on any active stage. Denial writes book_denied=true; SwapDenialPlugin resets the state approvals so the drafter can revise. All role checks (State Approver / State Administrator / Checkbook Administrator for state approvals; Budget Executor / Checkbook Administrator for BE; any approver for deny) are mirrored in SwapValidator as the authoritative security boundary."
            control-type="virtual" >
