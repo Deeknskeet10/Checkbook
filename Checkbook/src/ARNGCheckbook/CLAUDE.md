@@ -24,7 +24,7 @@ The ARNG Checkbook is a comprehensive financial management solution for tracking
 
 ## Domain Model
 
-### Core Entities (47 custom `book_*` tables)
+### Core Entities (48 custom `book_*` tables)
 
 #### Financial Structure
 | Entity | Schema Name | Purpose |
@@ -67,6 +67,7 @@ The ARNG Checkbook is a comprehensive financial management solution for tracking
 | **PG** | `book_PG` | Program Groups |
 | **SAG** | `book_SAG` | Sub-Activity Groups |
 | **TDC** | `book_TDC` | Training and Doctrine Command categories |
+| **Country** | `book_Country` | Country reference records, tagged with a `book_ccmd` (Combatant Command) picklist |
 
 ---
 
@@ -323,10 +324,12 @@ under the `book` publisher, every such reference must be updated in lockstep.
 | Entity | Important Fields |
 |--------|-----------------|
 | `book_RequirementFunding` | `book_tdp`, `book_lineofaccounting`, `book_fundedamount`, `book_validatedamount`, `book_fundingvalidated` |
-| `book_Prioritization` | `book_statepriority`, `book_approvalstatus`, `book_fundedamounttdp`, `book_requirementfunding`, `book_state`, `book_fundcenter`, `book_newfiscalyear` |
+| `book_Requirements` | `book_appropriation` (picklist), `book_countryrequired` / `book_linrequired` (bit — gate whether Country/LIN must be set on Itemized Details rows) |
+| `book_Prioritization` | `book_statepriority`, `book_approvalstatus`, `book_fundedamounttdp`, `book_requirementfunding`, `book_state`, `book_fundcenter`, `book_newfiscalyear`, `book_countryrequired` / `book_linrequired` (formula columns, rolled up from `book_Requirement`) |
 | `book_SpendPlan` | `book_total`, `book_january` through `book_december` |
 | `book_FundingLine` | `book_tdp` (total available TDP) |
 | `book_Ledger` | `book_lineofaccounting`, `book_ledgertype`, `book_amount` |
+| `book_ItemizedDetails` | `book_country` / `book_lin` (lookups, populated when required by the parent Requirement), `book_fundcenter` (lookup), `book_key` (nvarchar) |
 
 ---
 
