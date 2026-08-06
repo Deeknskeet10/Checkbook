@@ -158,9 +158,11 @@ namespace Checkbook.Plugins.Distributions
                     tracing.Trace($"Processing FundingEvent {fundingEvent.Id} (type = {fundingType}, idx = {feIdx}).");
 
                     // ---- Phase 2 — Prioritizations -------------------------------
+                    HashSet<string> phase2Keys = null;
                     if (startPhase <= 2)
                     {
                         var phase2Buckets = QueryPrioritizationBuckets(service, tracing, holdingFundCenterId, fcCache, fiscalYearFilter);
+                        phase2Keys = new HashSet<string>(phase2Buckets.Select(b => $"{b.FundId}|{b.FundCenterId}|{b.PgId}"));
                         var phase2Groups  = GroupByFundAndPg(phase2Buckets);
                         tracing.Trace($"Phase 2: {phase2Groups.Count} (Fund, PG) group(s) to process.");
                         var groupStart = (feIdx == startFeIdx && startPhase == 2) ? startBucket : 0;
@@ -187,6 +189,20 @@ namespace Checkbook.Plugins.Distributions
                     // ---- Phase 3 — Requirements ----------------------------------
                     {
                         var phase3Buckets = QueryRequirementBuckets(service, tracing, holdingFundCenterId, fcCache, fiscalYearFilter);
+
+                        // Tripwire: Phase 2 (state-level FCs) and Phase 3 (TARC-level
+                        // FCs) destinations are expected to be disjoint. Each phase
+                        // reconciles only ITS OWN target against the FULL committed
+                        // net at the FC, so a shared destination would make the two
+                        // passes fight — spurious Sweep Turn-Ins and pending-credit
+                        // clobbering. Warn-only; if this ever fires, the phases need
+                        // to be merged into one combined bucket set.
+                        if (phase2Keys != null)
+                            foreach (var b in phase3Buckets.Where(b => phase2Keys.Contains($"{b.FundId}|{b.FundCenterId}|{b.PgId}")))
+                                tracing.Trace(
+                                    $"WARNING: destination (Fund={b.FundId}, FC={b.FundCenterId}, PG={b.PgId}) appears in BOTH " +
+                                    "Phase 2 and Phase 3 buckets — the phases will fight over its pending credit / Sweep Turn-In.");
+
                         var phase3Groups  = GroupByFundAndPg(phase3Buckets);
                         tracing.Trace($"Phase 3: {phase3Groups.Count} (Fund, PG) group(s) to process.");
                         var groupStart = (feIdx == startFeIdx && startPhase == 3) ? startBucket : 0;

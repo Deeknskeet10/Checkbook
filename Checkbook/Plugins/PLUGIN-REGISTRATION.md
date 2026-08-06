@@ -977,9 +977,12 @@ Phases 2 + 3 reconcile Prio + Requirement buckets against their target
 document number) in place, creating it when missing, and deactivating it
 when no longer needed; Phase 4 cleans up pending rows whose bucket vanished
 and re-syncs the consolidated holding-FC debits. GFEBS-entered, manual, and
-Turn-In / State Swap–linked rows are never modified. Overage Sweep Turn-In
-machinery is unchanged. Wired via the Custom API's **Plugin Type** field —
-no separate Step registration required beyond that.
+Turn-In / State Swap–linked rows are never modified. Overage Sweep Turn-Ins
+decay per type; when both AFP and Allotment amounts reach 0 the spent
+tracker is **deleted** (Aug 2026 — deactivated zero-amount rows accumulated
+as clutter). No role grants Delete on `book_turnin`; the delete relies on
+plugins running under the sysadmin super user. Wired via the Custom API's
+**Plugin Type** field — no separate Step registration required beyond that.
 
 **Runs Sync** (Allowed custom processing step type: Sync only). The plugin
 self-budgets to ~105s of the 120s sandbox ceiling and returns a `NextToken`
@@ -1273,7 +1276,8 @@ missing or mis-registered. If step 6 leaves stale Itemized Details, the
 6. **Sweep decay** — raise the AFP Funding Detail pct so target catches up
    to existing; re-run `book_GenerateDistributions`; the Sweep Turn-In's
    `book_afpamount` should drop. When it (and Allotment amount) reach 0,
-   the Turn-In deactivates.
+   the Turn-In is **deleted** (spent trackers used to deactivate and pile
+   up as zero-amount clutter).
 
 ---
 

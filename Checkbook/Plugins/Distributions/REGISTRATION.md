@@ -106,7 +106,14 @@ Phases:
      (created if missing; duplicate pending credits deactivated).
    - delta < 0 → pending credit deactivated; overage flows to the per-FC
      Sweep Turn-In (AFP / Allotment columns tracked independently).
-   - delta = 0 → pending credit deactivated; Sweep Turn-In per-type amount zeroed.
+   - delta = 0 → pending credit deactivated; Sweep Turn-In per-type amount
+     zeroed. Once BOTH type amounts reach 0 the tracker is **deleted**, not
+     deactivated (changed Aug 2026 — spent zero-amount trackers piled up as
+     clutter, one per resolved overage). Safe because an open sweep tracker
+     (active, not BE-approved) has no items, ledgers, or distributions
+     attached. ⚠ No security role grants Delete on `book_turnin` — the
+     delete works because plugins run under the sysadmin super user; if the
+     execution identity ever changes, this is the first thing that breaks.
    After the destinations, the ONE pending debit at the holding FC is synced
    to Σ of all live pending credits in the (Fund, PG) group (created /
    amended / deactivated accordingly); credits point at it via
@@ -114,6 +121,14 @@ Phases:
 3. **Phase 3 — Requirements** — Same reconciliation against BE-approved
    Requirements (`book_approvalstatus = 7`) of types TARC (1) + ARNGExternal (4)
    that have no active Prioritizations. Same FC walk and FY filter apply.
+   Phase 2 destinations (state-level FCs) and Phase 3 destinations (TARC-level
+   FCs, which sit in their own branch of the FC tree) are expected to be
+   disjoint — each phase reconciles only its own target against the full
+   committed net at the FC, so a shared destination would make the two passes
+   fight (spurious Sweep Turn-Ins, pending-credit clobbering). A warn-only
+   tripwire traces `WARNING: destination … appears in BOTH Phase 2 and
+   Phase 3 buckets` if that assumption ever breaks; if it fires, the phases
+   need to be merged into one combined bucket set.
 4. **Phase 4 — Orphan cleanup** — Pending sweep credits whose
    `(Fund, FC, PG)` matches no current bucket (funded dropped to zero, FC
    re-parented, FY filtered out) are deactivated, and every pending

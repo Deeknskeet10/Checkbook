@@ -33,7 +33,7 @@ namespace Checkbook.Plugins.Distributions.Helpers
         public int DistributionsDeactivated;  // pending sweep rows no longer needed
         public int TurnInsCreated;
         public int TurnInsUpdated;
-        public int TurnInsDeactivated;
+        public int TurnInsDeleted;    // spent trackers removed (both type amounts hit 0)
         public int Skipped;
     }
 
@@ -61,7 +61,8 @@ namespace Checkbook.Plugins.Distributions.Helpers
     ///                  the per-destination Sweep Turn-In (one record per
     ///                  (Fund, FC, PG), AFP and Allotment tracked independently).
     ///   • delta == 0 → pending credit(s) deactivated; a non-zero Sweep Turn-In
-    ///                  per-type amount is zeroed (deactivated when both types hit 0).
+    ///                  per-type amount is zeroed (deleted when both types hit 0 —
+    ///                  a spent, never-approved tracker is clutter, not history).
     ///
     /// The single pending debit at the holding FC is then synced to the sum of ALL
     /// live pending credits in the (Fund, PG) group — including credits owned by the
@@ -134,7 +135,7 @@ namespace Checkbook.Plugins.Distributions.Helpers
                     if (openTurnIn != null && GetTypeAmount(openTurnIn, fundingType) > 0m)
                     {
                         if (ZeroTypeAmount(service, tracing, openTurnIn, fundingType))
-                            result.TurnInsDeactivated++;
+                            result.TurnInsDeleted++;
                         else
                             result.TurnInsUpdated++;
                     }
@@ -168,7 +169,7 @@ namespace Checkbook.Plugins.Distributions.Helpers
                         if (openTurnIn != null && GetTypeAmount(openTurnIn, fundingType) > 0m)
                         {
                             if (ZeroTypeAmount(service, tracing, openTurnIn, fundingType))
-                                result.TurnInsDeactivated++;
+                                result.TurnInsDeleted++;
                             else
                                 result.TurnInsUpdated++;
                         }
@@ -509,8 +510,14 @@ namespace Checkbook.Plugins.Distributions.Helpers
         }
 
         /// <summary>
-        /// Zero the named-type column. If both type amounts are then 0, deactivate
-        /// the Turn-In and return true; else return false.
+        /// Zero the named-type column. If both type amounts are then 0, the
+        /// tracker is spent — DELETE it and return true; else return false.
+        /// Deletion is safe: the sweep only touches active, BEApproved = false,
+        /// Origin = Sweep records, which have no items, ledgers, or distributions
+        /// hanging off them. Spent trackers used to be deactivated instead, and
+        /// the zero-amount rows accumulated as clutter (one per resolved overage).
+        /// NOTE: no security role grants Delete on book_turnin — this relies on
+        /// the plugins' execution identity being the sysadmin super user.
         /// </summary>
         private static bool ZeroTypeAmount(
             IOrganizationService service, ITracingService tracing,
@@ -527,15 +534,9 @@ namespace Checkbook.Plugins.Distributions.Helpers
 
             if (otherAmount <= 0m)
             {
-                // Both sides done — deactivate.
-                service.Update(new Entity(EntityNames.Turnin, turnIn.Id)
-                {
-                    [attr] = 0m,
-                    ["statecode"] = new OptionSetValue(StateCodeValues.Inactive),
-                    ["statuscode"] = new OptionSetValue(StatusCodeValues.InactiveDefault),
-                });
-                turnIn[attr] = 0m;
-                tracing.Trace($"  → Deactivated Sweep Turn-In {turnIn.Id} (both type amounts cleared).");
+                // Both sides done — the tracker is spent; remove it entirely.
+                service.Delete(EntityNames.Turnin, turnIn.Id);
+                tracing.Trace($"  → Deleted Sweep Turn-In {turnIn.Id} (both type amounts cleared).");
                 return true;
             }
 
