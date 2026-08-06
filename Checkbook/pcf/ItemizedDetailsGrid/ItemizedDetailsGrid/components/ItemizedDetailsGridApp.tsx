@@ -62,6 +62,8 @@ const TDC_ENTITY = "book_tdc";
 const PRIORITIZATION_ENTITY = "book_prioritization";
 const REQUIREMENT_FUNDING_ENTITY = "book_requirementfunding";
 const FUND_CENTER_ENTITY = "book_fundcenter";
+const LIN_ENTITY = "book_lin";
+const COUNTRY_ENTITY = "book_country";
 
 /** Shown for a blank Fund Center — the amount rolls up to the state level. */
 const STATE_LEVEL_LABEL = "State level";
@@ -72,8 +74,6 @@ interface CandidateRd {
   name: string;
   item: string;
   tdc: string;
-  lin: string;
-  country: string;
 }
 
 type NumericField = "quantity" | "requestedAmount" | "validatedAmount" | "fundedAmount";
@@ -98,8 +98,6 @@ interface RequirementItemContext {
   tdcId: string | null;
   tdcLongName: string;
   category: string;
-  lin: string;
-  country: string;
 }
 
 interface GridRow {
@@ -114,6 +112,32 @@ interface GridRow {
   fundedAmount: number | null;
   npmComment: string;
   stateComment: string;
+}
+
+/** Whether the parent Prioritization (rolled up from its Requirement) gates
+ * LIN/Country as required on every Itemized Detail row. */
+interface PrioLinCountryFlags {
+  linRequired: boolean;
+  countryRequired: boolean;
+}
+
+/** book_lin or book_country reference option, keyed by id. */
+interface ReferenceOption {
+  id: string;
+  name: string;
+}
+
+/** book_country adds a CCMD picklist alongside its name. */
+interface CountryOption extends ReferenceOption {
+  ccmd: string;
+}
+
+/** The LIN/Country currently set on one Itemized Details row. */
+interface RowLinCountry {
+  linId: string | null;
+  linName: string;
+  countryId: string | null;
+  countryName: string;
 }
 
 const useStyles = makeStyles({
@@ -181,6 +205,15 @@ const useStyles = makeStyles({
     minWidth: "170px",
     width: "170px",
   },
+  linCountryDropdown: {
+    minWidth: "150px",
+    width: "150px",
+  },
+  secondaryCcmdCell: {
+    width: "90px",
+    color: tokens.colorNeutralForeground3,
+    whiteSpace: "nowrap",
+  },
   totalsRow: {
     fontWeight: tokens.fontWeightSemibold,
     backgroundColor: tokens.colorNeutralBackground2,
@@ -234,6 +267,15 @@ const useStyles = makeStyles({
   },
   addDialogSurface: {
     maxWidth: "640px",
+  },
+  candidateItemLabel: {
+    fontWeight: tokens.fontWeightSemibold,
+  },
+  candidateTdcCell: {
+    width: "56px",
+    ...shorthands.padding(0, 0, 0, "16px"),
+    color: tokens.colorNeutralForeground3,
+    whiteSpace: "nowrap",
   },
   actionCol: {
     width: "80px",
@@ -330,11 +372,9 @@ export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
     // Requirement Detail — so we fetch the RD for Item/TDC/name, then chain
     // a second retrieve on the linked Item for quantitytype/category.
     const rdSelect =
-      "?$select=book_name,_book_item_value,_book_tdc_value,_book_lin_value,_book_country_value";
+      "?$select=book_name,_book_item_value,_book_tdc_value";
     const itemSelect = "?$select=_book_quantitytype_value,book_category";
     const tdcSelect = "?$select=book_tdcname";
-    const countrySelect = "?$select=book_name";
-    const linSelect = "?$select=book_name";
     const fv = "@OData.Community.Display.V1.FormattedValue";
 
     missing.forEach((id) => {
@@ -350,8 +390,6 @@ export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
               item: (rd[`_book_item_value${fv}`] as string) || "",
               quantityType: "",
               tdc: (rd[`_book_tdc_value${fv}`] as string) || "",
-              lin: (rd[`_book_lin_value${fv}`] as string) || "",
-              country: (rd[`_book_country_value${fv}`] as string) || "",
               tdcId,
               tdcLongName: "",
               category: "",
@@ -457,6 +495,168 @@ export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
     };
   }, [prioritizationId, webAPI]);
 
+  // ----- LIN / Country requirement gate (rolled up from the Requirement) -----
+  const [prioFlags, setPrioFlags] = React.useState<PrioLinCountryFlags | null>(
+    null
+  );
+
+  React.useEffect(() => {
+    if (!prioritizationId) {
+      setPrioFlags({ linRequired: false, countryRequired: false });
+      return;
+    }
+    let cancelled = false;
+    webAPI
+      .retrieveRecord(
+        PRIORITIZATION_ENTITY,
+        prioritizationId,
+        "?$select=book_linrequired,book_countryrequired"
+      )
+      .then((prio: ComponentFramework.WebApi.Entity) => {
+        if (cancelled) return;
+        setPrioFlags({
+          linRequired: !!prio.book_linrequired,
+          countryRequired: !!prio.book_countryrequired,
+        });
+        return;
+      })
+      .catch(() => {
+        if (!cancelled) setPrioFlags({ linRequired: false, countryRequired: false });
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [prioritizationId, webAPI]);
+
+  // LIN/Country reference lists, loaded once each only when the corresponding
+  // flag is set — most Prioritizations need neither.
+  const [linOptions, setLinOptions] = React.useState<ReferenceOption[] | null>(
+    null
+  );
+  const [countryOptions, setCountryOptions] = React.useState<
+    CountryOption[] | null
+  >(null);
+
+  React.useEffect(() => {
+    if (!prioFlags?.linRequired || linOptions !== null) return;
+    let cancelled = false;
+    webAPI
+      .retrieveMultipleRecords(
+        LIN_ENTITY,
+        "?$select=book_name&$filter=statecode eq 0&$orderby=book_name asc"
+      )
+      .then((result) => {
+        if (cancelled) return;
+        setLinOptions(
+          result.entities.map((e) => ({
+            id: (e.book_linid as string) ?? "",
+            name: (e.book_name as string) || "(unnamed)",
+          }))
+        );
+        return;
+      })
+      .catch(() => {
+        if (!cancelled) setLinOptions([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [prioFlags, linOptions, webAPI]);
+
+  React.useEffect(() => {
+    if (!prioFlags?.countryRequired || countryOptions !== null) return;
+    let cancelled = false;
+    const fv = "@OData.Community.Display.V1.FormattedValue";
+    webAPI
+      .retrieveMultipleRecords(
+        COUNTRY_ENTITY,
+        "?$select=book_name,book_ccmd&$filter=statecode eq 0&$orderby=book_name asc"
+      )
+      .then((result) => {
+        if (cancelled) return;
+        setCountryOptions(
+          result.entities.map((e) => ({
+            id: (e.book_countryid as string) ?? "",
+            name: (e.book_name as string) || "(unnamed)",
+            ccmd: (e[`book_ccmd${fv}`] as string) || "",
+          }))
+        );
+        return;
+      })
+      .catch(() => {
+        if (!cancelled) setCountryOptions([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [prioFlags, countryOptions, webAPI]);
+
+  // Current LIN/Country on each existing Itemized Details row — these live
+  // directly on book_itemizeddetails, not on the linked Requirement Detail,
+  // so they're fetched per row rather than via the `contexts` lookup above.
+  const [itemLinCountry, setItemLinCountry] = React.useState<
+    Record<string, RowLinCountry>
+  >({});
+
+  React.useEffect(() => {
+    if (!prioFlags || (!prioFlags.linRequired && !prioFlags.countryRequired)) {
+      return;
+    }
+    const missing = datasetRows
+      .map((r) => r.recordId)
+      .filter((id) => !itemLinCountry[id]);
+    if (missing.length === 0) return;
+
+    const fv = "@OData.Community.Display.V1.FormattedValue";
+    missing.forEach((id) => {
+      webAPI
+        .retrieveRecord(
+          ITEMIZED_DETAILS_ENTITY,
+          id,
+          "?$select=_book_lin_value,_book_country_value"
+        )
+        .then((e: ComponentFramework.WebApi.Entity) => {
+          setItemLinCountry((prev) => ({
+            ...prev,
+            [id]: {
+              linId: (e._book_lin_value as string | undefined) ?? null,
+              linName: (e[`_book_lin_value${fv}`] as string) || "",
+              countryId: (e._book_country_value as string | undefined) ?? null,
+              countryName: (e[`_book_country_value${fv}`] as string) || "",
+            },
+          }));
+          return;
+        })
+        .catch(() => {
+          /* leave LIN/Country blank on failure */
+        });
+    });
+  }, [datasetRows, itemLinCountry, webAPI, prioFlags]);
+
+  // recordId -> committed LIN/Country id. Mirrors `fcEdits`, but neither can
+  // be cleared back to blank once set — both are required whenever shown.
+  const [linEdits, setLinEdits] = React.useState<Record<string, string>>({});
+  const [countryEdits, setCountryEdits] = React.useState<Record<string, string>>(
+    {}
+  );
+
+  const commitLin = (row: GridRow, linId: string): void => {
+    const current = linEdits[row.recordId] ?? itemLinCountry[row.recordId]?.linId ?? "";
+    if (!linId || linId === current) return;
+    setLinEdits((prev) => ({ ...prev, [row.recordId]: linId }));
+    persist(row.recordId, { "book_LIN@odata.bind": `/book_lins(${linId})` });
+  };
+
+  const commitCountry = (row: GridRow, countryId: string): void => {
+    const current =
+      countryEdits[row.recordId] ?? itemLinCountry[row.recordId]?.countryId ?? "";
+    if (!countryId || countryId === current) return;
+    setCountryEdits((prev) => ({ ...prev, [row.recordId]: countryId }));
+    persist(row.recordId, {
+      "book_Country@odata.bind": `/book_countries(${countryId})`,
+    });
+  };
+
   /** Effective string value shown in an editable cell. */
   const displayValue = (row: GridRow, field: EditableField): string => {
     const pending = edits[row.recordId]?.[field];
@@ -551,6 +751,15 @@ export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
   const [selected, setSelected] = React.useState<Set<string>>(new Set());
   const [addBusy, setAddBusy] = React.useState(false);
   const [candidateSearch, setCandidateSearch] = React.useState("");
+  // Second screen of the flow, shown only when the Prioritization requires a
+  // LIN or Country pick per row — see Scenarios 2/3 below.
+  const [addStep, setAddStep] = React.useState<
+    "select-rd" | "select-lin" | "select-country"
+  >("select-rd");
+  const [selectedSecondary, setSelectedSecondary] = React.useState<
+    Set<string>
+  >(new Set());
+  const [secondarySearch, setSecondarySearch] = React.useState("");
 
   const existingRdIds = React.useMemo(() => {
     const ids = new Set<string>();
@@ -559,6 +768,29 @@ export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
     });
     return ids;
   }, [datasetRows]);
+
+  // requirementItemId::linId / ::countryId pairs already itemized on this
+  // Prioritization — Scenarios 2/3 let the same Requirement Detail repeat, but
+  // each LIN or Country combination may only appear once (book_TempKey).
+  const existingLinPairs = React.useMemo(() => {
+    const pairs = new Set<string>();
+    datasetRows.forEach((r) => {
+      const linId = itemLinCountry[r.recordId]?.linId;
+      if (r.requirementItemId && linId) pairs.add(`${r.requirementItemId}::${linId}`);
+    });
+    return pairs;
+  }, [datasetRows, itemLinCountry]);
+
+  const existingCountryPairs = React.useMemo(() => {
+    const pairs = new Set<string>();
+    datasetRows.forEach((r) => {
+      const countryId = itemLinCountry[r.recordId]?.countryId;
+      if (r.requirementItemId && countryId) {
+        pairs.add(`${r.requirementItemId}::${countryId}`);
+      }
+    });
+    return pairs;
+  }, [datasetRows, itemLinCountry]);
 
   const loadCandidates = React.useCallback((): void => {
     if (!prioritizationId) {
@@ -599,7 +831,7 @@ export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
         }
         return webAPI.retrieveMultipleRecords(
           REQUIREMENT_DETAILS_ENTITY,
-          "?$select=book_name,_book_item_value,_book_tdc_value,_book_lin_value,_book_country_value" +
+          "?$select=book_name,_book_item_value,_book_tdc_value" +
             `&$filter=_book_requirement_value eq ${requirementId} and statecode eq 0` +
             "&$orderby=book_name asc"
         );
@@ -612,8 +844,6 @@ export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
             name: (e.book_name as string) || "(unnamed)",
             item: (e[`_book_item_value${fv}`] as string) || "",
             tdc: (e[`_book_tdc_value${fv}`] as string) || "",
-            lin: (e[`_book_lin_value${fv}`] as string) || "",
-            country: (e[`_book_country_value${fv}`] as string) || "",
           }))
         );
         return;
@@ -630,6 +860,9 @@ export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
     setCandidateError(null);
     setSelected(new Set());
     setCandidateSearch("");
+    setAddStep("select-rd");
+    setSelectedSecondary(new Set());
+    setSecondarySearch("");
     setAddOpen(true);
     loadCandidates();
   };
@@ -643,6 +876,16 @@ export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
     });
   };
 
+  const toggleSecondary = (id: string, checked: boolean): void => {
+    setSelectedSecondary((prev) => {
+      const next = new Set(prev);
+      if (checked) next.add(id);
+      else next.delete(id);
+      return next;
+    });
+  };
+
+  /** Scenario 1 (neither LIN nor Country required) — creates directly. */
   const addSelected = (): void => {
     if (!prioritizationId || selected.size === 0) return;
     setAddBusy(true);
@@ -651,6 +894,72 @@ export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
         webAPI.createRecord(ITEMIZED_DETAILS_ENTITY, {
           "book_Prioritization@odata.bind": `/book_prioritizations(${prioritizationId})`,
           "book_RequirementItem@odata.bind": `/book_requirementdetailses(${rdId})`,
+        })
+      )
+    )
+      .then(() => {
+        setAddBusy(false);
+        setAddOpen(false);
+        dataset.refresh();
+        return;
+      })
+      .catch(() => {
+        setAddBusy(false);
+        setCandidateError(
+          "Some items could not be added — close the dialog and check the grid."
+        );
+      });
+  };
+
+  /** From the Requirement Details step: either creates directly (Scenario 1)
+   * or advances to the LIN/Country picker (Scenarios 2/3). Both required
+   * (Scenario 4) never happens on a real Prioritization — LIN wins if it did. */
+  const proceedFromRdStep = (): void => {
+    if (selected.size === 0) return;
+    if (prioFlags?.linRequired) {
+      setSelectedSecondary(new Set());
+      setSecondarySearch("");
+      setAddStep("select-lin");
+      return;
+    }
+    if (prioFlags?.countryRequired) {
+      setSelectedSecondary(new Set());
+      setSecondarySearch("");
+      setAddStep("select-country");
+      return;
+    }
+    addSelected();
+  };
+
+  /** Scenarios 2/3 — creates one Itemized Detail per (Requirement Detail x
+   * LIN/Country) pair, skipping any combination already itemized. */
+  const addPairs = (): void => {
+    if (!prioritizationId || selected.size === 0 || selectedSecondary.size === 0) {
+      return;
+    }
+    const isLin = addStep === "select-lin";
+    const existingPairs = isLin ? existingLinPairs : existingCountryPairs;
+    const pairs: { rdId: string; secId: string }[] = [];
+    selected.forEach((rdId) => {
+      selectedSecondary.forEach((secId) => {
+        if (!existingPairs.has(`${rdId}::${secId}`)) pairs.push({ rdId, secId });
+      });
+    });
+    if (pairs.length === 0) {
+      setCandidateError(
+        "Every selected combination is already itemized on this Prioritization."
+      );
+      return;
+    }
+    setAddBusy(true);
+    Promise.all(
+      pairs.map(({ rdId, secId }) =>
+        webAPI.createRecord(ITEMIZED_DETAILS_ENTITY, {
+          "book_Prioritization@odata.bind": `/book_prioritizations(${prioritizationId})`,
+          "book_RequirementItem@odata.bind": `/book_requirementdetailses(${rdId})`,
+          ...(isLin
+            ? { "book_LIN@odata.bind": `/book_lins(${secId})` }
+            : { "book_Country@odata.bind": `/book_countries(${secId})` }),
         })
       )
     )
@@ -693,20 +1002,58 @@ export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
       });
   };
 
-  const availableCandidates = React.useMemo(
-    () => (candidates ?? []).filter((c) => !existingRdIds.has(c.id)),
-    [candidates, existingRdIds]
-  );
+  // Scenario 1 (neither LIN nor Country required) still hides an already-
+  // itemized Requirement Detail, since it can only be itemized once. Once
+  // either is required, the same Requirement Detail may repeat — the actual
+  // duplicate check is per (RD, LIN/Country) pair, done in addPairs.
+  const availableCandidates = React.useMemo(() => {
+    if (prioFlags?.linRequired || prioFlags?.countryRequired) {
+      return candidates ?? [];
+    }
+    return (candidates ?? []).filter((c) => !existingRdIds.has(c.id));
+  }, [candidates, existingRdIds, prioFlags]);
 
   const filteredCandidates = React.useMemo(() => {
     const q = candidateSearch.trim().toLowerCase();
     if (!q) return availableCandidates;
     return availableCandidates.filter((c) =>
-      [c.item || c.name, c.tdc, c.lin, c.country].some((v) =>
+      [c.item || c.name, c.tdc].some((v) =>
         v.toLowerCase().includes(q)
       )
     );
   }, [availableCandidates, candidateSearch]);
+
+  const filteredLinOptions = React.useMemo(() => {
+    const q = secondarySearch.trim().toLowerCase();
+    const opts = linOptions ?? [];
+    if (!q) return opts;
+    return opts.filter((o) => o.name.toLowerCase().includes(q));
+  }, [linOptions, secondarySearch]);
+
+  const filteredCountryOptions = React.useMemo(() => {
+    const q = secondarySearch.trim().toLowerCase();
+    const opts = countryOptions ?? [];
+    if (!q) return opts;
+    return opts.filter(
+      (o) =>
+        o.name.toLowerCase().includes(q) || o.ccmd.toLowerCase().includes(q)
+    );
+  }, [countryOptions, secondarySearch]);
+
+  /** How many new Itemized Details the current secondary selection would
+   * actually create, after skipping combinations that already exist. */
+  const pendingPairCount = React.useMemo(() => {
+    if (selected.size === 0 || selectedSecondary.size === 0) return 0;
+    const existingPairs =
+      addStep === "select-lin" ? existingLinPairs : existingCountryPairs;
+    let count = 0;
+    selected.forEach((rdId) => {
+      selectedSecondary.forEach((secId) => {
+        if (!existingPairs.has(`${rdId}::${secId}`)) count += 1;
+      });
+    });
+    return count;
+  }, [selected, selectedSecondary, addStep, existingLinPairs, existingCountryPairs]);
 
   const totals = React.useMemo(() => {
     return datasetRows.reduce(
@@ -801,6 +1148,66 @@ export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
     );
   };
 
+  // LIN and Country are required whenever shown — unlike Fund Center there is
+  // no blank option, so a value can be changed but never cleared.
+  const linCell = (row: GridRow): React.ReactNode => {
+    const rowCtx = itemLinCountry[row.recordId];
+    const selectedId = linEdits[row.recordId] ?? rowCtx?.linId ?? "";
+    const listedName = linOptions?.find((l) => l.id === selectedId)?.name;
+    const selectedName = listedName ?? rowCtx?.linName ?? "";
+    if (isDisabled) {
+      return <span className={styles.contextCell}>{selectedName}</span>;
+    }
+    const orphan =
+      selectedId !== "" && !linOptions?.some((l) => l.id === selectedId);
+    return (
+      <Dropdown
+        size="small"
+        appearance="filled-lighter"
+        className={styles.linCountryDropdown}
+        value={selectedName}
+        selectedOptions={selectedId ? [selectedId] : []}
+        onOptionSelect={(_e, data) => commitLin(row, data.optionValue ?? "")}
+      >
+        {orphan && <Option value={selectedId}>{selectedName}</Option>}
+        {(linOptions ?? []).map((l) => (
+          <Option key={l.id} value={l.id}>
+            {l.name}
+          </Option>
+        ))}
+      </Dropdown>
+    );
+  };
+
+  const countryCell = (row: GridRow): React.ReactNode => {
+    const rowCtx = itemLinCountry[row.recordId];
+    const selectedId = countryEdits[row.recordId] ?? rowCtx?.countryId ?? "";
+    const listedName = countryOptions?.find((c) => c.id === selectedId)?.name;
+    const selectedName = listedName ?? rowCtx?.countryName ?? "";
+    if (isDisabled) {
+      return <span className={styles.contextCell}>{selectedName}</span>;
+    }
+    const orphan =
+      selectedId !== "" && !countryOptions?.some((c) => c.id === selectedId);
+    return (
+      <Dropdown
+        size="small"
+        appearance="filled-lighter"
+        className={styles.linCountryDropdown}
+        value={selectedName}
+        selectedOptions={selectedId ? [selectedId] : []}
+        onOptionSelect={(_e, data) => commitCountry(row, data.optionValue ?? "")}
+      >
+        {orphan && <Option value={selectedId}>{selectedName}</Option>}
+        {(countryOptions ?? []).map((c) => (
+          <Option key={c.id} value={c.id}>
+            {c.name}
+          </Option>
+        ))}
+      </Dropdown>
+    );
+  };
+
   // Validated / Funded / NPM Comment are owned by the NPM on the Requirement
   // Funding side (ValidateAndFundGrid) — read-only here on the Prioritization form.
   const readOnlyAmount = (row: GridRow, field: NumericField): React.ReactNode => (
@@ -855,6 +1262,10 @@ export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
                   <TableHeaderCell className={styles.firstCol}>Item</TableHeaderCell>
                   <TableHeaderCell>TDC</TableHeaderCell>
                   <TableHeaderCell>Fund Center</TableHeaderCell>
+                  {prioFlags?.linRequired && <TableHeaderCell>LIN</TableHeaderCell>}
+                  {prioFlags?.countryRequired && (
+                    <TableHeaderCell>Country</TableHeaderCell>
+                  )}
                   <TableHeaderCell className={styles.qtyCol}>Quantity</TableHeaderCell>
                   <TableHeaderCell className={styles.amount}>Requested</TableHeaderCell>
                   <TableHeaderCell className={styles.amount}>Validated</TableHeaderCell>
@@ -875,14 +1286,9 @@ export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
                     <TableRow key={row.recordId}>
                       <TableCell className={styles.firstCol}>
                         <div className={styles.firstColName}>
-                          <span>{ctx?.item?.trim() ? ctx.item : row.requirementItemName}{ctx?.country ? " - " + ctx?.country: ""}</span>
+                          <span>{ctx?.item?.trim() ? ctx.item : row.requirementItemName}</span>
                           {renderStatus(row.recordId)}
                         </div>
-                        {ctx?.lin ? (
-                          <span className={styles.firstColMeta}>
-                            LIN: {ctx?.lin ?? ""}
-                          </span> 
-                        ) : ""}
                         <span className={styles.firstColMeta}>
                           Cat: {ctx?.category ?? ""}
                         </span>
@@ -910,6 +1316,12 @@ export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
                         )}
                       </TableCell>
                       <TableCell>{fundCenterCell(row)}</TableCell>
+                      {prioFlags?.linRequired && (
+                        <TableCell>{linCell(row)}</TableCell>
+                      )}
+                      {prioFlags?.countryRequired && (
+                        <TableCell>{countryCell(row)}</TableCell>
+                      )}
                       <TableCell className={styles.qtyCol}>
                         {numericCell(row, "quantity", styles.qtyInput)}
                       </TableCell>
@@ -944,6 +1356,8 @@ export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
                   <TableCell className={styles.firstCol}>Totals</TableCell>
                   <TableCell />
                   <TableCell />
+                  {prioFlags?.linRequired && <TableCell />}
+                  {prioFlags?.countryRequired && <TableCell />}
                   <TableCell />
                   <TableCell className={styles.amount}>
                     {formatCurrency(totals.requested)}
@@ -981,83 +1395,223 @@ export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
         >
           <DialogSurface className={styles.addDialogSurface}>
             <DialogBody>
-              <DialogTitle>Add Items from Requirement Details</DialogTitle>
-              <DialogContent>
-                {candidateError ? (
-                  <Text className={styles.dialogError}>{candidateError}</Text>
-                ) : candidates === null ? (
-                  <Spinner label="Loading Requirement Details…" />
-                ) : availableCandidates.length === 0 ? (
-                  <Text>
-                    Every Requirement Detail on this Requirement is already
-                    itemized on this Prioritization.
-                  </Text>
-                ) : (
-                  <>
-                    <Input
-                      className={styles.dialogSearch}
-                      appearance="outline"
-                      placeholder="Search by Item Name, TDC, LIN or Country"
-                      value={candidateSearch}
-                      onChange={(_e, data) => setCandidateSearch(data.value)}
-                    />
-                    {filteredCandidates.length === 0 ? (
-                      <Text className={styles.candidateMeta}>
-                        No Requirement Details match that search.
+              {addStep === "select-rd" ? (
+                <>
+                  <DialogTitle>Add Items from Requirement Details</DialogTitle>
+                  <DialogContent>
+                    {candidateError ? (
+                      <Text className={styles.dialogError}>{candidateError}</Text>
+                    ) : candidates === null ? (
+                      <Spinner label="Loading Requirement Details…" />
+                    ) : availableCandidates.length === 0 ? (
+                      <Text>
+                        Every Requirement Detail on this Requirement is already
+                        itemized on this Prioritization.
                       </Text>
                     ) : (
-                      <div className={styles.addListScroll}>
-                        <Table size="small" aria-label="Requirement Details">
-                          <TableHeader>
-                            <TableRow>
-                              <TableHeaderCell>Item Name</TableHeaderCell>
-                              <TableHeaderCell>TDC</TableHeaderCell>
-                              <TableHeaderCell>LIN</TableHeaderCell>
-                              <TableHeaderCell>Country</TableHeaderCell>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {filteredCandidates.map((c) => (
-                              <TableRow key={c.id}>
-                                <TableCell>
-                                  <Checkbox
-                                    checked={selected.has(c.id)}
-                                    onChange={(_e, data) =>
-                                      toggleSelected(c.id, data.checked === true)
-                                    }
-                                    label={c.item || c.name}
-                                  />
-                                </TableCell>
-                                <TableCell>{c.tdc}</TableCell>
-                                <TableCell>{c.lin}</TableCell>
-                                <TableCell>{c.country}</TableCell>
-                              </TableRow>
-                            ))}
-                          </TableBody>
-                        </Table>
-                      </div>
+                      <>
+                        <Input
+                          className={styles.dialogSearch}
+                          appearance="outline"
+                          placeholder="Search by Item Name or TDC"
+                          value={candidateSearch}
+                          onChange={(_e, data) => setCandidateSearch(data.value)}
+                        />
+                        {filteredCandidates.length === 0 ? (
+                          <Text className={styles.candidateMeta}>
+                            No Requirement Details match that search.
+                          </Text>
+                        ) : (
+                          <div className={styles.addListScroll}>
+                            <Table size="small" aria-label="Requirement Details">
+                              <TableHeader>
+                                <TableRow>
+                                  <TableHeaderCell>Item Name</TableHeaderCell>
+                                  <TableHeaderCell className={styles.candidateTdcCell}>
+                                    TDC
+                                  </TableHeaderCell>
+                                </TableRow>
+                              </TableHeader>
+                              <TableBody>
+                                {filteredCandidates.map((c) => (
+                                  <TableRow key={c.id}>
+                                    <TableCell>
+                                      <Checkbox
+                                        checked={selected.has(c.id)}
+                                        onChange={(_e, data) =>
+                                          toggleSelected(c.id, data.checked === true)
+                                        }
+                                        label={
+                                          <span className={styles.candidateItemLabel}>
+                                            {c.item || c.name}
+                                          </span>
+                                        }
+                                      />
+                                    </TableCell>
+                                    <TableCell className={styles.candidateTdcCell}>
+                                      {c.tdc}
+                                    </TableCell>
+                                  </TableRow>
+                                ))}
+                              </TableBody>
+                            </Table>
+                          </div>
+                        )}
+                      </>
                     )}
-                  </>
-                )}
-              </DialogContent>
-              <DialogActions>
-                <Button
-                  appearance="secondary"
-                  disabled={addBusy}
-                  onClick={() => setAddOpen(false)}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  appearance="primary"
-                  disabled={addBusy || selected.size === 0}
-                  onClick={addSelected}
-                >
-                  {addBusy
-                    ? "Adding…"
-                    : `Add ${selected.size > 0 ? selected.size + " " : ""}selected`}
-                </Button>
-              </DialogActions>
+                  </DialogContent>
+                  <DialogActions>
+                    <Button
+                      appearance="secondary"
+                      disabled={addBusy}
+                      onClick={() => setAddOpen(false)}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      appearance="primary"
+                      disabled={addBusy || selected.size === 0}
+                      onClick={proceedFromRdStep}
+                    >
+                      {prioFlags?.linRequired || prioFlags?.countryRequired
+                        ? "Next"
+                        : `Add ${selected.size > 0 ? selected.size + " " : ""}selected`}
+                    </Button>
+                  </DialogActions>
+                </>
+              ) : (
+                <>
+                  <DialogTitle>
+                    {addStep === "select-lin" ? "Select LIN" : "Select Country"}
+                  </DialogTitle>
+                  <DialogContent>
+                    {candidateError ? (
+                      <Text className={styles.dialogError}>{candidateError}</Text>
+                    ) : addStep === "select-lin" && linOptions === null ? (
+                      <Spinner label="Loading LIN…" />
+                    ) : addStep === "select-country" && countryOptions === null ? (
+                      <Spinner label="Loading Country…" />
+                    ) : (
+                      <>
+                        <Input
+                          className={styles.dialogSearch}
+                          appearance="outline"
+                          placeholder={
+                            addStep === "select-lin"
+                              ? "Search by LIN"
+                              : "Search by Partner or CCMD"
+                          }
+                          value={secondarySearch}
+                          onChange={(_e, data) => setSecondarySearch(data.value)}
+                        />
+                        {addStep === "select-lin" ? (
+                          filteredLinOptions.length === 0 ? (
+                            <Text className={styles.candidateMeta}>
+                              No LIN match that search.
+                            </Text>
+                          ) : (
+                            <div className={styles.addListScroll}>
+                              <Table size="small" aria-label="LIN">
+                                <TableHeader>
+                                  <TableRow>
+                                    <TableHeaderCell>LIN</TableHeaderCell>
+                                  </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                  {filteredLinOptions.map((o) => (
+                                    <TableRow key={o.id}>
+                                      <TableCell>
+                                        <Checkbox
+                                          checked={selectedSecondary.has(o.id)}
+                                          onChange={(_e, data) =>
+                                            toggleSecondary(o.id, data.checked === true)
+                                          }
+                                          label={
+                                            <span className={styles.candidateItemLabel}>
+                                              {o.name}
+                                            </span>
+                                          }
+                                        />
+                                      </TableCell>
+                                    </TableRow>
+                                  ))}
+                                </TableBody>
+                              </Table>
+                            </div>
+                          )
+                        ) : filteredCountryOptions.length === 0 ? (
+                          <Text className={styles.candidateMeta}>
+                            No Country match that search.
+                          </Text>
+                        ) : (
+                          <div className={styles.addListScroll}>
+                            <Table size="small" aria-label="Country">
+                              <TableHeader>
+                                <TableRow>
+                                  <TableHeaderCell>Partner</TableHeaderCell>
+                                  <TableHeaderCell className={styles.secondaryCcmdCell}>
+                                    CCMD
+                                  </TableHeaderCell>
+                                </TableRow>
+                              </TableHeader>
+                              <TableBody>
+                                {filteredCountryOptions.map((o) => (
+                                  <TableRow key={o.id}>
+                                    <TableCell>
+                                      <Checkbox
+                                        checked={selectedSecondary.has(o.id)}
+                                        onChange={(_e, data) =>
+                                          toggleSecondary(o.id, data.checked === true)
+                                        }
+                                        label={
+                                          <span className={styles.candidateItemLabel}>
+                                            {o.name}
+                                          </span>
+                                        }
+                                      />
+                                    </TableCell>
+                                    <TableCell className={styles.secondaryCcmdCell}>
+                                      {o.ccmd}
+                                    </TableCell>
+                                  </TableRow>
+                                ))}
+                              </TableBody>
+                            </Table>
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </DialogContent>
+                  <DialogActions>
+                    <Button
+                      appearance="secondary"
+                      disabled={addBusy}
+                      onClick={() => {
+                        setCandidateError(null);
+                        setAddStep("select-rd");
+                      }}
+                    >
+                      Back
+                    </Button>
+                    <Button
+                      appearance="secondary"
+                      disabled={addBusy}
+                      onClick={() => setAddOpen(false)}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      appearance="primary"
+                      disabled={addBusy || pendingPairCount === 0}
+                      onClick={addPairs}
+                    >
+                      {addBusy
+                        ? "Adding…"
+                        : `Add ${pendingPairCount > 0 ? pendingPairCount + " " : ""}item${pendingPairCount === 1 ? "" : "s"}`}
+                    </Button>
+                  </DialogActions>
+                </>
+              )}
             </DialogBody>
           </DialogSurface>
         </Dialog>
