@@ -377,7 +377,13 @@ them.
 |---|---------|------------------------|----------------|-------|---------------------------|-------|
 | 1 | Delete  | `book_requirementdetails` | Pre-Operation  | Sync  | *(none)*                  | Wipes children before the parent row goes. **Sync** so failure rolls back the Delete. |
 | 2 | Create  | `book_prioritization`     | Post-Operation | Async | *(none)*                  | Sets FundingMode = Itemized when the Requirement has Requirement Details; leaves Direct otherwise. No Itemized Details are created. |
-| 3 | Update  | `book_prioritization`     | Post-Operation | Async | `book_requirementfunding` | On RF swap to a different Requirement: deletes the now-stale Itemized Details and resets FundingMode (Itemized if the new Requirement has RDs, else Direct). **Requires PreImage** (`book_requirementfunding`). |
+| 3 | Update  | `book_prioritization`     | Post-Operation | Async | `book_requirement, book_requirementfunding` | On re-point to a different effective Requirement — direct `book_requirement` edit (FY27+) or RF swap (legacy) — deletes the now-stale Itemized Details and resets FundingMode (Itemized if the new Requirement has RDs, else Direct). **Requires PreImage** (`book_requirement, book_requirementfunding`). |
+
+> **⚠ Step 3 filter widened (2026-08):** originally filtered on
+> `book_requirementfunding` only, so editing the direct `book_requirement`
+> lookup on the form (the FY27+ shape) never fired the step and
+> `book_fundingmode` went stale. In PRT, add `book_requirement` to both the
+> step's filtering attributes **and** its PreImage.
 
 > **Migration note (auto-populate retired, 2026-07):** in PRT, after updating
 > `Checkbook_Plugins.dll`:
@@ -1044,7 +1050,7 @@ a step or changing a rank: the ordering constraints live here.
 | 2 | Pre-Op | Sync | `PrioritizationFundingValidator` | `book_newfundedamounttdp, book_requirementfunding, book_approvalstatus, statecode` |
 | 3 | Pre-Op | Sync | `PrioritizationNameSetter` | `book_state, book_requirementfunding, book_requirement, book_statepriority, book_fundcenter, book_newfiscalyear` |
 | 4 | Post-Op | Sync | `PrioritizationRollupToRequirementFunding` | `book_newfundedamounttdp, book_validatedamount, book_requirementfunding, statecode` |
-| 5 | Post-Op | **Async** | `ItemizedDetailsSynchronizer` | `book_requirementfunding` (RF swap deletes stale details + resets FundingMode) |
+| 5 | Post-Op | **Async** | `ItemizedDetailsSynchronizer` | `book_requirement, book_requirementfunding` (re-point to a different Requirement deletes stale details + resets FundingMode) |
 
 **Delete**: Post-Op Sync `PrioritizationRollupToRequirementFunding` (recalcs the pre-image parent RF).
 
@@ -1109,7 +1115,7 @@ to sort the right pane by **Message** then by **Primary Entity**.
 - [ ] `Checkbook.Plugins.Items.ItemizedDetailsSynchronizer`
   - [ ] Delete of `book_requirementdetails` — Pre-Op, Sync
   - [ ] Create of `book_prioritization` — Post-Op, Async
-  - [ ] Update of `book_prioritization` — Post-Op, Async, filter `book_requirementfunding`, PreImage `book_requirementfunding`
+  - [ ] Update of `book_prioritization` — Post-Op, Async, filter `book_requirement, book_requirementfunding`, PreImage `book_requirement, book_requirementfunding` (filter widened 2026-08 — see the step-3 note in the Items section)
   - [ ] **No** Create step on `book_requirementdetails` and **no** `book_ReconcileItemizedDetails` Custom API remain (retired 2026-07 — see the migration note in the Items section)
 - [ ] `Checkbook.Plugins.Items.PrioritizationItemizedRollup`
   - [ ] Create / Update / Delete of `book_itemizeddetails` — Post-Op Sync; Update + Delete have PreImage
@@ -1249,10 +1255,16 @@ Each subfolder doc carries a domain-specific smoke test sequence:
    ~30 seconds the Itemized Details linked to A's RDs should be gone; the
    FundingMode should be Itemized if B has RDs (user re-selects from the
    grid) or Direct if it has none.
+7. Repeat step 6 but change the direct `book_requirement` lookup on the form
+   instead (FY27+ shape) — from a Requirement with RDs to one **without**.
+   Same expectation: stale Itemized Details deleted, FundingMode flips to
+   Direct.
 
 If step 4 leaves an orphan, the **Delete / Pre-Operation / Sync** step is
-missing or mis-registered. If step 6 leaves stale Itemized Details, the
-**Update of book_prioritization** step (or its PreImage) is missing.
+missing or mis-registered. If step 6 or 7 leaves stale Itemized Details or a
+stale FundingMode, the **Update of book_prioritization** step is missing, or
+its filter/PreImage lacks one of `book_requirement` /
+`book_requirementfunding`.
 
 ### Funding Event + Turn-In financial flow smoke tests
 
