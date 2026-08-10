@@ -22,16 +22,27 @@ namespace Checkbook.Plugins.StateSwaps.Helpers
     public static class SwapPrioritizationUpdater
     {
         /// <summary>
-        /// Order-sensitive: increase credit RFs' TDP first (creates headroom for the
-        /// credit-side Prio Funded increase), then apply Prio Funded deltas, then
-        /// roll up each touched RF's FundedAmount — folding a debit RF's TDP
-        /// reduction into the SAME Update as its rolled-down FundedAmount.
-        /// RequirementFundingTDPValidator has a State-Swap ancestor bypass, but the
+        /// Order-sensitive, debit-first: release funds before claiming them so
+        /// EVERY intermediate state is valid under single-record validation —
+        /// the per-RF LOA-allocation check (RequirementFundingTDPValidator),
+        /// the Prio-level cap checks (PrioritizationFundingValidator), and the
         /// "Req Funding - Funded vs TDP" real-time business rule (entity-scoped,
-        /// no bypass possible) also enforces Funded &lt;= TDP, so a TDP-only
-        /// reduction while the rollup FundedAmount is still stale-high would be
-        /// rejected. Mirrors RealignmentProcessor.ApplyDebitToRF, which writes
-        /// TDP and FundedAmount together for the same reason.
+        /// no bypass possible). On a fully-allocated LOA a credit-first order
+        /// transiently over-allocates the LOA by the swap amount; the validators
+        /// carry State-Swap ancestor bypasses, but the debit-first order works
+        /// even when an unbypassed check is watching (defense in depth — see the
+        /// Aug 2026 same-LOA one-way transfer incident).
+        ///
+        /// Sequence:
+        ///   1. Debit Prios' Funded down.
+        ///   2. Debit RFs: rolled-down FundedAmount + TDP cut in the SAME Update
+        ///      (a TDP-only cut while Funded is stale-high would trip the
+        ///      Funded &lt;= TDP business rule — mirrors
+        ///      RealignmentProcessor.ApplyDebitToRF). This frees LOA headroom.
+        ///   3. Credit RFs: TDP up (fits in the headroom step 2 released).
+        ///   4. Credit Prios' Funded up (fits under the raised credit RF TDP).
+        ///   5. Re-roll FundedAmount on every touched RF (an RF debited in one
+        ///      item and credited in another has children changed after step 2).
         /// </summary>
         public static void ApplyFundingDeltas(
             IOrganizationService service,
@@ -52,29 +63,40 @@ namespace Checkbook.Plugins.StateSwaps.Helpers
                     Accumulate(rfDeltas, item.CreditRF.Id, +item.Amount);
             }
 
-            // ---- 1. Credit RFs first (TDP up = headroom) ----
-            foreach (var pair in rfDeltas.Where(p => p.Value > 0m))
-                AdjustRFTdp(service, tracing, pair.Key, pair.Value);
-
-            // ---- 2. Prio deltas ----
-            foreach (var pair in prioDeltas)
+            // ---- 1. Debit Prios first (Funded down) ----
+            foreach (var pair in prioDeltas.Where(p => p.Value < 0m))
                 AdjustPrioFunded(service, tracing, pair.Key, pair.Value);
 
-            // ---- 3. Rollup RF.FundedAmount from children on every touched RF,
-            // with each debit RF's TDP reduction folded into the same Update ----
+            // ---- 2. Debit RFs: rolled-down Funded + TDP cut, one Update ----
             // The rollup is explicit for the same reason as in RealignmentProcessor:
             // the nested Prio updates above run at depth > 1, so the rollup helper
             // is skipped there.
-            foreach (var pair in rfDeltas)
+            foreach (var pair in rfDeltas.Where(p => p.Value < 0m))
             {
                 var update = PrioritizationRollupHelper.BuildRFFundedUpdate(
                     service, pair.Key, tracing);
-
-                if (pair.Value < 0m)
-                    update[RequirementFundingAttributes.TDP] =
-                        ComputeAdjustedTdp(service, tracing, pair.Key, pair.Value);
-
+                update[RequirementFundingAttributes.TDP] =
+                    ComputeAdjustedTdp(service, tracing, pair.Key, pair.Value);
                 service.Update(update);
+            }
+
+            // ---- 3. Credit RFs: TDP up, into the headroom freed by step 2 ----
+            foreach (var pair in rfDeltas.Where(p => p.Value > 0m))
+                AdjustRFTdp(service, tracing, pair.Key, pair.Value);
+
+            // ---- 4. Credit Prios: Funded up, under the raised credit RF TDP ----
+            foreach (var pair in prioDeltas.Where(p => p.Value > 0m))
+                AdjustPrioFunded(service, tracing, pair.Key, pair.Value);
+
+            // ---- 5. Final Funded rollup on every touched RF ----
+            // Debit RFs were rolled at step 2, but an RF that is debited in one
+            // item and credited in another (or net-zero) has child changes from
+            // step 4 to fold in; re-rolling every touched RF keeps this simple
+            // and idempotent. TDP is already final everywhere.
+            foreach (var pair in rfDeltas)
+            {
+                service.Update(PrioritizationRollupHelper.BuildRFFundedUpdate(
+                    service, pair.Key, tracing));
             }
         }
 
