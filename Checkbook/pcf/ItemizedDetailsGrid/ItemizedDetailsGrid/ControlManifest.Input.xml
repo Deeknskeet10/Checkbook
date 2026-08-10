@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <manifest>
-  <control namespace="ARNGCheckbook" constructor="ItemizedDetailsGrid" version="0.4.0"
+  <control namespace="ARNGCheckbook" constructor="ItemizedDetailsGrid" version="0.4.3"
            display-name-key="ItemizedDetailsGrid"
            description-key="Editable grid for the Itemized Details of a Prioritization: users add rows by selecting from the parent Requirement Details (Add Items) and can remove them; Quantity, Requested, Fund Center and State Comment are entered inline, with live totals. The first column stacks the Item name, Category, and Quantity Type (all read-only from the linked Item). TDC, Fund Center (filtered to the states Fund Centers, blank = state level), Quantity, Requested, Validated, Funded, and NPM Comment follow; the table scrolls horizontally on narrow screens."
            control-type="virtual" >

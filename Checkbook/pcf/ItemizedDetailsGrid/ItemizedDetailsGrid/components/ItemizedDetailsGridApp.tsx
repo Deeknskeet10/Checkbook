@@ -270,14 +270,32 @@ const useStyles = makeStyles({
     width: "100px",
     maxWidth: "140px",
     backgroundColor: "#f7f7f7",
+    textAlign: "right",
     ":hover": {
       backgroundColor: "#fff",
-      border: "2px solid #b2c3f4",
+      border: "2px solid #b2c3f4 !important",
+    },
+    // Drop the native number-input spin box so it reads as a plain text
+    // field — Firefox via -moz-appearance, WebKit/Blink via hiding its
+    // spin-button pseudo-elements (there's no single cross-browser property
+    // for this).
+    "& input": {
+      paddingLeft: "6px",
+      paddingRight: "6px",
+      MozAppearance: "textfield",
+    },
+    "& input::-webkit-outer-spin-button": {
+      WebkitAppearance: "none",
+      margin: 0,
+    },
+    "& input::-webkit-inner-spin-button": {
+      WebkitAppearance: "none",
+      margin: 0,
     },
   },
   qtyCol: {
-    textAlign: "center",
-    justifyContent: "center",
+    textAlign: "right",
+    justifyContent: "flex-end",
     minWidth: "90px",
     width: "90px",
   },
@@ -286,19 +304,47 @@ const useStyles = makeStyles({
     width: "80px",
     maxWidth: "140px",
     backgroundColor: "#f7f7f7",
+    textAlign: "right",
     ":hover": {
       backgroundColor: "#fff",
-      border: "2px solid #b2c3f4",
+      border: "2px solid #b2c3f4 !important",
+    },
+    "& input": {
+      paddingLeft: "6px",
+      paddingRight: "6px",
+      MozAppearance: "textfield",
+    },
+    "& input::-webkit-outer-spin-button": {
+      WebkitAppearance: "none",
+      margin: 0,
+    },
+    "& input::-webkit-inner-spin-button": {
+      WebkitAppearance: "none",
+      margin: 0,
     },
   },
   commentInput: {
-    minWidth: "160px",
+    minWidth: "150px",
     width: "160px",
     maxWidth: "200px",
     backgroundColor: "#f7f7f7",
+      border: "2px solid transparent",
     ":hover": {
       backgroundColor: "#fff",
-      border: "2px solid #b2c3f4",
+      border: "2px solid #b2c3f4 !important",
+    },
+  },
+  // NPM Comment is read-only here (owned by the NPM on the Requirement
+  // Funding side) — a Textarea instead of plain text so long paragraphs get
+  // the same wrap/scroll box as State Comment, but no editable styling
+  // (no #f7f7f7 fill, no hover border) since it can't actually be edited.
+  npmCommentInput: {
+    minWidth: "150px",
+    width: "160px",
+    maxWidth: "200px",
+    cursor: "default",
+    "& textarea": {
+      cursor: "default",
     },
   },
   // Fund Center *column* — kept wider than the dropdown's own minWidth
@@ -318,18 +364,22 @@ const useStyles = makeStyles({
     ":hover": {
       backgroundColor: "#fff",
       border: "2px solid #b2c3f4",
-    },
+    }
   },
   // minWidth only (not a fixed width) so the closed field can grow to fit
   // longer LIN/Country names instead of clipping them.
   linCountryDropdown: {
-    maxWidth: "150px",
+    maxWidth: "160px",
     minWidth: "100px",
     height: "30px",
     backgroundColor: "#f7f7f7",
     ":hover": {
       backgroundColor: "#fff",
-      border: "2px solid #b2c3f4",
+      border: "2px solid #b2c3f4 !important",
+    },
+    "& input": {
+      maxWidth: "120px",
+      minWidth: "80px",
     },
   },
   // Caps the visible option list to ~6 rows so long reference lists (LIN,
@@ -380,23 +430,35 @@ const useStyles = makeStyles({
       backgroundColor: tokens.colorNeutralBackground1,
     },
   },
+  // Fills the row's full clickable area — the td itself gets padding:0 via
+  // inline style in the JSX (a plain className can't reliably win against
+  // scrollContainer's own "& td" padding rule at equal specificity).
   loadMoreButton: {
     width: "100%",
+    minHeight: "40px",
     justifyContent: "center",
     textAlign: "center",
-    color: tokens.colorPaletteBlueForeground2,
     fontWeight: 600,
     fontSize: "15px",
+    padding: 0,
+    margin: 0,
+    borderRadius: 0,
+    color: "#5b9bd5",
+    backgroundImage:
+      "linear-gradient(to bottom, transparent, rgba(255, 255, 255, 0.7))",
+    ":hover": {
+      color: "#2e5f8a",
+      backgroundImage:
+        "linear-gradient(to bottom, transparent, rgba(255, 255, 255, 1))",
+    },
   },
-  // Numeric columns: TableCell/TableHeaderCell render their children inside a
-  // flex container, so plain text-align centers the literal text node but
-  // doesn't position child elements (the <Input> in edit cells, the <span>
-  // wrapping read-only amounts). justifyContent centers those flex children
-  // so headers and values share the same axis. Width is sized for "$32,000.00"
-  // with the Fluent Input's ~22px of internal padding.
+  // Numeric column sizing — width only. Alignment is right for all of
+  // Quantity/Requested/Validated/Funded (see amountBodyRight and
+  // headerJustifyEnd below), since a table-cell's own text-align/
+  // justifyContent don't reach the <Input>/<span> children directly.
   amount: {
-    textAlign: "center",
-    justifyContent: "center",
+    textAlign: "right",
+    justifyContent: "flex-end",
     fontVariantNumeric: "tabular-nums",
     minWidth: "120px",
     width: "120px",
@@ -415,8 +477,8 @@ const useStyles = makeStyles({
   // not the <th> itself), so aligning it needs justifyContent on that slot
   // — text-align/justifyContent on the <th> root has no effect since a
   // table-cell isn't a flex container. Applied via the `button` slot prop,
-  // not `className`. Validated/Funded only — Requested stays centered with
-  // its Input.
+  // not `className`, on every right-aligned numeric header (Quantity,
+  // Requested, Validated, Funded).
   headerJustifyEnd: {
     justifyContent: "end",
   },
@@ -438,6 +500,11 @@ const useStyles = makeStyles({
     display: "flex",
     columnGap: "8px",
   },
+  toolbarButtonText: {
+    fontSize: "14px",
+    color: "black",
+    padding: "10px 14px",
+  },
   dialogSearch: {
     width: "100%",
     marginBottom: "8px",
@@ -453,6 +520,18 @@ const useStyles = makeStyles({
   },
   dialogError: {
     color: tokens.colorPaletteRedForeground1,
+  },
+  // Sits to the left of the dialog's action buttons — marginRight: auto
+  // pushes it to the far side regardless of DialogActions' own alignment,
+  // keeping Cancel/Back/Add grouped together on the right as before.
+  addingCountLabel: {
+    color: "#333",
+    fontWeight: 600,
+    marginRight: "auto",
+    alignSelf: "center",
+  },
+  addingCountNumber: {
+    color: tokens.colorPaletteGreenForeground1,
   },
   addDialogSurface: {
     maxWidth: "640px",
@@ -493,6 +572,37 @@ function formatCurrency(value: number): string {
     maximumFractionDigits: 2,
   });
 }
+
+/** Font Awesome "trash" glyph (Font Awesome Free, CC BY 4.0) — used as the
+ * per-row delete action instead of a text button. */
+const DeleteIcon: React.FC = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" width="20" height="20" aria-hidden="true">
+    <path
+      fill="rgb(218, 30, 41)"
+      d="M232.7 69.9C237.1 56.8 249.3 48 263.1 48L377 48C390.8 48 403 56.8 407.4 69.9L416 96L512 96C529.7 96 544 110.3 544 128C544 145.7 529.7 160 512 160L128 160C110.3 160 96 145.7 96 128C96 110.3 110.3 96 128 96L224 96L232.7 69.9zM128 208L512 208L512 512C512 547.3 483.3 576 448 576L192 576C156.7 576 128 547.3 128 512L128 208zM216 272C202.7 272 192 282.7 192 296L192 488C192 501.3 202.7 512 216 512C229.3 512 240 501.3 240 488L240 296C240 282.7 229.3 272 216 272zM320 272C306.7 272 296 282.7 296 296L296 488C296 501.3 306.7 512 320 512C333.3 512 344 501.3 344 488L344 296C344 282.7 333.3 272 320 272zM424 272C410.7 272 400 282.7 400 296L400 488C400 501.3 410.7 512 424 512C437.3 512 448 501.3 448 488L448 296C448 282.7 437.3 272 424 272z"
+    />
+  </svg>
+);
+
+/** Font Awesome "rotate-left" glyph — left of the Refresh button's label. */
+const RefreshIcon: React.FC = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" height="18" width="18" viewBox="0 0 640 640" aria-hidden="true">
+    <path
+      fill="rgb(114, 114, 114)"
+      d="M320 128C263.2 128 212.1 152.7 176.9 192L224 192C241.7 192 256 206.3 256 224C256 241.7 241.7 256 224 256L96 256C78.3 256 64 241.7 64 224L64 96C64 78.3 78.3 64 96 64C113.7 64 128 78.3 128 96L128 150.7C174.9 97.6 243.5 64 320 64C461.4 64 576 178.6 576 320C576 461.4 461.4 576 320 576C233 576 156.1 532.6 109.9 466.3C99.8 451.8 103.3 431.9 117.8 421.7C132.3 411.5 152.2 415.1 162.4 429.6C197.2 479.4 254.8 511.9 320 511.9C426 511.9 512 425.9 512 319.9C512 213.9 426 128 320 128z"
+    />
+  </svg>
+);
+
+/** Font Awesome "plus" glyph — left of the Add Items button's label. */
+const AddIcon: React.FC = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" height="20" width="20" viewBox="0 0 640 640" aria-hidden="true">
+    <path
+      fill="rgb(22, 202, 146)"
+      d="M352 128C352 110.3 337.7 96 320 96C302.3 96 288 110.3 288 128L288 288L128 288C110.3 288 96 302.3 96 320C96 337.7 110.3 352 128 352L288 352L288 512C288 529.7 302.3 544 320 544C337.7 544 352 529.7 352 512L352 352L512 352C529.7 352 544 337.7 544 320C544 302.3 529.7 288 512 288L352 288L352 128z"
+    />
+  </svg>
+);
 
 /** Combobox with a height-capped, scrollable option list — used for
  * LIN/Country pickers whose reference lists run to 100+ entries. Typing
@@ -992,6 +1102,20 @@ export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
         ? null
         : pending;
 
+    // Requested Amount reads as a dollar figure elsewhere in the grid — once
+    // it parses as a real number, normalize the field to a fixed 2-decimal
+    // string so it always shows as a proper decimal amount, not whatever
+    // precision (or lack of one) the user happened to type.
+    if (field === "requestedAmount" && typeof newValue === "number") {
+      const formatted = newValue.toFixed(2);
+      if (formatted !== pending) {
+        setEdits((prev) => ({
+          ...prev,
+          [row.recordId]: { ...prev[row.recordId], [field]: formatted },
+        }));
+      }
+    }
+
     const original = row[field];
     const originalNorm =
       original === null || original === undefined || original === ""
@@ -1436,7 +1560,7 @@ export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
       value={displayValue(row, field)}
       onChange={(_e, data) => onCellChange(row.recordId, field, data.value)}
       onBlur={() => commitCell(row, field)}
-      input={{ style: { textAlign: "center", fontVariantNumeric: "tabular-nums" } }}
+      input={{ style: { textAlign: "right", fontVariantNumeric: "tabular-nums" } }}
     />
   );
 
@@ -1449,6 +1573,19 @@ export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
       value={displayValue(row, field)}
       onChange={(_e, data) => onCellChange(row.recordId, field, data.value)}
       onBlur={() => commitCell(row, field)}
+    />
+  );
+
+  // NPM Comment can run to a paragraph — a read-only Textarea instead of
+  // plain text gives it the same wrap/scroll box as State Comment.
+  const npmCommentCell = (row: GridRow): React.ReactNode => (
+    <Textarea
+      appearance="filled-lighter"
+      className={styles.npmCommentInput}
+      readOnly
+      tabIndex={-1}
+      resize="vertical"
+      value={row.npmComment}
     />
   );
 
@@ -1585,7 +1722,9 @@ export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
             {!isDisabled && (
               <Button
                 size="small"
-                appearance="primary"
+                appearance="subtle"
+                className={styles.toolbarButtonText}
+                icon={<AddIcon />}
                 disabled={dataset.loading}
                 onClick={openAddDialog}
               >
@@ -1595,6 +1734,8 @@ export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
             <Button
               size="small"
               appearance="subtle"
+              className={styles.toolbarButtonText}
+              icon={<RefreshIcon />}
               disabled={dataset.loading}
               onClick={() => {
                 dataset.refresh();
@@ -1629,8 +1770,18 @@ export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
                   {prioFlags?.countryRequired && (
                     <TableHeaderCell>Country</TableHeaderCell>
                   )}
-                  <TableHeaderCell className={styles.qtyCol}>Quantity</TableHeaderCell>
-                  <TableHeaderCell className={styles.amount}>Requested</TableHeaderCell>
+                  <TableHeaderCell
+                    className={styles.qtyCol}
+                    button={{ className: styles.headerJustifyEnd }}
+                  >
+                    Quantity
+                  </TableHeaderCell>
+                  <TableHeaderCell
+                    className={styles.amount}
+                    button={{ className: styles.headerJustifyEnd }}
+                  >
+                    Requested
+                  </TableHeaderCell>
                   <TableHeaderCell
                     className={styles.amount}
                     button={{ className: styles.headerJustifyEnd }}
@@ -1717,19 +1868,22 @@ export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
                       <TableCell className={styles.amountBodyRight}>
                         {readOnlyAmount(row, "fundedAmount")}
                       </TableCell>
-                      <TableCell className={styles.contextCell}>
-                        {row.npmComment}
-                      </TableCell>
+                      <TableCell>{npmCommentCell(row)}</TableCell>
                       <TableCell>{commentCell(row, "stateComment")}</TableCell>
                       {!isDisabled && (
                         <TableCell className={styles.actionCol}>
-                          <Button
-                            size="small"
-                            appearance="subtle"
-                            onClick={() => setPendingRemove(row)}
+                          <Tooltip
+                            content="Delete Itemized Detail"
+                            relationship="label"
                           >
-                            Remove
-                          </Button>
+                            <Button
+                              size="small"
+                              appearance="subtle"
+                              icon={<DeleteIcon />}
+                              aria-label="Delete Itemized Detail"
+                              onClick={() => setPendingRemove(row)}
+                            />
+                          </Tooltip>
                         </TableCell>
                       )}
                     </TableRow>
@@ -1737,7 +1891,7 @@ export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
                 })}
                 {hasNextPage && (
                   <TableRow className={styles.loadMoreRow}>
-                    <TableCell colSpan={columnCount}>
+                    <TableCell colSpan={columnCount} style={{ padding: 0 }}>
                       <Button
                         size="small"
                         appearance="subtle"
@@ -1848,6 +2002,17 @@ export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
                     )}
                   </DialogContent>
                   <DialogActions>
+                    {!prioFlags?.linRequired &&
+                      !prioFlags?.countryRequired &&
+                      selected.size > 0 && (
+                        <span className={styles.addingCountLabel}>
+                          Adding:{" "}
+                          <span className={styles.addingCountNumber}>
+                            {selected.size}
+                          </span>{" "}
+                          Items
+                        </span>
+                      )}
                     <Button
                       appearance="secondary"
                       disabled={addBusy}
@@ -1862,7 +2027,7 @@ export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
                     >
                       {prioFlags?.linRequired || prioFlags?.countryRequired
                         ? "Next"
-                        : `Add ${selected.size > 0 ? selected.size + " " : ""}selected`}
+                        : "Add Selected"}
                     </Button>
                   </DialogActions>
                 </>
@@ -1970,6 +2135,15 @@ export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
                     )}
                   </DialogContent>
                   <DialogActions>
+                    {pendingPairCount > 0 && (
+                      <span className={styles.addingCountLabel}>
+                        Adding:{" "}
+                        <span className={styles.addingCountNumber}>
+                          {pendingPairCount}
+                        </span>{" "}
+                        Items
+                      </span>
+                    )}
                     <Button
                       appearance="secondary"
                       disabled={addBusy}
@@ -1992,9 +2166,7 @@ export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
                       disabled={addBusy || pendingPairCount === 0}
                       onClick={addPairs}
                     >
-                      {addBusy
-                        ? "Adding…"
-                        : `Add ${pendingPairCount > 0 ? pendingPairCount + " " : ""}item${pendingPairCount === 1 ? "" : "s"}`}
+                      {addBusy ? "Adding…" : "Add Items"}
                     </Button>
                   </DialogActions>
                 </>
