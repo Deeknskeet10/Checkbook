@@ -28,11 +28,20 @@ import {
   Dropdown,
   Combobox,
   Option,
+  Badge,
 } from "@fluentui/react-components";
 
 type DataSet = ComponentFramework.PropertyTypes.DataSet;
 type WebApi = ComponentFramework.WebApi;
 type Navigation = ComponentFramework.Navigation;
+
+/** Shape of webAPI.retrieveMultipleRecords' resolved value, declared
+ * locally since the ComponentFramework.WebApi namespace isn't resolvable
+ * from a plain type-position reference in this project's tsconfig. */
+interface RetrieveMultipleResult {
+  entities: Record<string, unknown>[];
+  nextLink?: string;
+}
 
 export interface ItemizedDetailsGridProps {
   dataset: DataSet;
@@ -153,18 +162,44 @@ const useStyles = makeStyles({
     ...shorthands.padding("4px", "2px", "8px", "2px"),
   },
   // Lets the table extend past the form's width on narrow screens instead of
-  // squeezing every column into the visible area.
+  // squeezing every column into the visible area. Capped/scrollable
+  // vertically so long item lists don't push the rest of the form down —
+  // the header stays pinned via sticky th below.
   scrollContainer: {
     width: "100%",
+    maxHeight: "600px",
     overflowX: "auto",
+    overflowY: "auto",
     "& td": {
-      paddingLeft: "2.5px",
-      paddingRight: "2.5px",
+      ...shorthands.padding("5px"),
+      maxWidth: "200px",
     },
+    "& th": {
+      paddingBottom: "8px",
+      fontWeight: 600,
+      position: "sticky",
+      top: 0,
+      zIndex: 2,
+      backgroundColor: tokens.colorNeutralBackground1,
+    },
+  },
+  // Fluent's Table defaults to table-layout: fixed, which sizes columns off
+  // the header row alone — columns with no explicit header width (Fund
+  // Center, LIN, Country, State Comment, …) get squeezed to an arbitrary
+  // share of the table's width, so their fixed-width body content (the
+  // dropdowns, the comment Textarea) overflows past its own padding and
+  // gets clipped at the cell edge. auto sizes every column off its widest
+  // cell instead, so padding always has room.
+  tableAutoLayout: {
+    tableLayout: "auto",
   },
   contextCell: {
     color: tokens.colorNeutralForeground3,
     whiteSpace: "nowrap",
+  },
+  tdcLink: {
+    paddingLeft: "7.5px",
+    paddingRight: "7.5px",
   },
   // First column stacks Item name / Category / Quantity Type; Item names can
   // be long, so this is the one column that wraps rather than nowraps.
@@ -182,11 +217,39 @@ const useStyles = makeStyles({
     flexWrap: "wrap",
     columnGap: "4px",
   },
-  firstColMeta: {
-    display: "block",
+  // Category/Qty Type chips — one line, wrapping to a second only if they
+  // don't both fit.
+  metaChipRow: {
+    display: "flex",
+    flexWrap: "wrap",
+    columnGap: "4px",
+    rowGap: "2px",
+    marginTop: "4px",
+  },
+  // Toolbar legend explaining what the chip colors mean.
+  legend: {
+    display: "flex",
+    alignItems: "center",
+    columnGap: "12px",
+    marginRight: "4px",
     fontSize: tokens.fontSizeBase200,
     color: tokens.colorNeutralForeground3,
-    marginTop: "2px",
+  },
+  legendItem: {
+    display: "flex",
+    alignItems: "center",
+    columnGap: "4px",
+  },
+  legendPip: {
+    width: "8px",
+    height: "8px",
+    borderRadius: "50%",
+  },
+  legendPipCategory: {
+    backgroundColor: tokens.colorPaletteGreenForeground1,
+  },
+  legendPipQtyType: {
+    backgroundColor: tokens.colorPaletteBlueForeground2,
   },
   numberInput: {
     minWidth: "110px",
@@ -210,15 +273,24 @@ const useStyles = makeStyles({
     minWidth: "170px",
     width: "170px",
   },
+  // minWidth only (not a fixed width) so the closed field can grow to fit
+  // longer LIN/Country names instead of clipping them.
   linCountryDropdown: {
     minWidth: "150px",
-    width: "150px",
   },
-  // Caps the visible option list to ~7 rows (small-size Option ≈ 32px each)
-  // so long reference lists (LIN, Country) don't blow out the popup.
+  // Caps the visible option list to ~6 rows so long reference lists (LIN,
+  // Country) don't blow out the popup.
   dropdownOptionScroll: {
-    maxHeight: "224px",
+    maxHeight: "200px",
     overflowY: "auto",
+  },
+  // The closed Combobox field is a native <input> — it can never wrap text,
+  // only scroll/clip a single line, no matter what CSS is applied to it.
+  // Wrapping is only achievable for the open option list, where entries are
+  // plain elements, not an input — some country names run long.
+  dropdownOptionWrap: {
+    whiteSpace: "normal",
+    wordBreak: "break-word",
   },
   dropdownNoMatches: {
     display: "block",
@@ -232,8 +304,35 @@ const useStyles = makeStyles({
     whiteSpace: "nowrap",
   },
   totalsRow: {
-    fontWeight: tokens.fontWeightSemibold,
-    backgroundColor: tokens.colorNeutralBackground2,
+    fontWeight: 600,
+    "& td": {
+      // Explicit height (rather than relying on Fluent's default small-row
+      // height) so loadMoreRow's sticky offset below has a fixed, known
+      // value to stack against instead of guessing at internals.
+      height: "44px",
+      position: "sticky",
+      bottom: 0,
+      zIndex: 2,
+      backgroundColor: tokens.colorNeutralBackground2,
+    },
+  },
+  // Sits directly above the sticky totalsRow — its bottom offset must equal
+  // that row's td height (44px) so the two stack flush with no gap/overlap.
+  loadMoreRow: {
+    "& td": {
+      position: "sticky",
+      bottom: "44px",
+      zIndex: 2,
+      backgroundColor: tokens.colorNeutralBackground1,
+    },
+  },
+  loadMoreButton: {
+    width: "100%",
+    justifyContent: "center",
+    textAlign: "center",
+    color: tokens.colorPaletteBlueForeground2,
+    fontWeight: 600,
+    fontSize: "15px",
   },
   // Numeric columns: TableCell/TableHeaderCell render their children inside a
   // flex container, so plain text-align centers the literal text node but
@@ -247,6 +346,15 @@ const useStyles = makeStyles({
     fontVariantNumeric: "tabular-nums",
     minWidth: "120px",
     width: "120px",
+  },
+  // TableHeaderCell's own text sits in an inner flex "button" slot (a div,
+  // not the <th> itself), so aligning it needs justifyContent on that slot
+  // — text-align/justifyContent on the <th> root has no effect since a
+  // table-cell isn't a flex container. Applied via the `button` slot prop,
+  // not `className`. Validated/Funded only — Requested stays centered with
+  // its Input.
+  headerJustifyEnd: {
+    justifyContent: "end",
   },
   status: {
     marginLeft: "6px",
@@ -370,6 +478,13 @@ const SearchableOptionDropdown: React.FC<{
       className={className}
       placeholder={searchPlaceholder}
       freeform
+      // Combobox normally portals its popup to document.body, which lands
+      // outside this control's <FluentProvider> — the popup then has no
+      // access to the theme's CSS variables and renders with a transparent
+      // background. inlinePopup keeps it a normal DOM child (still
+      // positioned via Floating UI, so it still floats over the row) so it
+      // stays inside the themed subtree.
+      inlinePopup
       value={query}
       selectedOptions={selectedId ? [selectedId] : []}
       listbox={{ className: styles.dropdownOptionScroll }}
@@ -377,12 +492,20 @@ const SearchableOptionDropdown: React.FC<{
       onOptionSelect={(_e, data) => onSelect(data.optionValue ?? "")}
       onOpenChange={(_e, data) => setOpen(data.open)}
     >
-      {orphan && <Option value={orphan.id}>{orphan.name}</Option>}
+      {orphan && (
+        <Option className={styles.dropdownOptionWrap} value={orphan.id}>
+          {orphan.name}
+        </Option>
+      )}
       {filtered.length === 0 ? (
         <Text className={styles.dropdownNoMatches}>No matches</Text>
       ) : (
         filtered.map((o) => (
-          <Option key={o.id} value={o.id}>
+          <Option
+            key={o.id}
+            className={styles.dropdownOptionWrap}
+            value={o.id}
+          >
             {o.name}
           </Option>
         ))
@@ -773,6 +896,7 @@ export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
   /** Writes an update payload for one record, driving its save indicator. */
   const persist = (recordId: string, payload: Record<string, unknown>): void => {
     setSaveState((prev) => ({ ...prev, [recordId]: "saving" }));
+    const touchesAmount = aliasToLogical[ALIAS.requestedAmount] in payload;
     webAPI
       .updateRecord(ITEMIZED_DETAILS_ENTITY, recordId, payload)
       .then(() => {
@@ -784,6 +908,7 @@ export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
             return next;
           });
         }, 2500);
+        if (touchesAmount) fetchAllTotals();
         return;
       })
       .catch(() => {
@@ -987,6 +1112,7 @@ export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
         setAddBusy(false);
         setAddOpen(false);
         dataset.refresh();
+        fetchAllTotals();
         return;
       })
       .catch(() => {
@@ -1053,6 +1179,7 @@ export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
         setAddBusy(false);
         setAddOpen(false);
         dataset.refresh();
+        fetchAllTotals();
         return;
       })
       .catch(() => {
@@ -1079,6 +1206,7 @@ export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
         setRemoveBusy(false);
         setPendingRemove(null);
         dataset.refresh();
+        fetchAllTotals();
         return;
       })
       .catch(() => {
@@ -1141,6 +1269,8 @@ export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
     return count;
   }, [selected, selectedSecondary, addStep, existingLinPairs, existingCountryPairs]);
 
+  // Visible-page-only totals — always accurate for whatever's currently
+  // loaded/edited, used as the immediate/fallback figure.
   const totals = React.useMemo(() => {
     return datasetRows.reduce(
       (acc, row) => ({
@@ -1151,6 +1281,67 @@ export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
       { requested: 0, validated: 0, funded: 0 }
     );
   }, [datasetRows, edits]);
+
+  // True totals across every Itemized Detail on this Prioritization, not
+  // just the page(s) currently paged into the grid — fetched straight from
+  // the Web API (bypassing dataset paging) since PCF datasets only expose
+  // one page of sortedRecordIds at a time. Falls back to the visible-page
+  // totals above while loading or if the fetch fails.
+  const [allTotals, setAllTotals] = React.useState<{
+    requested: number;
+    validated: number;
+    funded: number;
+  } | null>(null);
+
+  const fetchAllTotals = React.useCallback(() => {
+    if (!prioritizationId) {
+      setAllTotals(null);
+      return;
+    }
+    const requestedField = aliasToLogical[ALIAS.requestedAmount];
+    const validatedField = aliasToLogical[ALIAS.validatedAmount];
+    const fundedField = aliasToLogical[ALIAS.fundedAmount];
+    if (!requestedField || !validatedField || !fundedField) return;
+
+    let cancelled = false;
+    const acc = { requested: 0, validated: 0, funded: 0 };
+
+    function fetchPage(options: string): Promise<void> {
+      return webAPI
+        .retrieveMultipleRecords(ITEMIZED_DETAILS_ENTITY, options, 5000)
+        .then((result: RetrieveMultipleResult) => {
+          for (const entity of result.entities) {
+            acc.requested += Number(entity[requestedField]) || 0;
+            acc.validated += Number(entity[validatedField]) || 0;
+            acc.funded += Number(entity[fundedField]) || 0;
+          }
+          if (result.nextLink) {
+            return fetchPage(result.nextLink.slice(result.nextLink.indexOf("?")));
+          }
+          return undefined;
+        });
+    }
+
+    fetchPage(
+      `?$select=${requestedField},${validatedField},${fundedField}` +
+        `&$filter=_book_prioritization_value eq ${prioritizationId}`
+    )
+      .then(() => {
+        if (!cancelled) setAllTotals({ ...acc });
+        return;
+      })
+      .catch(() => {
+        if (!cancelled) setAllTotals(null);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [prioritizationId, aliasToLogical, webAPI]);
+
+  React.useEffect(() => fetchAllTotals(), [fetchAllTotals]);
+
+  const displayTotals = allTotals ?? totals;
 
   const renderStatus = (recordId: string): React.ReactNode => {
     const state = saveState[recordId];
@@ -1296,6 +1487,15 @@ export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
 
   const hasNextPage = !!dataset.paging && dataset.paging.hasNextPage;
 
+  // Item, TDC, Fund Center, Quantity, Requested, Validated, Funded, NPM
+  // Comment, State Comment — plus whichever of LIN/Country/Action are
+  // showing. Used to span the sticky Load More row across every column.
+  const columnCount =
+    9 +
+    (prioFlags?.linRequired ? 1 : 0) +
+    (prioFlags?.countryRequired ? 1 : 0) +
+    (!isDisabled ? 1 : 0);
+
   return (
     <FluentProvider theme={webLightTheme}>
       <div className={styles.root}>
@@ -1304,6 +1504,20 @@ export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
             Itemized Details ({datasetRows.length})
           </Text>
           <div className={styles.toolbarButtons}>
+            <div className={styles.legend}>
+              <span className={styles.legendItem}>
+                <span
+                  className={`${styles.legendPip} ${styles.legendPipCategory}`}
+                />
+                Category
+              </span>
+              <span className={styles.legendItem}>
+                <span
+                  className={`${styles.legendPip} ${styles.legendPipQtyType}`}
+                />
+                Qty Type
+              </span>
+            </div>
             {!isDisabled && (
               <Button
                 size="small"
@@ -1318,7 +1532,10 @@ export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
               size="small"
               appearance="subtle"
               disabled={dataset.loading}
-              onClick={() => dataset.refresh()}
+              onClick={() => {
+                dataset.refresh();
+                fetchAllTotals();
+              }}
             >
               Refresh
             </Button>
@@ -1334,7 +1551,11 @@ export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
           </div>
         ) : (
           <div className={styles.scrollContainer}>
-            <Table size="small" aria-label="Itemized Details">
+            <Table
+              size="small"
+              aria-label="Itemized Details"
+              className={styles.tableAutoLayout}
+            >
               <TableHeader>
                 <TableRow>
                   <TableHeaderCell className={styles.firstCol}>Item</TableHeaderCell>
@@ -1346,8 +1567,18 @@ export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
                   )}
                   <TableHeaderCell className={styles.qtyCol}>Quantity</TableHeaderCell>
                   <TableHeaderCell className={styles.amount}>Requested</TableHeaderCell>
-                  <TableHeaderCell className={styles.amount}>Validated</TableHeaderCell>
-                  <TableHeaderCell className={styles.amount}>Funded</TableHeaderCell>
+                  <TableHeaderCell
+                    className={styles.amount}
+                    button={{ className: styles.headerJustifyEnd }}
+                  >
+                    Validated
+                  </TableHeaderCell>
+                  <TableHeaderCell
+                    className={styles.amount}
+                    button={{ className: styles.headerJustifyEnd }}
+                  >
+                    Funded
+                  </TableHeaderCell>
                   <TableHeaderCell>NPM Comment</TableHeaderCell>
                   <TableHeaderCell>State Comment</TableHeaderCell>
                   {!isDisabled && (
@@ -1367,17 +1598,24 @@ export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
                           <span>{ctx?.item?.trim() ? ctx.item : row.requirementItemName}</span>
                           {renderStatus(row.recordId)}
                         </div>
-                        <span className={styles.firstColMeta}>
-                          Cat: {ctx?.category ?? ""}
-                        </span>
-                        <span className={styles.firstColMeta}>
-                          Qty Type: {ctx?.quantityType ?? ""}
-                        </span>
+                        <div className={styles.metaChipRow}>
+                          {ctx?.category && (
+                            <Badge appearance="tint" color="success" size="small">
+                              {ctx.category}
+                            </Badge>
+                          )}
+                          {ctx?.quantityType && (
+                            <Badge appearance="tint" color="informative" size="small">
+                              {ctx.quantityType}
+                            </Badge>
+                          )}
+                        </div>
                       </TableCell>
                       <TableCell className={styles.contextCell}>
                         {ctx?.tdcId ? (
                           <Link
                             as="button"
+                            className={styles.tdcLink}
                             onClick={() => {
                               void navigation.openForm({
                                 entityName: TDC_ENTITY,
@@ -1430,6 +1668,20 @@ export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
                     </TableRow>
                   );
                 })}
+                {hasNextPage && (
+                  <TableRow className={styles.loadMoreRow}>
+                    <TableCell colSpan={columnCount}>
+                      <Button
+                        size="small"
+                        appearance="subtle"
+                        className={styles.loadMoreButton}
+                        onClick={() => dataset.paging.loadNextPage()}
+                      >
+                        Load more
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                )}
                 <TableRow className={styles.totalsRow}>
                   <TableCell className={styles.firstCol}>Totals</TableCell>
                   <TableCell />
@@ -1438,13 +1690,13 @@ export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
                   {prioFlags?.countryRequired && <TableCell />}
                   <TableCell />
                   <TableCell className={styles.amount}>
-                    {formatCurrency(totals.requested)}
+                    {formatCurrency(displayTotals.requested)}
                   </TableCell>
                   <TableCell className={styles.amount}>
-                    {formatCurrency(totals.validated)}
+                    {formatCurrency(displayTotals.validated)}
                   </TableCell>
                   <TableCell className={styles.amount}>
-                    {formatCurrency(totals.funded)}
+                    {formatCurrency(displayTotals.funded)}
                   </TableCell>
                   <TableCell />
                   <TableCell />
@@ -1453,16 +1705,6 @@ export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
               </TableBody>
             </Table>
           </div>
-        )}
-
-        {hasNextPage && (
-          <Button
-            size="small"
-            appearance="subtle"
-            onClick={() => dataset.paging.loadNextPage()}
-          >
-            Load more
-          </Button>
         )}
 
         <Dialog
