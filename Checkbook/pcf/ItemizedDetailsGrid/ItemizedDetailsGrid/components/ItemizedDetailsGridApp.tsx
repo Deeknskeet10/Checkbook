@@ -218,6 +218,9 @@ const useStyles = makeStyles({
     whiteSpace: "normal",
     wordBreak: "break-word",
     verticalAlign: "top",
+    minWidth: "180px",
+    // Anchors statusBadge below to this cell's corner instead of the page.
+    position: "relative",
   },
   firstColName: {
     fontWeight: tokens.fontWeightSemibold,
@@ -482,15 +485,14 @@ const useStyles = makeStyles({
   headerJustifyEnd: {
     justifyContent: "end",
   },
-  status: {
-    marginLeft: "6px",
-    fontSize: tokens.fontSizeBase200,
-  },
-  statusError: {
-    color: tokens.colorPaletteRedForeground1,
-  },
-  statusSaved: {
-    color: tokens.colorPaletteGreenForeground1,
+  // Pinned to the first column cell's top-right corner (firstCol above sets
+  // position: relative) instead of sitting inline next to the item name —
+  // inline "Saving…"/"Saved"/"Error" text used to change that cell's content
+  // width as it appeared/disappeared, jittering the whole column's layout.
+  statusBadge: {
+    position: "absolute",
+    top: "4px",
+    right: "4px",
   },
   empty: {
     ...shorthands.padding("16px"),
@@ -521,14 +523,16 @@ const useStyles = makeStyles({
   dialogError: {
     color: tokens.colorPaletteRedForeground1,
   },
-  // Sits to the left of the dialog's action buttons — marginRight: auto
-  // pushes it to the far side regardless of DialogActions' own alignment,
-  // keeping Cancel/Back/Add grouped together on the right as before.
+  // Rendered as its own block row between DialogContent and DialogActions —
+  // it used to be the first child inside DialogActions (pushed left via
+  // marginRight: auto), but with 2-3 buttons sharing that flex row there
+  // wasn't enough space left for "Adding: N Items" to read comfortably,
+  // especially on the LIN/Country step (Back + Cancel + Add Items).
   addingCountLabel: {
+    display: "block",
     color: "#333",
     fontWeight: 600,
-    marginRight: "auto",
-    alignSelf: "center",
+    marginTop: "8px",
   },
   addingCountNumber: {
     color: tokens.colorPaletteGreenForeground1,
@@ -1168,29 +1172,6 @@ export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
     return ids;
   }, [datasetRows]);
 
-  // requirementItemId::linId / ::countryId pairs already itemized on this
-  // Prioritization — Scenarios 2/3 let the same Requirement Detail repeat, but
-  // each LIN or Country combination may only appear once (book_TempKey).
-  const existingLinPairs = React.useMemo(() => {
-    const pairs = new Set<string>();
-    datasetRows.forEach((r) => {
-      const linId = itemLinCountry[r.recordId]?.linId;
-      if (r.requirementItemId && linId) pairs.add(`${r.requirementItemId}::${linId}`);
-    });
-    return pairs;
-  }, [datasetRows, itemLinCountry]);
-
-  const existingCountryPairs = React.useMemo(() => {
-    const pairs = new Set<string>();
-    datasetRows.forEach((r) => {
-      const countryId = itemLinCountry[r.recordId]?.countryId;
-      if (r.requirementItemId && countryId) {
-        pairs.add(`${r.requirementItemId}::${countryId}`);
-      }
-    });
-    return pairs;
-  }, [datasetRows, itemLinCountry]);
-
   const loadCandidates = React.useCallback((): void => {
     if (!prioritizationId) {
       setCandidateError(
@@ -1332,27 +1313,26 @@ export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
   };
 
   /** Scenarios 2/3 — creates one Itemized Detail per (Requirement Detail x
-   * LIN/Country) pair, skipping any combination already itemized. */
+   * LIN/Country) pair. Duplicate combinations (same RD + LIN, or same RD +
+   * Country, already itemized on this Prioritization) are not pre-filtered
+   * client-side — the PrioritizationxRequirementxLIN/Country alternate key
+   * rejects them server-side instead, and the rejected count is what drives
+   * the "could not be added" message below. This avoids depending on
+   * itemLinCountry (which loads one webAPI call per existing row) just to
+   * predict what the server will do anyway. */
   const addPairs = (): void => {
     if (!prioritizationId || selected.size === 0 || selectedSecondary.size === 0) {
       return;
     }
     const isLin = addStep === "select-lin";
-    const existingPairs = isLin ? existingLinPairs : existingCountryPairs;
     const pairs: { rdId: string; secId: string }[] = [];
     selected.forEach((rdId) => {
       selectedSecondary.forEach((secId) => {
-        if (!existingPairs.has(`${rdId}::${secId}`)) pairs.push({ rdId, secId });
+        pairs.push({ rdId, secId });
       });
     });
-    if (pairs.length === 0) {
-      setCandidateError(
-        "Every selected combination is already itemized on this Prioritization."
-      );
-      return;
-    }
     setAddBusy(true);
-    Promise.all(
+    Promise.allSettled(
       pairs.map(({ rdId, secId }) =>
         webAPI.createRecord(ITEMIZED_DETAILS_ENTITY, {
           "book_Prioritization@odata.bind": `/book_prioritizations(${prioritizationId})`,
@@ -1362,14 +1342,24 @@ export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
             : { "book_Country@odata.bind": `/book_countries(${secId})` }),
         })
       )
-    )
-      .then(() => {
-        setAddBusy(false);
-        setAddOpen(false);
+    ).then((results) => {
+      setAddBusy(false);
+      const skipped = results.filter((r) => r.status === "rejected").length;
+      const created = results.length - skipped;
+      if (created > 0) {
         dataset.refresh();
         fetchAllTotals();
+      }
+      if (skipped === 0) {
+        setAddOpen(false);
         return;
-      })
+      }
+      setCandidateError(
+        `${skipped} Detail${skipped === 1 ? "" : "s"} could not be added ` +
+          `because ${skipped === 1 ? "its" : "their"} ${isLin ? "LIN" : "Country"} already existed.`
+      );
+      return;
+    })
       .catch(() => {
         setAddBusy(false);
         setCandidateError(
@@ -1442,20 +1432,13 @@ export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
     );
   }, [countryOptions, secondarySearch]);
 
-  /** How many new Itemized Details the current secondary selection would
-   * actually create, after skipping combinations that already exist. */
-  const pendingPairCount = React.useMemo(() => {
-    if (selected.size === 0 || selectedSecondary.size === 0) return 0;
-    const existingPairs =
-      addStep === "select-lin" ? existingLinPairs : existingCountryPairs;
-    let count = 0;
-    selected.forEach((rdId) => {
-      selectedSecondary.forEach((secId) => {
-        if (!existingPairs.has(`${rdId}::${secId}`)) count += 1;
-      });
-    });
-    return count;
-  }, [selected, selectedSecondary, addStep, existingLinPairs, existingCountryPairs]);
+  // The straight RD x LIN/Country product — not reduced by what's already
+  // itemized. Computing that would mean waiting on itemLinCountry (loads one
+  // webAPI call per existing row) before showing a number at all. Instead
+  // addPairs below sends every combination and lets the
+  // PrioritizationxRequirementxLIN/Country alternate key reject duplicates
+  // server-side, then reports how many were skipped after the fact.
+  const pendingPairCount = selected.size * selectedSecondary.size;
 
   // Visible-page-only totals — always accurate for whatever's currently
   // loaded/edited, used as the immediate/fallback figure.
@@ -1535,14 +1518,28 @@ export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
     const state = saveState[recordId];
     if (!state) return null;
     if (state === "saving")
-      return <Spinner size="extra-tiny" className={styles.status} />;
+      return <Spinner size="extra-tiny" className={styles.statusBadge} />;
     if (state === "saved")
       return (
-        <span className={`${styles.status} ${styles.statusSaved}`}>Saved</span>
+        <Badge
+          className={styles.statusBadge}
+          appearance="filled"
+          color="success"
+          size="small"
+        >
+          Saved
+        </Badge>
       );
     return (
       <Tooltip content="Save failed — re-check the value" relationship="label">
-        <span className={`${styles.status} ${styles.statusError}`}>Error</span>
+        <Badge
+          className={styles.statusBadge}
+          appearance="filled"
+          color="danger"
+          size="small"
+        >
+          Error
+        </Badge>
       </Tooltip>
     );
   };
@@ -1809,9 +1806,9 @@ export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
                   return (
                     <TableRow key={row.recordId}>
                       <TableCell className={styles.firstCol}>
+                        {renderStatus(row.recordId)}
                         <div className={styles.firstColName}>
                           <span>{ctx?.item?.trim() ? ctx.item : row.requirementItemName}</span>
-                          {renderStatus(row.recordId)}
                         </div>
                         <div className={styles.metaChipRow}>
                           {ctx?.category && (
@@ -2001,18 +1998,18 @@ export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
                       </>
                     )}
                   </DialogContent>
+                  {!prioFlags?.linRequired &&
+                    !prioFlags?.countryRequired &&
+                    selected.size > 0 && (
+                      <span className={styles.addingCountLabel}>
+                        Adding:{" "}
+                        <span className={styles.addingCountNumber}>
+                          {selected.size}
+                        </span>{" "}
+                        Items
+                      </span>
+                    )}
                   <DialogActions>
-                    {!prioFlags?.linRequired &&
-                      !prioFlags?.countryRequired &&
-                      selected.size > 0 && (
-                        <span className={styles.addingCountLabel}>
-                          Adding:{" "}
-                          <span className={styles.addingCountNumber}>
-                            {selected.size}
-                          </span>{" "}
-                          Items
-                        </span>
-                      )}
                     <Button
                       appearance="secondary"
                       disabled={addBusy}
@@ -2134,16 +2131,16 @@ export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
                       </>
                     )}
                   </DialogContent>
+                  {pendingPairCount > 0 && (
+                    <span className={styles.addingCountLabel}>
+                      Adding:{" "}
+                      <span className={styles.addingCountNumber}>
+                        {pendingPairCount}
+                      </span>{" "}
+                      Items
+                    </span>
+                  )}
                   <DialogActions>
-                    {pendingPairCount > 0 && (
-                      <span className={styles.addingCountLabel}>
-                        Adding:{" "}
-                        <span className={styles.addingCountNumber}>
-                          {pendingPairCount}
-                        </span>{" "}
-                        Items
-                      </span>
-                    )}
                     <Button
                       appearance="secondary"
                       disabled={addBusy}
