@@ -6,7 +6,7 @@ import { RankBadge, roleRankMeta } from "./insignia";
 const HEADER_H = 48;
 const BAR_H = 22;
 const BAR_GAP = 4;
-const STRIP_H = 16;
+const STRIP_H = 20;
 const LANE_PAD = 5;
 const INDENT = 16;
 
