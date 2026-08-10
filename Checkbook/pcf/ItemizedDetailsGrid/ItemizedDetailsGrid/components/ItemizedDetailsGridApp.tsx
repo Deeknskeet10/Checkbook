@@ -172,7 +172,7 @@ const useStyles = makeStyles({
     overflowY: "auto",
     "& td": {
       ...shorthands.padding("5px"),
-      maxWidth: "200px",
+      maxWidth: "150px",
     },
     "& th": {
       paddingBottom: "8px",
@@ -189,9 +189,12 @@ const useStyles = makeStyles({
   // share of the table's width, so their fixed-width body content (the
   // dropdowns, the comment Textarea) overflows past its own padding and
   // gets clipped at the cell edge. auto sizes every column off its widest
-  // cell instead, so padding always has room.
+  // cell instead, so padding always has room. minWidth keeps the table from
+  // squeezing columns illegibly on narrow forms — scrollContainer's
+  // overflowX scrolls the pane horizontally past that point instead.
   tableAutoLayout: {
     tableLayout: "auto",
+    minWidth: "600px",
   },
   contextCell: {
     color: tokens.colorNeutralForeground3,
@@ -203,9 +206,11 @@ const useStyles = makeStyles({
   },
   // First column stacks Item name / Category / Quantity Type; Item names can
   // be long, so this is the one column that wraps rather than nowraps.
+  // No min/max width of its own — a minWidth here bigger than the blanket
+  // 150px td cap above would win over it (min-width always beats max-width
+  // in the box calc) and force the column wide even with no content, which
+  // is exactly the bug that used to make this column ignore the cap.
   firstCol: {
-    minWidth: "220px",
-    maxWidth: "280px",
     whiteSpace: "normal",
     wordBreak: "break-word",
     verticalAlign: "top",
@@ -245,15 +250,19 @@ const useStyles = makeStyles({
     height: "8px",
     borderRadius: "50%",
   },
+  // Matches the Category/Qty Type Badges' own tint background exactly
+  // (see the Badge usages below) rather than an independently-picked color,
+  // so the legend swatch and the chip it explains never drift apart again.
   legendPipCategory: {
-    backgroundColor: tokens.colorPaletteGreenForeground1,
+    backgroundColor: tokens.colorPaletteGreenBackground1,
   },
   legendPipQtyType: {
-    backgroundColor: tokens.colorPaletteBlueForeground2,
+    backgroundColor: tokens.colorBrandBackground2,
   },
   numberInput: {
     minWidth: "110px",
     width: "110px",
+    backgroundColor: "#eee",
   },
   qtyCol: {
     textAlign: "center",
@@ -264,19 +273,23 @@ const useStyles = makeStyles({
   qtyInput: {
     minWidth: "72px",
     width: "72px",
+    backgroundColor: "#eee",
   },
   commentInput: {
     minWidth: "160px",
     width: "160px",
+    backgroundColor: "#eee",
   },
   fcDropdown: {
     minWidth: "170px",
     width: "170px",
+    backgroundColor: "#eee",
   },
   // minWidth only (not a fixed width) so the closed field can grow to fit
   // longer LIN/Country names instead of clipping them.
   linCountryDropdown: {
     minWidth: "150px",
+    backgroundColor: "#eee",
   },
   // Caps the visible option list to ~6 rows so long reference lists (LIN,
   // Country) don't blow out the popup.
@@ -343,6 +356,16 @@ const useStyles = makeStyles({
   amount: {
     textAlign: "center",
     justifyContent: "center",
+    fontVariantNumeric: "tabular-nums",
+    minWidth: "120px",
+    width: "120px",
+  },
+  // Validated/Funded body cells — right-aligned to match their headers
+  // (headerJustifyEnd below). Applied to both the TableCell and the <span>
+  // readOnlyAmount renders inside it.
+  amountBodyRight: {
+    textAlign: "right",
+    justifyContent: "flex-end",
     fontVariantNumeric: "tabular-nums",
     minWidth: "120px",
     width: "120px",
@@ -1480,7 +1503,7 @@ export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
   // Validated / Funded / NPM Comment are owned by the NPM on the Requirement
   // Funding side (ValidateAndFundGrid) — read-only here on the Prioritization form.
   const readOnlyAmount = (row: GridRow, field: NumericField): React.ReactNode => (
-    <span className={styles.amount}>
+    <span className={styles.amountBodyRight}>
       {formatCurrency(effectiveNumber(row, field))}
     </span>
   );
@@ -1605,7 +1628,10 @@ export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
                             </Badge>
                           )}
                           {ctx?.quantityType && (
-                            <Badge appearance="tint" color="informative" size="small">
+                            // "informative" renders as neutral gray in
+                            // Fluent's theme, not blue — "brand" is this
+                            // theme's actual blue, matching legendPipQtyType.
+                            <Badge appearance="tint" color="brand" size="small">
                               {ctx.quantityType}
                             </Badge>
                           )}
@@ -1644,10 +1670,10 @@ export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
                       <TableCell className={styles.amount}>
                         {numericCell(row, "requestedAmount", styles.numberInput)}
                       </TableCell>
-                      <TableCell className={styles.amount}>
+                      <TableCell className={styles.amountBodyRight}>
                         {readOnlyAmount(row, "validatedAmount")}
                       </TableCell>
-                      <TableCell className={styles.amount}>
+                      <TableCell className={styles.amountBodyRight}>
                         {readOnlyAmount(row, "fundedAmount")}
                       </TableCell>
                       <TableCell className={styles.contextCell}>
@@ -1692,10 +1718,10 @@ export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
                   <TableCell className={styles.amount}>
                     {formatCurrency(displayTotals.requested)}
                   </TableCell>
-                  <TableCell className={styles.amount}>
+                  <TableCell className={styles.amountBodyRight}>
                     {formatCurrency(displayTotals.validated)}
                   </TableCell>
-                  <TableCell className={styles.amount}>
+                  <TableCell className={styles.amountBodyRight}>
                     {formatCurrency(displayTotals.funded)}
                   </TableCell>
                   <TableCell />
