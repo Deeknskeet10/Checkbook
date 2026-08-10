@@ -172,7 +172,10 @@ const useStyles = makeStyles({
     overflowY: "auto",
     "& td": {
       ...shorthands.padding("5px"),
-      maxWidth: "150px",
+      maxWidth: "180px",
+    },
+    "& tr:hover": {
+      backgroundColor: "#fbfbfb"
     },
     "& th": {
       paddingBottom: "8px",
@@ -201,9 +204,8 @@ const useStyles = makeStyles({
     whiteSpace: "nowrap",
   },
   tdcLink: {
-    paddingLeft: "7.5px",
-    paddingRight: "7.5px",
-    maxWidth: "160px",
+    maxWidth: "170px",
+    minWidth: "100px",
     textWrap: "auto"
   },
   // First column stacks Item name / Category / Quantity Type; Item names can
@@ -257,11 +259,11 @@ const useStyles = makeStyles({
   // colors, so the legend swatch and the chip it explains never drift apart.
   legendPipCategory: {
     backgroundColor: tokens.colorPaletteGreenBackground1,
-    border: `1px solid ${tokens.colorPaletteGreenForeground1}`,
+    border: `1px solid ${tokens.colorPaletteGreenBackground2}`,
   },
   legendPipQtyType: {
     backgroundColor: tokens.colorBrandBackground2,
-    border: `1px solid ${tokens.colorBrandForeground2}`,
+    border: `1px solid ${tokens.colorBrandBackground2Pressed}`,
   },
   numberInput: {
     minWidth: "100px",
@@ -292,7 +294,7 @@ const useStyles = makeStyles({
   commentInput: {
     minWidth: "160px",
     width: "160px",
-    maxWidth: "160px",
+    maxWidth: "200px",
     backgroundColor: "#f7f7f7",
     ":hover": {
       backgroundColor: "#fff",
@@ -310,6 +312,7 @@ const useStyles = makeStyles({
   // wider than that cap, which overflowed the cell.
   fcDropdown: {
     maxWidth: "150px",
+    minWidth: "100px",
     height: "30px",
     backgroundColor: "#f7f7f7",
     ":hover": {
@@ -321,6 +324,7 @@ const useStyles = makeStyles({
   // longer LIN/Country names instead of clipping them.
   linCountryDropdown: {
     maxWidth: "150px",
+    minWidth: "100px",
     height: "30px",
     backgroundColor: "#f7f7f7",
     ":hover": {
