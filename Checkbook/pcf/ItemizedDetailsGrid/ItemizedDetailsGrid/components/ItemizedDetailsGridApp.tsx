@@ -204,10 +204,14 @@ const useStyles = makeStyles({
   fcDropdown: {
     minWidth: "170px",
     width: "170px",
+    ...shorthands.margin("0", "5px"),
+    ...shorthands.padding("2px", "0"),
   },
   linCountryDropdown: {
     minWidth: "150px",
     width: "150px",
+    ...shorthands.margin("0", "5px"),
+    ...shorthands.padding("2px", "0"),
   },
   // Search box docked above dropdownOptionScroll — sits outside the
   // scrollable pane so it never scrolls out of view.
@@ -376,7 +380,18 @@ const SearchableOptionDropdown: React.FC<{
           placeholder={searchPlaceholder}
           value={search}
           onChange={(_e, data) => setSearch(data.value)}
-          onClick={(e) => e.stopPropagation()}
+          // Dropdown's listbox swallows mousedown on non-Option children (to
+          // keep DOM focus pinned on the trigger button) and keydown (for
+          // its own type-to-jump-to-option search). Both are handlers on an
+          // ancestor in this same React tree, so stopping propagation here
+          // — before it reaches them — lets the click focus this input
+          // normally and lets typed characters land in it instead of
+          // triggering Dropdown's option jump-search. Escape still bubbles
+          // through so it can close the popup as usual.
+          onMouseDown={(e) => e.stopPropagation()}
+          onKeyDown={(e) => {
+            if (e.key !== "Escape") e.stopPropagation();
+          }}
         />
       </div>
       <div className={styles.dropdownOptionScroll}>
