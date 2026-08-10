@@ -246,23 +246,29 @@ const useStyles = makeStyles({
     columnGap: "4px",
   },
   legendPip: {
-    width: "8px",
-    height: "8px",
+    width: "12px",
+    height: "12px",
     borderRadius: "50%",
   },
-  // Matches the Category/Qty Type Badges' own tint background exactly
-  // (see the Badge usages below) rather than an independently-picked color,
-  // so the legend swatch and the chip it explains never drift apart again.
+  // Matches the Category/Qty Type Badges' own tint background/foreground
+  // exactly (see the Badge usages below) rather than independently-picked
+  // colors, so the legend swatch and the chip it explains never drift apart.
   legendPipCategory: {
     backgroundColor: tokens.colorPaletteGreenBackground1,
+    border: `1px solid ${tokens.colorPaletteGreenForeground1}`,
   },
   legendPipQtyType: {
     backgroundColor: tokens.colorBrandBackground2,
+    border: `1px solid ${tokens.colorBrandForeground2}`,
   },
   numberInput: {
     minWidth: "110px",
     width: "110px",
     backgroundColor: "#eee",
+    ":hover": {
+      backgroundColor: "#fff",
+      border: "2px solid #b2c3f4",
+    },
   },
   qtyCol: {
     textAlign: "center",
@@ -274,22 +280,48 @@ const useStyles = makeStyles({
     minWidth: "72px",
     width: "72px",
     backgroundColor: "#eee",
+    ":hover": {
+      backgroundColor: "#fff",
+      border: "2px solid #b2c3f4",
+    },
   },
   commentInput: {
     minWidth: "160px",
     width: "160px",
     backgroundColor: "#eee",
+    ":hover": {
+      backgroundColor: "#fff",
+      border: "2px solid #b2c3f4",
+    },
   },
-  fcDropdown: {
+  // Fund Center *column* — kept wider than the dropdown's own minWidth
+  // below so the cell has breathing room around it; applied to both the
+  // TableHeaderCell and TableCell for this column.
+  fcCol: {
     minWidth: "170px",
-    width: "170px",
+  },
+  // The dropdown itself is capped to the shared 150px td max-width (see
+  // scrollContainer's "& td" rule) — it used to have a fixed 170px width,
+  // wider than that cap, which overflowed the cell.
+  fcDropdown: {
+    minWidth: "150px",
+    height: "30px",
     backgroundColor: "#eee",
+    ":hover": {
+      backgroundColor: "#fff",
+      border: "2px solid #b2c3f4",
+    },
   },
   // minWidth only (not a fixed width) so the closed field can grow to fit
   // longer LIN/Country names instead of clipping them.
   linCountryDropdown: {
     minWidth: "150px",
+    height: "30px",
     backgroundColor: "#eee",
+    ":hover": {
+      backgroundColor: "#fff",
+      border: "2px solid #b2c3f4",
+    },
   },
   // Caps the visible option list to ~6 rows so long reference lists (LIN,
   // Country) don't blow out the popup.
@@ -1583,7 +1615,7 @@ export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
                 <TableRow>
                   <TableHeaderCell className={styles.firstCol}>Item</TableHeaderCell>
                   <TableHeaderCell>TDC</TableHeaderCell>
-                  <TableHeaderCell>Fund Center</TableHeaderCell>
+                  <TableHeaderCell className={styles.fcCol}>Fund Center</TableHeaderCell>
                   {prioFlags?.linRequired && <TableHeaderCell>LIN</TableHeaderCell>}
                   {prioFlags?.countryRequired && (
                     <TableHeaderCell>Country</TableHeaderCell>
@@ -1657,7 +1689,7 @@ export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
                           ctx?.tdc ?? ""
                         )}
                       </TableCell>
-                      <TableCell>{fundCenterCell(row)}</TableCell>
+                      <TableCell className={styles.fcCol}>{fundCenterCell(row)}</TableCell>
                       {prioFlags?.linRequired && (
                         <TableCell>{linCell(row)}</TableCell>
                       )}
