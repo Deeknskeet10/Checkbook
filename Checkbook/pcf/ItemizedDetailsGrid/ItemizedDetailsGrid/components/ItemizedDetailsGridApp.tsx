@@ -209,6 +209,27 @@ const useStyles = makeStyles({
     minWidth: "150px",
     width: "150px",
   },
+  // Search box docked above dropdownOptionScroll — sits outside the
+  // scrollable pane so it never scrolls out of view.
+  dropdownSearchWrap: {
+    ...shorthands.padding("6px", "8px"),
+    ...shorthands.borderBottom("1px", "solid", tokens.colorNeutralStroke2),
+  },
+  dropdownSearchInput: {
+    width: "100%",
+  },
+  // Caps the visible option list to ~7 rows (small-size Option ≈ 32px each)
+  // so long reference lists (LIN, Country) don't blow out the popup.
+  dropdownOptionScroll: {
+    maxHeight: "224px",
+    overflowY: "auto",
+  },
+  dropdownNoMatches: {
+    display: "block",
+    ...shorthands.padding("8px"),
+    color: tokens.colorNeutralForeground3,
+    fontSize: tokens.fontSizeBase200,
+  },
   secondaryCcmdCell: {
     width: "90px",
     color: tokens.colorNeutralForeground3,
@@ -304,6 +325,75 @@ function formatCurrency(value: number): string {
     maximumFractionDigits: 2,
   });
 }
+
+/** Dropdown with an in-popup search box and a height-capped, scrollable
+ * option list — used for LIN/Country pickers whose reference lists run to
+ * 100+ entries, where a plain Dropdown's popup would otherwise be unusably
+ * long. */
+const SearchableOptionDropdown: React.FC<{
+  className: string;
+  selectedId: string;
+  selectedName: string;
+  options: ReferenceOption[];
+  /** Currently-selected option missing from `options` (e.g. deactivated
+   * after being set) — always shown so the Dropdown can render it selected. */
+  orphan?: ReferenceOption | null;
+  searchPlaceholder: string;
+  onSelect: (id: string) => void;
+}> = ({
+  className,
+  selectedId,
+  selectedName,
+  options,
+  orphan,
+  searchPlaceholder,
+  onSelect,
+}) => {
+  const styles = useStyles();
+  const [search, setSearch] = React.useState("");
+  const q = search.trim().toLowerCase();
+  const filtered = q
+    ? options.filter((o) => o.name.toLowerCase().includes(q))
+    : options;
+
+  return (
+    <Dropdown
+      size="small"
+      appearance="filled-lighter"
+      className={className}
+      value={selectedName}
+      selectedOptions={selectedId ? [selectedId] : []}
+      onOptionSelect={(_e, data) => onSelect(data.optionValue ?? "")}
+      onOpenChange={(_e, data) => {
+        if (!data.open) setSearch("");
+      }}
+    >
+      <div className={styles.dropdownSearchWrap}>
+        <Input
+          className={styles.dropdownSearchInput}
+          appearance="outline"
+          size="small"
+          placeholder={searchPlaceholder}
+          value={search}
+          onChange={(_e, data) => setSearch(data.value)}
+          onClick={(e) => e.stopPropagation()}
+        />
+      </div>
+      <div className={styles.dropdownOptionScroll}>
+        {orphan && <Option value={orphan.id}>{orphan.name}</Option>}
+        {filtered.length === 0 ? (
+          <Text className={styles.dropdownNoMatches}>No matches</Text>
+        ) : (
+          filtered.map((o) => (
+            <Option key={o.id} value={o.id}>
+              {o.name}
+            </Option>
+          ))
+        )}
+      </div>
+    </Dropdown>
+  );
+};
 
 export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
   props
@@ -1159,23 +1249,19 @@ export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
       return <span className={styles.contextCell}>{selectedName}</span>;
     }
     const orphan =
-      selectedId !== "" && !linOptions?.some((l) => l.id === selectedId);
+      selectedId !== "" && !linOptions?.some((l) => l.id === selectedId)
+        ? { id: selectedId, name: selectedName }
+        : null;
     return (
-      <Dropdown
-        size="small"
-        appearance="filled-lighter"
+      <SearchableOptionDropdown
         className={styles.linCountryDropdown}
-        value={selectedName}
-        selectedOptions={selectedId ? [selectedId] : []}
-        onOptionSelect={(_e, data) => commitLin(row, data.optionValue ?? "")}
-      >
-        {orphan && <Option value={selectedId}>{selectedName}</Option>}
-        {(linOptions ?? []).map((l) => (
-          <Option key={l.id} value={l.id}>
-            {l.name}
-          </Option>
-        ))}
-      </Dropdown>
+        selectedId={selectedId}
+        selectedName={selectedName}
+        options={linOptions ?? []}
+        orphan={orphan}
+        searchPlaceholder="Search LIN"
+        onSelect={(id) => commitLin(row, id)}
+      />
     );
   };
 
@@ -1188,23 +1274,19 @@ export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
       return <span className={styles.contextCell}>{selectedName}</span>;
     }
     const orphan =
-      selectedId !== "" && !countryOptions?.some((c) => c.id === selectedId);
+      selectedId !== "" && !countryOptions?.some((c) => c.id === selectedId)
+        ? { id: selectedId, name: selectedName }
+        : null;
     return (
-      <Dropdown
-        size="small"
-        appearance="filled-lighter"
+      <SearchableOptionDropdown
         className={styles.linCountryDropdown}
-        value={selectedName}
-        selectedOptions={selectedId ? [selectedId] : []}
-        onOptionSelect={(_e, data) => commitCountry(row, data.optionValue ?? "")}
-      >
-        {orphan && <Option value={selectedId}>{selectedName}</Option>}
-        {(countryOptions ?? []).map((c) => (
-          <Option key={c.id} value={c.id}>
-            {c.name}
-          </Option>
-        ))}
-      </Dropdown>
+        selectedId={selectedId}
+        selectedName={selectedName}
+        options={countryOptions ?? []}
+        orphan={orphan}
+        searchPlaceholder="Search Country"
+        onSelect={(id) => commitCountry(row, id)}
+      />
     );
   };
 
