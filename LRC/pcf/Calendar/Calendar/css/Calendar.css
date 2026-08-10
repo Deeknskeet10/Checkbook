@@ -361,6 +361,20 @@
     flex: 0 0 auto;
 }
 
+/* Rank insignia chip on event tiles — white so silver/gold insignia stay
+   legible on the colored type bars (the source bitmaps have white backgrounds). */
+.cal__rank {
+    background: #fff;
+    border-radius: 3px;
+    padding: 0 3px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    box-sizing: border-box;
+    box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.15);
+}
+
 .cal__dueout {
     position: absolute;
     font-size: 11px;
@@ -508,6 +522,12 @@
     word-break: break-word;
 }
 
+.cal-dp__rank {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
 .cal-dp__muted {
     color: #aaa;
 }
@@ -562,6 +582,7 @@
         position: static !important;
     }
     .cal__event,
+    .cal__rank,
     .cal-legend__swatch,
     .cal__col--today {
         -webkit-print-color-adjust: exact;

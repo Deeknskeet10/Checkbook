@@ -212,8 +212,9 @@ long-range calendar. It is **implemented** at `pcf/Calendar/` (namespace
 The manifest (`pcf/Calendar/Calendar/ControlManifest.Input.xml`) binds a
 `data-set name="events"` to a view of `lrc_Event` with property-sets `eventName`
 (`lrc_Name`), `eventType` (`lrc_EventType`), `startDate`/`endDate`, `division`
-(`lrc_Division`), plus detail columns `description`, `location`, `pocName`,
-`pocEmail`, `pocPhone`; and a `defaultView` input enum (2-week / 30-day).
+(`lrc_Division`), `leadershipRoleRank` (`lrc_leadershiprolerank`), plus detail
+columns `description`, `location`, `pocName`, `pocEmail`, `pocPhone`; and a
+`defaultView` input enum (2-week / 30-day).
 
 ### Source layout (`pcf/Calendar/Calendar/`)
 
@@ -226,6 +227,7 @@ The manifest (`pcf/Calendar/Calendar/ControlManifest.Input.xml`) binds a
 | `DetailPanel.tsx` | Side panel on click/double-click — event fields + its due-outs. |
 | `data.ts`         | Read dataset rows, fetch `lrc_EventDueOut` via WebAPI, `updateRecord` reschedule, CSV export. |
 | `dateUtils.ts` · `types.ts` | Date math (dates-only) and the swim-lane / event-type / color constants. |
+| `insignia.tsx` · `insigniaData.ts` | Leadership role/rank choice map (values 0–16) + rank-insignia badge; bitmaps from the Role - Rank Requirement doc as data URIs. |
 
 ### Implemented
 
@@ -242,6 +244,13 @@ The manifest (`pcf/Calendar/Calendar/ControlManifest.Input.xml`) binds a
 - **Due-out markers** on due dates (fetched from `lrc_EventDueOut`) + listed in
   the detail panel. Dates only, no year, on tiles ("14 - 16 Nov").
 - **Print** (print CSS) and **CSV export**; summary counts per lane/type.
+- **Leadership role/rank insignia** (`lrc_leadershiprolerank` choice, values
+  0–16 per `Role - Rank Requirement Function.docx`): a white badge on the tile
+  and a row in the detail panel. Roles 0–7 = Action Officer → CNGB, ranks
+  8–15 = O3 → O10, 16 = Other. Insignia: O3 bars / O4–O5 oak leaves / O6 eagle
+  (bitmaps from the doc), 1–4 SVG stars for O7–O10 and the general-officer
+  roles (G-3/5/7 = 1★, DDARNG = 2★, DARNG = 3★, CNGB = 4★, ARNG G3 = eagle);
+  Action Officer, Branch Chief, Division Chief, and Other show no insignia.
 
 ### Still to build (need schema columns first — see gap analysis)
 

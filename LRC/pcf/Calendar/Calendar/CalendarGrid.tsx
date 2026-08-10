@@ -1,6 +1,7 @@
 import * as React from "react";
 import { CalEvent, ColumnUnit, DueOut, UNASSIGNED, VisibleLane, colorFor } from "./types";
 import { addDays, diffDays, isWeekStart, monthShort, weekdayShort } from "./dateUtils";
+import { RankBadge, roleRankMeta } from "./insignia";
 
 const HEADER_H = 48;
 const BAR_H = 22;
@@ -252,6 +253,8 @@ export const CalendarGrid: React.FC<CalendarGridProps> = (props) => {
                                         const selected = selectedId === p.e.id;
                                         const hasDetail =
                                             !!p.e.description || !!p.e.location || (dueOutsByEvent[p.e.id]?.length ?? 0) > 0;
+                                        const rank = roleRankMeta(p.e.roleRank);
+                                        const rankTip = rank?.full ?? p.e.roleRankLabel;
                                         return (
                                             <div
                                                 key={p.e.id}
@@ -263,7 +266,7 @@ export const CalendarGrid: React.FC<CalendarGridProps> = (props) => {
                                                     height: BAR_H,
                                                     backgroundColor: colorFor(p.e.type),
                                                 }}
-                                                title={`${p.e.name} (${p.e.type})`}
+                                                title={`${p.e.name} (${p.e.type})${rankTip ? ` — ${rankTip}` : ""}`}
                                                 draggable
                                                 onDragStart={() => {
                                                     draggedRef.current = p.e;
@@ -272,6 +275,7 @@ export const CalendarGrid: React.FC<CalendarGridProps> = (props) => {
                                                 onDoubleClick={() => props.onSelect(p.e)}
                                             >
                                                 {hasDetail && <span className="cal__info">i</span>}
+                                                <RankBadge value={p.e.roleRank} />
                                                 <span className="cal__evname">{p.e.name}</span>
                                             </div>
                                         );

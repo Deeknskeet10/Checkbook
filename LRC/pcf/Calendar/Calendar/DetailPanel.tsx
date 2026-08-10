@@ -1,6 +1,7 @@
 import * as React from "react";
 import { CalEvent, DueOut, LEVELS, colorFor } from "./types";
 import { formatRangeNoYear } from "./dateUtils";
+import { RankBadge, roleRankMeta } from "./insignia";
 
 export interface DetailPanelProps {
     event: CalEvent;
@@ -48,6 +49,15 @@ export const DetailPanel: React.FC<DetailPanelProps> = ({ event, dueOuts, onClos
             <div className="cal-dp__body">
                 <Field label="Type" value={event.type} />
                 <Field label="Dates" value={formatRangeNoYear(event.start, event.end)} />
+                {(event.roleRank != null || event.roleRankLabel) && (
+                    <div className="cal-dp__field">
+                        <div className="cal-dp__label">Leadership Role/Rank</div>
+                        <div className="cal-dp__value cal-dp__rank">
+                            <RankBadge value={event.roleRank} size={20} />
+                            <span>{roleRankMeta(event.roleRank)?.full ?? event.roleRankLabel}</span>
+                        </div>
+                    </div>
+                )}
                 {LEVELS.map((level) => (
                     <Field key={level} label={level} value={event.orgs[level]?.name ?? ""} />
                 ))}
