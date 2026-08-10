@@ -26,6 +26,7 @@ import {
   DialogActions,
   Checkbox,
   Dropdown,
+  Combobox,
   Option,
 } from "@fluentui/react-components";
 
@@ -156,6 +157,10 @@ const useStyles = makeStyles({
   scrollContainer: {
     width: "100%",
     overflowX: "auto",
+    "& td": {
+      paddingLeft: "2.5px",
+      paddingRight: "2.5px",
+    },
   },
   contextCell: {
     color: tokens.colorNeutralForeground3,
@@ -204,23 +209,10 @@ const useStyles = makeStyles({
   fcDropdown: {
     minWidth: "170px",
     width: "170px",
-    ...shorthands.margin("0", "5px"),
-    ...shorthands.padding("2px", "0"),
   },
   linCountryDropdown: {
     minWidth: "150px",
     width: "150px",
-    ...shorthands.margin("0", "5px"),
-    ...shorthands.padding("2px", "0"),
-  },
-  // Search box docked above dropdownOptionScroll — sits outside the
-  // scrollable pane so it never scrolls out of view.
-  dropdownSearchWrap: {
-    ...shorthands.padding("6px", "8px"),
-    ...shorthands.borderBottom("1px", "solid", tokens.colorNeutralStroke2),
-  },
-  dropdownSearchInput: {
-    width: "100%",
   },
   // Caps the visible option list to ~7 rows (small-size Option ≈ 32px each)
   // so long reference lists (LIN, Country) don't blow out the popup.
@@ -330,17 +322,18 @@ function formatCurrency(value: number): string {
   });
 }
 
-/** Dropdown with an in-popup search box and a height-capped, scrollable
- * option list — used for LIN/Country pickers whose reference lists run to
- * 100+ entries, where a plain Dropdown's popup would otherwise be unusably
- * long. */
+/** Combobox with a height-capped, scrollable option list — used for
+ * LIN/Country pickers whose reference lists run to 100+ entries. Typing
+ * directly into the field filters the list; a plain Dropdown can't host a
+ * separate focusable search box in its popup because it keeps real keyboard
+ * focus pinned on the closed trigger the whole time it's open. */
 const SearchableOptionDropdown: React.FC<{
   className: string;
   selectedId: string;
   selectedName: string;
   options: ReferenceOption[];
   /** Currently-selected option missing from `options` (e.g. deactivated
-   * after being set) — always shown so the Dropdown can render it selected. */
+   * after being set) — always shown so the Combobox can render it selected. */
   orphan?: ReferenceOption | null;
   searchPlaceholder: string;
   onSelect: (id: string) => void;
@@ -354,59 +347,47 @@ const SearchableOptionDropdown: React.FC<{
   onSelect,
 }) => {
   const styles = useStyles();
-  const [search, setSearch] = React.useState("");
-  const q = search.trim().toLowerCase();
+  const [open, setOpen] = React.useState(false);
+  const [query, setQuery] = React.useState(selectedName);
+
+  // Mirror the committed selection into the field whenever the popup is
+  // closed — reverts stray typed text that was never turned into a
+  // selection, and picks up edits made elsewhere (e.g. a row's LIN/Country
+  // set by a Fund Center cascade).
+  React.useEffect(() => {
+    if (!open) setQuery(selectedName);
+  }, [selectedName, open]);
+
+  const q = query.trim().toLowerCase();
   const filtered = q
     ? options.filter((o) => o.name.toLowerCase().includes(q))
     : options;
 
   return (
-    <Dropdown
+    <Combobox
       size="small"
       appearance="filled-lighter"
       className={className}
-      value={selectedName}
+      placeholder={searchPlaceholder}
+      freeform
+      value={query}
       selectedOptions={selectedId ? [selectedId] : []}
+      listbox={{ className: styles.dropdownOptionScroll }}
+      onChange={(e) => setQuery(e.target.value)}
       onOptionSelect={(_e, data) => onSelect(data.optionValue ?? "")}
-      onOpenChange={(_e, data) => {
-        if (!data.open) setSearch("");
-      }}
+      onOpenChange={(_e, data) => setOpen(data.open)}
     >
-      <div className={styles.dropdownSearchWrap}>
-        <Input
-          className={styles.dropdownSearchInput}
-          appearance="outline"
-          size="small"
-          placeholder={searchPlaceholder}
-          value={search}
-          onChange={(_e, data) => setSearch(data.value)}
-          // Dropdown's listbox swallows mousedown on non-Option children (to
-          // keep DOM focus pinned on the trigger button) and keydown (for
-          // its own type-to-jump-to-option search). Both are handlers on an
-          // ancestor in this same React tree, so stopping propagation here
-          // — before it reaches them — lets the click focus this input
-          // normally and lets typed characters land in it instead of
-          // triggering Dropdown's option jump-search. Escape still bubbles
-          // through so it can close the popup as usual.
-          onMouseDown={(e) => e.stopPropagation()}
-          onKeyDown={(e) => {
-            if (e.key !== "Escape") e.stopPropagation();
-          }}
-        />
-      </div>
-      <div className={styles.dropdownOptionScroll}>
-        {orphan && <Option value={orphan.id}>{orphan.name}</Option>}
-        {filtered.length === 0 ? (
-          <Text className={styles.dropdownNoMatches}>No matches</Text>
-        ) : (
-          filtered.map((o) => (
-            <Option key={o.id} value={o.id}>
-              {o.name}
-            </Option>
-          ))
-        )}
-      </div>
-    </Dropdown>
+      {orphan && <Option value={orphan.id}>{orphan.name}</Option>}
+      {filtered.length === 0 ? (
+        <Text className={styles.dropdownNoMatches}>No matches</Text>
+      ) : (
+        filtered.map((o) => (
+          <Option key={o.id} value={o.id}>
+            {o.name}
+          </Option>
+        ))
+      )}
+    </Combobox>
   );
 };
 
