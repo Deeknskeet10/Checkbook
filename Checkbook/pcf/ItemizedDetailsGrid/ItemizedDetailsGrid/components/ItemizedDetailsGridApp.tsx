@@ -167,7 +167,7 @@ const useStyles = makeStyles({
   // the header stays pinned via sticky th below.
   scrollContainer: {
     width: "100%",
-    maxHeight: "600px",
+    maxHeight: "500px",
     overflowX: "auto",
     overflowY: "auto",
     "& td": {
@@ -194,7 +194,7 @@ const useStyles = makeStyles({
   // overflowX scrolls the pane horizontally past that point instead.
   tableAutoLayout: {
     tableLayout: "auto",
-    minWidth: "600px",
+    minWidth: "700px",
   },
   contextCell: {
     color: tokens.colorNeutralForeground3,
@@ -203,6 +203,8 @@ const useStyles = makeStyles({
   tdcLink: {
     paddingLeft: "7.5px",
     paddingRight: "7.5px",
+    maxWidth: "160px",
+    textWrap: "auto"
   },
   // First column stacks Item name / Category / Quantity Type; Item names can
   // be long, so this is the one column that wraps rather than nowraps.
@@ -246,23 +248,30 @@ const useStyles = makeStyles({
     columnGap: "4px",
   },
   legendPip: {
-    width: "8px",
-    height: "8px",
+    width: "12px",
+    height: "12px",
     borderRadius: "50%",
   },
-  // Matches the Category/Qty Type Badges' own tint background exactly
-  // (see the Badge usages below) rather than an independently-picked color,
-  // so the legend swatch and the chip it explains never drift apart again.
+  // Matches the Category/Qty Type Badges' own tint background/foreground
+  // exactly (see the Badge usages below) rather than independently-picked
+  // colors, so the legend swatch and the chip it explains never drift apart.
   legendPipCategory: {
     backgroundColor: tokens.colorPaletteGreenBackground1,
+    border: `1px solid ${tokens.colorPaletteGreenForeground1}`,
   },
   legendPipQtyType: {
     backgroundColor: tokens.colorBrandBackground2,
+    border: `1px solid ${tokens.colorBrandForeground2}`,
   },
   numberInput: {
-    minWidth: "110px",
-    width: "110px",
-    backgroundColor: "#eee",
+    minWidth: "100px",
+    width: "100px",
+    maxWidth: "140px",
+    backgroundColor: "#f7f7f7",
+    ":hover": {
+      backgroundColor: "#fff",
+      border: "2px solid #b2c3f4",
+    },
   },
   qtyCol: {
     textAlign: "center",
@@ -271,25 +280,53 @@ const useStyles = makeStyles({
     width: "90px",
   },
   qtyInput: {
-    minWidth: "72px",
-    width: "72px",
-    backgroundColor: "#eee",
+    minWidth: "80px",
+    width: "80px",
+    maxWidth: "140px",
+    backgroundColor: "#f7f7f7",
+    ":hover": {
+      backgroundColor: "#fff",
+      border: "2px solid #b2c3f4",
+    },
   },
   commentInput: {
     minWidth: "160px",
     width: "160px",
-    backgroundColor: "#eee",
+    maxWidth: "160px",
+    backgroundColor: "#f7f7f7",
+    ":hover": {
+      backgroundColor: "#fff",
+      border: "2px solid #b2c3f4",
+    },
   },
-  fcDropdown: {
+  // Fund Center *column* — kept wider than the dropdown's own minWidth
+  // below so the cell has breathing room around it; applied to both the
+  // TableHeaderCell and TableCell for this column.
+  fcCol: {
     minWidth: "170px",
-    width: "170px",
-    backgroundColor: "#eee",
+  },
+  // The dropdown itself is capped to the shared 150px td max-width (see
+  // scrollContainer's "& td" rule) — it used to have a fixed 170px width,
+  // wider than that cap, which overflowed the cell.
+  fcDropdown: {
+    maxWidth: "150px",
+    height: "30px",
+    backgroundColor: "#f7f7f7",
+    ":hover": {
+      backgroundColor: "#fff",
+      border: "2px solid #b2c3f4",
+    },
   },
   // minWidth only (not a fixed width) so the closed field can grow to fit
   // longer LIN/Country names instead of clipping them.
   linCountryDropdown: {
-    minWidth: "150px",
-    backgroundColor: "#eee",
+    maxWidth: "150px",
+    height: "30px",
+    backgroundColor: "#f7f7f7",
+    ":hover": {
+      backgroundColor: "#fff",
+      border: "2px solid #b2c3f4",
+    },
   },
   // Caps the visible option list to ~6 rows so long reference lists (LIN,
   // Country) don't blow out the popup.
@@ -1583,7 +1620,7 @@ export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
                 <TableRow>
                   <TableHeaderCell className={styles.firstCol}>Item</TableHeaderCell>
                   <TableHeaderCell>TDC</TableHeaderCell>
-                  <TableHeaderCell>Fund Center</TableHeaderCell>
+                  <TableHeaderCell className={styles.fcCol}>Fund Center</TableHeaderCell>
                   {prioFlags?.linRequired && <TableHeaderCell>LIN</TableHeaderCell>}
                   {prioFlags?.countryRequired && (
                     <TableHeaderCell>Country</TableHeaderCell>
@@ -1657,7 +1694,7 @@ export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
                           ctx?.tdc ?? ""
                         )}
                       </TableCell>
-                      <TableCell>{fundCenterCell(row)}</TableCell>
+                      <TableCell className={styles.fcCol}>{fundCenterCell(row)}</TableCell>
                       {prioFlags?.linRequired && (
                         <TableCell>{linCell(row)}</TableCell>
                       )}
