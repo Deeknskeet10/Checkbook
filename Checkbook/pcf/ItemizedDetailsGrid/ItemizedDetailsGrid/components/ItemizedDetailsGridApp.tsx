@@ -167,7 +167,7 @@ const useStyles = makeStyles({
   // the header stays pinned via sticky th below.
   scrollContainer: {
     width: "100%",
-    maxHeight: "600px",
+    maxHeight: "500px",
     overflowX: "auto",
     overflowY: "auto",
     "& td": {
@@ -194,7 +194,7 @@ const useStyles = makeStyles({
   // overflowX scrolls the pane horizontally past that point instead.
   tableAutoLayout: {
     tableLayout: "auto",
-    minWidth: "600px",
+    minWidth: "700px",
   },
   contextCell: {
     color: tokens.colorNeutralForeground3,
@@ -203,6 +203,8 @@ const useStyles = makeStyles({
   tdcLink: {
     paddingLeft: "7.5px",
     paddingRight: "7.5px",
+    maxWidth: "160px",
+    textWrap: "auto"
   },
   // First column stacks Item name / Category / Quantity Type; Item names can
   // be long, so this is the one column that wraps rather than nowraps.
@@ -262,9 +264,10 @@ const useStyles = makeStyles({
     border: `1px solid ${tokens.colorBrandForeground2}`,
   },
   numberInput: {
-    minWidth: "110px",
-    width: "110px",
-    backgroundColor: "#eee",
+    minWidth: "100px",
+    width: "100px",
+    maxWidth: "140px",
+    backgroundColor: "#f7f7f7",
     ":hover": {
       backgroundColor: "#fff",
       border: "2px solid #b2c3f4",
@@ -277,9 +280,10 @@ const useStyles = makeStyles({
     width: "90px",
   },
   qtyInput: {
-    minWidth: "72px",
-    width: "72px",
-    backgroundColor: "#eee",
+    minWidth: "80px",
+    width: "80px",
+    maxWidth: "140px",
+    backgroundColor: "#f7f7f7",
     ":hover": {
       backgroundColor: "#fff",
       border: "2px solid #b2c3f4",
@@ -288,7 +292,8 @@ const useStyles = makeStyles({
   commentInput: {
     minWidth: "160px",
     width: "160px",
-    backgroundColor: "#eee",
+    maxWidth: "160px",
+    backgroundColor: "#f7f7f7",
     ":hover": {
       backgroundColor: "#fff",
       border: "2px solid #b2c3f4",
@@ -304,9 +309,9 @@ const useStyles = makeStyles({
   // scrollContainer's "& td" rule) — it used to have a fixed 170px width,
   // wider than that cap, which overflowed the cell.
   fcDropdown: {
-    minWidth: "150px",
+    maxWidth: "150px",
     height: "30px",
-    backgroundColor: "#eee",
+    backgroundColor: "#f7f7f7",
     ":hover": {
       backgroundColor: "#fff",
       border: "2px solid #b2c3f4",
@@ -315,9 +320,9 @@ const useStyles = makeStyles({
   // minWidth only (not a fixed width) so the closed field can grow to fit
   // longer LIN/Country names instead of clipping them.
   linCountryDropdown: {
-    minWidth: "150px",
+    maxWidth: "150px",
     height: "30px",
-    backgroundColor: "#eee",
+    backgroundColor: "#f7f7f7",
     ":hover": {
       backgroundColor: "#fff",
       border: "2px solid #b2c3f4",
