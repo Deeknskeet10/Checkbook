@@ -881,6 +881,17 @@ RF delta application would otherwise trip that plugin's TDP-vs-Funded
 check (the bypass covers the plugin only, hence the same-Update fold above
 for the business rule).
 
+> **⚠ Delta ordering is debit-first (2026-08-06).** `SwapPrioritizationUpdater`
+> applies: (1) debit Prios' Funded down, (2) debit RFs' Funded rolldown +
+> TDP cut in one Update, (3) credit RFs' TDP up, (4) credit Prios' Funded
+> up, (5) final Funded rollup on every touched RF. Funds are *released
+> before they are claimed*, so every intermediate state passes
+> single-record validation even without the ancestor bypasses. The original
+> credit-first order transiently over-allocated the LOA by the swap amount;
+> on a fully-allocated LOA a stale (pre-bypass) validator step blocked a
+> same-LOA one-way transfer with "TDP allocation exceeds available funds on
+> LOA" — the bypass makes that survivable, the ordering makes it impossible.
+
 | # | Message | Primary entity   | Stage           | Mode | Filtering attributes | Notes |
 |---|---------|------------------|-----------------|------|----------------------|-------|
 | 1 | Update  | `book_stateswap` | Post-Operation  | Sync | `book_beapproved`    | Fires when `book_beapproved` = true is in the payload and the swap is active; idempotency-guarded. **Requires PreImage** (full image — must include `statecode`; reads `book_beapproved, book_stateaapproved, book_statebapproved, book_statea, book_stateb, book_newfiscalyear`). |
