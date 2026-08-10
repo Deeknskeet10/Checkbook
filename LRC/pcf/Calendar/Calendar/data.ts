@@ -21,6 +21,17 @@ function lookupId(v: unknown): string | null {
     return raw ? raw.replace(/[{}]/g, "") : null;
 }
 
+// Choice column values arrive as a number in model-driven hosts but can be a
+// numeric string in others (e.g. the test harness); normalize to number | null.
+function asChoiceValue(v: unknown): number | null {
+    if (typeof v === "number") return Number.isNaN(v) ? null : v;
+    if (typeof v === "string" && v.trim() !== "") {
+        const n = Number(v);
+        return Number.isNaN(n) ? null : n;
+    }
+    return null;
+}
+
 // Dataset property-set name for each org level (matches the manifest bindings).
 const LEVEL_PROP: Record<Level, string> = {
     Directorate: "directorate",
@@ -64,6 +75,8 @@ export function readEvents(dataset: DataSet): CalEvent[] {
             orgs,
             path,
             laneKey,
+            roleRank: asChoiceValue(rec.getValue("leadershipRoleRank")),
+            roleRankLabel: rec.getFormattedValue("leadershipRoleRank") || "",
             location: rec.getFormattedValue("location") || "",
             description: rec.getFormattedValue("description") || "",
             pocName: rec.getFormattedValue("pocName") || "",
@@ -221,7 +234,7 @@ export async function updateEventSchedule(
 export function exportEventsCsv(events: CalEvent[]): void {
     if (typeof document === "undefined") return;
     const esc = (s: string) => `"${(s ?? "").replace(/"/g, '""')}"`;
-    const header = ["Event", "Type", "Start", "End", "Directorate", "Staff", "Division", "Branch", "Location", "POC", "Email", "Phone"];
+    const header = ["Event", "Type", "Start", "End", "Role/Rank", "Directorate", "Staff", "Division", "Branch", "Location", "POC", "Email", "Phone"];
     const lines = [header.join(",")];
     for (const e of events) {
         lines.push(
@@ -230,6 +243,7 @@ export function exportEventsCsv(events: CalEvent[]): void {
                 esc(e.type),
                 esc(toISODate(e.start)),
                 esc(toISODate(e.end)),
+                esc(e.roleRankLabel),
                 esc(e.orgs.Directorate?.name ?? ""),
                 esc(e.orgs.Staff?.name ?? ""),
                 esc(e.orgs.Division?.name ?? ""),

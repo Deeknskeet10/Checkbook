@@ -97,7 +97,7 @@ export const CalendarApp: React.FC<ICalendarProps> = (props) => {
             if (keyword) {
                 const kw = keyword.toLowerCase();
                 const orgNames = LEVELS.map((l) => e.orgs[l]?.name ?? "").join(" ");
-                const hay = `${e.name} ${e.location} ${orgNames} ${e.pocName}`.toLowerCase();
+                const hay = `${e.name} ${e.location} ${orgNames} ${e.pocName} ${e.roleRankLabel}`.toLowerCase();
                 if (!hay.includes(kw)) return false;
             }
             return true;

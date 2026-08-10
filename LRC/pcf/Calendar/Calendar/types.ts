@@ -74,6 +74,10 @@ export interface CalEvent {
     path: PathStep[];
     // Key of the deepest node the event belongs to, or UNASSIGNED.
     laneKey: string;
+    // lrc_LeadershipRoleRank choice value (0-16), null when not designated.
+    roleRank: number | null;
+    // Formatted choice label from Dataverse (fallback display text).
+    roleRankLabel: string;
     location: string;
     description: string;
     pocName: string;
