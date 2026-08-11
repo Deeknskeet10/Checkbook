@@ -418,7 +418,7 @@ const useStyles = makeStyles({
       // value to stack against instead of guessing at internals.
       height: "44px",
       position: "sticky",
-      bottom: 0,
+      bottom: "-1px", // -1px so the row's bottom border sits flush with the table's bottom
       zIndex: 2,
       backgroundColor: tokens.colorNeutralBackground2,
     },
@@ -550,7 +550,68 @@ const useStyles = makeStyles({
     whiteSpace: "nowrap",
   },
   actionCol: {
-    width: "80px",
+    maxWidth: "70px",
+    paddingLeft: "20px"
+  },
+  toolbarLeft: {
+    display: "flex",
+    alignItems: "center",
+    columnGap: "10px",
+  },
+  // Red dot + "Selected (N)" — ties visually to Delete Selected (also red)
+  // since selection here exists to feed that action.
+  selectedIndicator: {
+    display: "flex",
+    alignItems: "center",
+    columnGap: "6px",
+    fontSize: tokens.fontSizeBase300,
+    fontWeight: tokens.fontWeightSemibold,
+    color: tokens.colorNeutralForeground3,
+  },
+  selectedDot: {
+    width: "8px",
+    height: "8px",
+    borderRadius: "50%",
+    backgroundColor: "black",
+  },
+  rowSearchInput: {
+    minWidth: "180px",
+    width: "400px",
+    backgroundColor: "#f7f7f7",
+    border: "2px solid transparent",
+    ":hover": {
+      backgroundColor: "#fff",
+      border: "2px solid #b2c3f4 !important",
+    }
+  },
+  // Stays red at all times — disabled state is conveyed with opacity +
+  // saturate(0) below instead of swapping the text color. filter (unlike
+  // color) applies to the whole rendered button including the icon slot,
+  // so it also desaturates DeleteIcon's hardcoded red fill, not just text.
+  deleteSelectedButtonText: {
+    fontSize: "14px",
+    padding: "10px 14px",
+    color: "rgb(218, 30, 41)",
+    ":disabled": {
+      opacity: 0.7,
+      filter: "saturate(0)",
+    },
+  },
+  selectCol: {
+    width: "36px",
+    minWidth: "36px",
+    textAlign: "center",
+  },
+  // Applied via TableHeaderCell's `button` slot — that's the element that
+  // actually receives the click, since text-align/justify on the <th> root
+  // has no effect (see headerJustifyEnd above for the same reasoning).
+  sortableHeaderButton: {
+    cursor: "pointer",
+    userSelect: "none",
+  },
+  sortIndicator: {
+    fontSize: "10px",
+    marginLeft: "2px",
   },
 });
 
@@ -605,6 +666,14 @@ const AddIcon: React.FC = () => (
       fill="rgb(22, 202, 146)"
       d="M352 128C352 110.3 337.7 96 320 96C302.3 96 288 110.3 288 128L288 288L128 288C110.3 288 96 302.3 96 320C96 337.7 110.3 352 128 352L288 352L288 512C288 529.7 302.3 544 320 544C337.7 544 352 529.7 352 512L352 352L512 352C529.7 352 544 337.7 544 320C544 302.3 529.7 288 512 288L352 288L352 128z"
     />
+  </svg>
+);
+
+const SearchIcon: React.FC = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" height="20" width="20">
+    <path 
+      fill="rgb(152, 152, 152)"
+      d="M480 272C480 317.9 465.1 360.3 440 394.7L566.6 521.4C579.1 533.9 579.1 554.2 566.6 566.7C554.1 579.2 533.8 579.2 521.3 566.7L394.7 440C360.3 465.1 317.9 480 272 480C157.1 480 64 386.9 64 272C64 157.1 157.1 64 272 64C386.9 64 480 157.1 480 272zM272 416C351.5 416 416 351.5 416 272C416 192.5 351.5 128 272 128C192.5 128 128 192.5 128 272C128 351.5 192.5 416 272 416z"/>
   </svg>
 );
 
@@ -1044,6 +1113,112 @@ export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
     });
   };
 
+  // ----- Effective display names — shared by the cell renderers below and
+  // by search/sort, so what you search/sort on always matches what's shown. -----
+
+  /** Item name shown in the first column. */
+  const itemDisplayName = (row: GridRow): string => {
+    const ctx = row.requirementItemId ? contexts[row.requirementItemId] : undefined;
+    return ctx?.item?.trim() ? ctx.item : row.requirementItemName;
+  };
+
+  /** Effective Fund Center name, mirroring fundCenterCell's own resolution. */
+  const fundCenterDisplayName = (row: GridRow): string => {
+    const selectedId = fcEdits[row.recordId] ?? row.fundCenterId ?? "";
+    const listedName = fundCenters?.find((fc) => fc.id === selectedId)?.name;
+    return selectedId === ""
+      ? STATE_LEVEL_LABEL
+      : listedName ?? (row.fundCenterName !== "" ? row.fundCenterName : "(unknown)");
+  };
+
+  /** Effective LIN name, mirroring linCell's own resolution. */
+  const linDisplayName = (row: GridRow): string => {
+    const rowCtx = itemLinCountry[row.recordId];
+    const selectedId = linEdits[row.recordId] ?? rowCtx?.linId ?? "";
+    const listedName = linOptions?.find((l) => l.id === selectedId)?.name;
+    return listedName ?? rowCtx?.linName ?? "";
+  };
+
+  /** Effective Country name, mirroring countryCell's own resolution. */
+  const countryDisplayName = (row: GridRow): string => {
+    const rowCtx = itemLinCountry[row.recordId];
+    const selectedId = countryEdits[row.recordId] ?? rowCtx?.countryId ?? "";
+    const listedName = countryOptions?.find((c) => c.id === selectedId)?.name;
+    return listedName ?? rowCtx?.countryName ?? "";
+  };
+
+  // ----- Search (Item / Fund Center / Country / LIN) -----
+  const [rowSearch, setRowSearch] = React.useState("");
+
+  const searchedRows = React.useMemo(() => {
+    const q = rowSearch.trim().toLowerCase();
+    if (!q) return datasetRows;
+    return datasetRows.filter((row) =>
+      [
+        itemDisplayName(row),
+        fundCenterDisplayName(row),
+        countryDisplayName(row),
+        linDisplayName(row),
+      ].some((v) => v.toLowerCase().includes(q))
+    );
+  }, [
+    datasetRows,
+    rowSearch,
+    contexts,
+    fcEdits,
+    fundCenters,
+    itemLinCountry,
+    linEdits,
+    linOptions,
+    countryEdits,
+    countryOptions,
+  ]);
+
+  // ----- Sort (Item / TDC / Fund Center / Country) -----
+  type SortField = "item" | "tdc" | "fundCenter" | "country";
+  const [sortField, setSortField] = React.useState<SortField | null>(null);
+  const [sortDirection, setSortDirection] = React.useState<"asc" | "desc">("asc");
+
+  const toggleSort = (field: SortField): void => {
+    if (sortField === field) {
+      setSortDirection((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortField(field);
+      setSortDirection("asc");
+    }
+  };
+
+  const sortedRows = React.useMemo(() => {
+    if (!sortField) return searchedRows;
+    const field = sortField;
+    const dir = sortDirection === "asc" ? 1 : -1;
+    const keyFor = (row: GridRow): string => {
+      switch (field) {
+        case "item":
+          return itemDisplayName(row).toLowerCase();
+        case "tdc":
+          return (
+            (row.requirementItemId ? contexts[row.requirementItemId]?.tdc : undefined) ?? ""
+          ).toLowerCase();
+        case "fundCenter":
+          return fundCenterDisplayName(row).toLowerCase();
+        case "country":
+          return countryDisplayName(row).toLowerCase();
+      }
+    };
+    return [...searchedRows].sort((a, b) => keyFor(a).localeCompare(keyFor(b)) * dir);
+  }, [
+    searchedRows,
+    sortField,
+    sortDirection,
+    contexts,
+    fcEdits,
+    fundCenters,
+    countryEdits,
+    countryOptions,
+    itemLinCountry,
+  ]);
+
   /** Effective string value shown in an editable cell. */
   const displayValue = (row: GridRow, field: EditableField): string => {
     const pending = edits[row.recordId]?.[field];
@@ -1394,6 +1569,74 @@ export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
       });
   };
 
+  // ----- Bulk selection / bulk delete -----
+  const [selectedRows, setSelectedRows] = React.useState<Set<string>>(
+    new Set()
+  );
+
+  // Selection is scoped to what's currently visible under the search filter
+  // — clear it whenever that filter changes rather than let it silently
+  // keep hold of rows the user can no longer see.
+  React.useEffect(() => {
+    setSelectedRows(new Set());
+  }, [rowSearch]);
+
+  const toggleRowSelected = (recordId: string, checked: boolean): void => {
+    setSelectedRows((prev) => {
+      const next = new Set(prev);
+      if (checked) next.add(recordId);
+      else next.delete(recordId);
+      return next;
+    });
+  };
+
+  const visibleRowIds = React.useMemo(
+    () => sortedRows.map((r) => r.recordId),
+    [sortedRows]
+  );
+  const allVisibleSelected =
+    visibleRowIds.length > 0 && visibleRowIds.every((id) => selectedRows.has(id));
+  const someVisibleSelected = visibleRowIds.some((id) => selectedRows.has(id));
+
+  const toggleSelectAllVisible = (checked: boolean): void => {
+    setSelectedRows((prev) => {
+      const next = new Set(prev);
+      visibleRowIds.forEach((id) => (checked ? next.add(id) : next.delete(id)));
+      return next;
+    });
+  };
+
+  const [bulkRemoveOpen, setBulkRemoveOpen] = React.useState(false);
+  const [bulkRemoveBusy, setBulkRemoveBusy] = React.useState(false);
+
+  const confirmBulkRemove = (): void => {
+    if (selectedRows.size === 0) return;
+    const recordIds = Array.from(selectedRows);
+    setBulkRemoveBusy(true);
+    Promise.allSettled(
+      recordIds.map((recordId) => webAPI.deleteRecord(ITEMIZED_DETAILS_ENTITY, recordId))
+    )
+      .then((results) => {
+        setBulkRemoveBusy(false);
+        setBulkRemoveOpen(false);
+        setSelectedRows(new Set());
+        // Rows that failed to delete stay in the grid after refresh — flag
+        // them the same way a failed cell save is flagged, via saveState,
+        // reusing the same floating status badge rather than a new one.
+        results.forEach((r, i) => {
+          if (r.status === "rejected") {
+            setSaveState((prev) => ({ ...prev, [recordIds[i]]: "error" }));
+          }
+        });
+        dataset.refresh();
+        fetchAllTotals();
+        return;
+      })
+      .catch(() => {
+        setBulkRemoveBusy(false);
+      });
+  };
+
   // Scenario 1 (neither LIN nor Country required) still hides an already-
   // itemized Requirement Detail, since it can only be itemized once. Once
   // either is required, the same Requirement Detail may repeat — the actual
@@ -1588,12 +1831,7 @@ export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
 
   const fundCenterCell = (row: GridRow): React.ReactNode => {
     const selectedId = fcEdits[row.recordId] ?? row.fundCenterId ?? "";
-    const listedName = fundCenters?.find((fc) => fc.id === selectedId)?.name;
-    const selectedName =
-      selectedId === ""
-        ? STATE_LEVEL_LABEL
-        : listedName ??
-          (row.fundCenterName !== "" ? row.fundCenterName : "(unknown)");
+    const selectedName = fundCenterDisplayName(row);
     if (isDisabled) {
       return <span className={styles.contextCell}>{selectedName}</span>;
     }
@@ -1628,8 +1866,7 @@ export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
   const linCell = (row: GridRow): React.ReactNode => {
     const rowCtx = itemLinCountry[row.recordId];
     const selectedId = linEdits[row.recordId] ?? rowCtx?.linId ?? "";
-    const listedName = linOptions?.find((l) => l.id === selectedId)?.name;
-    const selectedName = listedName ?? rowCtx?.linName ?? "";
+    const selectedName = linDisplayName(row);
     if (isDisabled) {
       return <span className={styles.contextCell}>{selectedName}</span>;
     }
@@ -1653,8 +1890,7 @@ export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
   const countryCell = (row: GridRow): React.ReactNode => {
     const rowCtx = itemLinCountry[row.recordId];
     const selectedId = countryEdits[row.recordId] ?? rowCtx?.countryId ?? "";
-    const listedName = countryOptions?.find((c) => c.id === selectedId)?.name;
-    const selectedName = listedName ?? rowCtx?.countryName ?? "";
+    const selectedName = countryDisplayName(row);
     if (isDisabled) {
       return <span className={styles.contextCell}>{selectedName}</span>;
     }
@@ -1683,25 +1919,65 @@ export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
     </span>
   );
 
+  /** Clickable header cell for one of the sortable columns (Item, TDC, Fund
+   * Center, Country) — shows a ▲/▼ arrow only when it's the active sort. */
+  const renderSortableHeader = (
+    label: string,
+    field: SortField,
+    cellClassName?: string
+  ): React.ReactNode => (
+    <TableHeaderCell
+      className={cellClassName}
+      button={{
+        className: styles.sortableHeaderButton,
+        onClick: () => toggleSort(field),
+      }}
+    >
+      {label}
+      {sortField === field && (
+        <span className={styles.sortIndicator} aria-hidden="true">
+          {sortDirection === "asc" ? "▲" : "▼"}
+        </span>
+      )}
+    </TableHeaderCell>
+  );
+
   const hasNextPage = !!dataset.paging && dataset.paging.hasNextPage;
 
   // Item, TDC, Fund Center, Quantity, Requested, Validated, Funded, NPM
-  // Comment, State Comment — plus whichever of LIN/Country/Action are
+  // Comment, State Comment — plus whichever of LIN/Country/Select/Action are
   // showing. Used to span the sticky Load More row across every column.
   const columnCount =
     9 +
     (prioFlags?.linRequired ? 1 : 0) +
     (prioFlags?.countryRequired ? 1 : 0) +
-    (!isDisabled ? 1 : 0);
+    (!isDisabled ? 2 : 0); // select col + action col
 
   return (
     <FluentProvider theme={webLightTheme}>
       <div className={styles.root}>
         <div className={styles.toolbar}>
-          <Text weight="semibold">
-            Itemized Details ({datasetRows.length})
-          </Text>
+          <div className={styles.toolbarLeft}>
+            <Text weight="semibold">
+              Itemized Details ({datasetRows.length})
+            </Text>
+            {selectedRows.size > 0 && (
+              <span className={styles.selectedIndicator}>
+                <span className={styles.selectedDot} />
+                Selected ({selectedRows.size})
+              </span>
+            )}
+          </div>
           <div className={styles.toolbarButtons}>
+            <Input
+              size="small"
+              appearance="outline"
+              className={styles.rowSearchInput}
+              placeholder="Search Item, Fund Center, Country, LIN"
+              contentBefore={<SearchIcon />}
+              value={rowSearch}
+              onChange={(_e, data) => setRowSearch(data.value)}
+            />
             <div className={styles.legend}>
               <span className={styles.legendItem}>
                 <span
@@ -1716,6 +1992,18 @@ export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
                 Qty Type
               </span>
             </div>
+            {!isDisabled && (
+              <Button
+                size="small"
+                appearance="subtle"
+                className={styles.deleteSelectedButtonText}
+                icon={<DeleteIcon />}
+                disabled={dataset.loading || selectedRows.size === 0}
+                onClick={() => setBulkRemoveOpen(true)}
+              >
+                Delete Selected
+              </Button>
+            )}
             {!isDisabled && (
               <Button
                 size="small"
@@ -1751,6 +2039,10 @@ export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
             No Itemized Details yet. Use Add Items to select which of the
             Requirement&apos;s Details to itemize on this Prioritization.
           </div>
+        ) : sortedRows.length === 0 ? (
+          <div className={styles.empty}>
+            No Itemized Details match your search.
+          </div>
         ) : (
           <div className={styles.scrollContainer}>
             <Table
@@ -1760,13 +2052,25 @@ export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
             >
               <TableHeader>
                 <TableRow>
-                  <TableHeaderCell className={styles.firstCol}>Item</TableHeaderCell>
-                  <TableHeaderCell>TDC</TableHeaderCell>
-                  <TableHeaderCell className={styles.fcCol}>Fund Center</TableHeaderCell>
-                  {prioFlags?.linRequired && <TableHeaderCell>LIN</TableHeaderCell>}
-                  {prioFlags?.countryRequired && (
-                    <TableHeaderCell>Country</TableHeaderCell>
+                  {!isDisabled && (
+                    <TableHeaderCell className={styles.selectCol}>
+                      <Checkbox
+                        checked={
+                          allVisibleSelected ? true : someVisibleSelected ? "mixed" : false
+                        }
+                        onChange={(_e, data) =>
+                          toggleSelectAllVisible(data.checked === true)
+                        }
+                        aria-label="Select all visible rows"
+                      />
+                    </TableHeaderCell>
                   )}
+                  {renderSortableHeader("Item", "item", styles.firstCol)}
+                  {renderSortableHeader("TDC", "tdc")}
+                  {renderSortableHeader("Fund Center", "fundCenter", styles.fcCol)}
+                  {prioFlags?.linRequired && <TableHeaderCell>LIN</TableHeaderCell>}
+                  {prioFlags?.countryRequired &&
+                    renderSortableHeader("Country", "country")}
                   <TableHeaderCell
                     className={styles.qtyCol}
                     button={{ className: styles.headerJustifyEnd }}
@@ -1799,16 +2103,27 @@ export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {datasetRows.map((row) => {
+                {sortedRows.map((row) => {
                   const ctx = row.requirementItemId
                     ? contexts[row.requirementItemId]
                     : undefined;
                   return (
                     <TableRow key={row.recordId}>
+                      {!isDisabled && (
+                        <TableCell className={styles.selectCol}>
+                          <Checkbox
+                            checked={selectedRows.has(row.recordId)}
+                            onChange={(_e, data) =>
+                              toggleRowSelected(row.recordId, data.checked === true)
+                            }
+                            aria-label="Select row"
+                          />
+                        </TableCell>
+                      )}
                       <TableCell className={styles.firstCol}>
                         {renderStatus(row.recordId)}
                         <div className={styles.firstColName}>
-                          <span>{ctx?.item?.trim() ? ctx.item : row.requirementItemName}</span>
+                          <span>{itemDisplayName(row)}</span>
                         </div>
                         <div className={styles.metaChipRow}>
                           {ctx?.category && (
@@ -1901,6 +2216,7 @@ export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
                   </TableRow>
                 )}
                 <TableRow className={styles.totalsRow}>
+                  {!isDisabled && <TableCell />}
                   <TableCell className={styles.firstCol}>Totals</TableCell>
                   <TableCell />
                   <TableCell />
@@ -2206,6 +2522,46 @@ export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
                   onClick={confirmRemove}
                 >
                   {removeBusy ? "Removing…" : "Remove"}
+                </Button>
+              </DialogActions>
+            </DialogBody>
+          </DialogSurface>
+        </Dialog>
+
+        <Dialog
+          open={bulkRemoveOpen}
+          onOpenChange={(_e, data) => {
+            if (!bulkRemoveBusy && !data.open) setBulkRemoveOpen(false);
+          }}
+        >
+          <DialogSurface>
+            <DialogBody>
+              <DialogTitle>
+                Remove {selectedRows.size} Itemized Detail
+                {selectedRows.size === 1 ? "" : "s"}
+              </DialogTitle>
+              <DialogContent>
+                <Text>
+                  Remove {selectedRows.size} selected Itemized Detail
+                  {selectedRows.size === 1 ? "" : "s"} from this
+                  Prioritization? Their Requested amounts will no longer
+                  count toward the total.
+                </Text>
+              </DialogContent>
+              <DialogActions>
+                <Button
+                  appearance="secondary"
+                  disabled={bulkRemoveBusy}
+                  onClick={() => setBulkRemoveOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  appearance="primary"
+                  disabled={bulkRemoveBusy}
+                  onClick={confirmBulkRemove}
+                >
+                  {bulkRemoveBusy ? "Removing…" : "Remove"}
                 </Button>
               </DialogActions>
             </DialogBody>
