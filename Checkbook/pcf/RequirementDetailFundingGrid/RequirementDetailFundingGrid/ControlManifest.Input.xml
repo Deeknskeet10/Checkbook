@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <manifest>
-  <control namespace="ARNGCheckbook" constructor="RequirementDetailFundingGrid" version="0.1.2"
+  <control namespace="ARNGCheckbook" constructor="RequirementDetailFundingGrid" version="0.1.3"
            display-name-key="RequirementDetailFundingGrid"
            description-key="Lists Requirement Details for a Requirement (no-Prio path) and lets the NPM allocate funding from the Requirement RFs via book_requirementdetailfunding junction rows. Each RD shows its current per-RF allocations inline with editable Funded/Validated amounts and an Add-from-RF dropdown; a toolbar FY filter narrows the picker."
            control-type="virtual" >
