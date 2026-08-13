@@ -63,7 +63,8 @@ namespace Checkbook.Plugins.Validation
                 new ColumnSet(
                     PrioritizationAttributes.Requirement,
                     PrioritizationAttributes.FiscalYear,
-                    PrioritizationAttributes.Name
+                    PrioritizationAttributes.Name,
+                    "ownerid"
                 )
             );
 
@@ -137,6 +138,26 @@ namespace Checkbook.Plugins.Validation
                 var prioName = prio.GetAttributeValue<string>(PrioritizationAttributes.Name) ?? "Prio";
                 var rfName = rf.GetAttributeValue<string>(RequirementFundingAttributes.Name) ?? "RF";
                 target[PrioritizationFundingAttributes.Name] = $"{prioName} ↔ {rfName}";
+            }
+
+            // ---- Owner alignment (Create only, when caller didn't set one) ----
+            // NPM creates these junction rows, so by default they'd be owned by
+            // the NPM user in the national BU — above the State BUs. Dataverse
+            // BU-hierarchy read only reaches *down*, so State users could never
+            // read NPM-owned rows. Reassign each row to its parent
+            // Prioritization's owner (a State user) so it lands in the State's
+            // BU and resolves under each State role's existing read depth.
+            // The plugin runs with system privileges, so no prvAssign elevation
+            // is needed. Only applied when the caller didn't set an explicit
+            // owner, so callers can still override.
+            if (context.MessageName == "Create" &&
+                target.GetAttributeValue<EntityReference>("ownerid") == null)
+            {
+                var prioOwner = prio.GetAttributeValue<EntityReference>("ownerid");
+                if (prioOwner != null)
+                {
+                    target["ownerid"] = prioOwner;
+                }
             }
 
             tracing.Trace("Prioritization Funding guard passed.");

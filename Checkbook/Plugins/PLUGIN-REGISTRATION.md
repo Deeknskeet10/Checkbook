@@ -239,11 +239,18 @@ bypass is code-level, not a step filter.
 Pre-op guard for the `book_prioritizationfunding` junction. Enforces both
 parents present + same Requirement + same FY + unique `(Prio, RF)` pair + sum
 of active junction FundedAmount on the RF ≤ RF.TDP. Autopopulates
-`book_name` on Create when blank.
+`book_name` on Create when blank. On Create, also **aligns `ownerid` to the
+parent Prioritization's owner** when the caller didn't set one — NPM creates
+these rows in the national BU, but States read them at BU/parent-BU depth, and
+Dataverse BU-hierarchy read only reaches downward, so the row is reassigned to
+its (State-user-owned) parent Prioritization's owner to land it in the State's
+BU. No step/PreImage change — same Create step; the guard reads `ownerid` from
+the parent it already retrieves. Runs with system privileges, so no `prvAssign`
+elevation needed.
 
 | # | Message | Primary entity                | Stage          | Mode | Filtering attributes                                                                       | Notes |
 |---|---------|-------------------------------|----------------|------|--------------------------------------------------------------------------------------------|-------|
-| 1 | Create  | `book_prioritizationfunding`  | Pre-Operation  | Sync | *(none)*                                                                                   | Validates new junction + autopops name. |
+| 1 | Create  | `book_prioritizationfunding`  | Pre-Operation  | Sync | *(none)*                                                                                   | Validates new junction + autopops name + aligns `ownerid` to parent Prio's owner. |
 | 2 | Update  | `book_prioritizationfunding`  | Pre-Operation  | Sync | `book_prioritization, book_requirementfunding, book_fundedamount, book_validatedamount`    | Re-validates on amount or parent change. **Requires PreImage** (same four attrs). |
 
 ### `Checkbook.Plugins.Validation.RealignmentValidator`
