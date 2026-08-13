@@ -22,6 +22,7 @@ export class RequirementFundingTab
     return React.createElement(RequirementFundingTabApp, {
       webAPI: context.webAPI,
       navigation: (context as unknown as { navigation: ComponentFramework.Navigation }).navigation,
+      userSettings: context.userSettings,
       parentRequirementId: ctxAny.contextInfo?.entityId ?? null,
       isDisabled: context.mode.isControlDisabled,
       allocatedHeight: ctxAny.allocatedHeight,

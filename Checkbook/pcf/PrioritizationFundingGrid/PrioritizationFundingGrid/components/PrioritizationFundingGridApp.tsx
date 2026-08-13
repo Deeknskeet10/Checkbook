@@ -28,6 +28,7 @@ import {
 type DataSet = ComponentFramework.PropertyTypes.DataSet;
 type WebApi = ComponentFramework.WebApi;
 type Navigation = ComponentFramework.Navigation;
+type UserSettings = ComponentFramework.UserSettings;
 
 export interface PrioRow {
   id: string;
@@ -50,6 +51,7 @@ export interface PrioritizationFundingGridProps {
   dataset?: DataSet;
   webAPI: WebApi;
   navigation: Navigation;
+  userSettings: UserSettings;
   isDisabled: boolean;
   width: number;
   /** Container override: pass pre-fetched Prio rows instead of relying on the dataset binding. */
@@ -356,6 +358,14 @@ const useStyles = makeStyles({
       filter: "saturate(100%)",
     },
   },
+  deleteButtonDisabled: {
+    opacity: 0.5,
+    filter: "saturate(0%)",
+    ":hover": {
+      opacity: 0.5,
+      filter: "saturate(0%)",
+    },
+  },
   drawerAddRow: {
     display: "flex",
     alignItems: "center",
@@ -502,6 +512,7 @@ export const PrioritizationFundingGridApp: React.FC<PrioritizationFundingGridPro
     dataset,
     webAPI,
     navigation,
+    userSettings,
     isDisabled,
     prioRowsOverride,
     fyFilterOverride,
@@ -510,6 +521,40 @@ export const PrioritizationFundingGridApp: React.FC<PrioritizationFundingGridPro
     onAfterSave,
   } = props;
   const styles = useStyles();
+
+  // ---- Current user's security roles (gates the RF allocation delete button) ----
+  const [userRoles, setUserRoles] = React.useState<Set<string>>(new Set());
+  const loadRoles = React.useCallback(async () => {
+    const userId = (userSettings.userId || "").replace(/[{}]/g, "");
+    if (!userId) return;
+    try {
+      // Mirrors UserRoleHelper: direct assignments (systemuserroles_association)
+      // OR team-derived roles (teamroles_association -> teammembership_association).
+      const roleFilter =
+        `systemuserroles_association/any(o:o/systemuserid eq ${userId})` +
+        ` or teamroles_association/any(t:t/teammembership_association/any(m:m/systemuserid eq ${userId}))`;
+      const rolesResp = await webAPI.retrieveMultipleRecords(
+        "role",
+        `?$select=name&$filter=${roleFilter}`
+      );
+      const names = new Set<string>();
+      for (const r of rolesResp.entities) {
+        if (r.name) names.add(r.name as string);
+      }
+      setUserRoles(names);
+    } catch {
+      setUserRoles(new Set());
+    }
+  }, [userSettings.userId, webAPI]);
+  React.useEffect(() => {
+    void loadRoles();
+  }, [loadRoles]);
+  const canDeleteAllocation = React.useMemo(
+    () =>
+      userRoles.has("Book - Checkbook Administrator") ||
+      userRoles.has("System Administrator"),
+    [userRoles]
+  );
 
   // Bump the dataset page size once. Without this Dataverse hands us only the
   // subgrid's default page (often ~4), which surprised users in 0.1.x.
@@ -1218,12 +1263,22 @@ export const PrioritizationFundingGridApp: React.FC<PrioritizationFundingGridPro
                             setAllocJunctionValue(j.id, "fundedAmount", n)
                           }
                         />
-                        <Tooltip content="Remove allocation" relationship="label">
+                        <Tooltip
+                          content={
+                            canDeleteAllocation
+                              ? "Remove allocation"
+                              : "Insufficient Permission - Contact System Admin"
+                          }
+                          relationship="label"
+                        >
                           <Button
                             appearance="subtle"
                             size="small"
-                            className={styles.deleteButton}
+                            className={`${styles.deleteButton} ${
+                              canDeleteAllocation ? "" : styles.deleteButtonDisabled
+                            }`}
                             disabled={isDisabled || allocBusy}
+                            disabledFocusable={!canDeleteAllocation}
                             onClick={() => void deleteJunction(j)}
                             icon={<DeleteIcon />}
                             aria-label="Remove allocation"
@@ -1309,6 +1364,12 @@ export const PrioritizationFundingGridApp: React.FC<PrioritizationFundingGridPro
               <div className={styles.drawerSummaryRow}>
                 <div className={styles.drawerSummaryStat}>
                   {renderStat(
+                    "Validated Sum",
+                    formatCurrency(allocValidatedSum)
+                  )}
+                </div>
+                <div className={styles.drawerSummaryStat}>
+                  {renderStat(
                     "Prio Funded (target)",
                     formatCurrency(eff.funded)
                   )}
@@ -1320,12 +1381,6 @@ export const PrioritizationFundingGridApp: React.FC<PrioritizationFundingGridPro
                     Math.abs(fundedDelta) < 0.005
                       ? "good"
                       : "bad"
-                  )}
-                </div>
-                <div className={styles.drawerSummaryStat}>
-                  {renderStat(
-                    "Validated Sum",
-                    formatCurrency(allocValidatedSum)
                   )}
                 </div>
               </div>

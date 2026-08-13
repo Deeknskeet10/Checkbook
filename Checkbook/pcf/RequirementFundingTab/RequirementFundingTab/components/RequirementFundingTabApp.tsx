@@ -24,6 +24,7 @@ import {
 export interface RequirementFundingTabAppProps {
   webAPI: ComponentFramework.WebApi;
   navigation: ComponentFramework.Navigation;
+  userSettings: ComponentFramework.UserSettings;
   parentRequirementId: string | null;
   isDisabled: boolean;
   allocatedHeight?: number;
@@ -83,6 +84,7 @@ export const RequirementFundingTabApp: React.FC<RequirementFundingTabAppProps> =
   const {
     webAPI,
     navigation,
+    userSettings,
     parentRequirementId,
     isDisabled,
     allocatedHeight,
@@ -429,6 +431,7 @@ export const RequirementFundingTabApp: React.FC<RequirementFundingTabAppProps> =
                   <PrioritizationFundingGridApp
                     webAPI={webAPI}
                     navigation={navigation}
+                    userSettings={userSettings}
                     isDisabled={isDisabled}
                     width={0}
                     prioRowsOverride={prios}

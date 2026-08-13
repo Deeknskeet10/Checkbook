@@ -29,6 +29,7 @@ export class PrioritizationFundingGrid
       dataset: context.parameters.prioritizations,
       webAPI: context.webAPI,
       navigation: context.navigation,
+      userSettings: context.userSettings,
       isDisabled: context.mode.isControlDisabled,
       width: context.mode.allocatedWidth,
     };
