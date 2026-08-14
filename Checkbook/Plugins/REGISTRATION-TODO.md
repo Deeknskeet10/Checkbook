@@ -70,6 +70,11 @@ code-only** — two deploy actions, no step or schema changes:
 - [ ] **`book_distributions`** — add lookup **`book_stateswap`** -> `book_stateswap`
   (peer of `book_turnin`). Swap-linked Distribution views filter on it; reconcile
   treats these rows as immutable. **[COMMITTED — Swap Distributions]**
+- [ ] **`book_distributions`** — add lookup **`book_realignment`** -> `book_realignments`
+  (peer of `book_turnin` / `book_stateswap`). Realignment-linked Distribution views
+  filter on it; reconcile treats these rows as immutable. Populated by
+  `RealignmentDistributionCreator` on approval of a realignment whose debit/credit
+  LOAs differ in Fund and/or SAG (`book_samefundandsag = false`). **[COMMITTED — Realignment Distributions]**
 - [ ] **`book_itemizeddetails`** — add optional lookup **`book_fundcenter`** ->
   `book_fundcenter` (blank = state-level FC). **[⭐ FY27 SpendPlan/FC — `794cac1`]**
 - [ ] **`book_spendplan`** — **[⭐ FY27 SpendPlan/FC — `794cac1`]**
@@ -182,6 +187,13 @@ wire the forms (details in
   *(This is the bug that started this — needs the DLL re-registered, step D.)*
 - [ ] Swap approval creates the AFP/Allotment **Swap Distributions** and shares
   child items to both states.
+- [ ] **Realignment Distributions** — approve a Prior→Prior or RF→RF realignment
+  whose debit/credit LOAs differ in Fund and/or SAG (`book_samefundandsag = false`).
+  Expect up to 4 Distribution rows per active funding type (AFP/Allotment): a
+  Turn-In pair (debited-state FC → A18, debit LOA's Fund/PG) and a Distribution
+  pair (A18 → credited-state FC, credit LOA's Fund/PG), all carrying
+  `book_realignment`. A **same** Fund-and-SAG realignment creates none. Requires
+  the `book_distributions.book_realignment` lookup from step A.
 
 🔧 State Swap approval fixes (Aug 2026):
 

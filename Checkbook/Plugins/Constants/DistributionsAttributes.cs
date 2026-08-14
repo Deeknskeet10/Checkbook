@@ -21,6 +21,7 @@ namespace Checkbook.Plugins.Constants
         public const string Remarks = "book_remarks";
         public const string TurnIn = "book_turnin";
         public const string StateSwap = "book_stateswap";
+        public const string Realignment = "book_realignment";
         public const string EnteredIntoGFEBS = "book_newenteredintogfebs";
         public const string StateCode = "statecode";
     }

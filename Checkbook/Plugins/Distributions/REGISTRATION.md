@@ -79,9 +79,9 @@ rows and churning row GUIDs for the GFEBS clerks working the queue. The
 reworked plugin instead classifies every active row in a (Fund, PG) group:
 
 - **Immutable** — already entered into GFEBS (`book_entrydocumentnumber`
-  set), manual entries (`book_manualentry`), Turn-In or State Swap–linked
-  rows (`book_turnin` / `book_stateswap`), and credits whose paired debit is
-  already entered. Counted toward each FC's committed net; never modified.
+  set), manual entries (`book_manualentry`), Turn-In / State Swap / Realignment–linked
+  rows (`book_turnin` / `book_stateswap` / `book_realignment`), and credits whose
+  paired debit is already entered. Counted toward each FC's committed net; never modified.
 - **Pending sweep rows** — everything else (no entry document number, not
   manual, not linked). Owned by the reconcile: amounts are updated in place,
   rows are created when missing and deactivated when no longer needed.

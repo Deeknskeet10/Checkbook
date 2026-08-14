@@ -4,6 +4,7 @@ using Microsoft.Xrm.Sdk.Query;
 using Checkbook.Plugins.Base;
 using Checkbook.Plugins.Constants;
 using Checkbook.Plugins.Helpers;
+using Checkbook.Plugins.Realignments.Helpers;
 
 namespace Checkbook.Plugins.Realignments
 {
@@ -179,6 +180,25 @@ namespace Checkbook.Plugins.Realignments
                 TDPCalculationHelper.RecalculateLOATDP(service, creditLOA.Id, tracing);
             }
 
+            // When the debit and credit LOAs do NOT share the same Fund AND SAG/PG,
+            // the money changes buckets, so the debited state must return the debited
+            // Fund to A18 and A18 must issue the desired credited Fund back out. Emit
+            // the round-trip AFP/Allotment Distributions that record that swap. Same
+            // Fund-and-SAG realignments are fungible within one bucket and need none.
+            if (!sameFundSAG && (isPriorPath || isRFPath))
+            {
+                var debitAnchorFc = isPriorPath
+                    ? ResolveAnchorFundCenter(service, EntityNames.Prioritization, debitPrior, PrioritizationAttributes.FundCenter)
+                    : ResolveAnchorFundCenter(service, EntityNames.RequirementFunding, debitRF, RequirementFundingAttributes.FundCenter);
+                var creditAnchorFc = isPriorPath
+                    ? ResolveAnchorFundCenter(service, EntityNames.Prioritization, creditPrior, PrioritizationAttributes.FundCenter)
+                    : ResolveAnchorFundCenter(service, EntityNames.RequirementFunding, creditRF, RequirementFundingAttributes.FundCenter);
+
+                RealignmentDistributionCreator.CreateDistributions(
+                    service, tracing, context.PrimaryEntityId,
+                    debitAnchorFc, creditAnchorFc, debitLOA, creditLOA, amount);
+            }
+
             FinalizeRealignment(service, tracing, context.PrimaryEntityId);
         }
 
@@ -336,6 +356,19 @@ namespace Checkbook.Plugins.Realignments
             service.Update(upd);
 
             tracing.Trace($"RF Credit: TDP increased by {amount:N2} on RF {creditRFRef.Id}.");
+        }
+
+        private EntityReference ResolveAnchorFundCenter(
+            IOrganizationService service,
+            string entityName,
+            EntityReference anchorRef,
+            string fundCenterAttribute)
+        {
+            if (anchorRef == null)
+                return null;
+
+            var anchor = service.Retrieve(entityName, anchorRef.Id, new ColumnSet(fundCenterAttribute));
+            return anchor.GetAttributeValue<EntityReference>(fundCenterAttribute);
         }
 
         private void FinalizeRealignment(IOrganizationService service, ITracingService tracing, Guid id)

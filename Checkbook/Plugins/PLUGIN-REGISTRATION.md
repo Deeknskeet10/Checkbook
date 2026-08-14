@@ -86,6 +86,7 @@ Required in the maker portal before enabling the State Swap steps:
 | `book_swapitem` table (new) | Full attribute list §2. Configure the 1:N from `book_stateswap` with **Share cascade = Cascade All** (§4) so item sharing follows the parent for items that exist when the swap is first shared. Items added *later* are shared per-row by `SwapItemAutoSharePlugin` (Cascade All is point-in-time and does not retroactively cover new children). |
 | `book_ledger` (existing) | Add lookup `book_stateswap` → `book_stateswap` (peer of `book_turnin`, `book_realignment`). |
 | `book_distributions` (existing) | Add lookup `book_stateswap` → `book_stateswap` (peer of `book_turnin`). Written by `SwapDistributionCreator` on BE approval; the swap-related Distribution views filter on it, and the `book_GenerateDistributions` reconcile treats swap-linked rows as immutable. |
+| `book_distributions` (existing) | Add lookup `book_realignment` → `book_realignments` (peer of `book_turnin`, `book_stateswap`). Written by `RealignmentDistributionCreator` on approval of a non-same-Fund/SAG realignment; the realignment-related Distribution views filter on it, and the `book_GenerateDistributions` reconcile treats realignment-linked rows as immutable. |
 | `book_ledgertype` option set (existing) | Relabel value `2` from **Add** to **Swap** (values stay Realignment=0, Turn-in=1, Swap=2, Cut=3). This corrects a pre-existing constants bug — `LedgerTypeValues` in this build now uses 0/1/2. Historical ledger rows previously written with `book_ledgertype = 100000001` / `100000002` should be backfilled to `0` / `1` if reporting on ledger type matters. |
 | Owner teams per state | Names `{StateAbbr} - State Approver` and `{StateAbbr} - State Administrator` (e.g. `AL - State Approver`). One pair per state. `SwapAutoSharePlugin` looks them up by name and shares each swap with both teams. Missing teams are logged and skipped, not fatal. |
 | Role privileges | Grant User-level Create/Read/Write/Delete/Append/AppendTo/Share on `book_stateswap` + `book_swapitem` to `Book - State Approver` and `Book - State Administrator`; Org-level Read to `Book - Budget Executor` and `Book - Read Only`; Org-level everything to `Book - Checkbook Administrator`. See schema doc §5.1. |
@@ -343,6 +344,13 @@ users can't bypass the form by populating fields bottom-up.
 Post-op executor that fires on approval/denial. Creates the Ledger
 debit/credit pair, applies the RF (and Prio, on Prior→Prior) funding
 movements, recalculates touched LOAs, and deactivates the Realignment.
+When the debit/credit LOAs do **not** share the same Fund AND SAG
+(`book_samefundandsag = false`), it also calls `RealignmentDistributionCreator`
+to emit round-trip AFP/Allotment Distributions — the debited state returns the
+debited Fund to A18 (Turn-In pair) and A18 issues the credited Fund back out
+(Distribution pair), per active funding type. Rows carry `book_realignment` and
+are immutable to the `book_GenerateDistributions` reconcile. Same-Fund-and-SAG
+realignments create none.
 
 Trigger semantics (hardened Jul 2026 after 4 approvals committed without
 processing): the plugin fires when the Update **payload carries a decision

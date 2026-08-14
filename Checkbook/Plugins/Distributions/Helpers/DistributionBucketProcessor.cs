@@ -43,7 +43,7 @@ namespace Checkbook.Plugins.Distributions.Helpers
     ///
     /// Amend-in-place model: rows are split into
     ///   • IMMUTABLE — already entered into GFEBS (book_entrydocumentnumber set),
-    ///     manual entries, Turn-In / State Swap–linked rows, credits whose paired
+    ///     manual entries, Turn-In / State Swap / Realignment–linked rows, credits whose paired
     ///     debit is already entered (preserves entered pairings), and any stray
     ///     amendable-looking debit not at the holding FC. These count toward each
     ///     FC's committed net and are never touched.
@@ -309,6 +309,7 @@ namespace Checkbook.Plugins.Distributions.Helpers
                     DistributionsAttributes.ManualEntry,
                     DistributionsAttributes.TurnIn,
                     DistributionsAttributes.StateSwap,
+                    DistributionsAttributes.Realignment,
                     DistributionsAttributes.DebitedDistribution,
                     DistributionsAttributes.FundingEvent),
                 Criteria = new FilterExpression(LogicalOperator.And)
@@ -361,6 +362,7 @@ namespace Checkbook.Plugins.Distributions.Helpers
                     && !(row.GetAttributeValue<bool?>(DistributionsAttributes.ManualEntry) ?? false)
                     && row.GetAttributeValue<EntityReference>(DistributionsAttributes.TurnIn) == null
                     && row.GetAttributeValue<EntityReference>(DistributionsAttributes.StateSwap) == null
+                    && row.GetAttributeValue<EntityReference>(DistributionsAttributes.Realignment) == null
                     && !(direction == DisbursementDirectionValues.Credit
                          && debitedRef != null && enteredDebitIds.Contains(debitedRef.Id))
                     // A pending sweep debit only ever lives at the holding FC;
