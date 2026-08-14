@@ -302,6 +302,7 @@ const useStyles = makeStyles({
     marginLeft: "6px",
     ...shorthands.padding("1px", "8px"),
     border: `1px solid ${tokens.colorNeutralStroke2}`,
+    ...shorthands.borderRadius("9x"),
     fontSize: tokens.fontSizeBase200,
     fontWeight: tokens.fontWeightSemibold,
     lineHeight: "16px",
@@ -314,7 +315,7 @@ const useStyles = makeStyles({
     ...shorthands.borderColor(tokens.colorPaletteBlueBorderActive),
   },
   countryBubble: {
-    backgroundColor: "#d8ffd8",
+    backgroundColor: "#edf6ed",
     color: tokens.colorPaletteGreenForeground2,
     ...shorthands.borderColor(tokens.colorPaletteGreenBorderActive),
   },
