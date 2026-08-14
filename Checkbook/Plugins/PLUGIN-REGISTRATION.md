@@ -211,6 +211,44 @@ detected by walking `context.ParentContext`). Shares its logic with
 |---|---------|-----------------------|----------------|------|------------------------------|-------|
 | 1 | Update  | `book_prioritization` | Pre-Operation  | Sync | `book_newfundedamounttdp`    | Rank **10** (runs before the other Pre-Op Update validators). **Requires PreImage** (`book_newfundedamounttdp`) — falls back to a Retrieve if the image is missing. |
 
+### `Checkbook.Plugins.Validation.PrioritizationFundingApprovalGuard`
+
+Enforces the invariant **funding ⟹ NPM Review**: a Prioritization may only hold
+funding (`book_newfundedamounttdp`) while `book_approvalstatus == 4` (NPM
+Review). Two concerns in one Pre-Op step:
+
+1. **Block funding a not-yet-approved Prio** — rejects any *increase* to
+   `book_newfundedamounttdp` when the effective approval status is not NPM
+   Review (message: *"Funding can only be applied to a Prioritization that is in
+   NPM Review…"*). Universal backstop across FY26 (the funding grid's direct
+   field write) and FY27 (the junction roll-up write into the same field). **No**
+   realignment / turn-in / state-swap carve-out — crediting a pending Prio from
+   any tool is exactly what this blocks.
+2. **Strip funding on pull-back** — when a State recalls a Prio out of NPM Review
+   (pre-image status == 4 → new status != 4) while it still holds funding, folds
+   a `book_newfundedamounttdp = 0` write into the same Update so the money
+   returns to the parent RF via the Post-Op `PrioritizationRollupToRequirementFunding`
+   recalc. Keys on the **pre-image** status, so FC/State-Review rejections
+   (status 1/2 → 0, never funded) are untouched. The client modal in
+   `book_checkbookButtons` (case 4 / `returnToStatePM`) warns the user first;
+   this step is the guaranteed enforcement for bulk-edit / Web API paths.
+
+Why it matters: `RF.FundedAmount` rolls up only FinalApproved (status 4) child
+Prios (`PrioritizationRollupHelper`) while `RF.TDP` is not approval-filtered, so
+a Prio holding funding below status 4 is invisible to the roll-up and surfaces
+as a phantom `TDP − Funded` gap on the parent RF.
+
+FY27 caveat: funding physically lives on `book_prioritizationfunding` junction
+rows there, so zeroing the rolled-up field alone would be restored by the next
+junction roll-up — FY27 pull-backs additionally need the junction rows cleared
+(tracked separately; junction-side funding gate belongs in
+`PrioritizationFundingGuard`).
+
+| # | Message | Primary entity        | Stage          | Mode | Filtering attributes                        | Notes |
+|---|---------|-----------------------|----------------|------|---------------------------------------------|-------|
+| 1 | Create  | `book_prioritization` | Pre-Operation  | Sync | *(none)*                                    | Blocks creating a funded Prio below NPM Review. Order **before** `PrioritizationFundingValidator`. |
+| 2 | Update  | `book_prioritization` | Pre-Operation  | Sync | `book_newfundedamounttdp, book_approvalstatus` | Rank **15** (after the reduction lock at 10, before `PrioritizationFundingValidator`). **Requires PreImage** (`book_newfundedamounttdp, book_approvalstatus`). |
+
 ### `Checkbook.Plugins.Validation.PrioritizationFundingValidator`
 
 Enforces RF TDP cap + LOA TDP allocation when a Prioritization's
@@ -239,7 +277,10 @@ bypass is code-level, not a step filter.
 
 Pre-op guard for the `book_prioritizationfunding` junction. Enforces both
 parents present + same Requirement + same FY + unique `(Prio, RF)` pair + sum
-of active junction FundedAmount on the RF ≤ RF.TDP. Autopopulates
+of active junction FundedAmount on the RF ≤ RF.TDP + **funding only on an
+NPM-Review Prio** (FY27 mirror of `PrioritizationFundingApprovalGuard`: a
+funded-amount *increase* is rejected unless the parent Prioritization is in NPM
+Review — reductions and the pull-back deactivation stay allowed). Autopopulates
 `book_name` on Create when blank. On Create, also **aligns `ownerid` to the
 parent Prioritization's owner** when the caller didn't set one — NPM creates
 these rows in the national BU, but States read them at BU/parent-BU depth, and
@@ -253,6 +294,22 @@ elevation needed.
 |---|---------|-------------------------------|----------------|------|--------------------------------------------------------------------------------------------|-------|
 | 1 | Create  | `book_prioritizationfunding`  | Pre-Operation  | Sync | *(none)*                                                                                   | Validates new junction + autopops name + aligns `ownerid` to parent Prio's owner. |
 | 2 | Update  | `book_prioritizationfunding`  | Pre-Operation  | Sync | `book_prioritization, book_requirementfunding, book_fundedamount, book_validatedamount`    | Re-validates on amount or parent change. **Requires PreImage** (same four attrs). |
+
+### `Checkbook.Plugins.Validation.PrioritizationPullbackFundingCleanup`
+
+FY27 companion to `PrioritizationFundingApprovalGuard`'s pull-back strip. When a
+Prioritization is recalled out of NPM Review (pre-image status == 4 → new status
+!= 4), its FY27 funding lives on `book_prioritizationfunding` junction rows —
+zeroing the rolled-up `book_newfundedamounttdp` alone would be restored by the
+next junction roll-up. This Post-Op step **deactivates the Prio's active
+junction rows** so the funding truly returns to the parent RF(s); the junction
+statecode change fires `PrioritizationFundingRollup`, which recomputes both the
+Prio and RF funded totals. No-op for FY26 Prios (no junction rows). Keys on the
+**pre-image** status so FC/State-Review rejections are ignored.
+
+| # | Message | Primary entity        | Stage           | Mode | Filtering attributes | Notes |
+|---|---------|-----------------------|-----------------|------|----------------------|-------|
+| 1 | Update  | `book_prioritization` | Post-Operation  | Sync | `book_approvalstatus` | Deactivates active junction funding rows on pull-back out of NPM Review. **Requires PreImage** (`book_approvalstatus`). |
 
 ### `Checkbook.Plugins.Validation.RealignmentValidator`
 
@@ -1061,22 +1118,25 @@ a step or changing a rank: the ordering constraints live here.
 
 | Order | Stage | Mode | Step | Ordering constraint |
 |---|---|---|---|---|
-| 1 | Pre-Op (rank 1) | Sync | `PrioritizationFundingValidator` | None — reads only Target amounts. |
-| 2 | Pre-Op (rank 10) | Sync | `PrioritizationFundCenterBackfill` | Must precede NameSetter (writes `book_fundcenter` into Target). |
-| 3 | Pre-Op (rank 20) | Sync | `RequirementDetailFundingGuard` | XOR guard; before NameSetter so rejected Prios skip the naming retrieves. |
-| 4 | Pre-Op (rank 30) | Sync | `PrioritizationNameSetter` | Reads `book_fundcenter` from Target — MUST run after the backfill. |
-| 5 | Post-Op | Sync | `PrioritizationRollupToRequirementFunding` | Rolls new Prio into parent RF totals. |
-| 6 | Post-Op | **Async** | `ItemizedDetailsSynchronizer` | Sets FundingMode from the Requirement's RDs (no seeding — Itemized Details are user-selected); async, so it lands after the transaction. |
+| 1 | Pre-Op (rank 1) | Sync | `PrioritizationFundingApprovalGuard` | Blocks creating a funded Prio below NPM Review; before `PrioritizationFundingValidator` so the approval message wins over a cap error. |
+| 2 | Pre-Op (rank 2) | Sync | `PrioritizationFundingValidator` | Reads only Target amounts. |
+| 3 | Pre-Op (rank 10) | Sync | `PrioritizationFundCenterBackfill` | Must precede NameSetter (writes `book_fundcenter` into Target). |
+| 4 | Pre-Op (rank 20) | Sync | `RequirementDetailFundingGuard` | XOR guard; before NameSetter so rejected Prios skip the naming retrieves. |
+| 5 | Pre-Op (rank 30) | Sync | `PrioritizationNameSetter` | Reads `book_fundcenter` from Target — MUST run after the backfill. |
+| 6 | Post-Op | Sync | `PrioritizationRollupToRequirementFunding` | Rolls new Prio into parent RF totals. |
+| 7 | Post-Op | **Async** | `ItemizedDetailsSynchronizer` | Sets FundingMode from the Requirement's RDs (no seeding — Itemized Details are user-selected); async, so it lands after the transaction. |
 
 **Update** (in order):
 
 | Order | Stage | Mode | Step | Filter / constraint |
 |---|---|---|---|---|
 | 1 | Pre-Op (rank 10) | Sync | `PrioritizationFundedAmountLock` | `book_newfundedamounttdp` — reduction lock runs before other validators so users get the lock message, not a cap error. Increases pass through. |
-| 2 | Pre-Op | Sync | `PrioritizationFundingValidator` | `book_newfundedamounttdp, book_requirementfunding, book_approvalstatus, statecode` |
-| 3 | Pre-Op | Sync | `PrioritizationNameSetter` | `book_state, book_requirementfunding, book_requirement, book_statepriority, book_fundcenter, book_newfiscalyear` |
-| 4 | Post-Op | Sync | `PrioritizationRollupToRequirementFunding` | `book_newfundedamounttdp, book_validatedamount, book_requirementfunding, statecode` |
-| 5 | Post-Op | **Async** | `ItemizedDetailsSynchronizer` | `book_requirement, book_requirementfunding` (re-point to a different Requirement deletes stale details + resets FundingMode) |
+| 2 | Pre-Op (rank 15) | Sync | `PrioritizationFundingApprovalGuard` | `book_newfundedamounttdp, book_approvalstatus` — blocks funding increases below NPM Review; strips funding on pull-back out of NPM Review. **Requires PreImage** (both attrs). |
+| 3 | Pre-Op | Sync | `PrioritizationFundingValidator` | `book_newfundedamounttdp, book_requirementfunding, book_approvalstatus, statecode` |
+| 4 | Pre-Op | Sync | `PrioritizationNameSetter` | `book_state, book_requirementfunding, book_requirement, book_statepriority, book_fundcenter, book_newfiscalyear` |
+| 5 | Post-Op | Sync | `PrioritizationRollupToRequirementFunding` | `book_newfundedamounttdp, book_validatedamount, book_requirementfunding, statecode` |
+| 6 | Post-Op | Sync | `PrioritizationPullbackFundingCleanup` | `book_approvalstatus` — deactivates FY27 junction rows on pull-back out of NPM Review. PreImage `book_approvalstatus`. |
+| 7 | Post-Op | **Async** | `ItemizedDetailsSynchronizer` | `book_requirement, book_requirementfunding` (re-point to a different Requirement deletes stale details + resets FundingMode) |
 
 **Delete**: Post-Op Sync `PrioritizationRollupToRequirementFunding` (recalcs the pre-image parent RF).
 
@@ -1117,10 +1177,15 @@ to sort the right pane by **Message** then by **Primary Entity**.
   - [ ] Create + Update of `book_fundingdetails` — Pre-Op Sync, Update has PreImage
 - [ ] `Checkbook.Plugins.Validation.PrioritizationFundedAmountLock`
   - [ ] Update of `book_prioritization` — Pre-Op Sync, **Rank 10**, PreImage, filter `book_newfundedamounttdp`
+- [ ] `Checkbook.Plugins.Validation.PrioritizationFundingApprovalGuard`
+  - [ ] Create of `book_prioritization` — Pre-Op Sync, before `PrioritizationFundingValidator`
+  - [ ] Update of `book_prioritization` — Pre-Op Sync, **Rank 15**, PreImage, filter `book_newfundedamounttdp, book_approvalstatus`
 - [ ] `Checkbook.Plugins.Validation.PrioritizationFundingValidator`
   - [ ] Create + Update of `book_prioritization` — Pre-Op Sync, Update has PreImage
 - [ ] `Checkbook.Plugins.Validation.PrioritizationFundingGuard`
   - [ ] Create + Update of `book_prioritizationfunding` — Pre-Op Sync, Update has PreImage
+- [ ] `Checkbook.Plugins.Validation.PrioritizationPullbackFundingCleanup`
+  - [ ] Update of `book_prioritization` — Post-Op Sync, PreImage `book_approvalstatus`, filter `book_approvalstatus`
 - [ ] `Checkbook.Plugins.Validation.RealignmentValidator`
   - [ ] Update of `book_realignments` — Pre-Op Sync, PreImage
 - [ ] `Checkbook.Plugins.Validation.RequirementDetailFundingGuard`
