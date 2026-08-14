@@ -118,9 +118,9 @@ interface ItemRow {
   label: string;
   /** TDC name of the linked Requirement Detail; empty when not set. */
   tdc: string;
-  /** LIN code of the linked Requirement Detail; empty when not set. */
+  /** LIN code on this Itemized Detail; empty when not set. */
   lin: string;
-  /** Country of the linked Requirement Detail; empty when not set. */
+  /** Country on this Itemized Detail; empty when not set. */
   country: string;
   /** Fund Center name of the Itemized Detail; empty = state level. */
   fundCenter: string;
@@ -739,8 +739,9 @@ export const PrioritizationFundingGridApp: React.FC<PrioritizationFundingGridPro
       .join(" or ");
     const options =
       "?$select=_book_prioritization_value,_book_requirementitem_value,_book_fundcenter_value," +
+      `_book_lin_value,_book_country_value,` +
       `book_requestedamount,${ITEM_VALIDATED},${ITEM_FUNDED},${ITEM_NPM_COMMENT}` +
-      "&$expand=book_RequirementItem($select=_book_item_value,_book_tdc_value,_book_lin_value,_book_country_value)" +
+      "&$expand=book_RequirementItem($select=_book_item_value,_book_tdc_value)" +
       `&$filter=(${filter})`;
 
     void (async () => {
@@ -757,8 +758,8 @@ export const PrioritizationFundingGridApp: React.FC<PrioritizationFundingGridPro
           const itemName =
             (rd?.[`_book_item_value${FV}`] as string | undefined) ?? null;
           const tdc = rd?.[`_book_tdc_value${FV}`];
-          const lin = rd?.[`_book_lin_value${FV}`];
-          const country = rd?.[`_book_country_value${FV}`];
+          const lin = e[`_book_lin_value${FV}`];
+          const country = e[`_book_country_value${FV}`];
           return {
           id: e.book_itemizeddetailsid as string,
           prioritizationId: ((e._book_prioritization_value as string) ?? "")
