@@ -377,7 +377,7 @@
 
 .cal__dueout {
     position: absolute;
-    font-size: 16px;
+    font-size: 20px;
     color: #cf222e;
     z-index: 2;
     line-height: 1;
