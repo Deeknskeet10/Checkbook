@@ -55,12 +55,23 @@ export function toISODate(d: Date): string {
     return `${d.getFullYear()}-${mm}-${dd}`;
 }
 
+// LRC events carry dates only, no times. Dataverse date-only values arrive
+// anchored to UTC midnight (a Date instance, or an ISO string like
+// "2026-08-14"/"2026-08-14T00:00:00Z"). Reading them with LOCAL calendar
+// fields in a negative-offset zone (e.g. EST, UTC-5) rolls them back to the
+// previous evening, placing the event one day early. So we take the calendar
+// day timezone-independently — from the leading yyyy-mm-dd of a string, or the
+// UTC fields of a Date/number — and rebuild it as a local start-of-day.
 export function fromValue(value: unknown): Date | null {
     if (value === null || value === undefined) return null;
-    if (value instanceof Date) return isNaN(value.getTime()) ? null : startOfDay(value);
-    if (typeof value === "number" || typeof value === "string") {
-        const d = new Date(value);
-        return isNaN(d.getTime()) ? null : startOfDay(d);
+    if (typeof value === "string") {
+        const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(value);
+        if (m) return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+    }
+    if (value instanceof Date || typeof value === "number" || typeof value === "string") {
+        const d = value instanceof Date ? value : new Date(value);
+        if (isNaN(d.getTime())) return null;
+        return new Date(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate());
     }
     return null;
 }

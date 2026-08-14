@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <manifest>
-  <control namespace="LongRangeCalendar" constructor="Calendar" version="0.5.1"
+  <control namespace="LongRangeCalendar" constructor="Calendar" version="0.5.2"
            display-name-key="Long Range Calendar"
            description-key="Swim-lane long-range calendar for G-3/5/7 events. Renders lrc_Event records in lanes by owning org level, color-coded by event type, across rolling 2-week / 30-day / 60-day / 90-day / 120-day windows. Dates only, no times."
            control-type="virtual" >
