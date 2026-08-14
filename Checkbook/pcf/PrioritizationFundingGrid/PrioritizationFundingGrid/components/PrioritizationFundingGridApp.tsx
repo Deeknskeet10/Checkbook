@@ -302,7 +302,7 @@ const useStyles = makeStyles({
     marginLeft: "6px",
     ...shorthands.padding("1px", "8px"),
     border: `1px solid ${tokens.colorNeutralStroke2}`,
-    ...shorthands.borderRadius("9x"),
+    borderRadius: "9px",
     fontSize: tokens.fontSizeBase200,
     fontWeight: tokens.fontWeightSemibold,
     lineHeight: "16px",
@@ -310,7 +310,7 @@ const useStyles = makeStyles({
     verticalAlign: "middle",
   },
   linBubble: {
-    backgroundColor: "#daefff",
+    backgroundColor: "#dfebf4",
     color: tokens.colorPaletteBlueForeground2,
     ...shorthands.borderColor(tokens.colorPaletteBlueBorderActive),
   },

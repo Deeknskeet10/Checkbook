@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <manifest>
-  <control namespace="ARNGCheckbook" constructor="PrioritizationFundingGrid" version="0.2.13"
+  <control namespace="ARNGCheckbook" constructor="PrioritizationFundingGrid" version="0.2.14"
            display-name-key="PrioritizationFundingGrid"
            description-key="Requirement-form hub for NPM Validate and Fund. Lists child Prioritizations with batch Edit/Save of Validated and Funded amounts (expandable to per-line Itemized Details when present), and an Allocate-to-RFs dialog per Prioritization that splits the Prio Funded total across multiple Requirement Fundings via book_prioritizationfunding rows. TDP guardrail aggregates across every RF on the Requirement."
            control-type="virtual" >
