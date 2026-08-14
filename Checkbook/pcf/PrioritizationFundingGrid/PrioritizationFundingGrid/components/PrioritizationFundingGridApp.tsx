@@ -118,8 +118,10 @@ interface ItemRow {
   label: string;
   /** TDC name of the linked Requirement Detail; empty when not set. */
   tdc: string;
-  /** "LIN · Country" of the linked Requirement Detail; absent codes omitted. */
-  codes: string;
+  /** LIN code of the linked Requirement Detail; empty when not set. */
+  lin: string;
+  /** Country of the linked Requirement Detail; empty when not set. */
+  country: string;
   /** Fund Center name of the Itemized Detail; empty = state level. */
   fundCenter: string;
   requested: number;
@@ -295,11 +297,24 @@ const useStyles = makeStyles({
     ...shorthands.padding("6px", "12px", "6px", "28px"),
     borderTop: `1px solid ${tokens.colorNeutralStroke2}`,
   },
-  itemCodes: {
-    marginLeft: "8px",
-    color: tokens.colorNeutralForeground3,
+  codeBubble: {
+    display: "inline-block",
+    marginLeft: "6px",
+    ...shorthands.padding("1px", "8px"),
+    ...shorthands.borderRadius("9px"),
     fontSize: tokens.fontSizeBase100,
+    fontWeight: tokens.fontWeightSemibold,
+    lineHeight: "16px",
     whiteSpace: "nowrap",
+    verticalAlign: "middle",
+  },
+  linBubble: {
+    backgroundColor: tokens.colorPaletteBlueBackground2,
+    color: tokens.colorPaletteBlueForeground2,
+  },
+  countryBubble: {
+    backgroundColor: tokens.colorPaletteGreenBackground2,
+    color: tokens.colorPaletteGreenForeground2,
   },
   rowActions: {
     display: "flex",
@@ -503,6 +518,15 @@ function approvalColor(label: string | null): "danger" | "warning" | "success" |
   if (t.includes("review") || t.includes("submit")) return "warning";
   if (t.includes("draft") || t.includes("planning")) return "informative";
   return "informative";
+}
+
+// A Prioritization is only fundable once it reaches NPM Review; below that the
+// funding roll-up (FinalApproved-only) ignores it, so the grid keeps earlier
+// stages visible but read-only. Matched on the formatted status label so the
+// same check works for both the dataset and container-override data paths.
+const NPM_REVIEW_LABEL = "NPM Review";
+function isFundable(prio: PrioRow): boolean {
+  return (prio.approvalStatus ?? "").trim().toLowerCase() === NPM_REVIEW_LABEL.toLowerCase();
 }
 
 export const PrioritizationFundingGridApp: React.FC<PrioritizationFundingGridProps> = (
@@ -733,12 +757,8 @@ export const PrioritizationFundingGridApp: React.FC<PrioritizationFundingGridPro
           const itemName =
             (rd?.[`_book_item_value${FV}`] as string | undefined) ?? null;
           const tdc = rd?.[`_book_tdc_value${FV}`];
-          const codes = [
-            rd?.[`_book_lin_value${FV}`],
-            rd?.[`_book_country_value${FV}`],
-          ]
-            .filter((v): v is string => typeof v === "string" && v.trim() !== "")
-            .join(" · ");
+          const lin = rd?.[`_book_lin_value${FV}`];
+          const country = rd?.[`_book_country_value${FV}`];
           return {
           id: e.book_itemizeddetailsid as string,
           prioritizationId: ((e._book_prioritization_value as string) ?? "")
@@ -749,7 +769,8 @@ export const PrioritizationFundingGridApp: React.FC<PrioritizationFundingGridPro
             (e[`_book_requirementitem_value${FV}`] as string | undefined) ??
             "(unnamed line item)",
           tdc: typeof tdc === "string" ? tdc : "",
-          codes,
+          lin: typeof lin === "string" ? lin : "",
+          country: typeof country === "string" ? country : "",
           fundCenter:
             (e[`_book_fundcenter_value${FV}`] as string | undefined) ?? "",
           requested: num(e.book_requestedamount),
@@ -1568,6 +1589,10 @@ export const PrioritizationFundingGridApp: React.FC<PrioritizationFundingGridPro
                   const eff = effective(editable);
                   const items = itemsFor(editable.id);
                   const isItemized = eff.derived;
+                  // Only NPM-Review Prios are fundable; earlier stages show
+                  // read-only (funding they don't yet legitimately hold would be
+                  // invisible to the RF roll-up — see PrioritizationFundingApprovalGuard).
+                  const canFund = isFundable(editable);
                   const isOpen = !!expandedItems[editable.id];
                   const unfunded = Math.max(
                     editable.requestedAmount - eff.funded,
@@ -1639,7 +1664,7 @@ export const PrioritizationFundingGridApp: React.FC<PrioritizationFundingGridPro
                           {formatCurrency(editable.requestedAmount)}
                         </td>
                         <td className={`${styles.td} ${styles.tdNum}`}>
-                          {editMode && !isItemized ? (
+                          {editMode && !isItemized && canFund ? (
                             <MoneyInput
                               className={styles.amountInput}
                               value={editable.validatedAmount}
@@ -1652,7 +1677,7 @@ export const PrioritizationFundingGridApp: React.FC<PrioritizationFundingGridPro
                           )}
                         </td>
                         <td className={`${styles.td} ${styles.tdNum}`}>
-                          {editMode && !isItemized ? (
+                          {editMode && !isItemized && canFund ? (
                             <MoneyInput
                               className={styles.amountInput}
                               value={editable.fundedAmount}
@@ -1697,7 +1722,7 @@ export const PrioritizationFundingGridApp: React.FC<PrioritizationFundingGridPro
                             <Button
                               size="small"
                               appearance="subtle"
-                              disabled={isDisabled || editMode}
+                              disabled={isDisabled || editMode || !canFund}
                               onClick={() => openAllocate(editable)}
                             >
                               Allocate to RFs
@@ -1727,8 +1752,15 @@ export const PrioritizationFundingGridApp: React.FC<PrioritizationFundingGridPro
                                   <tr key={it.id}>
                                     <td className={styles.itemsTd}>
                                       {it.label}
-                                      {it.codes && (
-                                        <span className={styles.itemCodes}>{it.codes}</span>
+                                      {it.lin && (
+                                        <span className={`${styles.codeBubble} ${styles.linBubble}`}>
+                                          {it.lin}
+                                        </span>
+                                      )}
+                                      {it.country && (
+                                        <span className={`${styles.codeBubble} ${styles.countryBubble}`}>
+                                          {it.country}
+                                        </span>
                                       )}
                                     </td>
                                     <td className={styles.itemsTd}>{it.tdc}</td>
@@ -1739,7 +1771,7 @@ export const PrioritizationFundingGridApp: React.FC<PrioritizationFundingGridPro
                                       {formatCurrency(it.requested)}
                                     </td>
                                     <td className={`${styles.itemsTd} ${styles.tdNum}`}>
-                                      {editMode ? (
+                                      {editMode && canFund ? (
                                         <MoneyInput
                                           className={styles.amountInput}
                                           value={it.validated}
@@ -1752,7 +1784,7 @@ export const PrioritizationFundingGridApp: React.FC<PrioritizationFundingGridPro
                                       )}
                                     </td>
                                     <td className={`${styles.itemsTd} ${styles.tdNum}`}>
-                                      {editMode ? (
+                                      {editMode && canFund ? (
                                         <MoneyInput
                                           className={styles.amountInput}
                                           value={it.funded}
@@ -1765,7 +1797,7 @@ export const PrioritizationFundingGridApp: React.FC<PrioritizationFundingGridPro
                                       )}
                                     </td>
                                     <td className={styles.itemsTd}>
-                                      {editMode ? (
+                                      {editMode && canFund ? (
                                         <Textarea
                                           appearance="outline"
                                           resize="vertical"

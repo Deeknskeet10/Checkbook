@@ -63,6 +63,7 @@ namespace Checkbook.Plugins.Validation
                 new ColumnSet(
                     PrioritizationAttributes.Requirement,
                     PrioritizationAttributes.FiscalYear,
+                    PrioritizationAttributes.ApprovalStatus,
                     PrioritizationAttributes.Name,
                     "ownerid"
                 )
@@ -130,6 +131,27 @@ namespace Checkbook.Plugins.Validation
                 rfRef.Id, rfTDP,
                 newFunded, oldFunded,
                 context);
+
+            // ---- 5. Funding only on an NPM-Review Prioritization ----
+            // FY27 funding lives on these junction rows, so mirror the
+            // Prio-level PrioritizationFundingApprovalGuard here: a Prio that
+            // hasn't reached NPM Review must not receive funding through the
+            // junction either (or it would be invisible to the FinalApproved-only
+            // RF roll-up and surface as a phantom TDP gap). Increases only —
+            // reductions and the pull-back deactivation stay allowed.
+            if (newFunded > oldFunded)
+            {
+                var prioStatus = prio
+                    .GetAttributeValue<OptionSetValue>(PrioritizationAttributes.ApprovalStatus)?.Value;
+                if (prioStatus != ApprovalStatusValues.FinalApproved)
+                {
+                    tracing.Trace(
+                        $"Blocking junction funding increase {oldFunded:C} -> {newFunded:C} — " +
+                        $"parent Prio {prioRef.Id} at ApprovalStatus " +
+                        $"{(prioStatus?.ToString() ?? "null")} (NPM Review required).");
+                    throw new InvalidPluginExecutionException(ValidationMessages.FundingRequiresNPMReview);
+                }
+            }
 
             // ---- Name autopop (Create only, when caller didn't set one) ----
             if (context.MessageName == "Create" &&

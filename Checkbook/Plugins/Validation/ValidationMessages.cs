@@ -67,6 +67,20 @@ namespace Checkbook.Plugins.Validation
 
         #endregion
 
+        #region Prioritization Funding / Approval Messages
+
+        /// <summary>
+        /// Error when funding is applied to a Prioritization that has not reached
+        /// NPM Review. Funding may only be held by a Prioritization in NPM Review;
+        /// below that stage it would be invisible to the RF funded roll-up and
+        /// surface as a phantom TDP gap on the parent Requirement Funding.
+        /// </summary>
+        public const string FundingRequiresNPMReview =
+            "Funding can only be applied to a Prioritization that is in NPM Review. " +
+            "Advance this Prioritization to NPM Review before funding it.";
+
+        #endregion
+
         #region Funding Event / Funding Detail Validation Messages
 
         /// <summary>

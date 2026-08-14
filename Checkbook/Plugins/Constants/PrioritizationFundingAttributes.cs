@@ -14,5 +14,6 @@ namespace Checkbook.Plugins.Constants
         public const string FundedAmount = "book_fundedamount";
         public const string ValidatedAmount = "book_validatedamount";
         public const string StateCode = "statecode";
+        public const string StatusCode = "statuscode";
     }
 }

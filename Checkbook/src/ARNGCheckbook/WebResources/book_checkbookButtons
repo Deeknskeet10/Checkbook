@@ -236,6 +236,63 @@ async function getUserRolesByTeamAssociation() {
  * @param {list} selectedRecordIds - list of GUIDs of the selected records
  * @param {int} buttonId - serial for button selected
  */
+/**
+ * Pull-back warning: a Prioritization in NPM Review (status 4) may hold funding.
+ * Pulling it back to State Input strips that funding (the
+ * PrioritizationFundingApprovalGuard / PrioritizationPullbackFundingCleanup
+ * plugins return it to the parent RF). Warn the user once for the batch when any
+ * selected record is funded. Returns true to proceed, false to cancel.
+ * @param {list} selectedRecordIds
+ * @returns {Promise<boolean>}
+ */
+async function confirmPullbackFundingRemoval(selectedRecordIds) {
+  if (!selectedRecordIds || selectedRecordIds.length === 0) return true;
+
+  const ids = selectedRecordIds.map(function (id) {
+    return id.replace(/[{}]/g, "");
+  });
+  const filter = ids
+    .map(function (id) {
+      return "book_prioritizationid eq " + id;
+    })
+    .join(" or ");
+
+  let fundedCount = null; // null = pre-check failed → fall back to a generic warning
+  try {
+    const result = await Xrm.WebApi.retrieveMultipleRecords(
+      "book_prioritization",
+      "?$select=book_newfundedamounttdp,book_approvalstatus&$filter=(" + filter + ")"
+    );
+    fundedCount = result.entities.filter(function (e) {
+      return e.book_approvalstatus === 4 && (e.book_newfundedamounttdp || 0) > 0;
+    }).length;
+  } catch (e) {
+    console.error("Pull-back funding pre-check failed: " + e.message);
+  }
+
+  /* No funded records in scope → nothing to warn about. */
+  if (fundedCount === 0) return true;
+
+  const count = fundedCount === null ? selectedRecordIds.length : fundedCount;
+  const confirmStrings = {
+    title: "Remove funding?",
+    text:
+      (count === 1
+        ? "This Prioritization has funding that will be removed when it is pulled back to the State."
+        : count +
+          " of the selected Prioritizations have funding that will be removed when they are pulled back to the State.") +
+      " The funding returns to the parent Requirement Funding and must be re-entered after the Prioritization returns to NPM Review. Continue?",
+    confirmButtonLabel: "Pull back & remove funding",
+    cancelButtonLabel: "Cancel",
+  };
+
+  const res = await Xrm.Navigation.openConfirmDialog(confirmStrings, {
+    height: 220,
+    width: 460,
+  });
+  return !!(res && res.confirmed);
+}
+
 async function checkbookButtons(gridContext, selectedRecordIds, buttonId) {
   /* Grab User Roles assigned via Team */
   var userTeamRoles = getUserRolesByTeamAssociation();
@@ -290,6 +347,12 @@ async function checkbookButtons(gridContext, selectedRecordIds, buttonId) {
     case 4:
       console.log("Case 4 - Return to State PM");
       /* Rejected by NPM/Recalled by State -> State Input */
+      /* Pulling a Prioritization out of NPM Review removes any funding on it
+         (the server strips it back to the parent RF). Warn first when funded. */
+      if (!(await confirmPullbackFundingRemoval(selectedRecordIds))) {
+        console.log("Case 4 - pull-back cancelled by user.");
+        return;
+      }
       successNotification.message = await returnToStatePM(
         gridContext,
         selectedRecordIds,
