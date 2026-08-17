@@ -198,7 +198,12 @@ export const ValidateAndFundRequirementDetailsGridApp: React.FC<
     return { validated, funded };
   }, [rdfRows]);
 
-  const overAllocated = tdp != null && totals.funded > tdp;
+  // Whole-cent comparison: totals.funded is a running JS-float sum, so a total
+  // that exactly equals TDP can land a sub-cent epsilon high and trip a strict
+  // `>`. The plugin validates with exact C# decimals, so equal-to-the-cent is
+  // fine — round both sides to avoid a phantom "exceeds by $0.00" false positive.
+  const overAllocated =
+    tdp != null && Math.round(totals.funded * 100) > Math.round(tdp * 100);
 
   const updateRdfMoney = (
     id: string,
