@@ -96,6 +96,18 @@ namespace Checkbook.Plugins.TurnIns
             // Need a merged view to read amount + fund/pg etc. consistently
             var merged = GetMergedEntity(target, preImage);
 
+            // An approval save only carries the approval boolean(s) in Target, so the
+            // amount/origin fields below can come *only* from the pre-image. If the
+            // registered pre-image is missing any of them (registration drift — e.g. a
+            // step registered before book_afpamount/book_allotmentamount were added to
+            // the image), reading them from `merged` silently yields 0 and the
+            // sweep-origin AFP-only guard misfires on a Turn-In that actually carries a
+            // positive AFP amount. Backfill from the database — Pre-Operation runs before
+            // the write and this save never touches these columns, so the stored values
+            // are the correct effective values. Matches the reduction-lock validators'
+            // "falls back to a Retrieve if the image is missing" convention.
+            EnsureSweepFields(service, tracing, context.PrimaryEntityId, merged);
+
             decimal headerAmount = NumericHelper.ToDecimal(merged, TurninAttributes.Amount) ?? 0m;
             int origin = merged.GetAttributeValue<OptionSetValue>(TurninAttributes.Origin)?.Value
                 ?? TurnInOriginValues.State;
@@ -206,6 +218,49 @@ namespace Checkbook.Plugins.TurnIns
             }
 
             tracing.Trace("TurnInValidator: all validations passed.");
+        }
+
+        /// <summary>
+        /// Fields the approval-time validation reads that an approval save never
+        /// carries in Target (they come only from the pre-image). Backfilled from
+        /// the database when the pre-image doesn't supply them.
+        /// </summary>
+        private static readonly string[] SweepFields =
+        {
+            TurninAttributes.Amount,
+            TurninAttributes.Origin,
+            TurninAttributes.AFPAmount,
+            TurninAttributes.AllotmentAmount,
+        };
+
+        /// <summary>
+        /// Guarantees <paramref name="merged"/> contains every field in
+        /// <see cref="SweepFields"/>. Any that are absent (pre-image drift) are
+        /// retrieved once from the stored record and overlaid — without clobbering
+        /// values already present from Target/pre-image. A no-op when the pre-image
+        /// is complete, so the happy path issues no extra Retrieve.
+        /// </summary>
+        private static void EnsureSweepFields(
+            IOrganizationService service,
+            ITracingService tracing,
+            Guid turnInId,
+            Entity merged)
+        {
+            var missing = SweepFields.Where(f => !merged.Contains(f)).ToArray();
+            if (missing.Length == 0) return;
+
+            tracing.Trace(
+                $"TurnInValidator: pre-image missing [{string.Join(", ", missing)}]; " +
+                "retrieving from stored record.");
+
+            var stored = service.Retrieve(
+                EntityNames.Turnin, turnInId, new ColumnSet(missing));
+
+            foreach (var field in missing)
+            {
+                if (stored.Contains(field))
+                    merged[field] = stored[field];
+            }
         }
 
         /// <summary>

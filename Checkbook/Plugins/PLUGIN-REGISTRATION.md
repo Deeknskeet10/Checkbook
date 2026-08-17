@@ -730,7 +730,7 @@ renamed. The PCF process-bar control mirrors these lists on the UI side.
 
 | # | Message | Primary entity | Stage         | Mode | Filtering attributes                  | Notes |
 |---|---------|----------------|---------------|------|---------------------------------------|-------|
-| 1 | Update  | `book_turnin`  | Pre-Operation | Sync | `book_stateapproved, book_beapproved` | Fires when the payload carries an approval flag = true (value-based, not transition-based — so a re-save that re-drives a stuck approval is validated + role-gated like the original). **Requires PreImage** (`book_stateapproved, book_beapproved, book_newamount, book_origin, book_afpamount, book_allotmentamount`) — origin + AFP/Allotment amounts are needed to evaluate the sweep-origin AFP-only path. |
+| 1 | Update  | `book_turnin`  | Pre-Operation | Sync | `book_stateapproved, book_beapproved` | Fires when the payload carries an approval flag = true (value-based, not transition-based — so a re-save that re-drives a stuck approval is validated + role-gated like the original). **Requires PreImage** (`book_stateapproved, book_beapproved, book_newamount, book_origin, book_afpamount, book_allotmentamount`) — origin + AFP/Allotment amounts are needed to evaluate the sweep-origin AFP-only path. If the deployed image is missing `book_newamount`/`book_origin`/`book_afpamount`/`book_allotmentamount`, the plugin falls back to a single Retrieve for the absent columns (guards against pre-image drift that otherwise made the sweep AFP-only guard misfire — reading 0 and rejecting a Turn-In that carried a positive AFP amount). Registering the full image above avoids the extra Retrieve. |
 
 ### `Checkbook.Plugins.TurnIns.TurnInApprovalPlugin`
 
