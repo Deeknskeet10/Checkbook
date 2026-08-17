@@ -243,6 +243,23 @@ Book.Prioritization = (function () {
         ctrl.setDisabled(formContext.ui.getFormType() !== 1);
     }
 
+    // ----- Requirement Funding is a FY26-only linkage -----
+    // Users can set FY=2026, pick an RF lookup, then flip FY to 2027 before the
+    // first save — leaving a FY27 Prio pinned to a FY26 RequirementFunding.
+    // Business rules can't clear a lookup, so do it here: whenever FY moves off
+    // 2026, blank the RF. (setValue(null) is the client-API move a "Set Field
+    // Value" business-rule action has no equivalent for on lookups.)
+    var FY_WITH_REQUIREMENT_FUNDING = 2026;
+
+    function clearRequirementFundingIfNotFy26(formContext) {
+        var fy    = formContext.getAttribute(FISCAL_YEAR);
+        var rf    = formContext.getAttribute(REQUIREMENT_FUNDING);
+        if (!fy || !rf) return;
+        if (fy.getValue() === FY_WITH_REQUIREMENT_FUNDING) return;
+        if (rf.getValue() === null) return;
+        rf.setValue(null);
+    }
+
     // ----- Unique state-priority enforcement -----
 
     async function verifyUniquePriority(executionContext) {
@@ -319,6 +336,13 @@ Book.Prioritization = (function () {
 
         onRequirementFundingChange: function (executionContext) {
             applyFundCenterLock(executionContext.getFormContext());
+        },
+
+        onFiscalYearChange: function (executionContext) {
+            var formContext = executionContext.getFormContext();
+            clearRequirementFundingIfNotFy26(formContext);
+            applyFundCenterLock(formContext);
+            applySpendPlanTabVisibility(formContext);
         },
 
         onRequirementChange: function (executionContext) {
