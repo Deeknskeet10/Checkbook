@@ -322,7 +322,14 @@ export const ValidateAndFundGridApp: React.FC<ValidateAndFundGridProps> = (
   // Withhold is read directly from the RF's stored book_newwithholding (the
   // plugins are the authoritative computer). overAllocated remains a live
   // guardrail against the user's pending edits before save.
-  const overAllocated = tdp != null && totals.funded > tdp;
+  //
+  // Compare at whole-cent precision: totals.funded is a running JS-float sum of
+  // many row amounts, so summing values that exactly equal TDP can land a
+  // sub-cent epsilon high (…11.0000000037) and trip a strict `>`. The plugin
+  // validates with exact C# decimals, so an equal-to-the-cent total is fine —
+  // rounding both sides here avoids a phantom "exceeds by $0.00" false positive.
+  const overAllocated =
+    tdp != null && Math.round(totals.funded * 100) > Math.round(tdp * 100);
 
   // --- Editing ----------------------------------------------------------
   const updatePrioMoney = (

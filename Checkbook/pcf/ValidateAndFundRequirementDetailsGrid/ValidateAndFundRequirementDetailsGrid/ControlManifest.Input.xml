@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <manifest>
-  <control namespace="ARNGCheckbook" constructor="ValidateAndFundRequirementDetailsGrid" version="0.1.0"
+  <control namespace="ARNGCheckbook" constructor="ValidateAndFundRequirementDetailsGrid" version="0.1.1"
            display-name-key="ValidateAndFundRequirementDetailsGrid"
            description-key="NPM Validate and Fund grid for a Requirement Funding whose parent Requirement has no Prioritization: edit Validated/Funded directly on each Requirement Detail allocation. Batch Edit/Save with an Available-TDP over-allocation guardrail."
            control-type="virtual" >
