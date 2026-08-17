@@ -118,9 +118,10 @@ namespace Checkbook.Plugins.TurnIns
 
             // ---- AFP-only (Kind B / sweep) path: zero items permitted ----
             // Sweep-created Turn-Ins track an AFP/Allotment over-allocation; no TDP moves,
-            // so there are no items and header book_newamount is 0. RequiresBEApprovalRecalc
-            // already flips book_requiresbeapproval = true for zero-item Turn-Ins, and we
-            // enforce that routing here.
+            // so there are no items and header book_newamount is 0. These are State-level
+            // corrections and require State Approval ONLY. BE Approval is reserved for
+            // Turn-Ins that move funds with no Prioritization (RF-only items — see the
+            // item-bearing path below); a sweep Turn-In has no such items.
             if (items.Count == 0)
             {
                 if (!isSweep)
@@ -144,12 +145,9 @@ namespace Checkbook.Plugins.TurnIns
                         "Sweep-origin (AFP-only) Turn-In must carry a positive AFP or Allotment amount.");
                 }
 
-                if (!newBeApproved)
-                {
-                    throw new InvalidPluginExecutionException(
-                        "Sweep-origin (AFP-only) Turn-Ins require Budget Execution Approval before processing.");
-                }
-
+                // Sweep-origin Turn-Ins are State-approved only — no BE gate. BE Approval
+                // applies solely to Turn-Ins that move funds outside a Prioritization
+                // (RF-only items), which a zero-item sweep by definition never has.
                 if (!newStateApproved)
                 {
                     throw new InvalidPluginExecutionException(

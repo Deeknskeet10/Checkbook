@@ -67,7 +67,7 @@ runtime the Create / Update messages will fail.
 | `book_origin`           | Choice (option set)  | `State` | Values: **State** = `0`, **Sweep** = `1`. Distinguishes Kind A (state-submitted) from Kind B (sweep-created over-allocation tracker). |
 | `book_afpamount`        | Decimal (2 decimals) | `0`     | AFP amount that will flow back to A18 on approval. Auto-populated by `TurnInAmountCalculator` for Kind A; written by `GenerateDistributions` for Kind B. |
 | `book_allotmentamount`  | Decimal (2 decimals) | `0`     | Allotment amount that will flow back to A18 on approval. Same population sources as above. |
-| `book_requiresbeapproval` | Two Options (Yes/No) | `Yes` | Derived flag driving the Turn-In BPF's BE-Approval branch. Kept in sync by `TurnInRequiresBEApprovalRecalc` on item Create/Update/Delete. Default **Yes** so a fresh (item-less) Turn-In starts on the BE path until items say otherwise. |
+| `book_requiresbeapproval` | Two Options (Yes/No) | `No` | Derived flag driving the Turn-In BPF's BE-Approval branch. Kept in sync by `TurnInRequiresBEApprovalRecalc` on item Create/Update/Delete. Default **No**: a zero-item Turn-In (AFP-only / sweep-origin) is State-approved only, and the recalc never fires for it (no items), so the default must leave it off the BE path. The recalc flips it to **Yes** once an item lacking a Prioritization (RF-only) is added. ⚠ Change the column default from Yes→No in Dataverse to match. |
 
 `book_newamount` keeps its existing schema; its semantic meaning narrows to
 "TDP amount being returned (Kind A) or 0 (Kind B)" — no migration needed.
@@ -778,10 +778,12 @@ the idempotency barrier.
 ### `Checkbook.Plugins.TurnIns.TurnInRequiresBEApprovalRecalc`
 
 Keeps `book_turnin.book_requiresbeapproval` in sync as child Turn-In Items
-change. Rule: BE Approval is required when the Turn-In has zero active items
-(AFP-only path) or any active item lacks a Prioritization (RF-only item). The
+change. Rule: BE Approval is required only when the Turn-In has **at least one
+active item and any active item lacks a Prioritization** (RF-only item — funds
+moving at the Requirement/RF level, outside a Prioritization). A zero-item
+Turn-In (AFP-only / sweep-origin) is **State-approved only — no BE gate**. The
 flag is what the Turn-In BPF branches on to route the BE Approval stage;
-`TurnInValidator` still enforces the same rule at approval time.
+`TurnInValidator` enforces the same rule at approval time.
 
 Cross-entity writer (writes `book_turnin`, triggered by `book_turninitems`), so
 it does not recurse with the other Turn-In steps. The plugin no-ops the Update

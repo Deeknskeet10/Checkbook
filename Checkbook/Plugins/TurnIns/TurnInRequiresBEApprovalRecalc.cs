@@ -14,10 +14,11 @@ namespace Checkbook.Plugins.TurnIns
     /// Register a PreImage on Update and Delete that includes book_turnin,
     /// book_prioritization, and statecode.
     ///
-    /// Rule: a Turn-In requires BE Approval when
-    ///   - it has zero active items (AFP-only Turn-In path), OR
-    ///   - any active item has no Prioritization (RF-only item).
-    /// Otherwise State approval alone is sufficient.
+    /// Rule: a Turn-In requires BE Approval when it has at least one active item
+    /// and any active item has no Prioritization (RF-only item) — i.e. it moves
+    /// funds at the Requirement/RF level, outside a Prioritization.
+    /// Otherwise State approval alone is sufficient. In particular a zero-item
+    /// Turn-In (AFP-only / sweep-origin) is State-approved only — no BE gate.
     ///
     /// The flag drives the Turn-In BPF's routing to the BE Approval stage. The
     /// authoritative enforcement still lives in TurnInValidator — this flag only
@@ -110,7 +111,9 @@ namespace Checkbook.Plugins.TurnIns
                 withPrio = (int)(rows[0].GetAttributeValue<AliasedValue>("withPrio")?.Value ?? 0);
             }
 
-            bool requires = total == 0 || withPrio < total;
+            // BE Approval only for item-bearing Turn-Ins that carry an RF-only item
+            // (no Prioritization). Zero-item (sweep) Turn-Ins are State-approved only.
+            bool requires = total > 0 && withPrio < total;
 
             // Skip the write when the flag already matches — avoids an unnecessary
             // Turn-In Update (and the sync plugins that would early-exit on it).
