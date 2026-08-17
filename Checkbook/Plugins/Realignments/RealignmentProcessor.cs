@@ -189,10 +189,10 @@ namespace Checkbook.Plugins.Realignments
             {
                 var debitAnchorFc = isPriorPath
                     ? ResolveAnchorFundCenter(service, EntityNames.Prioritization, debitPrior, PrioritizationAttributes.FundCenter)
-                    : ResolveAnchorFundCenter(service, EntityNames.RequirementFunding, debitRF, RequirementFundingAttributes.FundCenter);
+                    : ResolveRFFundCenter(service, debitRF);
                 var creditAnchorFc = isPriorPath
                     ? ResolveAnchorFundCenter(service, EntityNames.Prioritization, creditPrior, PrioritizationAttributes.FundCenter)
-                    : ResolveAnchorFundCenter(service, EntityNames.RequirementFunding, creditRF, RequirementFundingAttributes.FundCenter);
+                    : ResolveRFFundCenter(service, creditRF);
 
                 RealignmentDistributionCreator.CreateDistributions(
                     service, tracing, context.PrimaryEntityId,
@@ -369,6 +369,34 @@ namespace Checkbook.Plugins.Realignments
 
             var anchor = service.Retrieve(entityName, anchorRef.Id, new ColumnSet(fundCenterAttribute));
             return anchor.GetAttributeValue<EntityReference>(fundCenterAttribute);
+        }
+
+        // book_requirementfunding has no book_fundcenter of its own — unlike
+        // Prioritization, which carries a backfilled copy. The RF's fund center
+        // lives on its parent book_requirement, so hop RF → Requirement →
+        // FundCenter to anchor the AFP/Allotment Distributions on an RF→RF move.
+        private EntityReference ResolveRFFundCenter(
+            IOrganizationService service,
+            EntityReference rfRef)
+        {
+            if (rfRef == null)
+                return null;
+
+            var rf = service.Retrieve(
+                EntityNames.RequirementFunding,
+                rfRef.Id,
+                new ColumnSet(RequirementFundingAttributes.Requirement));
+
+            var reqRef = rf.GetAttributeValue<EntityReference>(RequirementFundingAttributes.Requirement);
+            if (reqRef == null)
+                return null;
+
+            var req = service.Retrieve(
+                EntityNames.Requirements,
+                reqRef.Id,
+                new ColumnSet(RequirementsAttributes.FundCenter));
+
+            return req.GetAttributeValue<EntityReference>(RequirementsAttributes.FundCenter);
         }
 
         private void FinalizeRealignment(IOrganizationService service, ITracingService tracing, Guid id)
