@@ -24,3 +24,5 @@ Thumbs.db
 
 # Raw solution-export drops (zips get copied into Checkbook/solutions/ for tracking)
 Checkbook/DOD SAFE-*/
+# Stray export zips at repo root (leading slash = root only; tracked zips in Checkbook/solutions/ are unaffected)
+/*.zip
