@@ -166,7 +166,7 @@ namespace Checkbook.Plugins.Realignments
             if (isPriorPath)
             {
                 tracing.Trace("Executing Prior→Prior realignment.");
-                ExecutePriorToPrior(service, tracing, debitPrior, creditPrior, debitRF, creditRF, amount);
+                ExecutePriorToPrior(service, tracing, debitPrior, creditPrior, debitRF, creditRF, debitLOA, creditLOA, amount);
             }
             else if (isRFPath)
             {
@@ -209,27 +209,64 @@ namespace Checkbook.Plugins.Realignments
             EntityReference creditPrior,
             EntityReference debitRF,
             EntityReference creditRF,
+            EntityReference debitLOA,
+            EntityReference creditLOA,
             decimal amount)
         {
+            // When the debit and credit sit on the SAME Requirement Funding AND
+            // the SAME LOA, the money never leaves the RF or the LOA — it only
+            // shifts between two child Prioritizations. The RF debit and RF
+            // credit would net to zero on RF.TDP, and the child-sum recalc below
+            // already restores RF.Funded, so touching the RF is pure churn (an
+            // intermediate TDP dip-and-restore that needlessly trips the
+            // "Funded vs TDP" business rule). Skip both RF writes in that case.
+            bool sameRfAndLoa =
+                debitRF.Id == creditRF.Id &&
+                (debitLOA?.Id) == (creditLOA?.Id);
+
             var debit = service.Retrieve(
                 EntityNames.Prioritization,
                 debitPrior.Id,
                 new ColumnSet(PrioritizationAttributes.FundedAmountTDP));
 
             decimal fundedDebit = debit.GetAttributeValue<decimal?>(PrioritizationAttributes.FundedAmountTDP) ?? 0m;
+
+            // Do NOT clamp a short debit to zero. If the debit Prioritization no
+            // longer holds enough funded amount to cover this realignment, the
+            // credit side (below) still posts the full amount and the RF.Funded
+            // children-sum recalc launders the shortfall into RF.Funded —
+            // creating money and over-funding the RF. This is the over-funding
+            // seen when a second realignment drains the source Prioritization
+            // between this realignment's authoring and its approval: the source
+            // had funds when queued but zero by approval time, and the old
+            // clamp swallowed the difference silently. Abort instead so the
+            // approver re-sources or lowers the amount.
+            if (fundedDebit < amount)
+                throw new InvalidPluginExecutionException(
+                    $"Realignment cannot be executed: the debited Prioritization holds only {fundedDebit:N2} " +
+                    $"but this realignment moves {amount:N2}. The source funding was likely reduced by another " +
+                    $"realignment after this one was submitted. Re-source the realignment or lower the amount.");
+
             decimal newDebitAmount = fundedDebit - amount;
-            if (newDebitAmount < 0)
-                newDebitAmount = 0;
 
             var updDebit = new Entity(EntityNames.Prioritization, debitPrior.Id);
             updDebit[PrioritizationAttributes.FundedAmountTDP] = newDebitAmount;
             service.Update(updDebit);
 
-            /* Now that Prioritization is debited; debit parent RF */
-            ApplyDebitToRF(service, tracing, debitRF, amount, true);
+            if (!sameRfAndLoa)
+            {
+                /* Now that Prioritization is debited; debit parent RF */
+                ApplyDebitToRF(service, tracing, debitRF, amount, true);
 
-            /* Add credit to credited RF before crediting Prioritization */
-            ApplyCreditToRF(service, tracing, creditRF, amount);
+                /* Add credit to credited RF before crediting Prioritization */
+                ApplyCreditToRF(service, tracing, creditRF, amount);
+            }
+            else
+            {
+                tracing.Trace(
+                    "Prior→Prior on same RF and same LOA — funds stay in house; " +
+                    "skipping RF debit/credit (net-zero on RF.TDP).");
+            }
 
             var credit = service.Retrieve(
                 EntityNames.Prioritization,
@@ -317,11 +354,19 @@ namespace Checkbook.Plugins.Realignments
                         "Debited RF has no remaining withholding and has child Prioritizations. Realignment would affect child-funded amounts.");
                 }
 
+                // Same conservation rule as the Prio debit above: never clamp a
+                // short RF debit to zero. If this leaf RF cannot cover the move,
+                // the credit RF still receives its full TDP increase and we would
+                // be fabricating funds that do not exist. Abort instead.
+                if (remaining > funded || remaining > tdp)
+                    throw new InvalidPluginExecutionException(
+                        $"Realignment cannot be executed: the debited Requirement Funding holds only " +
+                        $"{Math.Min(funded, tdp):N2} available (Funded {funded:N2}, TDP {tdp:N2}) but this " +
+                        $"realignment moves {remaining:N2}. The source funding was likely reduced by another " +
+                        $"realignment after this one was submitted. Re-source the realignment or lower the amount.");
+
                 tdp -= remaining;
                 funded -= remaining;
-
-                if (tdp < 0) tdp = 0;
-                if (funded < 0) funded = 0;
 
                 remaining = 0;
                 tracing.Trace("RF Debit: Reduced leaf-RF TDP and Funded.");
