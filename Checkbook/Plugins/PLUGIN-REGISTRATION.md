@@ -576,6 +576,33 @@ directly.
 | 2 | Update  | `book_prioritization` | Post-Operation  | Sync | `book_newfundedamounttdp, book_validatedamount, book_requirementfunding, statecode`                           | Recalc parent RF. **Requires PreImage** (`book_requirementfunding`). |
 | 3 | Delete  | `book_prioritization` | Post-Operation  | Sync | *(none)*                                                                                                      | Recalc pre-image parent RF. **Requires PreImage** (`book_requirementfunding`). |
 
+### `Checkbook.Plugins.Recalculations.PrioritizationSingleRfAutoAllocate`
+
+Auto-allocates a Prioritization's funded/validated total to its **single**
+Requirement Funding when the Requirement has exactly **one** active RF for the
+Prio's Fiscal Year (FY27+). Removes the "type Funded, then re-type it in Allocate
+to RFs" double entry by materializing / syncing the one `book_prioritizationfunding`
+junction whenever the NPM sets the Prio total. Covers **both** funding modes —
+Direct (NPM types `book_newfundedamounttdp` / `book_validatedamount` in the V&F
+editor) and Itemized (`PrioritizationItemizedRollup` sums the details onto the
+same two fields) — because both fire this step's filter. It recalculates the
+parent RF directly via `PrioritizationRollupHelper.RecalculateRFFunded` (the
+junction write lands at depth ≥ 2, where `PrioritizationFundingRollup`
+self-guards and won't refresh the RF). No pre-image needed — the post-operation
+`Retrieve` reads the committed totals + parents.
+
+**Single-RF only.** When the Requirement has 2+ active RFs for the FY it no-ops
+and leaves the junctions to the manual "Allocate to RFs" dialog. It also no-ops
+below NPM Review (status ≠ 4), so it never collides with the pull-back cleanup.
+An idempotent guard (junction already equals the target) is the final backstop
+against a roll-up echo. Gated so it never re-points or collapses a hand-built
+multi-junction / mismatched-RF layout.
+
+| # | Message | Primary entity        | Stage           | Mode | Filtering attributes                                | Notes |
+|---|---------|-----------------------|-----------------|------|-----------------------------------------------------|-------|
+| 1 | Create  | `book_prioritization` | Post-Operation  | Sync | *(none)*                                            | Materializes the single junction on a Prio created already funded at NPM Review (rare; import/automation). |
+| 2 | Update  | `book_prioritization` | Post-Operation  | Sync | `book_newfundedamounttdp, book_validatedamount`     | Syncs the single junction to the new total. **Rank: after `PrioritizationRollupToRequirementFunding`.** No pre-image. |
+
 ### `Checkbook.Plugins.Recalculations.RequirementDetailFundingRollup`
 
 Rolls `book_requirementdetailfunding` junction amounts up onto both the
