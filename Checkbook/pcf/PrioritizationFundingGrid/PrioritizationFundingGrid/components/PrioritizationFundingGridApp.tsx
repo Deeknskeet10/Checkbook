@@ -1150,12 +1150,33 @@ export const PrioritizationFundingGridApp: React.FC<PrioritizationFundingGridPro
     setAllocBusy(true);
     setAllocError(null);
     try {
-      const payload = {
+      const payload: Record<string, unknown> = {
         [`book_Prioritization@odata.bind`]: `/${PRIORITIZATION_ENTITY}s(${allocPrioId})`,
         [`book_RequirementFunding@odata.bind`]: `/${REQUIREMENT_FUNDING_ENTITY}s(${allocAddRFId})`,
         book_fundedamount: 0,
         book_validatedamount: 0,
       };
+
+      // Scope the junction to the state that owns the parent Prio, not the NPM
+      // creating it here. Requires "record ownership across business units" so
+      // owningbusinessunit is settable independently of owner; states then read
+      // their own via Business-Unit-depth read without an org-wide leak.
+      try {
+        const prioRec = await webAPI.retrieveRecord(
+          PRIORITIZATION_ENTITY,
+          allocPrioId,
+          "?$select=_owningbusinessunit_value"
+        );
+        const prioBu = (prioRec as { _owningbusinessunit_value?: string })
+          ._owningbusinessunit_value;
+        if (prioBu) {
+          payload[`owningbusinessunit@odata.bind`] = `/businessunits(${prioBu})`;
+        }
+      } catch {
+        // Non-fatal: fall back to default (creator's BU) ownership rather than
+        // block the allocation. Backfill can re-scope any that slip through.
+      }
+
       await webAPI.createRecord(PRIORITIZATION_FUNDING_ENTITY, payload);
       setAllocAddOpen(false);
       setAllocAddRFId("");

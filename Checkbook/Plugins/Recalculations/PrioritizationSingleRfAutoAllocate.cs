@@ -92,7 +92,8 @@ namespace Checkbook.Plugins.Recalculations
                     PrioritizationAttributes.RequirementFunding,
                     PrioritizationAttributes.FiscalYear,
                     PrioritizationAttributes.FundedAmountTDP,
-                    PrioritizationAttributes.ValidatedAmount));
+                    PrioritizationAttributes.ValidatedAmount,
+                    "owningbusinessunit"));
 
             // ---- Gate 1: only a Prio that is HOLDING funding (NPM Review) ----
             // Below status 4 the funding guards block the write anyway, and the
@@ -179,6 +180,16 @@ namespace Checkbook.Plugins.Recalculations
                     new EntityReference(EntityNames.RequirementFunding, rfId);
                 create[PrioritizationFundingAttributes.FundedAmount] = targetFunded;
                 create[PrioritizationFundingAttributes.ValidatedAmount] = targetValidated;
+
+                // Scope the junction to the state that owns the parent Prio, not the
+                // NPM whose Funded-set triggered us. Requires "record ownership across
+                // business units" (modernized BUs) so owningbusinessunit is settable
+                // independently of the (NPM) owner; states then read their own via
+                // Business-Unit-depth read without an org-wide leak.
+                var prioBu = prio.GetAttributeValue<EntityReference>("owningbusinessunit");
+                if (prioBu != null)
+                    create["owningbusinessunit"] = prioBu;
+
                 service.Create(create);
 
                 RecalcRf(service, tracing, rfId);
