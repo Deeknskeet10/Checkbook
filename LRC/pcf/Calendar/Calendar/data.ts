@@ -32,6 +32,15 @@ function asChoiceValue(v: unknown): number | null {
     return null;
 }
 
+// Two-option columns arrive as a boolean in model-driven hosts but can be a
+// number or string ("1"/"true") elsewhere; normalize to a boolean.
+function asBool(v: unknown): boolean {
+    if (typeof v === "boolean") return v;
+    if (typeof v === "number") return v === 1;
+    if (typeof v === "string") return v === "1" || v.toLowerCase() === "true";
+    return false;
+}
+
 // Dataset property-set name for each org level (matches the manifest bindings).
 const LEVEL_PROP: Record<Level, string> = {
     Directorate: "directorate",
@@ -77,6 +86,7 @@ export function readEvents(dataset: DataSet): CalEvent[] {
             laneKey,
             roleRank: asChoiceValue(rec.getValue("leadershipRoleRank")),
             roleRankLabel: rec.getFormattedValue("leadershipRoleRank") || "",
+            tentative: asBool(rec.getValue("tentative")),
             location: rec.getFormattedValue("location") || "",
             description: rec.getFormattedValue("description") || "",
             pocName: rec.getFormattedValue("pocName") || "",

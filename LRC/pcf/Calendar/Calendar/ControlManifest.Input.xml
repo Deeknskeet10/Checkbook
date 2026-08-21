@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <manifest>
-  <control namespace="LongRangeCalendar" constructor="Calendar" version="0.5.2"
+  <control namespace="LongRangeCalendar" constructor="Calendar" version="0.5.3"
            display-name-key="Long Range Calendar"
            description-key="Swim-lane long-range calendar for G-3/5/7 events. Renders lrc_Event records in lanes by owning org level, color-coded by event type, across rolling 2-week / 30-day / 60-day / 90-day / 120-day windows. Dates only, no times."
            control-type="virtual" >
@@ -54,6 +54,10 @@
       <property-set name="leadershipRoleRank" display-name-key="Leadership Role/Rank"
                     description-key="lrc_LeadershipRoleRank — choice (Action Officer .. CNGB, O3 .. O10, Other). Events designated at a level with an insignia show that rank image on the tile."
                     of-type="OptionSet" usage="bound" required="false" />
+      <!-- Tentative flag; shows a "(T)" suffix on the tile and a legend entry. -->
+      <property-set name="tentative" display-name-key="Tentative"
+                    description-key="lrc_Tentative — when set, the event is not yet confirmed; the tile title gets a (T) suffix."
+                    of-type="TwoOptions" usage="bound" required="false" />
       <!-- Optional detail shown in the side panel / hover, not on the tile. -->
       <property-set name="description" display-name-key="Description"
                     description-key="lrc_DetailedDescription"

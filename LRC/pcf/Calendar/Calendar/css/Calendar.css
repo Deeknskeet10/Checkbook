@@ -149,6 +149,19 @@
     display: inline-block;
 }
 
+.cal-legend__glyph {
+    display: inline-block;
+    min-width: 10px;
+    text-align: center;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.cal-legend__glyph--dueout {
+    color: #cf222e;
+    font-weight: 400;
+}
+
 .cal-tb__busy {
     color: #0078d4;
 }
@@ -584,6 +597,7 @@
     .cal__event,
     .cal__rank,
     .cal-legend__swatch,
+    .cal-legend__glyph--dueout,
     .cal__col--today {
         -webkit-print-color-adjust: exact;
         print-color-adjust: exact;

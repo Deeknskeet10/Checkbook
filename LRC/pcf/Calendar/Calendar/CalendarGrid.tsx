@@ -266,7 +266,7 @@ export const CalendarGrid: React.FC<CalendarGridProps> = (props) => {
                                                     height: BAR_H,
                                                     backgroundColor: colorFor(p.e.type),
                                                 }}
-                                                title={`${p.e.name} (${p.e.type})${rankTip ? ` — ${rankTip}` : ""}`}
+                                                title={`${p.e.name}${p.e.tentative ? " (Tentative)" : ""} (${p.e.type})${rankTip ? ` — ${rankTip}` : ""}`}
                                                 draggable
                                                 onDragStart={() => {
                                                     draggedRef.current = p.e;
@@ -276,7 +276,10 @@ export const CalendarGrid: React.FC<CalendarGridProps> = (props) => {
                                             >
                                                 {hasDetail && <span className="cal__info">i</span>}
                                                 <RankBadge value={p.e.roleRank} />
-                                                <span className="cal__evname">{p.e.name}</span>
+                                                <span className="cal__evname">
+                                    {p.e.name}
+                                    {p.e.tentative ? " (T)" : ""}
+                                </span>
                                             </div>
                                         );
                                     })

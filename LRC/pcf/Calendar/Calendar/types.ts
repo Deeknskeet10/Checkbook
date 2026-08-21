@@ -78,6 +78,8 @@ export interface CalEvent {
     roleRank: number | null;
     // Formatted choice label from Dataverse (fallback display text).
     roleRankLabel: string;
+    // lrc_Tentative two-option flag; drives the "(T)" suffix on the tile.
+    tentative: boolean;
     location: string;
     description: string;
     pocName: string;

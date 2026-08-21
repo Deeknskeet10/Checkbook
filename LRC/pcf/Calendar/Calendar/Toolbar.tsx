@@ -138,6 +138,14 @@ export const Toolbar: React.FC<ToolbarProps> = (props) => {
                         {t}: {props.typeCounts[t]}
                     </span>
                 ))}
+                <span className="cal-legend" title="A diamond on a due date marks an event due-out">
+                    <span className="cal-legend__glyph cal-legend__glyph--dueout">◆</span>
+                    Due-Out
+                </span>
+                <span className="cal-legend" title="A (T) after an event name marks it Tentative">
+                    <span className="cal-legend__glyph">(T)</span>
+                    Tentative
+                </span>
                 {props.busy && <span className="cal-tb__busy">Saving…</span>}
                 {props.error && <span className="cal-tb__error">{props.error}</span>}
             </div>
