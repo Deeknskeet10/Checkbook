@@ -89,6 +89,7 @@ namespace Checkbook.Plugins.Recalculations
                 new ColumnSet(
                     PrioritizationAttributes.ApprovalStatus,
                     PrioritizationAttributes.Requirement,
+                    PrioritizationAttributes.RequirementFunding,
                     PrioritizationAttributes.FiscalYear,
                     PrioritizationAttributes.FundedAmountTDP,
                     PrioritizationAttributes.ValidatedAmount));
@@ -107,9 +108,28 @@ namespace Checkbook.Plugins.Recalculations
                 return;
             }
 
-            // ---- Gate 2: FY27 model — direct Requirement lookup + a Fiscal Year ----
-            // FY26 Prios pin to a single RF via book_requirementfunding and carry
-            // no junction; they are out of scope for junction auto-allocation.
+            // ---- Gate 2: FY26 model — a Prio that already funds an RF via the
+            // legacy direct lookup is out of scope. This is the load-bearing
+            // FY26/FY27 discriminator: the RF roll-up UNIONs the direct-lookup
+            // path (prioFunded) with the junction path (pfFunded) on the
+            // assumption they are mutually exclusive per RF
+            // (PrioritizationRollupHelper.BuildRFFundedUpdate). If we materialize
+            // a junction for a Prio that ALSO carries book_requirementfunding, the
+            // Prio lands in BOTH sums and the RF double-counts it — exactly the
+            // Funded > TDP failure this guard exists to prevent. Keying off the
+            // direct lookup (rather than the Fiscal Year option value) is
+            // self-correcting: whatever the FY picklist integers are, a Prio with
+            // a direct RF is the FY26 shape and never gets a junction.
+            var directRf = prio.GetAttributeValue<EntityReference>(PrioritizationAttributes.RequirementFunding);
+            if (directRf != null)
+            {
+                tracing.Trace(
+                    $"Prio {prioId} funds RF {directRf.Id} via the direct book_requirementfunding " +
+                    "lookup (FY26 model) — junction auto-allocation would double-count it; skipping.");
+                return;
+            }
+
+            // ---- FY27 model requires a direct Requirement lookup to scope RFs ----
             var reqRef = prio.GetAttributeValue<EntityReference>(PrioritizationAttributes.Requirement);
             if (reqRef == null)
             {

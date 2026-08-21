@@ -591,6 +591,16 @@ junction write lands at depth ≥ 2, where `PrioritizationFundingRollup`
 self-guards and won't refresh the RF). No pre-image needed — the post-operation
 `Retrieve` reads the committed totals + parents.
 
+**FY26 guard.** A Prio that already funds an RF through the legacy direct
+`book_requirementfunding` lookup is skipped outright — that is the FY26 shape,
+and the RF roll-up (`PrioritizationRollupHelper.BuildRFFundedUpdate`) UNIONs the
+direct-lookup path with the junction path on the assumption they are mutually
+exclusive per RF. Materializing a junction for a Prio that also carries the
+direct lookup lands it in **both** sums and the RF double-counts it → a spurious
+`Funded > TDP` failure on save. The guard keys off the presence of
+`book_requirementfunding` (not the Fiscal Year option value), so it holds
+whatever the FY picklist integers are.
+
 **Single-RF only.** When the Requirement has 2+ active RFs for the FY it no-ops
 and leaves the junctions to the manual "Allocate to RFs" dialog. It also no-ops
 below NPM Review (status ≠ 4), so it never collides with the pull-back cleanup.
