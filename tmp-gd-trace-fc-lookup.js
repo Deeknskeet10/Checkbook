@@ -1,114 +1,116 @@
 // TEMP debug helper — safe to delete.
-// Scans recent book_GenerateDistributions plugin-trace runs to debug a spurious
-// Sweep Turn-In. Handles the two reasons a turn-in's FC can seem "missing":
-//   (1) Continuation: one logical run = MANY plugin invocations (each ~105s,
-//       each its own trace row). The creating invocation may be far down the list.
-//   (2) Source truncation: a huge messageblock is capped by Dataverse when written.
+// Reconciles the GenerateDistributions sweep math from LIVE records at one FC,
+// independent of the plugin trace. Reproduces:
+//     target       = funded TDP × AFP distribution %
+//     immutableNet = Σ committed AFP credits − Σ committed AFP debits at the FC
+//     delta        = target − immutableNet     (delta < 0 ⇒ Sweep Turn-In = -delta)
 //
-// HOW TO RUN:
-//   1. Open any model-driven app page in the Checkbook environment.
-//   2. F12 -> Console.
-//   3. Paste the FC GUID into FC_GUID below, then paste this whole block + Enter.
+// It reads immutableNet + the AFP % straight from Dataverse, then shows what
+// funded-TDP the plugin must be seeing to justify the observed sweep. Compare
+// that implied TDP to the ~5M you expect — the gap is the bug.
 //
-// It prints, per run: length + a truncation flag, every "Dest FC=<yourguid>" hit
-// with context, and EVERY "Created Sweep Turn-In" line paired with the nearest
-// preceding "Dest FC=" line (so you can see which FC each sweep belongs to, even
-// if it isn't your GUID).
+// HOW TO RUN: model-driven app page → F12 → Console → paste. FC below is A18NE.
 
 (async () => {
-  // ─── paste the Fund Center GUID here (dashes ok, braces/case don't matter) ───
-  const FC_GUID = "00000000-0000-0000-0000-000000000000";
-  const RUNS    = 40;   // how many recent GenerateDistributions invocations to scan
-  const CONTEXT = 2;    // lines of context around each FC hit
-  // ─────────────────────────────────────────────────────────────────────────────
+  const FC_GUID = "106453ad-3c45-f011-877a-001dd805a15f"; // A18NE
+  const HOLDING_FC = "";  // optional: holding FC guid; leave "" — only affects a debit edge case
+  const money = n => (n < 0 ? "-$" : "$") + Math.abs(n).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+  const fv = (r, k) => r[k + "@OData.Community.Display.V1.FormattedValue"];
 
-  const needle = FC_GUID.replace(/[{}]/g, "").trim().toLowerCase();
+  // ── 1. The sweep turn-in(s) at this FC ──────────────────────────────────────
+  const tins = (await Xrm.WebApi.retrieveMultipleRecords("book_turnin",
+    "?$select=book_afpamount,book_allotmentamount,book_newamount,book_fiscalyear,book_origin," +
+    "statecode,createdon,_book_fund_value,_book_pg_value" +
+    "&$filter=_book_fundcenter_value eq " + FC_GUID + " and book_origin eq 1" +
+    "&$orderby=createdon desc&$top=10")).entities;
 
-  const r = await Xrm.WebApi.retrieveMultipleRecords(
-    "plugintracelog",
-    "?$select=createdon,typename,messagename,messageblock,exceptiondetails," +
-    "performanceexecutionduration" +
-    "&$filter=contains(typename,'GenerateDistributions')" +
-    "&$orderby=createdon desc&$top=" + RUNS
-  );
+  if (!tins.length) { console.warn("No Origin=Sweep turn-ins at this FC. Check the FC guid."); return; }
 
-  if (!r.entities.length) { console.warn("No GenerateDistributions trace logs found."); return; }
-  console.log(`%cScanned ${r.entities.length} invocation(s). Searching for FC ${needle}`,
-              "font-weight:bold");
+  console.group("%cSweep Turn-Ins at FC " + FC_GUID, "font-weight:bold");
+  tins.forEach((t, i) => console.log(
+    `[${i}] ${new Date(t.createdon).toLocaleString()} · ${fv(t,"statecode")} · ` +
+    `Fund=${fv(t,"_book_fund_value")} · SAG=${fv(t,"_book_pg_value")} · ` +
+    `AFP=${money(t.book_afpamount||0)} · Allot=${money(t.book_allotmentamount||0)} · TDP(newamount)=${money(t.book_newamount||0)}`));
+  console.groupEnd();
 
-  const nearestDestFcAbove = (lines, idx) => {
-    for (let j = idx; j >= 0; j--) if (/Dest FC=/i.test(lines[j])) return lines[j].trim();
-    return "(no Dest FC line above — likely truncated)";
-  };
+  const sweep = tins[0];
+  const fundId = sweep._book_fund_value, pgId = sweep._book_pg_value;
+  const sweepAFP = sweep.book_afpamount || 0;
+  console.log(`%cReconciling newest sweep — Fund=${fv(sweep,"_book_fund_value")}, SAG=${fv(sweep,"_book_pg_value")}, AFP overage=${money(sweepAFP)}`, "font-weight:bold;color:#a0a");
 
-  let totalFcHits = 0, totalSweeps = 0;
+  // ── 2. All active distributions at this FC for that Fund/SAG ────────────────
+  const dists = (await Xrm.WebApi.retrieveMultipleRecords("book_distributions",
+    "?$select=book_newamount,book_disbursementdirection,book_entrydocumentnumber,book_manualentry," +
+    "book_newenteredintogfebs,createdon,_book_turnin_value,_book_stateswap_value,_book_realignment_value," +
+    "_book_debiteddistribution_value,_book_fundingevent_value" +
+    "&$filter=_book_fundcenter_value eq " + FC_GUID + " and _book_fund_value eq " + fundId +
+    " and _book_newpgsag_value eq " + pgId + " and statecode eq 0" +
+    "&$orderby=createdon asc")).entities;
 
-  r.entities.forEach((log, i) => {
-    const block = log.messageblock || "";
-    const lines = block.split(/\r?\n/);
-    const len   = block.length;
+  // Resolve funding-event types (AFP=0 / Allotment=1) for the rows.
+  const feIds = [...new Set(dists.map(d => d._book_fundingevent_value).filter(Boolean))];
+  const feType = {};
+  await Promise.all(feIds.map(async id => {
+    try { const fe = await Xrm.WebApi.retrieveRecord("book_fundingevent", id, "?$select=book_fundingtype,book_name,statecode");
+      feType[id] = { type: fe.book_fundingtype, name: fe.book_name, active: fe.statecode === 0 }; }
+    catch { feType[id] = { type: null, name: "(missing)", active: false }; }
+  }));
 
-    const hits       = lines.reduce((a, ln, idx) => (ln.toLowerCase().includes(needle) && a.push(idx), a), []);
-    const sweepIdxs  = lines.reduce((a, ln, idx) => (/Created Sweep Turn-In/i.test(ln) && a.push(idx), a), []);
-    const warnings   = lines.filter(l => /WARNING/i.test(l));
-    // Heuristic: real runs end with a WriteOutputs-ish tail; a block that ends
-    // mid-line (no trailing newline, very long) is a truncation suspect.
-    const truncSuspect = len > 90000 || (block.length && !/\n\s*$/.test(block) && lines[lines.length - 1].length > 40);
+  let immCredits = 0, immDebits = 0, pending = 0, excluded = 0;
+  console.group("%cActive distributions at FC (Fund/SAG matched)", "font-weight:bold");
+  dists.forEach(d => {
+    const amt = d.book_newamount || 0;
+    const dir = d.book_disbursementdirection;          // 0 credit, 1 debit
+    const fe  = d._book_fundingevent_value ? feType[d._book_fundingevent_value] : null;
+    const isAFP = fe && fe.type === 0;
+    const entered = !!d.book_entrydocumentnumber;
+    const manual  = d.book_manualentry === true;
+    const linked  = d._book_turnin_value || d._book_stateswap_value || d._book_realignment_value;
+    // Plugin's immutable rule (approx; the "credit paired to an entered debit" nuance omitted):
+    const immutable = entered || manual || !!linked || dir === 1;
 
-    totalFcHits += hits.length;
-    totalSweeps += sweepIdxs.length;
+    let bucket;
+    if (!isAFP) { bucket = "EXCLUDED (not an active AFP funding event)"; excluded += amt; }
+    else if (!immutable && dir === 0) { bucket = "pending sweep credit (amendable)"; pending += amt; }
+    else if (dir === 0) { bucket = "immutable CREDIT (+net)"; immCredits += amt; }
+    else { bucket = "immutable DEBIT (−net)"; immDebits += amt; }
 
-    // Skip totally-irrelevant runs to keep the console readable.
-    if (!hits.length && !sweepIdxs.length && !warnings.length && !log.exceptiondetails) return;
-
-    console.group(
-      `%c[${i}] ${new Date(log.createdon).toLocaleString()} · ${log.performanceexecutionduration}ms · ` +
-      `len=${len}${truncSuspect ? " ⚠TRUNC?" : ""} · FC hits=${hits.length} · sweeps=${sweepIdxs.length}`,
-      "font-weight:bold"
-    );
-
-    if (log.exceptiondetails) {
-      console.log("%cEXCEPTION:", "color:#c00;font-weight:bold");
-      console.log(log.exceptiondetails);
-    }
-    if (warnings.length) {
-      console.log("%cPhase 2/3 WARNING line(s):", "color:#c60;font-weight:bold");
-      warnings.forEach(w => console.log("  " + w.trim()));
-    }
-
-    // Your FC's Dest lines, with context.
-    if (hits.length) {
-      console.log("%c── FC matches ──", "color:#08f;font-weight:bold");
-      const shown = new Set();
-      hits.forEach(idx => {
-        const s = Math.max(0, idx - CONTEXT), e = Math.min(lines.length - 1, idx + CONTEXT);
-        for (let j = s; j <= e; j++) {
-          if (shown.has(j)) continue; shown.add(j);
-          console.log((j === idx ? "%c→ " : "%c  ") + lines[j],
-                      j === idx ? "color:#08f;font-weight:bold" : "color:inherit");
-        }
-        console.log("%c" + "─".repeat(30), "color:#ccc");
-      });
-    }
-
-    // EVERY sweep created in this invocation, tied to its FC (via the Dest line above).
-    if (sweepIdxs.length) {
-      console.log("%c── Sweep Turn-Ins created in this invocation ──", "color:#a0a;font-weight:bold");
-      sweepIdxs.forEach(idx => {
-        console.log("%cFC: " + nearestDestFcAbove(lines, idx), "color:#a0a");
-        console.log("     " + lines[idx].trim());
-      });
-    }
-
-    if (truncSuspect) console.log("%c…tail: " + block.slice(-160).replace(/\s+/g, " "), "color:#888");
-    console.groupEnd();
+    const tags = [entered && "ENTERED:" + d.book_entrydocumentnumber, manual && "MANUAL",
+      d._book_turnin_value && "→turnin", d._book_stateswap_value && "→swap",
+      d._book_realignment_value && "→realign", d._book_debiteddistribution_value && "hasDebitRef"]
+      .filter(Boolean).join(" ");
+    console.log(`${fv(d,"book_disbursementdirection")||dir} ${money(amt)} · FE=${fe?fe.name:"(none)"}` +
+      `${isAFP?"":" [type "+(fe?fe.type:"—")+"]"} · ${bucket}${tags?" · "+tags:""}`);
   });
+  console.groupEnd();
 
-  console.log(`%cDone. Total across scanned invocations — FC hits: ${totalFcHits}, sweeps created: ${totalSweeps}.`,
-              "color:#080;font-weight:bold");
-  if (!totalFcHits) {
-    console.log("%cFC still not found across " + r.entities.length + " invocations. Next: bump RUNS higher, " +
-                "or re-run book_GenerateDistributions scoped (FundingType=0 + the specific FiscalYear) to shrink " +
-                "the trace so Nebraska's group survives, then re-run this.", "color:#c60");
-  }
+  const immutableNet = immCredits - immDebits;
+
+  // ── 3. AFP distribution percentage from FundingDetails ─────────────────────
+  const fds = (await Xrm.WebApi.retrieveMultipleRecords("book_fundingdetails",
+    "?$select=book_distributionpercentage,_book_fundingevent_value" +
+    "&$filter=_book_fund_value eq " + fundId + " and _book_pgsag_value eq " + pgId + " and statecode eq 0")).entities;
+  await Promise.all(fds.map(async f => { const id = f._book_fundingevent_value;
+    if (id && !feType[id]) { try { const fe = await Xrm.WebApi.retrieveRecord("book_fundingevent", id, "?$select=book_fundingtype,book_name,statecode");
+      feType[id] = { type: fe.book_fundingtype, name: fe.book_name, active: fe.statecode === 0 }; } catch {} } }));
+  const afpFd = fds.find(f => { const t = feType[f._book_fundingevent_value]; return t && t.type === 0 && t.active; });
+  const pct = afpFd ? (afpFd.book_distributionpercentage || 0) : null;
+
+  // ── 4. The verdict ─────────────────────────────────────────────────────────
+  console.group("%c══ RECONCILIATION ══", "font-weight:bold;color:#08f");
+  console.log(`immutable AFP credits   = ${money(immCredits)}`);
+  console.log(`immutable AFP debits    = ${money(immDebits)}`);
+  console.log(`immutableNet at FC      = ${money(immutableNet)}   ← what the plugin compares target against`);
+  console.log(`pending sweep credits   = ${money(pending)}   (amendable; not part of immutableNet)`);
+  console.log(`AFP distribution %      = ${pct === null ? "NO ACTIVE AFP FundingDetails ROW!" : pct + "%"}`);
+  console.log(`observed sweep AFP      = ${money(sweepAFP)}`);
+  console.log("%c" + "─".repeat(50), "color:#ccc");
+  const impliedTarget = immutableNet - sweepAFP;   // delta=-sweepAFP ⇒ target = immutableNet - sweepAFP
+  console.log(`⇒ plugin's implied target (immutableNet − sweep) = ${money(impliedTarget)}`);
+  if (pct) console.log(`⇒ implied funded TDP (target ÷ %)               = ${money(impliedTarget / (pct/100))}`);
+  console.log("%cCompare implied funded TDP to the ~5M you expect on the Prioritizations.", "color:#080");
+  console.log("• If AFP % < 100 and implied TDP ≈ 5M → the sweep is the % scaling working as designed (Scenario A).");
+  console.log("• If AFP % = 100 and immutableNet ≈ 7.25M → committed rows are double-counted; the list above shows the extra 2.25M (Scenario B).");
+  console.log("• If NO active AFP FundingDetails row → the group would be SKIPPED, not swept — means a stale/duplicate FundingDetails or FundingEvent is in play.");
+  console.groupEnd();
 })();
