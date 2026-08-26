@@ -77,11 +77,97 @@ As-of date = `DateTime.UtcNow.Date` (use today's date in the two date conditions
   turn-in's linked distributions (`book_turnin` set → classified immutable,
   `DistributionBucketProcessor.cs:363`).
 
+---
+
+## UPDATE 2026-08-26 — pct confirmed 97%, turn-in is NOT stale
+
+Resolve-% fetch returned **one** row: `Enactment - AFP`, `pct = 97`, window
+31 Jan 2026 → 30 Sep 2026 (covers today). So `pct = 97` is confirmed, and the
+target side (`funded = 4,967,954`, verbatim Phase 2 fetch) is confirmed too.
+
+Turn-in record was **deleted and Generate Distributions re-run (25 Aug 2026) — the
+2,331,899 turn-in reappeared.** So it is NOT stale; the plugin recomputes it
+deterministically from current data.
+
+### The math now forces exactly two possibilities
+
+```
+target      = funded × 0.97
+2,331,899   = immutableNet − target
+
+(A) immutableNet[A18NE] = 4,818,915 + 2,331,899 = 7,150,814
+        → ~2.18M of immutable credit at A18NE BEYOND the measured 4,967,954
+(B) funded[A18NE bucket] = 2,636,055 / 0.97      = 2,717,582
+        → ~2.25M of the 4,967,954 Prio funding is NOT landing in the A18NE bucket
+          (a Prio FC resolving off A18NE), while its distributions sit stranded
+          at A18NE
+```
+
+(A) contradicts the measured 4,967,954 (all credits, one direction). **(B) is the
+live suspect** — the funded total was summed by fund+PG only, never grouped by
+`prio_fc_id` and walked to the resolved dest FC. Run BOTH queries below to decide.
+
+### Q1 — immutableNet by FC (distribution side, exact LoadGroupState set)
+
+No FC filter, AFP-only, grouped so A18NE's committed net + entered/link split is visible.
+
+```xml
+<fetch aggregate='true' no-lock='true'>
+  <entity name='book_distributions'>
+    <attribute name='book_amount' alias='amt' aggregate='sum' />
+    <attribute name='book_fundcenter' alias='fc' groupby='true' />
+    <attribute name='book_disbursementdirection' alias='dir' groupby='true' />
+    <attribute name='book_entrydocumentnumber' alias='entered' groupby='true' />
+    <attribute name='book_turnin' alias='ti' groupby='true' />
+    <attribute name='book_stateswap' alias='ss' groupby='true' />
+    <attribute name='book_realignment' alias='ra' groupby='true' />
+    <attribute name='book_manualentry' alias='man' groupby='true' />
+    <filter type='and'>
+      <condition attribute='book_fund'  operator='eq' value='{206510D26 GUID}' />
+      <condition attribute='book_pgsag' operator='eq' value='{PG121 GUID}' />
+      <condition attribute='statecode'  operator='eq' value='0' />
+    </filter>
+    <link-entity name='book_fundingevent' from='book_fundingeventid' to='book_fundingevent' link-type='inner' alias='fe'>
+      <filter type='and'>
+        <condition attribute='book_fundingtype' operator='eq' value='0' />   <!-- AFP -->
+      </filter>
+    </link-entity>
+  </entity>
+</fetch>
+```
+
+Read: A18NE `immutableNet` = Σ(entered / `ti` / `ss` / `ra` / `man`-flagged credits) − debits.
+- If A18NE total > 4,967,954 → possibility (A): extra immutable rows the first
+  measurement missed (duplicate set, or turn-in/realignment/state-swap-linked credits).
+- If A18NE total ≤ 4,967,954 → (A) impossible; go to Q2.
+- Watch for **two FCs that both read "Nebraska/A18NE"** (a duplicate fund-center
+  record) — that alone would explain a split target vs. pooled distributions.
+
+### Q2 — funded by Prio FC (Prio side, exposes the bucket split)
+
+In the verbatim Phase 2 result filtered to this fund+PG, group by `prio_fc_id` and
+subtotal `total_funding`. Then for EACH distinct Prio FC, walk its parent chain and
+find the resolved dest FC = the FC whose parent IS the holding FC (A18):
+
+- PrioFC.parent == A18 (holding)      → resolves to **PrioFC itself** (own bucket, NOT A18NE)
+- PrioFC.parent == A18NE, A18NE.parent == A18 → resolves to **A18NE**
+- otherwise keep walking up until parent == A18
+
+Sum only the subtotals whose resolved dest FC == A18NE. **Predicted: 2,717,582**, not
+4,967,954 — the remaining ~2.25M belongs to Prio FCs that resolve elsewhere, and its
+distributions are stranded at A18NE.
+
+If Q2 == 4,967,954 (all really resolve to A18NE) AND Q1 A18NE ≤ 4,967,954, then the
+data genuinely cannot produce 2,331,899 and the runtime inputs differ from these
+queries — capture the plugin trace line for the A18NE bucket (funded / target /
+immutableNet / delta, `DistributionBucketProcessor.cs:114`) to see what it actually read.
+
 ## Diagnostic path so far (ruled out)
 
 - Type mix — single AFP type, one direction (credit)
 - Multiple Fund/PG — single fund + PG
 - Fiscal-year bucket split — single fund → single FY
-- FC resolution split/drop — all Prio FCs parent to A18NE, all resolve to A18NE
 - Wrong funded field — `book_newfundedamount` doesn't exist on Prio; only
   `book_newfundedamounttdp`, and the verbatim Phase 2 fetch = 4,967,954
+- Wrong / stale percentage — resolved event is `Enactment - AFP` @ 97%, window covers today
+- Stale turn-in — deleted + re-ran 25 Aug 2026, 2,331,899 reappeared → deterministic, live
