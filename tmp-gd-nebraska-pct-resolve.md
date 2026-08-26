@@ -162,6 +162,46 @@ data genuinely cannot produce 2,331,899 and the runtime inputs differ from these
 queries — capture the plugin trace line for the A18NE bucket (funded / target /
 immutableNet / delta, `DistributionBucketProcessor.cs:114`) to see what it actually read.
 
+## RESOLVED 2026-08-26 — Phase 2 / Phase 3 fight over the A18NE destination
+
+Q1 (`Fetch output.xlsx`) settles it. A18NE committed net = **exactly 4,967,954**:
+9 credit rows (`dir=0`), every one with a GFEBS entry document number
+(`100098876 … 101804458`, `EXCEPECTED ACTIVITIES P1-P7`), zero debits, zero
+amendable. So `immutableNet[A18NE] = 4,967,954`, all immutable → possibility (A)
+dead, no hidden rows.
+
+That forces the target the plugin actually used:
+
+```
+target        = immutableNet − turn-in = 4,967,954 − 2,331,899 = 2,636,055
+funded_bucket = 2,636,055 / 0.97       = 2,717,582   (NOT 4,967,954)
+```
+
+Phase 2's A18NE bucket = 4,967,954 (verified), so the 2,717,582 bucket is **Phase 3**.
+This is the tripwire the code already warns about (`GenerateDistributionsPlugin.cs:193-204`):
+
+1. Phase 2 (Prios): target 4,818,915 vs immNet 4,967,954 → writes correct Turn-In **149,038.62**.
+2. Phase 3 (Reqs) runs after, re-loads the SAME full immNet 4,967,954, but its own
+   bucket target is 2,717,582 × 0.97 = 2,636,055 → delta −2,331,899.
+3. `FindOpenSweepTurnInsByFc` finds Phase 2's turn-in → `UpdateTypeAmount` overwrites
+   149,039 → **2,331,899** (`DistributionBucketProcessor.cs:159-164`). Phase 3 runs last, so it wins.
+
+Deterministic every run (matches delete-and-reappear).
+
+### Confirm
+Verbatim Phase 3 fetch (`GenerateDistributionsPlugin.cs:680-717`) scoped to Fund
+206510D26 / PG 121 → expect a destination resolving to A18NE with
+`sum(book_newfundedamount) ≈ 2,717,582`, a BE-approved Requirement of type
+TARC(1) or ARNG-External(4) with no active Prioritization. Trace should be firing
+`WARNING: destination ... appears in BOTH Phase 2 and Phase 3` at A18NE.
+
+### Fix direction
+Per the code comment: merge Phase 2 + Phase 3 into ONE combined bucket set keyed by
+(Fund, dest FC, PG) so a shared destination reconciles one summed target against the
+committed net, instead of each phase clobbering the other's Sweep Turn-In. Also
+determine whether the Phase 3 Requirement is legitimately separate funding or the same
+prio'd money double-represented.
+
 ## Diagnostic path so far (ruled out)
 
 - Type mix — single AFP type, one direction (credit)
