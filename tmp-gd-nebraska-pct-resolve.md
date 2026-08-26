@@ -162,7 +162,48 @@ data genuinely cannot produce 2,331,899 and the runtime inputs differ from these
 queries — capture the plugin trace line for the A18NE bucket (funded / target /
 immutableNet / delta, `DistributionBucketProcessor.cs:114`) to see what it actually read.
 
-## RESOLVED 2026-08-26 — Phase 2 / Phase 3 fight over the A18NE destination
+## ROOT CAUSE 2026-08-26 — two Nebraska Prio FCs resolve off A18NE (A18ZX, A18ZY)
+
+Confirmed from `Fetch output.xlsx` (Phase2z + FC tabs). One A18NE (`106453ad`); the
+earlier `00ef4194` scare was the PG-121 guid, not a duplicate FC. Turn-in FC = A18NE
+`106453ad`, AFP 2,331,899.46, Fund 206510D26 / PG 121, Origin Sweep, created 8/24/2026.
+
+immutableNet[A18NE] = 4,967,954 (all entered) forces bucket funded = 2,717,582
+(= (4,967,954 − 2,331,899.46)/0.97, exact incl. the .46). Nebraska's Phase 2 funding
+is 7 `A18Z*` program FCs; the split is unique to the penny:
+
+```
+A18ZB 9a6653ad 1,506,556  ┐
+A18ZF a26653ad   734,626  │
+A18ZG a46653ad   300,000  ├ = 2,717,582  → resolve to A18NE (bucket target basis)
+A18ZH a66653ad   172,400  │
+A18ZA 986653ad     4,000  ┘
+A18ZX c26653ad   375,372  ┐
+A18ZY c46653ad 1,875,000  ┘ = 2,250,372  → resolve OFF A18NE (stranded)
+```
+
+Mechanism: A18ZX + A18ZY's $2,250,372 of Prio funding resolves (via
+`ResolveStateFundCenter`) to a different state FC (likely A18NG, same hop as A1835),
+so it lands in that bucket — but their distributions sit at A18NE (placed when they
+resolved correctly). A18NE target = 2,717,582 vs 4,967,954 entered → sweep turns in
+`4,967,954 − 2,717,582×0.97 = 2,331,899.46`. Deterministic; matches delete+reappear.
+
+### Fix — DATA, not code
+`book_parentfundcenter` chain of A18ZX (`c26653ad`) and A18ZY (`c46653ad`) no longer
+walks up to A18NE (`106453ad`). Compare to working sibling A18ZB (`9a6653ad`); follow
+parent up to holding A18 (`666053ad`). Two resolutions:
+1. If A18ZX/ZY are genuinely Nebraska → repoint their parent so they resolve to A18NE;
+   re-run Generate Distributions → turn-in collapses to 149,038.62.
+2. If they're intentionally national/joint (belong at A18NG) → their distributions are
+   misplaced at A18NE; the 2,250,372 entered there must be moved/turned in deliberately,
+   and the sweep's turn-in is correct.
+
+The sweep is not buggy — it faithfully flags 2,250,372 of entered AFP at A18NE whose
+Prio funding no longer resolves to A18NE.
+
+---
+
+## (superseded) 2026-08-26 — Phase 2 / Phase 3 fight theory — DISPROVEN
 
 Q1 (`Fetch output.xlsx`) settles it. A18NE committed net = **exactly 4,967,954**:
 9 credit rows (`dir=0`), every one with a GFEBS entry document number
