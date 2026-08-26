@@ -162,7 +162,30 @@ data genuinely cannot produce 2,331,899 and the runtime inputs differ from these
 queries — capture the plugin trace line for the A18NE bucket (funded / target /
 immutableNet / delta, `DistributionBucketProcessor.cs:114`) to see what it actually read.
 
-## ROOT CAUSE 2026-08-26 — two Nebraska Prio FCs resolve off A18NE (A18ZX, A18ZY)
+## CORRECTION 2026-08-26 (later) — parent chain is CLEAN; A18ZX/ZY excluded at RUN TIME
+
+FC-parent export disproves the "resolves off A18NE" theory below: ALL 7 A18Z* FCs
+(incl. A18ZX c26653ad, A18ZY c46653ad) walk parent→A18NE(106453ad)→A18(666053ad,
+holding). All 7 Phase2z rows share identical key (fund eb9e5a09, fy 2026, pg 00ef4194)
+→ collapse to ONE A18NE bucket = 4,967,954. Current data ⇒ target 4,818,915 ⇒ turn-in
+SHOULD be 149,038.62.
+
+But A18ZX+A18ZY = 2,250,372 = the stranded amount to the PENNY, unique 2-FC subset —
+not coincidence. Conclusion: when the sweep ran (8/24–8/25) those two Prios were NOT in
+the A18NE bucket (bucket was 2,717,582, five FCs); the export reflects later/changed
+data. The 2,331,899.46 turn-in is the run-time state, not the current state.
+
+Next tests:
+1. RE-RUN Generate Distributions now. If current data truly has all 7 in the bucket,
+   turn-in reconciles to 149,038.62 (already-fixed stale data).
+2. If it still makes 2,331,899: plugin derives Fund/PG via
+   Prio→book_requirementfunding→book_fundingline→LOA→book_pg/book_fund (NOT the Prio's
+   own fields) + inner join book_state. Check A18ZX & A18ZY Prios: does their
+   RF→FundingLine→LOA point to Fund 206510D26 / PG 121, and do they have an active
+   book_state? A different LOA fund/pg or missing state drops them from the plugin's
+   real fetch even though a Prio-field-grouped export shows them under 206510/121.
+
+## (DISPROVEN) ROOT CAUSE 2026-08-26 — two Nebraska Prio FCs resolve off A18NE (A18ZX, A18ZY)
 
 Confirmed from `Fetch output.xlsx` (Phase2z + FC tabs). One A18NE (`106453ad`); the
 earlier `00ef4194` scare was the PG-121 guid, not a duplicate FC. Turn-in FC = A18NE
