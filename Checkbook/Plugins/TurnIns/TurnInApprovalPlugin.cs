@@ -112,6 +112,30 @@ namespace Checkbook.Plugins.TurnIns
             // ---- Load items (also resolves LOA.Fund + LOA.PG on each item) ----
             var items = TurnInItemRepository.GetTurnInItems(service, tracing, turnInId);
 
+            // ---- Execution-readiness gate (owns the RF-only BE requirement) ----
+            // The validator now permits an intermediate State-only approval on an
+            // RF-only Turn-In (State approves first, which routes it to BE), so the
+            // "RF-only needs BE approval before funds move" rule lives HERE: don't
+            // create any ledgers/distributions until the Turn-In is fully approved.
+            //   * RF-only (any item without a Prio) — needs BOTH State and BE approval.
+            //   * Otherwise (all items Prio-backed) — State approval alone.
+            // A save that only records one half of an RF-only approval falls through
+            // to a no-op return; the other approval's save re-drives this orchestrator
+            // (value-based trigger) once both flags are effective.
+            bool anyRfOnly = items.Any(i => i.IsRFOnly);
+            bool newStateApproved = GetEffectiveBool(target, preImage, TurninAttributes.StateApproved);
+            bool newBeApproved = GetEffectiveBool(target, preImage, TurninAttributes.BEApproved);
+            bool readyToExecute = anyRfOnly ? (newStateApproved && newBeApproved) : newStateApproved;
+
+            if (!readyToExecute)
+            {
+                tracing.Trace(
+                    $"Approval recorded but Turn-In not yet ready to execute " +
+                    $"(anyRfOnly={anyRfOnly}, state={newStateApproved}, be={newBeApproved}). " +
+                    "Awaiting the remaining approval — no financial side effects yet.");
+                return;
+            }
+
             // ---- Resolve LOAs for ledger creation ----
             var loaResolution = TurnInLOAResolver.ResolveLOAs(service, tracing, merged, items);
 

@@ -756,7 +756,32 @@ values for Kind B.
 
 Pre-op validation of an in-flight Turn-In approval. Idempotency (no
 duplicate ledgers), header math, per-item math, aggregated availability per
-source, and approval routing (RF-only items require BE Approval).
+source, and approval ordering.
+
+> **Two-step approval (RF-only Turn-Ins).** RF-only Turn-Ins (any item with
+> no Prioritization) require **both** State and BE approval, granted in two
+> separate saves: State approves first (routing the Turn-In to Budget
+> Execution), then BE. The validator does **not** demand both flags on every
+> save — that deadlocked step one (State-only save rejected for missing BE,
+> BE-only save rejected for missing State, so neither side could move). It
+> only enforces *ordering*: a save that grants BE approval requires State
+> approval to already be effective. The **RF-only "BE before funds move"
+> rule itself is enforced by the post-op orchestrator's execution-readiness
+> gate** (`TurnInApprovalPlugin` creates no ledgers until RF-only Turn-Ins
+> are both State- and BE-approved), not by a hard block here. Mirrors the
+> `SwapValidator` / `SwapApprovalPlugin` split.
+
+> **State-only rule (regular states must use a Prioritization).** A regular
+> geographic-state user — a member of a `{ABBR} - State Approver` /
+> `{ABBR} - State Administrator` owner team whose ABBR is **not** PEC or WTC —
+> may **not** turn in items sourced directly from a Requirement Funding; every
+> Turn-In Item must carry a Prioritization. PEC and WTC are non-geographic
+> entities and stay **exempt** (they may turn in RF-only). Checkbook
+> Administrators and Budget Executors hold no such state team and pass. The
+> check runs via `StateTeamHelper.IsRestrictedStateUser` (a name-pattern query
+> over the user's team memberships) on the State's approval save. Exempt
+> abbreviations live in `TurnInValidator.RfOnlyExemptAbbreviations`; the state
+> owner-team suffixes live in `StateTeamHelper.StateTeamSuffixes`.
 
 Also enforces **role gating** via `UserRoleHelper`: State approval requires
 `Book - State Approver`, `Book - State Administrator`, or
@@ -775,6 +800,14 @@ Post-op orchestrator that executes the approved Turn-In: resolves credit
 LOA, creates Ledger debit/credit pair, creates AFP/Allotment Distributions,
 updates Prios and (for RF-only items) RFs, rolls up parent RFs, recalcs
 touched LOAs, and deactivates the Turn-In.
+
+**Owns the execution-readiness gate:** after loading items it computes
+`readyToExecute` = RF-only ? (State && BE approved) : State approved, and
+returns without side effects when not ready. This is where the RF-only
+"BE approval before funds move" rule is enforced (the validator now permits
+the intermediate State-only approval so it can route to BE). The value-based
+trigger re-drives this orchestrator on the second approval's save, at which
+point both flags are effective and it executes once.
 
 Trigger semantics (hardened Jul 2026, same pattern as `RealignmentProcessor`):
 fires when the payload carries an approval flag = true **and the pre-image

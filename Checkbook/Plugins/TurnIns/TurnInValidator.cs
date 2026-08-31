@@ -30,8 +30,15 @@ namespace Checkbook.Plugins.TurnIns
     ///        - Each item has either a Prioritization or a Requirement Funding (or both).
     ///        - Each item amount does not exceed available funds on its source
     ///          (Prio.book_newfundedamounttdp, or RF.book_newfundedamount when RF-only).
-    ///        - Approval routing: if any item is RF-only (no Prio), book_beapproved must
-    ///          be true. Otherwise book_stateapproved is sufficient.
+    ///        - State-only rule: a regular geographic-state user (member of a
+    ///          "{ABBR} - State Approver/Administrator" owner team, ABBR not PEC/WTC)
+    ///          may not turn in RF-only items — every item must carry a Prioritization.
+    ///          PEC and WTC are exempt (may turn in RF-only).
+    ///        - Approval ordering: RF-only Turn-Ins take a two-step approval (State
+    ///          first, then BE). This validator only enforces that a BE-approval save
+    ///          has State approval already in place; the RF-only "BE before funds move"
+    ///          rule itself is gated in TurnInApprovalPlugin's execution-readiness check
+    ///          (State-only approvals are allowed through here so they can route to BE).
     ///
     /// All failures throw InvalidPluginExecutionException with a user-facing message.
     /// </summary>
@@ -192,31 +199,62 @@ namespace Checkbook.Plugins.TurnIns
             // *sum* overdraws it. Aggregate first, then compare to the source once per source.
             ValidateAggregatedAvailability(service, tracing, items);
 
-            // ---- Approval routing ----
-            // If any item is RF-only (no Prio attached), BE approval is required in
-            // addition to State approval. Otherwise State approval is sufficient.
-            bool anyRfOnly = items.Any(i => i.IsRFOnly);
-
-            if (anyRfOnly)
-            {
-                if (!newBeApproved)
-                {
-                    throw new InvalidPluginExecutionException(
-                        "This Turn-In includes items sourced directly from a Requirement Funding " +
-                        "(no Prioritization). Budget Execution Approval is required before this " +
-                        "Turn-In can be approved.");
-                }
-                tracing.Trace("TurnInValidator: RF-only items present; BE Approval required and present.");
-            }
-
-            if (!newStateApproved)
+            // ---- State-only rule: regular states must turn in through a Prioritization ----
+            // A geographic-state user (member of a "{ABBR} - State Approver/Administrator"
+            // owner team whose ABBR is not PEC/WTC) may not turn in funds sourced directly
+            // from a Requirement Funding — every Turn-In Item must carry a Prioritization.
+            // PEC and WTC are non-geographic entities and stay exempt (they may turn in
+            // RF-only). Checkbook Administrators / Budget Executors hold no such state team
+            // and pass. Enforced on the State's approval save (the moment the State submits);
+            // a BE approval save re-runs this but the BE user is not a state-team member.
+            if (items.Any(i => i.IsRFOnly) &&
+                StateTeamHelper.IsRestrictedStateUser(
+                    service, tracing, context.UserId, RfOnlyExemptAbbreviations))
             {
                 throw new InvalidPluginExecutionException(
-                    "State Approval is required before a Turn-In can be processed.");
+                    "A Turn-In submitted by a State must move funds through a Prioritization. " +
+                    "One or more items are sourced directly from a Requirement Funding with no " +
+                    "Prioritization — add a Prioritization to each Turn-In Item before approving. " +
+                    "(Only PEC and WTC may turn in directly from a Requirement Funding.)");
+            }
+
+            // ---- Approval routing ----
+            // RF-only Turn-Ins (items sourced directly from a Requirement Funding,
+            // no Prioritization) take a TWO-STEP approval: the State approves first —
+            // which routes the Turn-In to Budget Execution — and BE approves second,
+            // each in its own save. Demanding both flags on every approval save
+            // deadlocks step one: the State save carries book_stateapproved only, so a
+            // "BE approval must also be present" check rejects it, and BE can never
+            // reach the record because the State could never route it. (Symmetrically,
+            // a BE-first save was rejected for missing State approval — so neither
+            // side could move. That was the reported deadlock.)
+            //
+            // Enforce ordering the way SwapValidator does instead: only when BE
+            // approval is being GRANTED in this save do we require State approval to
+            // already be effective. A State-only approval is always permitted here and
+            // routes the Turn-In to BE. Execution readiness (RF-only => both flags;
+            // otherwise State alone) is gated in the post-op orchestrator
+            // TurnInApprovalPlugin, which creates ledgers only once the Turn-In is
+            // fully approved — so letting the intermediate State approval through here
+            // is safe.
+            if (beApprovedInPayload && newBeApproved && !newStateApproved)
+            {
+                throw new InvalidPluginExecutionException(
+                    "Budget Execution approval requires State Approval to already be in " +
+                    "place. Approve for the State first, then grant Budget Execution approval.");
             }
 
             tracing.Trace("TurnInValidator: all validations passed.");
         }
+
+        /// <summary>
+        /// Non-geographic state abbreviations exempt from the "regular states must
+        /// turn in through a Prioritization" rule — PEC and WTC may turn in items
+        /// sourced directly from a Requirement Funding. Matched against the leading
+        /// abbreviation of the user's "{ABBR} - State Approver/Administrator" owner
+        /// team (see <see cref="StateTeamHelper"/>).
+        /// </summary>
+        private static readonly string[] RfOnlyExemptAbbreviations = { "PEC", "WTC" };
 
         /// <summary>
         /// Fields the approval-time validation reads that an approval save never
