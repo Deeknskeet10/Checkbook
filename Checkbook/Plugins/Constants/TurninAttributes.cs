@@ -18,6 +18,15 @@ namespace Checkbook.Plugins.Constants
         // Both columns must be created in the maker portal.
         public const string AFPAmount = "book_afpamount";
         public const string AllotmentAmount = "book_allotmentamount";
+        // Sticky manual-override flags (Two Options / bool). When set, the
+        // corresponding amount is human-entered and TurnInAmountCalculator leaves
+        // it untouched on Create and Update — it will NOT be re-derived from
+        // Amount × current pct. Clearing the flag lets the calculator resume
+        // auto-sizing (the flags are in the Update step filter, so clearing one
+        // retriggers a recompute of that amount). Both columns must be created
+        // in the maker portal (default No). Applies to Kind A only.
+        public const string AFPOverridden = "book_afpoverridden";
+        public const string AllotmentOverridden = "book_allotmentoverridden";
         public const string FiscalYear = "book_fiscalyear";
         public const string Fund = "book_fund";
         public const string FundCenter = "book_fundcenter";

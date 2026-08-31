@@ -747,10 +747,18 @@ with `book_newamount × current_pct` for **Kind A** Turn-Ins. Skips entirely
 when `book_origin = Sweep` — the Generate Distributions sweep owns those
 values for Kind B.
 
+Each amount has a sticky manual-override flag — `book_afpoverridden` and
+`book_allotmentoverridden`. When a flag is set, that amount is human-entered
+and the calculator leaves it untouched (it will **not** be re-derived on a
+later TDP/Fund/PG change). The two are independent, so a state can pin AFP
+(e.g. to 0 — return TDP without AFP) while Allotment keeps auto-correcting.
+Both flags are in the Update filter/pre-image so **clearing** a flag
+retriggers a recompute of that amount.
+
 | # | Message | Primary entity | Stage         | Mode | Filtering attributes                                               | Notes |
 |---|---------|----------------|---------------|------|--------------------------------------------------------------------|-------|
-| 1 | Create  | `book_turnin`  | Pre-Operation | Sync | *(none)*                                                           | Initial AFP/Allotment computation. |
-| 2 | Update  | `book_turnin`  | Pre-Operation | Sync | `book_newamount, book_fund, book_pg, book_fundcenter, book_origin` | Re-computes on input change. **Requires PreImage** (`book_newamount, book_fund, book_pg, book_fundcenter, book_origin`). |
+| 1 | Create  | `book_turnin`  | Pre-Operation | Sync | *(none)*                                                           | Initial AFP/Allotment computation (respects override flags). |
+| 2 | Update  | `book_turnin`  | Pre-Operation | Sync | `book_newamount, book_fund, book_pg, book_fundcenter, book_origin, book_afpoverridden, book_allotmentoverridden` | Re-computes on input change or when an override flag is cleared/set. **Requires PreImage** (`book_newamount, book_fund, book_pg, book_fundcenter, book_origin, book_afpoverridden, book_allotmentoverridden`). |
 
 ### `Checkbook.Plugins.TurnIns.TurnInValidator`
 

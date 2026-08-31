@@ -254,6 +254,59 @@ don't drift.
 
 ---
 
+## 9. book_turnInFormBehavior  (file: `book_turnInFormBehavior.js`)
+
+Origin-driven show/lock behavior for the **Turn-In main form**
+`{676d1438-a523-497d-8ae4-261b007eb4bc}`, plus the AFP/Allotment manual-override
+stamping. Not a retirement — this library carries its own handlers; wire the
+new **OnChange** handlers below (the OnLoad/OnChange-of-origin handlers may
+already be registered — leave them).
+
+Create/refresh WR `book_turnInFormBehavior`, type **JavaScript (JS)**, publish.
+
+| Event | Handler | Pass exec ctx | Parameters |
+|---|---|---|---|
+| Form OnLoad | `TurnInFormBehavior.onLoad` | yes | (none) |
+| `book_origin` OnChange | `TurnInFormBehavior.onOriginChange` | yes | (none) |
+| `book_afpamount` OnChange | `TurnInFormBehavior.onAmountChange` | yes | (none) |
+| `book_allotmentamount` OnChange | `TurnInFormBehavior.onAmountChange` | yes | (none) |
+
+**Form prerequisites (add to the Turn-In main form first):**
+- Field controls present: `book_origin`, `book_newamount`,
+  `book_identifiedturninamount`, `book_afpamount`, `book_allotmentamount`,
+  `book_afpoverridden`, `book_allotmentoverridden` (the script no-ops on any
+  missing control/attribute).
+- `book_afpamount` / `book_allotmentamount` must **not** be locked (read-only)
+  in field properties — the script enables them on Kind A (State) and disables
+  them on Kind B (Sweep). A form-level lock would defeat the Kind A edit path.
+- Create the two override flags in the maker portal as **Yes/No (Two Options)**,
+  default **No**. Keep them on the form (visible) so a user can clear an
+  override to re-enable auto-sizing.
+
+**Behavior / why:** on Kind A, AFP/Allotment are auto-sized by the
+`TurnInAmountCalculator` pre-op plugin (`TDP × current pct`). A state may
+hand-edit either amount to return TDP without the matching AFP/Allotment;
+`onAmountChange` stamps the paired sticky flag (`book_afpamount` →
+`book_afpoverridden`, `book_allotmentamount` → `book_allotmentoverridden`) so
+the plugin stops re-deriving that amount even on a later TDP change. Clearing
+the flag resumes auto-sizing (both flags are in the plugin's Update step
+filter). The handler no-ops on Kind B — those amounts are GenerateDistributions'
+read-only output. See [`../Plugins/PLUGIN-REGISTRATION.md`](../Plugins/PLUGIN-REGISTRATION.md)
+→ `TurnInAmountCalculator` for the plugin side.
+
+Verify: on a **State** Turn-In, AFP and Allotment show computed values and are
+editable; type a new AFP → the AFP override flag flips to Yes; save, then change
+the TDP amount → AFP stays at the entered value while Allotment re-derives; clear
+the AFP override flag, save → AFP snaps back to `TDP × pct`. On a **Sweep**
+Turn-In, both amounts are read-only and editing is impossible (no override
+stamped).
+
+> Note: `book_hidePriTurnIns` is still listed as a handler-less library on this
+> same form (see cross-reference below) — remove it in the same pass if you
+> haven't already.
+
+---
+
 ## Cross-reference: already-dead web resources
 
 Safe to delete without any rewiring (verify the delete isn't blocked by a
