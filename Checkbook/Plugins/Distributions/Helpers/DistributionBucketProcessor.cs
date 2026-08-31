@@ -257,6 +257,18 @@ namespace Checkbook.Plugins.Distributions.Helpers
                 return;
             }
 
+            // The consolidated debit and everything that references it (the new
+            // credits' book_debiteddistribution, the repoints) MUST go through the
+            // synchronous `service`, NOT the batch. This plugin runs inside the
+            // platform transaction, and ExecuteMultipleRequest does NOT observe
+            // that ambient transaction: a debit created via the batch (or via a
+            // direct service.Create, then referenced from a batched request) is
+            // invisible to the batched credit create → "book_Distributions with
+            // Id = … Does Not Exist". Direct service.Create → service.Create in the
+            // same transaction DOES see prior writes, so keep this chain sync.
+            // Flush the buffered bucket-loop writes first so ordering is clean.
+            batch.Flush();
+
             Guid debitId;
             if (keeper == null)
             {
@@ -269,10 +281,6 @@ namespace Checkbook.Plugins.Distributions.Helpers
                 debit[DistributionsAttributes.FundingEvent]          = fundingEventRef;
                 debit[DistributionsAttributes.ManualEntry]           = false;
                 if (holdingOwningBu != null) debit["owningbusinessunit"] = holdingOwningBu;
-                // Synchronous: the credits below reference this debit's id, so it
-                // must exist before they are queued. Flush anything the bucket loop
-                // buffered first, so this create can't be reordered after a credit.
-                batch.Flush();
                 debitId = service.Create(debit);
                 result.DistributionsCreated++;
                 tracing.Trace($"  → Created consolidated Debit {debitId} at holding FC for {totalDebit:C}.");
@@ -280,6 +288,7 @@ namespace Checkbook.Plugins.Distributions.Helpers
             else
             {
                 debitId = keeper.Id;
+                // keeper is a committed row, so its amend is safe to batch.
                 AmendRowIfNeeded(batch, tracing, keeper, totalDebit, fundingEventRef, result);
             }
             var debitRef = new EntityReference(EntityNames.Distributions, debitId);
@@ -296,14 +305,16 @@ namespace Checkbook.Plugins.Distributions.Helpers
                 credit[DistributionsAttributes.DebitedDistribution]   = debitRef;
                 credit[DistributionsAttributes.ManualEntry]           = false;
                 if (s.bucket.OwningBusinessUnit != null) credit["owningbusinessunit"] = s.bucket.OwningBusinessUnit;
-                batch.Create(credit);
+                // Synchronous — references the debit created above (see note).
+                var creditId = service.Create(credit);
                 result.DistributionsCreated++;
-                tracing.Trace($"    → Credit queued to FC {s.bucket.FundCenterId} for {s.amount:C}.");
+                tracing.Trace($"    → Credit {creditId} to FC {s.bucket.FundCenterId} for {s.amount:C}.");
             }
 
             foreach (var c in liveCredits.Where(c => c.DebitedDistributionId != debitId))
             {
-                batch.Update(new Entity(EntityNames.Distributions, c.Id)
+                // Synchronous — sets book_debiteddistribution to the debit above.
+                service.Update(new Entity(EntityNames.Distributions, c.Id)
                 {
                     [DistributionsAttributes.DebitedDistribution] = debitRef,
                 });
@@ -311,6 +322,9 @@ namespace Checkbook.Plugins.Distributions.Helpers
                 result.DistributionsUpdated++;
                 tracing.Trace($"    → Re-pointed pending credit {c.Id} at debit {debitId}.");
             }
+
+            // Drain the keeper amend (if queued above) before returning.
+            batch.Flush();
         }
 
         // -----------------------------------------------------------------

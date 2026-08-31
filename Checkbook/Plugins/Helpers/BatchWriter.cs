@@ -22,11 +22,20 @@ namespace Checkbook.Plugins.Helpers
     ///
     /// ContinueOnError = false: the first faulting request aborts the batch and
     /// throws, matching the fail-fast behaviour of the direct service calls this
-    /// replaces. Requests execute in the order queued, so a caller needing
-    /// A-before-B (e.g. create a parent, then children referencing its id) must
-    /// either queue them in that order OR create the parent synchronously first —
-    /// SyncHoldingDebit creates the consolidated debit synchronously for exactly
-    /// this reason.
+    /// replaces.
+    ///
+    /// ⚠ TRANSACTION VISIBILITY: this runs from a plugin inside the platform
+    /// transaction, and ExecuteMultipleRequest does NOT observe that ambient
+    /// transaction. A record created earlier IN THE SAME EXECUTION — whether by a
+    /// direct service.Create or by an earlier batched request — is NOT guaranteed
+    /// visible to a later batched request that references it by id (lookup or
+    /// target), and Dataverse reports it as "Entity … With Id = … Does Not Exist".
+    /// So NEVER route a create-then-reference chain through the batch: keep the
+    /// parent create AND the dependent writes on the synchronous `service` path
+    /// (direct service.Create → service.Create in one transaction DO see each
+    /// other). SyncHoldingDebit does exactly this for the consolidated debit and
+    /// its credits/repoints. The batch is only for writes to already-committed
+    /// rows (amends, deactivations, turn-in ops, Phase-4 re-syncs).
     /// </summary>
     public sealed class BatchWriter
     {
