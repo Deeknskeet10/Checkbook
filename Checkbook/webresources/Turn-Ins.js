@@ -1,5 +1,15 @@
-// Form behavior for book_turnin. Toggles visibility/lock state based on
-// book_origin so the same form serves both kinds:
+"use strict";
+var Book = Book || {};
+// Book.TurnIn — form behavior for the book_turnin (Turn-In header) main form.
+//
+// Replaces (old web resource / old global → new handler):
+//   book_turnInFormBehavior   TurnInFormBehavior.onLoad          → Book.TurnIn.onLoad
+//   book_turnInFormBehavior   TurnInFormBehavior.onOriginChange  → Book.TurnIn.onOriginChange
+//   book_turnInFormBehavior   TurnInFormBehavior.onAmountChange  → Book.TurnIn.onAmountChange
+//   book_hidePriTurnIns       (unwired, retired — no replacement)
+//
+// Toggles visibility/lock state based on book_origin so the same form serves
+// both kinds, and stamps the AFP/Allotment manual-override flags:
 //
 //   • Origin = State  (0) — user-initiated Kind A. Shows the items subgrid,
 //                            book_newamount (TDP), and book_identifiedturninamount.
@@ -14,13 +24,11 @@
 //                            book_afpamount + book_allotmentamount (read-only,
 //                            owned by GenerateDistributions).
 //
-// Register as JScript web resource "book_turnInFormBehavior" and wire on the
-// book_turnin main form:
-//   • OnLoad                        → TurnInFormBehavior.onLoad
-//   • OnChange of book_origin       → TurnInFormBehavior.onOriginChange
-//   • OnChange of book_afpamount    → TurnInFormBehavior.onAmountChange
-//   • OnChange of book_allotmentamount → TurnInFormBehavior.onAmountChange
-//     (all with "Pass execution context as first parameter" checked)
+// Wire on the book_turnin main form (all with "Pass execution context" checked):
+//   • OnLoad                            → Book.TurnIn.onLoad
+//   • OnChange of book_origin           → Book.TurnIn.onOriginChange
+//   • OnChange of book_afpamount        → Book.TurnIn.onAmountChange
+//   • OnChange of book_allotmentamount  → Book.TurnIn.onAmountChange
 //
 // Form prerequisites (add these to the form first):
 //   • Field controls: book_origin, book_afpamount, book_allotmentamount,
@@ -28,8 +36,7 @@
 //     (the script no-ops gracefully if a control/attribute is missing)
 //   • The items subgrid lives in section "_section_541" of tab "general"; if
 //     that section name changes in the form designer, update ITEMS_SECTION.
-var TurnInFormBehavior = (function () {
-  "use strict";
+Book.TurnIn = (function () {
 
   var ORIGIN_STATE = 0;
   var ORIGIN_SWEEP = 1;

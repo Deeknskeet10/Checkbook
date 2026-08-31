@@ -254,24 +254,36 @@ don't drift.
 
 ---
 
-## 9. book_turnInFormBehavior  (file: `book_turnInFormBehavior.js`)
+## 9. Turn-In tables — one file per table
 
-Origin-driven show/lock behavior for the **Turn-In main form**
-`{676d1438-a523-497d-8ae4-261b007eb4bc}`, plus the AFP/Allotment manual-override
-stamping. Not a retirement — this library carries its own handlers; wire the
-new **OnChange** handlers below (the OnLoad/OnChange-of-origin handlers may
-already be registered — leave them).
+The Turn-In feature spans two tables, each consolidated to a single library:
 
-Create/refresh WR `book_turnInFormBehavior`, type **JavaScript (JS)**, publish.
+- **`Turn-Ins.js`** → `Book.TurnIn` — the **Turn-In header** (`book_turnin`)
+  main form. Replaces `book_turnInFormBehavior` (and retires the unwired
+  `book_hidePriTurnIns` on the same form).
+- **`Turn-In-Items.js`** → `Book.TurnInItem` — the **Turn-In Items**
+  (`book_turninitem`) form. Replaces `book_turnInFilterForm`.
 
-| Event | Handler | Pass exec ctx | Parameters |
-|---|---|---|---|
-| Form OnLoad | `TurnInFormBehavior.onLoad` | yes | (none) |
-| `book_origin` OnChange | `TurnInFormBehavior.onOriginChange` | yes | (none) |
-| `book_afpamount` OnChange | `TurnInFormBehavior.onAmountChange` | yes | (none) |
-| `book_allotmentamount` OnChange | `TurnInFormBehavior.onAmountChange` | yes | (none) |
+The Items quick-create populate handler (`book_turnInQC`) is retired
+separately via the generic `Book.QuickCreate.populateParent` — see §3, not here.
 
-**Form prerequisites (add to the Turn-In main form first):**
+### 9a. Turn-Ins.js — book_turnin main form `{676d1438-a523-497d-8ae4-261b007eb4bc}`
+
+Origin-driven show/lock behavior plus AFP/Allotment manual-override stamping.
+Create WR `Turn-Ins` (file `Turn-Ins.js`), type **JavaScript (JS)**, publish.
+
+| Event | Remove handler (library) | Add handler | Pass exec ctx | Parameters |
+|---|---|---|---|---|
+| Form OnLoad | `TurnInFormBehavior.onLoad` (book_turnInFormBehavior) | `Book.TurnIn.onLoad` | yes | (none) |
+| `book_origin` OnChange | `TurnInFormBehavior.onOriginChange` (book_turnInFormBehavior) | `Book.TurnIn.onOriginChange` | yes | (none) |
+| `book_afpamount` OnChange | (none — new) | `Book.TurnIn.onAmountChange` | yes | (none) |
+| `book_allotmentamount` OnChange | (none — new) | `Book.TurnIn.onAmountChange` | yes | (none) |
+
+Also swap the form library `book_turnInFormBehavior` → `Turn-Ins`, and **remove
+the `book_hidePriTurnIns` library** from this form (it was handler-less — see
+cross-reference below).
+
+**Form prerequisites:**
 - Field controls present: `book_origin`, `book_newamount`,
   `book_identifiedturninamount`, `book_afpamount`, `book_allotmentamount`,
   `book_afpoverridden`, `book_allotmentoverridden` (the script no-ops on any
@@ -301,9 +313,28 @@ the AFP override flag, save → AFP snaps back to `TDP × pct`. On a **Sweep**
 Turn-In, both amounts are read-only and editing is impossible (no override
 stamped).
 
-> Note: `book_hidePriTurnIns` is still listed as a handler-less library on this
-> same form (see cross-reference below) — remove it in the same pass if you
-> haven't already.
+### 9b. Turn-In-Items.js — book_turninitem form
+
+Scopes the Requirement Funding and Prioritization lookups on the Items form to
+the parent Turn-In's Fund/PG/FY (RF) and state (Prioritization). Create WR
+`Turn-In-Items` (file `Turn-In-Items.js`), type **JavaScript (JS)**, publish.
+
+| Event | Remove handler (library) | Add handler | Pass exec ctx | Parameters |
+|---|---|---|---|---|
+| Form OnLoad | `TurnInItem.onLoad` (book_turnInFilterForm) | `Book.TurnInItem.onLoad` | yes | (none) |
+
+Swap the form library `book_turnInFilterForm` → `Turn-In-Items`.
+
+**Form prerequisites:** lookup controls `book_turnin`, `book_requirementfunding`,
+`book_prioritization` present (the script no-ops if a control is missing).
+
+Verify: open a Turn-In Item under a saved Turn-In — the Requirement Funding
+lookup shows only RFs whose LOA matches the parent's Fund+PG+FY; the
+Prioritization lookup shows Prioritizations from any Fund Center in the parent
+Turn-In's state.
+
+Delete when done (both 9a and 9b verified): `book_turnInFormBehavior`,
+`book_turnInFilterForm`.
 
 ---
 
@@ -325,7 +356,7 @@ points at, then retry):
 
 Still live, untouched by this pass: `book_checkbookButtons`,
 `book_hidePriRealignments`, `book_realignmentFormProgression` (candidates to
-adopt `book_security` later), `book_turnInFilterForm`, `book_resetStateUFR`,
+adopt `book_security` later), `book_resetStateUFR`,
 `book_generateLOAs`, `book_genManualDistributions`, `book_generateDistributions`,
 `book_Prioritizations`, `book_Requirements`, `book_reqDetailFieldRequired`,
 `book_allocation`, `book_ledger`, `book_fund`, `book_recertification`,
@@ -333,7 +364,7 @@ adopt `book_security` later), `book_turnInFilterForm`, `book_resetStateUFR`,
 
 ---
 
-## 9. book_Prioritizations update — FY27 Spend Plan tab (Jul 2026, FC lock retired Aug 2026)
+## 10. book_Prioritizations update — FY27 Spend Plan tab (Jul 2026, FC lock retired Aug 2026)
 
 File: `book_prioritization.js` → paste into the existing WR
 **`book_Prioritizations`** (already wired to the Prioritization main form:
