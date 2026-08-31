@@ -76,9 +76,12 @@ namespace Checkbook.Plugins.Helpers
                 {
                     // With ReturnResponses = false, only faulted items come back.
                     var faulted = response.Responses.FirstOrDefault(x => x.Fault != null);
+                    var culprit = faulted != null && faulted.RequestIndex >= 0 && faulted.RequestIndex < slice.Count
+                        ? Describe(slice[faulted.RequestIndex])
+                        : "unknown request";
                     throw new InvalidPluginExecutionException(
-                        $"Batch write failed (request {faulted?.RequestIndex} in a {slice.Count}-item chunk): " +
-                        $"{faulted?.Fault?.Message ?? "unknown fault"}.");
+                        $"Batch write failed (request {faulted?.RequestIndex} in a {slice.Count}-item chunk) — " +
+                        $"{culprit}: {faulted?.Fault?.Message ?? "unknown fault"}.");
                 }
             }
             _tracing?.Trace($"  BatchWriter: flushed {total} request(s).");
@@ -86,5 +89,27 @@ namespace Checkbook.Plugins.Helpers
         }
 
         public int PendingCount => _pending.Count;
+
+        // Human-readable identity of a queued request, so a batch fault points at
+        // the exact row/operation (and, for a create, the lookup targets that
+        // Dataverse validates — a dangling book_debiteddistribution surfaces here).
+        private static string Describe(OrganizationRequest request)
+        {
+            switch (request)
+            {
+                case CreateRequest c:
+                    var e = c.Target;
+                    var lookups = string.Join(", ", e.Attributes
+                        .Where(a => a.Value is EntityReference)
+                        .Select(a => $"{a.Key}→{((EntityReference)a.Value).LogicalName}:{((EntityReference)a.Value).Id}"));
+                    return $"Create {e.LogicalName}" + (lookups.Length > 0 ? $" [{lookups}]" : string.Empty);
+                case UpdateRequest u:
+                    return $"Update {u.Target.LogicalName}:{u.Target.Id}";
+                case DeleteRequest d:
+                    return $"Delete {d.Target.LogicalName}:{d.Target.Id}";
+                default:
+                    return request?.RequestName ?? "unknown";
+            }
+        }
     }
 }
