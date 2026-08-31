@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using Microsoft.Xrm.Sdk;
 using Microsoft.Xrm.Sdk.Query;
@@ -35,6 +36,14 @@ namespace Checkbook.Plugins.Distributions.Helpers
         public int TurnInsUpdated;
         public int TurnInsDeleted;    // spent trackers removed (both type amounts hit 0)
         public int Skipped;
+
+        // Mid-group continuation: false when the time budget forced a bail before
+        // every bucket in the group was processed. NextBucketOffset is the index
+        // of the first UNPROCESSED bucket — the caller re-invokes with it so a
+        // single oversized (Fund, PG) group is split across passes rather than
+        // being an uninterruptible unit that blows the 120s sandbox ceiling.
+        public bool GroupComplete = true;
+        public int NextBucketOffset;
     }
 
     /// <summary>
@@ -79,6 +88,9 @@ namespace Checkbook.Plugins.Distributions.Helpers
             int fundingType,
             Guid holdingFundCenterId,
             EntityReference holdingOwningBu,
+            int startBucketOffset,
+            Stopwatch stopwatch,
+            TimeSpan budget,
             IDictionary<string, FundingPercentageHelper.FundingResolution> pctCache = null)
         {
             var result = new BucketResult();
@@ -101,10 +113,31 @@ namespace Checkbook.Plugins.Distributions.Helpers
             var state = LoadGroupState(service, fundId, pgId, fundingType, holdingFundCenterId);
             var openTurnInByFc = FindOpenSweepTurnInsByFc(service, fundId, pgId);
 
+            // All row writes for this group go through the batch — it auto-flushes
+            // as it fills, so the between-bucket budget check above still reflects
+            // real elapsed time, and the final Flush() below drains ≤ one chunk.
+            var batch = new BatchWriter(service, tracing);
+
             var toCreate = new List<(DistributionBucket bucket, decimal amount)>();
 
-            foreach (var bucket in groupBuckets)
+            for (var bi = startBucketOffset; bi < groupBuckets.Count; bi++)
             {
+                // Bail between buckets when the pass is out of time — but always
+                // process at least one bucket per entry so the run makes forward
+                // progress and can't livelock on this group. SyncHoldingDebit
+                // still runs below (it re-derives from live state, so a partial
+                // pass leaves a consistent, self-correcting debit).
+                if (bi > startBucketOffset && stopwatch != null && stopwatch.Elapsed > budget)
+                {
+                    tracing.Trace(
+                        $"  Time budget reached mid-group after bucket {bi} of {groupBuckets.Count} " +
+                        $"— resuming here next pass.");
+                    result.GroupComplete = false;
+                    result.NextBucketOffset = bi;
+                    break;
+                }
+
+                var bucket = groupBuckets[bi];
                 var target = Math.Round(bucket.TotalFunding * resolution.Percentage / 100m, 2);
                 state.ImmutableNetByFc.TryGetValue(bucket.FundCenterId, out var immutableNet);
                 var delta = target - immutableNet;
@@ -127,14 +160,14 @@ namespace Checkbook.Plugins.Distributions.Helpers
                     }
                     else
                     {
-                        AmendRowIfNeeded(service, tracing, keeper, delta, resolution.FundingEvent, result);
+                        AmendRowIfNeeded(batch, tracing, keeper, delta, resolution.FundingEvent, result);
                         foreach (var extra in credits.Where(c => c != keeper && !c.Deactivated))
-                            DeactivateRow(service, tracing, extra, result, "duplicate pending credit");
+                            DeactivateRow(batch, tracing, extra, result, "duplicate pending credit");
                     }
 
                     if (openTurnIn != null && GetTypeAmount(openTurnIn, fundingType) > 0m)
                     {
-                        if (ZeroTypeAmount(service, tracing, openTurnIn, fundingType))
+                        if (ZeroTypeAmount(batch, tracing, openTurnIn, fundingType))
                             result.TurnInsDeleted++;
                         else
                             result.TurnInsUpdated++;
@@ -144,14 +177,14 @@ namespace Checkbook.Plugins.Distributions.Helpers
                 {
                     if (credits != null)
                         foreach (var c in credits.Where(c => !c.Deactivated))
-                            DeactivateRow(service, tracing, c, result, "target met by committed rows");
+                            DeactivateRow(batch, tracing, c, result, "target met by committed rows");
 
                     if (delta < 0m)
                     {
                         var overage = -delta;
                         if (openTurnIn == null)
                         {
-                            CreateOverageTurnIn(service, tracing, bucket, overage, fundingType, bucket.OwningBusinessUnit);
+                            CreateOverageTurnIn(batch, tracing, bucket, overage, fundingType, bucket.OwningBusinessUnit);
                             result.TurnInsCreated++;
                         }
                         else
@@ -159,7 +192,7 @@ namespace Checkbook.Plugins.Distributions.Helpers
                             var currentAmount = GetTypeAmount(openTurnIn, fundingType);
                             if (currentAmount != overage)
                             {
-                                UpdateTypeAmount(service, tracing, openTurnIn, fundingType, overage);
+                                UpdateTypeAmount(batch, tracing, openTurnIn, fundingType, overage);
                                 result.TurnInsUpdated++;
                             }
                         }
@@ -168,7 +201,7 @@ namespace Checkbook.Plugins.Distributions.Helpers
                     {
                         if (openTurnIn != null && GetTypeAmount(openTurnIn, fundingType) > 0m)
                         {
-                            if (ZeroTypeAmount(service, tracing, openTurnIn, fundingType))
+                            if (ZeroTypeAmount(batch, tracing, openTurnIn, fundingType))
                                 result.TurnInsDeleted++;
                             else
                                 result.TurnInsUpdated++;
@@ -177,8 +210,12 @@ namespace Checkbook.Plugins.Distributions.Helpers
                 }
             }
 
-            SyncHoldingDebit(service, tracing, state, toCreate, resolution.FundingEvent,
+            SyncHoldingDebit(service, batch, tracing, state, toCreate, resolution.FundingEvent,
                 fundId, pgId, holdingFundCenterId, holdingOwningBu, result);
+
+            // Drain whatever the auto-flush left (≤ one chunk). Runs on both the
+            // completed and mid-group-bail paths so processed buckets persist.
+            batch.Flush();
 
             return result;
         }
@@ -192,6 +229,7 @@ namespace Checkbook.Plugins.Distributions.Helpers
         // -----------------------------------------------------------------
         private static void SyncHoldingDebit(
             IOrganizationService service,
+            BatchWriter batch,
             ITracingService tracing,
             GroupState state,
             IList<(DistributionBucket bucket, decimal amount)> toCreate,
@@ -210,12 +248,12 @@ namespace Checkbook.Plugins.Distributions.Helpers
 
             var keeper = state.AmendableHoldingDebits.FirstOrDefault(d => !d.Deactivated);
             foreach (var extra in state.AmendableHoldingDebits.Where(d => d != keeper && !d.Deactivated))
-                DeactivateRow(service, tracing, extra, result, "duplicate pending holding-FC debit");
+                DeactivateRow(batch, tracing, extra, result, "duplicate pending holding-FC debit");
 
             if (totalDebit <= 0m)
             {
                 if (keeper != null)
-                    DeactivateRow(service, tracing, keeper, result, "no pending credits remain");
+                    DeactivateRow(batch, tracing, keeper, result, "no pending credits remain");
                 return;
             }
 
@@ -231,6 +269,10 @@ namespace Checkbook.Plugins.Distributions.Helpers
                 debit[DistributionsAttributes.FundingEvent]          = fundingEventRef;
                 debit[DistributionsAttributes.ManualEntry]           = false;
                 if (holdingOwningBu != null) debit["owningbusinessunit"] = holdingOwningBu;
+                // Synchronous: the credits below reference this debit's id, so it
+                // must exist before they are queued. Flush anything the bucket loop
+                // buffered first, so this create can't be reordered after a credit.
+                batch.Flush();
                 debitId = service.Create(debit);
                 result.DistributionsCreated++;
                 tracing.Trace($"  → Created consolidated Debit {debitId} at holding FC for {totalDebit:C}.");
@@ -238,7 +280,7 @@ namespace Checkbook.Plugins.Distributions.Helpers
             else
             {
                 debitId = keeper.Id;
-                AmendRowIfNeeded(service, tracing, keeper, totalDebit, fundingEventRef, result);
+                AmendRowIfNeeded(batch, tracing, keeper, totalDebit, fundingEventRef, result);
             }
             var debitRef = new EntityReference(EntityNames.Distributions, debitId);
 
@@ -254,14 +296,14 @@ namespace Checkbook.Plugins.Distributions.Helpers
                 credit[DistributionsAttributes.DebitedDistribution]   = debitRef;
                 credit[DistributionsAttributes.ManualEntry]           = false;
                 if (s.bucket.OwningBusinessUnit != null) credit["owningbusinessunit"] = s.bucket.OwningBusinessUnit;
-                var creditId = service.Create(credit);
+                batch.Create(credit);
                 result.DistributionsCreated++;
-                tracing.Trace($"    → Credit {creditId} to FC {s.bucket.FundCenterId} for {s.amount:C}.");
+                tracing.Trace($"    → Credit queued to FC {s.bucket.FundCenterId} for {s.amount:C}.");
             }
 
             foreach (var c in liveCredits.Where(c => c.DebitedDistributionId != debitId))
             {
-                service.Update(new Entity(EntityNames.Distributions, c.Id)
+                batch.Update(new Entity(EntityNames.Distributions, c.Id)
                 {
                     [DistributionsAttributes.DebitedDistribution] = debitRef,
                 });
@@ -409,7 +451,7 @@ namespace Checkbook.Plugins.Distributions.Helpers
             row.GetAttributeValue<OptionSetValue>(DistributionsAttributes.DisbursementDirection)?.Value ?? -1;
 
         private static void AmendRowIfNeeded(
-            IOrganizationService service, ITracingService tracing,
+            BatchWriter batch, ITracingService tracing,
             AmendableRow row, decimal newAmount, EntityReference fundingEventRef, BucketResult result)
         {
             var amountChanged = row.Amount != newAmount;
@@ -419,7 +461,7 @@ namespace Checkbook.Plugins.Distributions.Helpers
             var update = new Entity(EntityNames.Distributions, row.Id);
             if (amountChanged) update[DistributionsAttributes.Amount] = newAmount;
             if (feChanged)     update[DistributionsAttributes.FundingEvent] = fundingEventRef;
-            service.Update(update);
+            batch.Update(update);
 
             tracing.Trace($"  → Amended pending row {row.Id}: amount {row.Amount:C} → {newAmount:C}" +
                           (feChanged ? " (+ FundingEvent retag)." : "."));
@@ -429,10 +471,10 @@ namespace Checkbook.Plugins.Distributions.Helpers
         }
 
         private static void DeactivateRow(
-            IOrganizationService service, ITracingService tracing,
+            BatchWriter batch, ITracingService tracing,
             AmendableRow row, BucketResult result, string reason)
         {
-            service.Update(new Entity(EntityNames.Distributions, row.Id)
+            batch.Update(new Entity(EntityNames.Distributions, row.Id)
             {
                 [DistributionsAttributes.StateCode] = new OptionSetValue(StateCodeValues.Inactive),
             });
@@ -499,13 +541,13 @@ namespace Checkbook.Plugins.Distributions.Helpers
         }
 
         private static void UpdateTypeAmount(
-            IOrganizationService service, ITracingService tracing,
+            BatchWriter batch, ITracingService tracing,
             Entity turnIn, int fundingType, decimal newAmount)
         {
             var attr = fundingType == FundingTypeValues.AFP
                 ? TurninAttributes.AFPAmount
                 : TurninAttributes.AllotmentAmount;
-            service.Update(new Entity(EntityNames.Turnin, turnIn.Id) { [attr] = newAmount });
+            batch.Update(new Entity(EntityNames.Turnin, turnIn.Id) { [attr] = newAmount });
             // Update local copy so subsequent reads in this Process call see the new value.
             turnIn[attr] = newAmount;
             tracing.Trace($"  → Updated Sweep Turn-In {turnIn.Id} {attr} = {newAmount:C}.");
@@ -522,7 +564,7 @@ namespace Checkbook.Plugins.Distributions.Helpers
         /// the plugins' execution identity being the sysadmin super user.
         /// </summary>
         private static bool ZeroTypeAmount(
-            IOrganizationService service, ITracingService tracing,
+            BatchWriter batch, ITracingService tracing,
             Entity turnIn, int fundingType)
         {
             var attr = fundingType == FundingTypeValues.AFP
@@ -537,12 +579,12 @@ namespace Checkbook.Plugins.Distributions.Helpers
             if (otherAmount <= 0m)
             {
                 // Both sides done — the tracker is spent; remove it entirely.
-                service.Delete(EntityNames.Turnin, turnIn.Id);
+                batch.Delete(EntityNames.Turnin, turnIn.Id);
                 tracing.Trace($"  → Deleted Sweep Turn-In {turnIn.Id} (both type amounts cleared).");
                 return true;
             }
 
-            service.Update(new Entity(EntityNames.Turnin, turnIn.Id) { [attr] = 0m });
+            batch.Update(new Entity(EntityNames.Turnin, turnIn.Id) { [attr] = 0m });
             turnIn[attr] = 0m;
             tracing.Trace($"  → Zeroed Sweep Turn-In {turnIn.Id} {attr} (other type still > 0).");
             return false;
@@ -554,7 +596,7 @@ namespace Checkbook.Plugins.Distributions.Helpers
         // the detected overage. The complementary column starts at 0.
         // -----------------------------------------------------------------
         private static void CreateOverageTurnIn(
-            IOrganizationService service,
+            BatchWriter batch,
             ITracingService tracing,
             DistributionBucket bucket,
             decimal amount,
@@ -573,9 +615,9 @@ namespace Checkbook.Plugins.Distributions.Helpers
             turnIn[TurninAttributes.AllotmentAmount] = fundingType == FundingTypeValues.Allotment ? amount : 0m;
             if (owningBu != null) turnIn["owningbusinessunit"] = owningBu;
 
-            var id = service.Create(turnIn);
+            batch.Create(turnIn);
             var typeName = fundingType == FundingTypeValues.AFP ? "AFP" : "Allotment";
-            tracing.Trace($"  → Created Sweep Turn-In {id} ({typeName} overage {amount:C}).");
+            tracing.Trace($"  → Queued Sweep Turn-In ({typeName} overage {amount:C}) at FC {bucket.FundCenterId}.");
         }
     }
 }

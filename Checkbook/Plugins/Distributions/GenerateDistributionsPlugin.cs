@@ -69,9 +69,14 @@ namespace Checkbook.Plugins.Distributions
         private const string MessageName = "book_GenerateDistributions";
         private const string HoldingFundCenterEnvVar = "book_DistributionHoldingFundCenter";
 
-        // Plugin sandbox hard kill is 120s. Bail at ~105s so we have time to
-        // serialize the continuation token and write outputs.
-        private static readonly TimeSpan TimeBudget = TimeSpan.FromSeconds(105);
+        // Plugin sandbox hard kill is 120s. Bail at ~90s to leave ~30s of tail
+        // headroom: after the budget trips, one more bucket may finish, then
+        // SyncHoldingDebit's batched writes flush, then the caller serializes the
+        // continuation token — all of which must complete before the 120s ceiling,
+        // because a kill during the tail loses the token and stalls the run.
+        // Writes are batched (BatchWriter / ExecuteMultiple), so the tail is a
+        // handful of round-trips, not one per row.
+        private static readonly TimeSpan TimeBudget = TimeSpan.FromSeconds(90);
 
         protected override void ExecutePlugin(
             IPluginExecutionContext context,
@@ -132,17 +137,19 @@ namespace Checkbook.Plugins.Distributions
                 }
 
                 // Determine starting (fe-index, phase, bucket-idx) from the cursor.
-                var startFeIdx   = 0;
-                var startPhase   = 2;
-                var startBucket  = 0;
+                var startFeIdx      = 0;
+                var startPhase      = 2;
+                var startBucket     = 0;
+                var startBucketOff  = 0;
                 if (cursor != null && cursor.Phase >= 2 && cursor.Phase <= 3)
                 {
                     var idx = fundingEvents.FindIndex(e => e.Id == cursor.FundingEventId);
                     if (idx >= 0)
                     {
-                        startFeIdx  = idx;
-                        startPhase  = cursor.Phase;
-                        startBucket = cursor.BucketIdx;
+                        startFeIdx     = idx;
+                        startPhase     = cursor.Phase;
+                        startBucket    = cursor.BucketIdx;
+                        startBucketOff = cursor.BucketOffset;
                     }
                     else
                     {
@@ -168,21 +175,30 @@ namespace Checkbook.Plugins.Distributions
                         var groupStart = (feIdx == startFeIdx && startPhase == 2) ? startBucket : 0;
                         for (var i = groupStart; i < phase2Groups.Count; i++)
                         {
+                            // Only the group we resumed into carries a within-group offset.
+                            var bucketOff = (feIdx == startFeIdx && startPhase == 2 && i == startBucket) ? startBucketOff : 0;
                             if (stopwatch.Elapsed > TimeBudget)
                             {
-                                var outCursor = new Cursor { Phase = 2, FundingEventId = fundingEvent.Id, BucketIdx = i };
-                                tracing.Trace($"Time budget reached at FE {fundingEvent.Id} Phase 2 group {i} — returning continuation.");
+                                var outCursor = new Cursor { Phase = 2, FundingEventId = fundingEvent.Id, BucketIdx = i, BucketOffset = bucketOff };
+                                tracing.Trace($"Time budget reached at FE {fundingEvent.Id} Phase 2 group {i} (bucket {bucketOff}) — returning continuation.");
                                 WriteOutputs(context, totalDeactivated, totalCreated, totalUpdated, totalTurnIns, totalSkipped, outCursor);
                                 return;
                             }
                             var r = DistributionBucketProcessor.ProcessGroup(
                                 service, tracing, phase2Groups[i], fundingEventRef, fundingType,
-                                holdingFundCenterId, holdingOwningBu, pctCache);
+                                holdingFundCenterId, holdingOwningBu, bucketOff, stopwatch, TimeBudget, pctCache);
                             totalCreated     += r.DistributionsCreated;
                             totalUpdated     += r.DistributionsUpdated;
                             totalDeactivated += r.DistributionsDeactivated;
                             totalTurnIns     += r.TurnInsCreated;
                             totalSkipped     += r.Skipped;
+                            if (!r.GroupComplete)
+                            {
+                                var outCursor = new Cursor { Phase = 2, FundingEventId = fundingEvent.Id, BucketIdx = i, BucketOffset = r.NextBucketOffset };
+                                tracing.Trace($"Phase 2 group {i} split at bucket {r.NextBucketOffset} — returning continuation.");
+                                WriteOutputs(context, totalDeactivated, totalCreated, totalUpdated, totalTurnIns, totalSkipped, outCursor);
+                                return;
+                            }
                         }
                     }
 
@@ -208,27 +224,36 @@ namespace Checkbook.Plugins.Distributions
                         var groupStart = (feIdx == startFeIdx && startPhase == 3) ? startBucket : 0;
                         for (var i = groupStart; i < phase3Groups.Count; i++)
                         {
+                            var bucketOff = (feIdx == startFeIdx && startPhase == 3 && i == startBucket) ? startBucketOff : 0;
                             if (stopwatch.Elapsed > TimeBudget)
                             {
-                                var outCursor = new Cursor { Phase = 3, FundingEventId = fundingEvent.Id, BucketIdx = i };
-                                tracing.Trace($"Time budget reached at FE {fundingEvent.Id} Phase 3 group {i} — returning continuation.");
+                                var outCursor = new Cursor { Phase = 3, FundingEventId = fundingEvent.Id, BucketIdx = i, BucketOffset = bucketOff };
+                                tracing.Trace($"Time budget reached at FE {fundingEvent.Id} Phase 3 group {i} (bucket {bucketOff}) — returning continuation.");
                                 WriteOutputs(context, totalDeactivated, totalCreated, totalUpdated, totalTurnIns, totalSkipped, outCursor);
                                 return;
                             }
                             var r = DistributionBucketProcessor.ProcessGroup(
                                 service, tracing, phase3Groups[i], fundingEventRef, fundingType,
-                                holdingFundCenterId, holdingOwningBu, pctCache);
+                                holdingFundCenterId, holdingOwningBu, bucketOff, stopwatch, TimeBudget, pctCache);
                             totalCreated     += r.DistributionsCreated;
                             totalUpdated     += r.DistributionsUpdated;
                             totalDeactivated += r.DistributionsDeactivated;
                             totalTurnIns     += r.TurnInsCreated;
                             totalSkipped     += r.Skipped;
+                            if (!r.GroupComplete)
+                            {
+                                var outCursor = new Cursor { Phase = 3, FundingEventId = fundingEvent.Id, BucketIdx = i, BucketOffset = r.NextBucketOffset };
+                                tracing.Trace($"Phase 3 group {i} split at bucket {r.NextBucketOffset} — returning continuation.");
+                                WriteOutputs(context, totalDeactivated, totalCreated, totalUpdated, totalTurnIns, totalSkipped, outCursor);
+                                return;
+                            }
                         }
                     }
 
                     // Once we've finished an FE, subsequent ones start from Phase 2 / group 0.
                     startPhase = 2;
                     startBucket = 0;
+                    startBucketOff = 0;
                 }
             }
 
@@ -281,6 +306,7 @@ namespace Checkbook.Plugins.Distributions
             Stopwatch stopwatch, TimeSpan budget)
         {
             var result = new CleanupResult();
+            var batch = new BatchWriter(service, tracing);
             tracing.Trace("Phase 4: orphan cleanup starting.");
 
             // Live bucket keys, re-derived from the same aggregations Phases 2+3 use.
@@ -324,10 +350,11 @@ namespace Checkbook.Plugins.Distributions
                 if (stopwatch.Elapsed > budget)
                 {
                     tracing.Trace("Phase 4: time budget reached during orphan deactivation.");
+                    batch.Flush();
                     result.Complete = false;
                     return result;
                 }
-                service.Update(new Entity(EntityNames.Distributions, orphan.Id)
+                batch.Update(new Entity(EntityNames.Distributions, orphan.Id)
                 {
                     [DistributionsAttributes.StateCode] = new OptionSetValue(StateCodeValues.Inactive),
                 });
@@ -348,6 +375,7 @@ namespace Checkbook.Plugins.Distributions
                 if (stopwatch.Elapsed > budget)
                 {
                     tracing.Trace("Phase 4: time budget reached during debit re-sync.");
+                    batch.Flush();
                     result.Complete = false;
                     return result;
                 }
@@ -356,7 +384,7 @@ namespace Checkbook.Plugins.Distributions
                 var keeper = debitGroup.First();
                 foreach (var extra in debitGroup.Skip(1))
                 {
-                    service.Update(new Entity(EntityNames.Distributions, extra.Id)
+                    batch.Update(new Entity(EntityNames.Distributions, extra.Id)
                     {
                         [DistributionsAttributes.StateCode] = new OptionSetValue(StateCodeValues.Inactive),
                     });
@@ -367,7 +395,7 @@ namespace Checkbook.Plugins.Distributions
                 creditSums.TryGetValue(debitGroup.Key, out var creditSum);
                 if (creditSum <= 0m)
                 {
-                    service.Update(new Entity(EntityNames.Distributions, keeper.Id)
+                    batch.Update(new Entity(EntityNames.Distributions, keeper.Id)
                     {
                         [DistributionsAttributes.StateCode] = new OptionSetValue(StateCodeValues.Inactive),
                     });
@@ -376,7 +404,7 @@ namespace Checkbook.Plugins.Distributions
                 }
                 else if (keeper.Amount != creditSum)
                 {
-                    service.Update(new Entity(EntityNames.Distributions, keeper.Id)
+                    batch.Update(new Entity(EntityNames.Distributions, keeper.Id)
                     {
                         [DistributionsAttributes.Amount] = creditSum,
                     });
@@ -385,6 +413,7 @@ namespace Checkbook.Plugins.Distributions
                 }
             }
 
+            batch.Flush();
             tracing.Trace($"Phase 4: complete — {result.Deactivated} deactivated, {result.Updated} re-synced.");
             return result;
         }
@@ -781,11 +810,15 @@ namespace Checkbook.Plugins.Distributions
         // -----------------------------------------------------------------
         // Continuation cursor — tiny key=value text, no escaping needed since
         // values are int / Guid only. Three states:
-        //   phase=2;fe=<guid>;idx=<n>      → mid-Phase-2 of FE <guid>, (Fund,PG) group <n>
-        //   phase=3;fe=<guid>;idx=<n>      → mid-Phase-3 of FE <guid>, (Fund,PG) group <n>
-        //   phase=4                        → Phase 4 (orphan cleanup) incomplete
-        // idx is a group index (see GroupByFundAndPg) — never within a group, so
-        // a group's pending debit+credits are always reconciled atomically.
+        //   phase=2;fe=<guid>;idx=<n>[;boff=<b>]  → mid-Phase-2 of FE <guid>, (Fund,PG) group <n>
+        //   phase=3;fe=<guid>;idx=<n>[;boff=<b>]  → mid-Phase-3 of FE <guid>, (Fund,PG) group <n>
+        //   phase=4                               → Phase 4 (orphan cleanup) incomplete
+        // idx is a group index (see GroupByFundAndPg). boff (optional, default 0)
+        // is the first UNPROCESSED bucket within that group — a group whose
+        // reconciliation can't finish inside one time budget is split across
+        // passes at bucket boundaries. The group's single holding-FC debit is
+        // re-synced from live state on every pass (SyncHoldingDebit re-derives,
+        // never accumulates), so a mid-group split leaves a consistent debit.
         // Legacy phase=1 tokens (from the retired deactivation sweep) parse as
         // a fresh start.
         // -----------------------------------------------------------------
@@ -794,9 +827,13 @@ namespace Checkbook.Plugins.Distributions
             public int Phase;
             public Guid FundingEventId;
             public int BucketIdx;
+            public int BucketOffset;   // first unprocessed bucket WITHIN group BucketIdx
 
             public string Serialize() =>
-                Phase == 4 ? "phase=4" : $"phase={Phase};fe={FundingEventId};idx={BucketIdx}";
+                Phase == 4
+                    ? "phase=4"
+                    : $"phase={Phase};fe={FundingEventId};idx={BucketIdx}" +
+                      (BucketOffset > 0 ? $";boff={BucketOffset}" : string.Empty);
 
             public static Cursor Parse(string s)
             {
@@ -816,6 +853,9 @@ namespace Checkbook.Plugins.Distributions
                             break;
                         case "idx":
                             if (int.TryParse(kv[1], out var i)) c.BucketIdx = i;
+                            break;
+                        case "boff":
+                            if (int.TryParse(kv[1], out var bo)) c.BucketOffset = bo;
                             break;
                     }
                 }
