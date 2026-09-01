@@ -24,6 +24,26 @@ namespace Checkbook.Plugins.Constants
         public const string FundCenter = "book_fundcenter"; // null on rollup rows
         public const string RowType = "book_rowtype";       // 0 Planned, 1 Actual
 
+        // FY27 Mode-C (State-Rollup) anchor — a (State, Fund, SAG) bucket that
+        // aggregates across every distributed non-breakout PF in the state.
+        // Coarser than one LOA, so it cannot hang off book_lineofaccountingloa.
+        public const string State = "book_state";
+        public const string Fund = "book_fund";
+        public const string Sag = "book_sag";
+
+        /// <summary>
+        /// FY option value (calendar year, e.g. 2027). Stored explicitly on
+        /// Mode-C rows — they have no PF/RF to infer it from.
+        /// </summary>
+        public const string FiscalYear = "book_newfiscalyear";
+
+        /// <summary>
+        /// Decimal — the anchor's funded amount. On Mode-C rows this is the
+        /// rollup written by SpendPlanStateRollup (Σ of the bucket's PF funded
+        /// amounts); the Planned cap validates against it.
+        /// </summary>
+        public const string FundedAmount = "book_fundedamount";
+
         /// <summary>Decimal month twins in federal FY order (Oct → Sep).</summary>
         public static readonly string[] DecimalMonths =
         {

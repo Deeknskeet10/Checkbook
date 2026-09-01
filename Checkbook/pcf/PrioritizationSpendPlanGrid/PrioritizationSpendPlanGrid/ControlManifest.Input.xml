@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <manifest>
-  <control namespace="ARNGCheckbook" constructor="PrioritizationSpendPlanGrid" version="0.1.0"
+  <control namespace="ARNGCheckbook" constructor="PrioritizationSpendPlanGrid" version="0.2.0"
            display-name-key="PrioritizationSpendPlanGrid"
            description-key="FY27+ Spend Plan grid for a Prioritization: one section per Prioritization Funding row (per allocated Requirement Funding) with Planned, Actual and Variance bands across the 12 federal fiscal year months (Oct-Sep). When the Prioritizations Itemized Details span multiple Fund Centers, each section expands into per-Fund-Center bands. Planned cells lock as each month passes; Actual cells open only for passed months; Variance is computed. Rows are stored on book_spendplan anchored by book_prioritizationfunding (book_prioritization stays empty on FY27 rows)."
            control-type="virtual" >
@@ -15,6 +15,9 @@
                     of-type="Decimal" usage="bound" required="false" />
       <property-set name="validatedAmount" display-name-key="Validated Amount"
                     of-type="Decimal" usage="bound" required="false" />
+      <property-set name="spendPlanMode" display-name-key="Spend Plan Mode"
+                    description-key="book_spendplanmode — this grid shows only Breakout (0) allocations; State-Rollup / Central roll up elsewhere."
+                    of-type="OptionSet" usage="bound" required="false" />
     </data-set>
     <resources>
       <code path="index.ts" order="1"/>

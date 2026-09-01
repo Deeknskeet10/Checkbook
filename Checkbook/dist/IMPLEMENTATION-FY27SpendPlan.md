@@ -1,5 +1,13 @@
 # FY27 Spend Plans + Itemized Detail Fund Centers — Implementation & Deployment
 
+> **Supersession note (Aug 2026):** the single PF-anchored spend plan below is
+> now **one of three** spend-plan grains. A Requirement is Centrally Managed
+> (one plan per Requirement), Breakout (one plan per Prioritization — the grid
+> in this doc), or State-Rollup (funded amounts rolled up by State + Fund/SAG).
+> See [`DESIGN-SpendPlanModes.md`](./DESIGN-SpendPlanModes.md) for the mode
+> model, the PF stamp, and the past-FY immutability design. This doc still
+> describes the Breakout grain correctly.
+
 Design agreed Jul 2026. Two connected features:
 
 > **Revised Aug 2026 — FC lock retired.** The original design forced and

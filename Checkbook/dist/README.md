@@ -16,9 +16,19 @@ containing the PCF controls:
   [`../Plugins/PLUGIN-REGISTRATION.md`](../Plugins/PLUGIN-REGISTRATION.md))
 - `book_ARNGCheckbook.PrioritizationFundingGrid` — v0.2.5: Itemized Detail
   sub-rows show their Fund Center (read-only)
-- `book_ARNGCheckbook.PrioritizationSpendPlanGrid` — v0.1.0 (new): FY27+
-  Spend Plan tab on the Prioritization form; see
-  [`IMPLEMENTATION-FY27SpendPlan.md`](./IMPLEMENTATION-FY27SpendPlan.md)
+- `book_ARNGCheckbook.PrioritizationSpendPlanGrid` — v0.2.0: the **Breakout**
+  spend-plan surface on the Prioritization form (filters to Breakout PFs via
+  the new bound `spendPlanMode` property; non-breakout allocations are counted
+  in a banner). See [`IMPLEMENTATION-FY27SpendPlan.md`](./IMPLEMENTATION-FY27SpendPlan.md).
+- `book_ARNGCheckbook.RequirementSpendPlanGrid` — v0.1.0 (new): the **Centrally
+  Managed** (Mode-A) plan on the Requirement form — one section per Requirement
+  Funding (per FY), RF-anchored, shown only for `book_national` requirements.
+- `book_ARNGCheckbook.StateSpendPlanGrid` — v0.1.0 (new): the **State-Rollup**
+  (Mode-C) plan on a new custom page keyed by State + FY — one section per
+  (Fund, SAG) bucket, funded read-only from the rollup.
+  Grain model (Breakout / State-Rollup / Centrally Managed), schema, and past-FY
+  immutability design: [`DESIGN-SpendPlanModes.md`](./DESIGN-SpendPlanModes.md);
+  schema setup: [`SETUP-SpendPlanModes-Schema.md`](./SETUP-SpendPlanModes-Schema.md)
 - `book_ARNGCheckbook.PrioritizationsForRequirement`
 - `book_ARNGCheckbook.RequirementDetailFundingGrid`
 - `book_ARNGCheckbook.RequirementDetailsRank`

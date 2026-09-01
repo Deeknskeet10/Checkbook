@@ -29,7 +29,11 @@ const ALIAS = {
   requirementFunding: "requirementFunding",
   fundedAmount: "fundedAmount",
   validatedAmount: "validatedAmount",
+  spendPlanMode: "spendPlanMode",
 } as const;
+
+/** book_spendplanmode option values (mirror of the C# SpendPlanModeValues). */
+const MODE_BREAKOUT = 0;
 
 const SPEND_PLAN_ENTITY = "book_spendplan";
 const PRIORITIZATION_ENTITY = "book_prioritization";
@@ -67,6 +71,8 @@ interface PfRow {
   id: string;
   rfName: string;
   funded: number;
+  /** book_spendplanmode; only Breakout (0) rows are planned on this grid. */
+  mode: number | null;
 }
 
 /** A Fund Center band under a PF section. Key "" = state level / rollup. */
@@ -279,7 +285,10 @@ export const PrioritizationSpendPlanGridApp: React.FC<
     : null;
 
   // ----- PF rows straight from the bound subgrid dataset -----
-  const pfRows = React.useMemo<PfRow[]>(() => {
+  // This grid is the Breakout surface only: State-Rollup / Central allocations
+  // are planned elsewhere (state page / requirement form), so they are filtered
+  // out here and surfaced as a count so their funding is never silently hidden.
+  const allPfRows = React.useMemo<PfRow[]>(() => {
     return dataset.sortedRecordIds.map((id) => {
       const r = dataset.records[id];
       return {
@@ -287,9 +296,16 @@ export const PrioritizationSpendPlanGridApp: React.FC<
         rfName:
           r.getFormattedValue(ALIAS.requirementFunding) || "(unnamed funding)",
         funded: num(r.getValue(ALIAS.fundedAmount)),
+        mode: toNumber(r.getValue(ALIAS.spendPlanMode)),
       };
     });
   }, [dataset.sortedRecordIds, dataset.records]);
+
+  const pfRows = React.useMemo(
+    () => allPfRows.filter((pf) => pf.mode === MODE_BREAKOUT),
+    [allPfRows]
+  );
+  const nonBreakoutCount = allPfRows.length - pfRows.length;
 
   // ----- Server data -----
   const [prioInfo, setPrioInfo] = React.useState<PrioInfo | null>(null);
@@ -854,13 +870,23 @@ export const PrioritizationSpendPlanGridApp: React.FC<
             {fcMismatches.join("; ")}
           </div>
         )}
+        {!loading && isFy27Plus && nonBreakoutCount > 0 && (
+          <div className={`${styles.banner} ${styles.bannerWarn}`}>
+            {nonBreakoutCount} allocation{nonBreakoutCount === 1 ? "" : "s"} on
+            this Prioritization {nonBreakoutCount === 1 ? "is" : "are"} not
+            broken out — {nonBreakoutCount === 1 ? "it rolls" : "they roll"} up
+            to the state or requirement spend plan and {" "}
+            {nonBreakoutCount === 1 ? "is" : "are"} not shown here.
+          </div>
+        )}
 
         {loading ? (
           <Spinner label="Loading Spend Plan…" />
         ) : !isFy27Plus ? null : pfRows.length === 0 ? (
           <div className={styles.empty}>
-            No Requirement Funding has been allocated to this Prioritization
-            yet — allocate funding before building a Spend Plan.
+            {nonBreakoutCount > 0
+              ? "None of this Prioritization's allocations are broken out — their spend plans are maintained on the state or requirement plan, not here."
+              : "No Requirement Funding has been allocated to this Prioritization yet — allocate funding before building a Spend Plan."}
           </div>
         ) : (
           <div className={styles.scrollContainer}>

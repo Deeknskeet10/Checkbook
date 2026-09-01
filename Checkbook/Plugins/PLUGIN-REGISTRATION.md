@@ -104,6 +104,27 @@ The Itemized-Detail Fund Center + FY27 spend plan work (source in
 Register the spend plan validator only after the `book_spendplan` changes
 are published.
 
+#### FY27 Spend Plan **modes** (Breakout / State-Rollup / Centrally Managed)
+
+Extends the above so a Requirement's spend plan is maintained at the right
+grain. Full rationale in
+[`../dist/DESIGN-SpendPlanModes.md`](../dist/DESIGN-SpendPlanModes.md).
+
+| Item | Change |
+|---|---|
+| `book_requirements` (existing) | Add Boolean `book_breakout` (default **false**). true ⇒ child Prios get individual (breakout) plans; false ⇒ their funded amounts roll up by State + Fund/SAG. Ignored when `book_national` (Centrally Managed) is set. |
+| `book_prioritizationfunding` (existing) | Add Boolean `book_centrallymanaged`; Choice `book_spendplanmode` (**Breakout** = `0`, **State-Rollup** = `1`, **Central** = `2`); lookup `book_lineofaccounting` → `book_fundingline`. **All three are plugin-owned/read-only** — set by `PrioritizationFundingSpendPlanStamp`, kept in sync by the Requirement / RF cascades. |
+| `book_spendplan` (existing) | Add Mode-A/C anchors + rollup: lookups `book_state` → `book_state`, `book_fund` → `book_fund`, `book_sag` → `book_sag`; FY `book_newfiscalyear` (same option set as elsewhere — stored explicitly on Mode-C rows); decimal `book_fundedamount` (the anchor's funded amount — on Mode-C rows the rollup written by `SpendPlanStateRollup`). Add an alternate key `(book_state, book_fund, book_sag, book_newfiscalyear, book_rowtype)` for Mode-C uniqueness. Extend the `book_spendplantype` formula with a leading branch: `If(!IsBlank(book_State) && !IsBlank(book_Fund), "State Rollup", …)`. Mode A anchors on the existing `book_requirementfunding` lookup (formula already yields "Requirement"). |
+
+Anchor → mode map: `book_prioritizationfunding` set = **Breakout**;
+`book_requirementfunding` set (with `book_rowtype`) = **Centrally Managed**;
+`book_state`+`book_fund`+`book_sag` set = **State-Rollup**. Exactly one anchor
+per row; the legacy `book_prioritization` / `book_requirement` /
+`book_unfundedrequest` lookups stay empty on all FY27 rows.
+
+Register the mode plugins only after these `book_spendplan` /
+`book_prioritizationfunding` / `book_requirements` changes are published.
+
 > **Retired (Aug 2026): the Itemized-Details FC lock.**
 > `PrioritizationItemizedFundCenterDefault` and
 > `PrioritizationFundCenterLockGuard` (which forced/locked the Prio FC to the
@@ -123,6 +144,7 @@ are published.
 | `book_DistributionHoldingFundCenter`  | Text | `GenerateDistributionsPlugin` | See [`Distributions/REGISTRATION.md`](Distributions/REGISTRATION.md). The A18 record's GUID. |
 | `book_TurnInCreditOPR`                | Text | `TurnInApprovalPlugin` (via `TurnInLOAResolver`)         | See [`TurnIns/REGISTRATION.md`](TurnIns/REGISTRATION.md). Required for FY27+ Turn-Ins. |
 | `book_LockManualFundedEdits`          | Yes/No | `PrioritizationFundedAmountLock` + `RequirementFundingFundedAmountLock`; written by `ToggleFundedAmountLockPlugin` | See [`../docs/FundedAmountLock-Setup.md`](../docs/FundedAmountLock-Setup.md). Ships default `false`; toggled via the Admin Center button. Blocks manual **reductions** only — increases stay allowed. |
+| `book_activeplanningfy`               | Text (integer) | `RequirementSpendPlanModeCascade`, `RequirementFundingLoaCascade`, `SpendPlanImmutabilityGuard`, `FiscalYearHelper` | The open planning FY (calendar year, e.g. `2027`). FYs below it are frozen. **Optional** — when unset, `FiscalYearHelper` falls back to the computed federal FY (Oct-start). |
 
 ---
 
@@ -364,21 +386,50 @@ LOA-allocation check when the update is mid-realignment (detected by walking
 
 ### `Checkbook.Plugins.Validation.SpendPlanFY27Validator`
 
-Guards FY27+ spend plan rows — the ones anchored on
-`book_prioritizationfunding`; legacy rows (Prio / Requirement / UFR anchored)
-pass through untouched. Enforces: (1) a PF-anchored row must not also set
-`book_prioritization`; (2) one active row per (PF, Fund Center, Row Type);
-(3) active **Planned** rows under a PF may not total more than the PF funded
-amount — equality is deliberately NOT required so plans can be entered
-incrementally, the grid badge surfaces completeness; (4) month locks — once a
-federal FY month has passed its Planned cell is frozen, and Actual cells only
-accept values for completed months (FY resolved PF → Prio →
-`book_newfiscalyear`; skipped with a trace when FY is unknown).
+Guards FY27+ spend plan rows across all three anchor modes — **Breakout**
+(`book_prioritizationfunding`), **Centrally Managed** (`book_requirementfunding`
++ `book_rowtype`), and **State-Rollup** (`book_state`+`book_fund`+`book_sag` +
+`book_newfiscalyear`). Legacy rows (Prio / Requirement / UFR anchored, no FY27
+marker) pass through untouched. Enforces: (1) **anchor exclusivity** — exactly
+one anchor, and none of the legacy lookups; (2) **one active row per anchor +
+Row Type** (Breakout also keys on Fund Center); (3) **Planned cap** — active
+Planned rows for the anchor may not exceed funded (Breakout vs PF funded,
+Central vs RF `book_newfundedamount`, State-Rollup vs the row's stored
+`book_fundedamount` bucket rollup); equality NOT required (incremental entry);
+(4) **month locks** — passed month's Planned frozen, Actual only for passed
+months (FY resolved per anchor: Prio for Breakout, RF for Central, explicit
+`book_newfiscalyear` for State-Rollup; skipped with a trace when unknown).
 
 | # | Message | Primary entity   | Stage          | Mode | Filtering attributes | Notes |
 |---|---------|------------------|----------------|------|----------------------|-------|
 | 1 | Create  | `book_spendplan` | Pre-Operation  | Sync | *(none)*             | Validates new FY27 rows; legacy creates return immediately. |
-| 2 | Update  | `book_spendplan` | Pre-Operation  | Sync | `book_prioritizationfunding, book_fundcenter, book_rowtype, book_prioritization, book_newoctober, book_newnovember, book_newdecember, book_newjanuary, book_newfebruary, book_newmarch, book_newapril, book_newmay, book_newjune, book_newjuly, book_newaugust, book_newseptember` | **Requires PreImage** (same attributes plus `statecode`). |
+| 2 | Update  | `book_spendplan` | Pre-Operation  | Sync | `book_prioritizationfunding, book_requirementfunding, book_state, book_fund, book_sag, book_newfiscalyear, book_fundcenter, book_rowtype, book_fundedamount, book_prioritization, book_newoctober, book_newnovember, book_newdecember, book_newjanuary, book_newfebruary, book_newmarch, book_newapril, book_newmay, book_newjune, book_newjuly, book_newaugust, book_newseptember` | **Requires PreImage** (same attributes plus `statecode`). |
+
+### `Checkbook.Plugins.Validation.SpendPlanImmutabilityGuard`
+
+Makes past FYs immutable by construction (the invariant backing the FY-gated
+cascades). Rejects an Update that would change a PF's spend-plan stamp, or a
+`book_spendplan` row's FY27 planning values, once the record's FY is **below the
+active planning FY** (`book_activeplanningfy`, else computed federal FY) — no
+matter the path. Legacy (FY26) rows are out of scope. FY resolved from live
+related records; no pre-image needed.
+
+| # | Message | Primary entity              | Stage          | Mode | Filtering attributes | Notes |
+|---|---------|-----------------------------|----------------|------|----------------------|-------|
+| 1 | Update  | `book_prioritizationfunding`| Pre-Operation  | Sync | `book_centrallymanaged, book_spendplanmode, book_lineofaccounting` | Blocks stamp edits on closed-FY PFs. |
+| 2 | Update  | `book_spendplan`            | Pre-Operation  | Sync | `book_prioritizationfunding, book_requirementfunding, book_state, book_fund, book_sag, book_newfiscalyear, book_fundcenter, book_rowtype, book_fundedamount, book_newoctober, book_newnovember, book_newdecember, book_newjanuary, book_newfebruary, book_newmarch, book_newapril, book_newmay, book_newjune, book_newjuly, book_newaugust, book_newseptember` | Blocks planning edits on closed-FY rows. |
+
+### `Checkbook.Plugins.Validation.RequirementBreakoutConsistencyGuard`
+
+Keeps `book_breakout` and `book_national` consistent — a centrally managed
+Requirement can't be breakout — by force-clearing `book_breakout` to false when
+the effective record is centrally managed. Pre-op so the correction lands in the
+same write and the PF stamp derives the right mode.
+
+| # | Message | Primary entity      | Stage          | Mode | Filtering attributes | Notes |
+|---|---------|---------------------|----------------|------|----------------------|-------|
+| 1 | Create  | `book_requirements` | Pre-Operation  | Sync | *(none)*             | Clears breakout on new CM requirements. |
+| 2 | Update  | `book_requirements` | Pre-Operation  | Sync | `book_national, book_breakout` | **Requires PreImage** (`book_national, book_breakout`). |
 
 ---
 
@@ -519,6 +570,41 @@ national → non-national leave existing Prio FCs in place.
 |---|---------|---------------------|-----------------|------|-----------------------------------|-------|
 | 1 | Update  | `book_requirements` | Post-Operation  | Sync | `book_fundcenter, book_national`  | Cascades to linked Prios. **Requires PreImage** (`book_fundcenter, book_national`). Cascades even to Prios with active Itemized Details — the Itemized-Details FC lock was retired Aug 2026 (see the retirement note in the FY27 schema section). |
 
+### `Checkbook.Plugins.Items.PrioritizationFundingSpendPlanStamp`
+
+Stamps the spend-plan classification onto a Prioritization Funding from its
+parent Requirement + RF: `book_centrallymanaged` (mirror of `book_national`),
+`book_spendplanmode` (Central / Breakout / State-Rollup — derived), and
+`book_lineofaccounting` (the RF's LOA). The PF becomes the point-in-time
+snapshot for its FY. Pre-op so the values land in the same write.
+
+| # | Message | Primary entity              | Stage          | Mode | Filtering attributes | Notes |
+|---|---------|-----------------------------|----------------|------|----------------------|-------|
+| 1 | Create  | `book_prioritizationfunding`| Pre-Operation  | Sync | *(none)*             | Stamps CM / mode / LOA on new PFs. |
+| 2 | Update  | `book_prioritizationfunding`| Pre-Operation  | Sync | `book_requirementfunding` | Re-stamps when the RF is re-pointed. **Requires PreImage** (`book_requirementfunding`). |
+
+### `Checkbook.Plugins.Items.RequirementSpendPlanModeCascade`
+
+When a Requirement's `book_national` or `book_breakout` flips, re-stamps
+`book_centrallymanaged` / `book_spendplanmode` on its PFs — **only for FY ≥ the
+active planning FY** (RF.`book_newfiscalyear`). Prior-FY PFs are never loaded,
+so past FYs stay frozen. Mirrors the stamp plugin's mode derivation.
+
+| # | Message | Primary entity      | Stage          | Mode | Filtering attributes | Notes |
+|---|---------|---------------------|----------------|------|----------------------|-------|
+| 1 | Update  | `book_requirements` | Post-Operation | Sync | `book_national, book_breakout` | Re-stamps active-FY PFs. **Requires PreImage** (`book_national, book_breakout`). |
+
+### `Checkbook.Plugins.Items.RequirementFundingLoaCascade`
+
+When an RF's LOA (`book_lineofaccounting`) changes, pushes it onto the stamped
+`book_lineofaccounting` of its PFs so the state rollup keeps reaching the right
+Fund/SAG — gated to FY ≥ the active planning FY. The downstream PF update
+re-triggers `SpendPlanStateRollup`.
+
+| # | Message | Primary entity              | Stage          | Mode | Filtering attributes | Notes |
+|---|---------|-----------------------------|----------------|------|----------------------|-------|
+| 1 | Update  | `book_requirementfunding`   | Post-Operation | Sync | `book_lineofaccounting` | Cascades LOA to PFs. **Requires PreImage** (`book_lineofaccounting, book_newfiscalyear`). |
+
 ---
 
 ## Naming
@@ -561,6 +647,21 @@ refresh the RF). On re-parent it recalcs both the old and new RF.
 | 1 | Create  | `book_prioritizationfunding`  | Post-Operation  | Sync | *(none)*                                                                            | Recalc new parent Prio + new parent RF. |
 | 2 | Update  | `book_prioritizationfunding`  | Post-Operation  | Sync | `book_fundedamount, book_validatedamount, book_prioritization, book_requirementfunding, statecode` | Recalc current parent Prio + RF; recalc old parent Prio/RF on re-parent. **Requires PreImage** (`book_fundedamount, book_validatedamount, book_prioritization, book_requirementfunding`). |
 | 3 | Delete  | `book_prioritizationfunding`  | Post-Operation  | Sync | *(none)*                                                                            | Recalc pre-image parent Prio + RF. **Requires PreImage** (`book_prioritization, book_requirementfunding`). |
+
+### `Checkbook.Plugins.Recalculations.SpendPlanStateRollup`
+
+Keeps the Mode-C (State-Rollup) bucket funded amount in sync: recomputes
+`book_fundedamount` on any existing `book_spendplan` rows for the affected
+(State, Fund, SAG, FY) bucket = Σ of that bucket's active State-Rollup PFs'
+`book_fundedamount` (PF → LOA for Fund/SAG, PF → Prio for State/FY). A PF that
+moves buckets or leaves State-Rollup recomputes both its old and new bucket.
+Only buckets that already have spend-plan rows are touched. Never creates rows.
+
+| # | Message | Primary entity                | Stage           | Mode | Filtering attributes | Notes |
+|---|---------|-------------------------------|-----------------|------|----------------------|-------|
+| 1 | Create  | `book_prioritizationfunding`  | Post-Operation  | Sync | *(none)*             | Recompute the new PF's bucket. |
+| 2 | Update  | `book_prioritizationfunding`  | Post-Operation  | Sync | `book_fundedamount, book_spendplanmode, book_lineofaccounting, book_prioritization, statecode` | Recompute old + new bucket. **Requires PreImage** (`book_prioritization, book_lineofaccounting, book_spendplanmode, book_fundedamount, statecode`). |
+| 3 | Delete  | `book_prioritizationfunding`  | Post-Operation  | Sync | *(none)*             | Recompute the pre-image bucket. **Requires PreImage** (`book_prioritization, book_lineofaccounting, book_spendplanmode, book_fundedamount, statecode`). |
 
 ### `Checkbook.Plugins.Recalculations.PrioritizationRollupToRequirementFunding`
 

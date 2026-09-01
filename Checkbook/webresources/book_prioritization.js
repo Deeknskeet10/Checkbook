@@ -19,6 +19,12 @@ Book.Prioritization = (function () {
     // First FY that uses the PrioritizationSpendPlanGrid tab; earlier FYs keep
     // the legacy Spend Plan page (command bar button).
     var SPEND_PLAN_MIN_FY = 2027;
+    // book_prioritizationfunding.book_spendplanmode = Breakout. The Prio tab
+    // hosts the Breakout-only grid; State-Rollup / Central allocations are
+    // planned on the state page / requirement form instead.
+    var PRIORITIZATION_FUNDING     = "book_prioritizationfunding";
+    var SPEND_PLAN_MODE            = "book_spendplanmode";
+    var SPEND_PLAN_MODE_BREAKOUT   = 0;
 
     var DOCS_REMINDER_ID = "docsReminder";
     var DOCS_REMINDER_MESSAGE =
@@ -149,16 +155,45 @@ Book.Prioritization = (function () {
         );
     }
 
-    // ----- Spend Plan tab visibility (FY27+) -----
-    // The Spend Plan tab hosts PrioritizationSpendPlanGrid; FY26 and earlier
-    // keep the legacy Spend Plan custom page, so hide the tab for them.
+    // ----- Spend Plan tab visibility (FY27+, Breakout only) -----
+    // The Spend Plan tab hosts PrioritizationSpendPlanGrid, which is the
+    // *Breakout* surface. Two gates:
+    //   1. FY27+ — FY26 and earlier keep the legacy Spend Plan custom page.
+    //   2. This Prio has at least one Breakout allocation
+    //      (book_prioritizationfunding.book_spendplanmode = 0). A Prio whose
+    //      allocations are all State-Rollup / Central has nothing to plan here
+    //      (its money is on the state page / requirement plan), so hide the tab.
+    // The mode is stamped by PrioritizationFundingSpendPlanStamp, so on a brand
+    // new (unsaved) Prio there are no PFs yet — the tab stays hidden until one
+    // exists and reloads.
 
     function applySpendPlanTabVisibility(formContext) {
         var tab = formContext.ui.tabs.get(SPEND_PLAN_TAB);
         if (!tab) return;
+
         var fyAttr = formContext.getAttribute(FISCAL_YEAR);
         var fy = fyAttr ? fyAttr.getValue() : null;
-        tab.setVisible(fy !== null && fy >= SPEND_PLAN_MIN_FY);
+        if (fy === null || fy < SPEND_PLAN_MIN_FY) {
+            tab.setVisible(false);
+            return;
+        }
+
+        var rawId = formContext.data.entity.getId();
+        if (!rawId) { tab.setVisible(false); return; } // unsaved — no PFs yet
+        var prioId = stripBraces(rawId);
+
+        // Hide until a Breakout allocation is confirmed to exist.
+        tab.setVisible(false);
+        Xrm.WebApi.retrieveMultipleRecords(
+            PRIORITIZATION_FUNDING,
+            "?$select=" + PRIORITIZATION_FUNDING + "id&$top=1" +
+            "&$filter=_book_prioritization_value eq " + prioId +
+            " and " + SPEND_PLAN_MODE + " eq " + SPEND_PLAN_MODE_BREAKOUT +
+            " and statecode eq 0"
+        ).then(
+            function (result) { tab.setVisible(result.entities.length > 0); },
+            function () { /* leave hidden on error */ }
+        );
     }
 
     // ----- State auto-populate from user BU -----

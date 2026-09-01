@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<manifest>
+  <control namespace="ARNGCheckbook" constructor="RequirementSpendPlanGrid" version="0.1.0"
+           display-name-key="RequirementSpendPlanGrid"
+           description-key="FY27+ Centrally Managed spend plan for a Requirement: one section per Requirement Funding (per fiscal year) with Planned, Actual and Variance bands across the 12 federal fiscal year months (Oct-Sep). Only shown for Centrally Managed (book_national) requirements; the NPM maintains it. Rows are stored on book_spendplan anchored by book_requirementfunding."
+           control-type="virtual" >
+    <external-service-usage enabled="false">
+    </external-service-usage>
+    <!-- Bound to the book_requirementfunding subgrid on the Requirement form. -->
+    <data-set name="requirementFunding" display-name-key="Requirement Funding">
+      <property-set name="fundedAmount" display-name-key="Funded Amount"
+                    description-key="RF funded amount (book_newfundedamount)."
+                    of-type="Decimal" usage="bound" required="false" />
+      <property-set name="fiscalYear" display-name-key="Fiscal Year"
+                    description-key="RF fiscal year (book_newfiscalyear)."
+                    of-type="OptionSet" usage="bound" required="false" />
+    </data-set>
+    <resources>
+      <code path="index.ts" order="1"/>
+      <css path="css/RequirementSpendPlanGrid.css" order="1" />
+      <platform-library name="React" version="16.14.0" />
+      <platform-library name="Fluent" version="9.46.2" />
+    </resources>
+    <feature-usage>
+      <uses-feature name="WebAPI" required="true" />
+    </feature-usage>
+  </control>
+</manifest>
