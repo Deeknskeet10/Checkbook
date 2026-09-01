@@ -36,6 +36,9 @@ var Book = Book || {};
 //     (the script no-ops gracefully if a control/attribute is missing)
 //   • The items subgrid lives in section "_section_541" of tab "general"; if
 //     that section name changes in the form designer, update ITEMS_SECTION.
+//   • book_beapproved / book_stateapproved are Column-Level-Security masked
+//     columns on this form. onLoad tolerates the "masking feature is not ready"
+//     error their async init throws by retrying the origin layout (see below).
 Book.TurnIn = (function () {
 
   var ORIGIN_STATE = 0;
@@ -45,6 +48,15 @@ Book.TurnIn = (function () {
   // these need to be updated to match.
   var GENERAL_TAB = "general";
   var ITEMS_SECTION = "_section_541";
+
+  // Column-Level-Security masking (on book_beapproved / book_stateapproved,
+  // the two secured approval flags on this form) initializes asynchronously
+  // AFTER OnLoad fires. Any attribute .getValue() during that window — even on
+  // an unsecured column like book_origin — throws "Column level security masking
+  // feature is not ready". So origin-driven layout is applied on a bounded retry
+  // until masking settles, rather than synchronously in onLoad.
+  var MASKING_RETRY_MS = 150;
+  var MASKING_MAX_RETRIES = 20; // ~3s ceiling; readiness is effectively immediate
 
   // Field/control ids that toggle with origin.
   var KIND_A_CONTROLS = [
@@ -68,8 +80,35 @@ Book.TurnIn = (function () {
 
   function onLoad(executionContext) {
     var formContext = executionContext.getFormContext();
-    applyForOrigin(formContext);
+    // lockOrigin only touches controls (no getValue) so it's masking-safe now.
     lockOrigin(formContext);
+    // applyForOrigin reads book_origin.getValue(), which can throw while CLS
+    // masking is still initializing — apply it once masking is ready.
+    applyForOriginWhenReady(formContext, 0);
+  }
+
+  // Runs applyForOrigin, retrying on the CLS "masking feature is not ready"
+  // error until masking settles. Any other error propagates immediately.
+  function applyForOriginWhenReady(formContext, attempt) {
+    try {
+      applyForOrigin(formContext);
+    } catch (e) {
+      if (isMaskingNotReady(e) && attempt < MASKING_MAX_RETRIES) {
+        setTimeout(function () {
+          applyForOriginWhenReady(formContext, attempt + 1);
+        }, MASKING_RETRY_MS);
+        return;
+      }
+      // Masking never settled (pathological) — degrade quietly rather than
+      // surfacing the error popup; the form still works, just without
+      // origin-based field toggling. Non-masking errors still throw.
+      if (!isMaskingNotReady(e)) throw e;
+    }
+  }
+
+  function isMaskingNotReady(e) {
+    var msg = e && e.message ? e.message : String(e);
+    return msg.indexOf("masking feature is not ready") !== -1;
   }
 
   function onOriginChange(executionContext) {
