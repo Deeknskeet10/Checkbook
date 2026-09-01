@@ -2,7 +2,7 @@
 <manifest>
   <control namespace="ARNGCheckbook" constructor="StateSpendPlanGrid" version="0.1.0"
            display-name-key="StateSpendPlanGrid"
-           description-key="FY27+ State-Rollup spend plan: one section per (Fund, SAG) bucket for a State and fiscal year, with Planned, Actual and Variance bands across the 12 federal fiscal year months (Oct-Sep). Funded amount per bucket is the rollup of the state's distributed, non-breakout Prioritization Fundings at that Fund/SAG (read-only). Hosted on a custom page keyed by State + Fiscal Year; rows are stored on book_spendplan anchored by book_state + book_fund + book_sag."
+           description-key="FY27+ State-Rollup spend plan: one section per (Fund, SAG) bucket for a State and fiscal year, with Planned, Actual and Variance bands across the 12 federal fiscal year months (Oct-Sep). Funded amount per bucket is the rollup of the distributed, non-breakout Prioritization Fundings in that state at that Fund/SAG (read-only). Hosted on a custom page keyed by State + Fiscal Year; rows are stored on book_spendplan anchored by book_state + book_fund + book_sag."
            control-type="virtual" >
     <external-service-usage enabled="false">
     </external-service-usage>

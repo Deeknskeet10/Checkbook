@@ -16,7 +16,7 @@
       <property-set name="validatedAmount" display-name-key="Validated Amount"
                     of-type="Decimal" usage="bound" required="false" />
       <property-set name="spendPlanMode" display-name-key="Spend Plan Mode"
-                    description-key="book_spendplanmode — this grid shows only Breakout (0) allocations; State-Rollup / Central roll up elsewhere."
+                    description-key="book_spendplanmode - this grid shows only Breakout (0) allocations; State-Rollup / Central roll up elsewhere."
                     of-type="OptionSet" usage="bound" required="false" />
     </data-set>
     <resources>
