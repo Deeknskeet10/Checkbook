@@ -197,20 +197,48 @@ Book.Prioritization = (function () {
     }
 
     // ----- State auto-populate from user BU -----
+    // A book_state is owned by its own state Business Unit
+    // (book_state.owningbusinessunit). A user belongs to that state if their BU
+    // is anywhere in the state BU's subtree — including child BUs some states
+    // created below their state BU. So walk UP the user's BU parent chain
+    // (id-based, up to 50 levels — same rule as the StateScopeHelper plugin) and
+    // match the book_state whose owning BU is the nearest ancestor in the chain.
+    // (Old name-matching + one-level parent fallback missed deep child BUs.)
+    var MAX_BU_DEPTH = 50;
 
-    function businessUnitNameToStateName(name) {
-        var words = name.split(" ");
-        return words.map(function (w) {
-            return w.length === 0 ? "" : w.charAt(0).toUpperCase() + w.slice(1).toLowerCase();
-        }).join(" ");
+    function guid(value) {
+        return value ? stripBraces(value).toLowerCase() : null;
     }
 
-    function findStateRecord(name) {
+    function collectBuChain(buId, acc, depth) {
+        if (!buId || depth > MAX_BU_DEPTH || acc.indexOf(buId) >= 0) {
+            return Promise.resolve(acc);
+        }
+        acc.push(buId);
+        return Xrm.WebApi.retrieveRecord(
+            "businessunit", buId, "?$select=_parentbusinessunitid_value"
+        ).then(function (bu) {
+            return collectBuChain(guid(bu._parentbusinessunitid_value), acc, depth + 1);
+        }, function () { return acc; });
+    }
+
+    function findStateByOwningBu(chain) {
+        if (!chain.length) return Promise.resolve(null);
+        var orf = chain.map(function (id) {
+            return "_owningbusinessunit_value eq " + id;
+        }).join(" or ");
         return Xrm.WebApi.retrieveMultipleRecords(
             "book_state",
-            "?$select=book_name,book_stateid&$filter=book_name eq '" + name + "'"
+            "?$select=book_name,book_stateid,_owningbusinessunit_value&$filter=(" + orf + ") and statecode eq 0"
         ).then(function (result) {
-            return result.entities.length > 0 ? result.entities[0] : null;
+            if (!result.entities.length) return null;
+            // Nearest ancestor wins (owning BU earliest in the user's up-chain).
+            var best = null, bestIdx = 1e9;
+            result.entities.forEach(function (e) {
+                var idx = chain.indexOf(guid(e._owningbusinessunit_value));
+                if (idx >= 0 && idx < bestIdx) { bestIdx = idx; best = e; }
+            });
+            return best || result.entities[0];
         });
     }
 
@@ -224,31 +252,17 @@ Book.Prioritization = (function () {
 
     function populateStateFromBU(formContext) {
         if (formContext.getAttribute(STATE).getValue()) return;
-        var userId = Xrm.Utility.getGlobalContext().userSettings.userId;
+        var userId = guid(Xrm.Utility.getGlobalContext().userSettings.userId);
 
         Xrm.WebApi.retrieveRecord(
-            "systemuser",
-            userId.slice(1, -1),
-            "?$expand=businessunitid($select=name)"
+            "systemuser", userId, "?$select=_businessunitid_value"
         ).then(function (user) {
-            if (!user.businessunitid) return;
-            var buName = businessUnitNameToStateName(user.businessunitid.name);
-            var buId   = user.businessunitid.businessunitid;
-
-            findStateRecord(buName).then(function (state) {
-                if (state) { setStateLookup(formContext, state); return; }
-                Xrm.WebApi.retrieveRecord(
-                    "businessunit",
-                    buId,
-                    "?$expand=parentbusinessunitid($select=name)"
-                ).then(function (bu) {
-                    if (!bu.parentbusinessunitid) return;
-                    findStateRecord(businessUnitNameToStateName(bu.parentbusinessunitid.name))
-                        .then(function (parentState) {
-                            if (parentState) setStateLookup(formContext, parentState);
-                        });
-                });
-            });
+            var buId = guid(user._businessunitid_value);
+            return buId ? collectBuChain(buId, [], 0) : [];
+        }).then(function (chain) {
+            return findStateByOwningBu(chain);
+        }).then(function (state) {
+            if (state) setStateLookup(formContext, state);
         });
     }
 

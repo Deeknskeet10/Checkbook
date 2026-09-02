@@ -160,12 +160,31 @@ The three PCF controls ship in the delivery zip. After import + publish:
    `book_ARNGCheckbook.RequirementSpendPlanGrid`. Map `fundedAmount` →
    `book_newfundedamount`, `fiscalYear` → `book_newfiscalyear`. It self-hides
    for non-Centrally-Managed requirements.
-3. **State Spend Plan custom page** (new) — create a model-driven **custom page**
-   that takes a State (and a fiscal year) and hosts
-   `book_ARNGCheckbook.StateSpendPlanGrid`, binding its inputs:
-   `stateId` = the selected state's GUID, `fiscalYear` = the chosen FY (integer).
-   Add the page to the app's site map (e.g. under an NPM/State area). The grid
-   reads/writes the (State, Fund, SAG) bucket rows itself.
+3. **State Spend Plan page** (Mode-C) — an **HTML web resource**, not a form.
+   The state rollup is generalized (spans many Prios/Requirements), so it lives
+   on its own page that auto-detects the user's state:
+   1. Create a web resource **Name `book_stateSpendPlan.html`**, Type
+      **Webpage (HTML)**, upload
+      [`../webresources/book_stateSpendPlan.html`](../webresources/book_stateSpendPlan.html),
+      Save + **Publish**.
+   2. Add it to the Spend Plan app's **site map**: edit the app → add a
+      **Subarea** → Type **Web resource** → `book_stateSpendPlan.html` → give it
+      a title (e.g. "State Spend Plan") and icon. Publish the app.
+   3. Users open that nav item; the page finds their state by walking their
+      business-unit chain up to the `book_state` whose `owningbusinessunit` is
+      the nearest ancestor (id-based, same rule as the `StateScopeHelper`
+      plugin — so users in **child BUs under a state BU** resolve correctly).
+      It defaults to the active planning FY (with a FY selector) and reads/writes
+      the (State, Fund, SAG) bucket rows via `Xrm.WebApi`. No state picker, no
+      code-components toggle, no canvas WebAPI dependency.
+   - Depends on `book_spendplanmode`, `book_activeplanningfy`, and the Mode-C
+     `book_spendplan` columns (§2, §3, §5) existing and PFs being stamped.
+   - The Mode-C save binds `book_State` / `book_Fund` / `book_Sag` via
+     `@odata.bind` (PascalCase nav-property convention) — verify these match the
+     live navigation-property names; reads use `_value` fields and are unaffected.
+   - *(The `StateSpendPlanGrid` PCF + a custom page remain an alternative host;
+     the HTML web resource was chosen to avoid the canvas code-components toggle
+     and canvas WebAPI limits on the government network.)*
 4. **Web resource `book_Prioritizations`** — ⚠ **update this web resource.**
    Paste the current
    [`../webresources/book_prioritization.js`](../webresources/book_prioritization.js)

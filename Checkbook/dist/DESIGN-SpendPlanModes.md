@@ -303,10 +303,17 @@ Carry the existing FY27 rules to the two new anchor types:
 - **`RequirementSpendPlanGrid` v0.1.0** — the **Centrally Managed** (Mode-A)
   surface on the Requirement form: one section per RF (per FY), RF-anchored,
   shown only when `book_national`. Bind to the `book_requirementfunding` subgrid.
-- **`StateSpendPlanGrid` v0.1.0** — the **State-Rollup** (Mode-C) surface on a
-  new custom page keyed by State + FY: one section per (Fund, SAG) bucket,
-  funded read-only from the rollup. Inputs `stateId` (text) + `fiscalYear`
-  (whole number) supplied by the host page.
+- **`StateSpendPlanGrid` v0.1.0** — the **State-Rollup** (Mode-C) surface as a
+  PCF (custom-page host). **Shelved in favor of the HTML web resource below**
+  (kept in the repo as an alternative host); the web resource avoids the canvas
+  code-components toggle and canvas WebAPI limits.
+- **`webresources/book_stateSpendPlan.html`** (new) — the chosen **Mode-C**
+  surface: a standalone HTML web resource for the Spend Plan app site map.
+  Auto-detects the user's state from their business unit (same rule as
+  `book_prioritization.js`), defaults to the active planning FY (env var) with a
+  FY selector, discovers (Fund, SAG) buckets from the state's State-Rollup PFs,
+  and reads/writes bucket rows via `Xrm.WebApi`. No picker, no code-components
+  toggle, no canvas WebAPI dependency.
 
 **Web resource updated** — `book_prioritization.js` `applySpendPlanTabVisibility`
 now gates the Prio Spend Plan tab on FY27+ **and** the presence of a Breakout

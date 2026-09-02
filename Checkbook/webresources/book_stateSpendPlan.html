@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>State Spend Plan</title>
+<style>
+  :root { font-family: "Segoe UI", Tahoma, sans-serif; font-size: 13px; color: #242424; }
+  body { margin: 0; padding: 10px; background: #fff; }
+  .toolbar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 8px; }
+  .toolbar h1 { font-size: 15px; font-weight: 600; margin: 0; flex: 1 1 auto; }
+  .toolbar .spacer { flex: 1 1 auto; }
+  button { font: inherit; padding: 4px 12px; border: 1px solid #8a8886; background: #fff; border-radius: 4px; cursor: pointer; }
+  button.primary { background: #0f6cbd; border-color: #0f6cbd; color: #fff; }
+  button:disabled { opacity: 0.5; cursor: default; }
+  select { font: inherit; padding: 3px 6px; }
+  .banner { padding: 6px 10px; margin-bottom: 8px; border-radius: 4px; font-size: 12px; }
+  .banner.error { background: #fde7e9; color: #a4262c; }
+  .banner.success { background: #dff6dd; color: #0e700e; }
+  .banner.warn { background: #fff4ce; color: #797573; }
+  .empty { padding: 16px; color: #605e5c; }
+  .scroll { width: 100%; overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; font-size: 12px; }
+  th { text-align: center; white-space: nowrap; font-weight: 600; padding: 4px 6px; border-bottom: 1px solid #d2d0ce; background: #f3f2f1; }
+  th.band { text-align: left; min-width: 220px; }
+  td { padding: 2px 4px; border-bottom: 1px solid #edebe9; white-space: nowrap; }
+  td.num { text-align: right; font-variant-numeric: tabular-nums; min-width: 84px; }
+  td.label { padding: 2px 6px; white-space: nowrap; }
+  tr.section td { background: #edebe9; font-weight: 600; padding: 6px; }
+  input.month { width: 82px; text-align: right; font: inherit; font-variant-numeric: tabular-nums; padding: 2px 4px; box-sizing: border-box; }
+  .locked { color: #a19f9d; }
+  .over { color: #a4262c; }
+  .under { color: #a19f9d; }
+  .badge { margin-left: 10px; font-weight: 400; }
+  .ok { color: #0e700e; }
+  .off { color: #b56a00; }
+</style>
+</head>
+<body>
+  <div class="toolbar">
+    <h1 id="title">State Spend Plan</h1>
+    <label>FY <select id="fySelect"></select></label>
+    <button class="primary" id="saveBtn" disabled>Save</button>
+    <button id="discardBtn" disabled>Discard</button>
+    <button id="refreshBtn">Refresh</button>
+  </div>
+  <div id="status"></div>
+  <div id="content"><div class="empty">Loading…</div></div>
+
+<script>
+"use strict";
+(function () {
+  var FV = "@OData.Community.Display.V1.FormattedValue";
+  var MIN_FY = 2027;
+  var MODE_STATE_ROLLUP = 1;
+  var ROW_PLANNED = 0, ROW_ACTUAL = 1;
+  var MONTHS = [
+    { label: "Oct", col: "book_newoctober" }, { label: "Nov", col: "book_newnovember" },
+    { label: "Dec", col: "book_newdecember" }, { label: "Jan", col: "book_newjanuary" },
+    { label: "Feb", col: "book_newfebruary" }, { label: "Mar", col: "book_newmarch" },
+    { label: "Apr", col: "book_newapril" }, { label: "May", col: "book_newmay" },
+    { label: "Jun", col: "book_newjune" }, { label: "Jul", col: "book_newjuly" },
+    { label: "Aug", col: "book_newaugust" }, { label: "Sep", col: "book_newseptember" }
+  ];
+
+  // ---- state ----
+  var xrm = null;
+  var stateId = null, stateLabel = "", stateBad = false;
+  var activeFy = null, fy = null;
+  var buckets = [];            // {key,fundId,fundName,sagId,sagName,funded}
+  var recordMap = {};          // gKey -> {id, months:[]}
+  var edits = {};              // cellKey -> string
+
+  // ---- helpers ----
+  function $(id) { return document.getElementById(id); }
+  function getXrm() { return window.Xrm || (window.parent && window.parent.Xrm) || (window.top && window.top.Xrm) || null; }
+  function stripGuid(v) { return v ? String(v).replace(/[{}]/g, "").toLowerCase() : null; }
+  function toNum(v) { if (v === null || v === undefined || v === "") return null; var n = Number(v); return isFinite(n) ? n : null; }
+  function num(v) { var n = toNum(v); return n === null ? 0 : n; }
+  function fmt(v) { return (v || 0).toLocaleString(undefined, { style: "currency", currency: "USD", maximumFractionDigits: 2 }); }
+  function esc(s) { return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;"); }
+  function chunk(a, s) { var o = []; for (var i = 0; i < a.length; i += s) o.push(a.slice(i, i + s)); return o; }
+  function bKey(f, s) { return f + "|" + s; }
+  function gKey(k, rt) { return k + "|" + rt; }
+  function cellKey(k, rt, i) { return k + "|" + rt + "|" + i; }
+  function nearly(a, b) { return Math.abs(a - b) < 0.005; }
+  function monthPassed(fyv, idx) { var cal = idx < 3 ? fyv - 1 : fyv; var m = (idx + 9) % 12; return new Date() >= new Date(cal, m + 1, 1); }
+  function computeFederalFY() { var d = new Date(); return d.getMonth() >= 9 ? d.getFullYear() + 1 : d.getFullYear(); }
+  function setStatus(kind, msg) {
+    $("status").innerHTML = msg ? '<div class="banner ' + kind + '">' + esc(msg) + "</div>" : "";
+  }
+
+  // ---- current user's state ----
+  // A book_state is owned by its own state Business Unit (book_state.owningbusinessunit),
+  // and a user belongs to that state if their BU is anywhere in the state BU's
+  // subtree — including child BUs some states created below their state BU. So
+  // we walk UP the user's BU parent chain (id-based, up to 50 levels — same rule
+  // as the StateScopeHelper plugin) and find the book_state whose owning BU is
+  // the nearest ancestor in that chain. No name matching.
+  var MAX_BU_DEPTH = 50;
+
+  function collectBuChain(buId, acc, depth) {
+    if (!buId || depth > MAX_BU_DEPTH || acc.indexOf(buId) >= 0) return Promise.resolve(acc);
+    acc.push(buId);
+    return xrm.WebApi.retrieveRecord("businessunit", buId, "?$select=_parentbusinessunitid_value")
+      .then(function (bu) {
+        return collectBuChain(stripGuid(bu._parentbusinessunitid_value), acc, depth + 1);
+      })
+      .catch(function () { return acc; });
+  }
+
+  function findStateByOwningBu(chain) {
+    if (!chain.length) return Promise.resolve(null);
+    var orf = chain.map(function (id) { return "_owningbusinessunit_value eq " + id; }).join(" or ");
+    return xrm.WebApi.retrieveMultipleRecords("book_state",
+      "?$select=book_stateid,book_name,book_abbreviation,_owningbusinessunit_value&$filter=(" + orf + ") and statecode eq 0"
+    ).then(function (r) {
+      if (!r.entities.length) return null;
+      // Nearest ancestor wins (owning BU earliest in the user's up-chain).
+      var best = null, bestIdx = 1e9;
+      r.entities.forEach(function (e) {
+        var idx = chain.indexOf(stripGuid(e._owningbusinessunit_value));
+        if (idx >= 0 && idx < bestIdx) { bestIdx = idx; best = e; }
+      });
+      return best || r.entities[0];
+    });
+  }
+
+  function resolveUserState() {
+    var gc = xrm.Utility.getGlobalContext();
+    var userId = stripGuid(gc.userSettings.userId);
+    return xrm.WebApi.retrieveRecord("systemuser", userId, "?$select=_businessunitid_value")
+      .then(function (u) {
+        var buId = stripGuid(u._businessunitid_value);
+        return buId ? collectBuChain(buId, [], 0) : [];
+      })
+      .then(function (chain) { return findStateByOwningBu(chain); });
+  }
+
+  // ---- active planning FY (env var book_activeplanningfy, else federal FY) ----
+  function resolveActiveFy() {
+    return xrm.WebApi.retrieveMultipleRecords("environmentvariabledefinition",
+      "?$select=environmentvariabledefinitionid,defaultvalue&$filter=schemaname eq 'book_activeplanningfy'&$top=1"
+    ).then(function (d) {
+      if (!d.entities.length) return computeFederalFY();
+      var def = d.entities[0];
+      return xrm.WebApi.retrieveMultipleRecords("environmentvariablevalue",
+        "?$select=value&$filter=_environmentvariabledefinitionid_value eq " + def.environmentvariabledefinitionid + "&$top=1"
+      ).then(function (v) {
+        var raw = (v.entities.length && v.entities[0].value != null) ? v.entities[0].value : def.defaultvalue;
+        var n = parseInt(raw, 10);
+        return (raw && !isNaN(n) && n >= 1990 && n <= 2200) ? n : computeFederalFY();
+      });
+    }).catch(function () { return computeFederalFY(); });
+  }
+
+  // ---- rollup discovery: state+FY Prios -> their State-Rollup PFs -> LOAs -> (Fund,SAG) ----
+  function loadBuckets() {
+    return xrm.WebApi.retrieveMultipleRecords("book_prioritization",
+      "?$select=book_prioritizationid&$filter=_book_state_value eq " + stateId +
+      " and book_newfiscalyear eq " + fy + " and statecode eq 0"
+    ).then(function (pr) {
+      var prioIds = pr.entities.map(function (e) { return stripGuid(e.book_prioritizationid); }).filter(Boolean);
+      var chunks = chunk(prioIds, 25);
+      return Promise.all(chunks.map(function (ids) {
+        var orf = ids.map(function (id) { return "_book_prioritization_value eq " + id; }).join(" or ");
+        return xrm.WebApi.retrieveMultipleRecords("book_prioritizationfunding",
+          "?$select=book_fundedamount,_book_lineofaccounting_value&$filter=book_spendplanmode eq " +
+          MODE_STATE_ROLLUP + " and statecode eq 0 and (" + orf + ")");
+      })).then(function (results) {
+        var pfRows = [];
+        results.forEach(function (res) {
+          res.entities.forEach(function (e) {
+            var loaId = stripGuid(e._book_lineofaccounting_value);
+            if (loaId) pfRows.push({ funded: num(e.book_fundedamount), loaId: loaId });
+          });
+        });
+        var loaIds = [];
+        var seen = {};
+        pfRows.forEach(function (p) { if (!seen[p.loaId]) { seen[p.loaId] = 1; loaIds.push(p.loaId); } });
+        return Promise.all(chunk(loaIds, 25).map(function (ids) {
+          var orf = ids.map(function (id) { return "book_fundinglineid eq " + id; }).join(" or ");
+          return xrm.WebApi.retrieveMultipleRecords("book_fundingline",
+            "?$select=book_fundinglineid,_book_fund_value,_book_sag_value&$filter=" + orf);
+        })).then(function (loaResults) {
+          var loaMap = {};
+          loaResults.forEach(function (res) {
+            res.entities.forEach(function (e) {
+              var id = stripGuid(e.book_fundinglineid);
+              loaMap[id] = {
+                fundId: stripGuid(e._book_fund_value) || "",
+                fundName: e["_book_fund_value" + FV] || "",
+                sagId: stripGuid(e._book_sag_value) || "",
+                sagName: e["_book_sag_value" + FV] || ""
+              };
+            });
+          });
+          var byBucket = {};
+          pfRows.forEach(function (p) {
+            var loa = loaMap[p.loaId];
+            if (!loa || !loa.fundId || !loa.sagId) return;
+            var key = bKey(loa.fundId, loa.sagId);
+            if (byBucket[key]) byBucket[key].funded += p.funded;
+            else byBucket[key] = { key: key, fundId: loa.fundId, fundName: loa.fundName, sagId: loa.sagId, sagName: loa.sagName, funded: p.funded };
+          });
+          return byBucket;
+        });
+      });
+    });
+  }
+
+  function loadRecords() {
+    var monthCols = MONTHS.map(function (m) { return m.col; }).join(",");
+    return xrm.WebApi.retrieveMultipleRecords("book_spendplan",
+      "?$select=book_spendplanid,_book_fund_value,_book_sag_value,book_rowtype," + monthCols +
+      "&$filter=_book_state_value eq " + stateId + " and book_newfiscalyear eq " + fy + " and statecode eq 0"
+    ).then(function (res) {
+      return res.entities.map(function (e) {
+        return {
+          id: e.book_spendplanid,
+          fundId: stripGuid(e._book_fund_value) || "",
+          fundName: e["_book_fund_value" + FV] || "",
+          sagId: stripGuid(e._book_sag_value) || "",
+          sagName: e["_book_sag_value" + FV] || "",
+          rowType: toNum(e.book_rowtype) === ROW_ACTUAL ? ROW_ACTUAL : ROW_PLANNED,
+          months: MONTHS.map(function (m) { return toNum(e[m.col]); })
+        };
+      });
+    });
+  }
+
+  // ---- cell value helpers ----
+  function stored(bkey, rt, idx) {
+    var rec = recordMap[gKey(bkey, rt)];
+    return rec ? (rec.months[idx] == null ? null : rec.months[idx]) : null;
+  }
+  function effective(bkey, rt, idx) {
+    var pend = edits[cellKey(bkey, rt, idx)];
+    if (pend !== undefined) return toNum(pend);
+    return stored(bkey, rt, idx);
+  }
+  function bandTotal(bkey, rt) {
+    var t = 0; for (var i = 0; i < 12; i++) t += (effective(bkey, rt, i) || 0); return t;
+  }
+  function isEditableFy() { return fy != null && activeFy != null && fy >= activeFy && fy >= MIN_FY; }
+  function cellEditable(rt, idx) {
+    if (!isEditableFy()) return false;
+    var passed = monthPassed(fy, idx);
+    return rt === ROW_PLANNED ? !passed : passed;
+  }
+
+  // ---- render ----
+  function render() {
+    $("title").textContent = "State Spend Plan" + (stateLabel ? " — " + stateLabel : "") + (fy != null ? " (FY " + fy + ")" : "");
+    var content = $("content");
+
+    if (stateBad || !stateId) {
+      content.innerHTML = '<div class="empty">Could not determine your state from your business unit. ' +
+        'Contact an administrator if this is unexpected.</div>';
+      return;
+    }
+    if (fy == null || fy < MIN_FY) {
+      content.innerHTML = '<div class="empty">State rollup spend plans cover FY ' + MIN_FY + ' and later.</div>';
+      return;
+    }
+    if (!buckets.length) {
+      content.innerHTML = '<div class="empty">No distributed, non-breakout funding rolls up for ' +
+        esc(stateLabel || "this state") + " in FY " + fy + " yet.</div>";
+      return;
+    }
+    if (!isEditableFy()) {
+      setStatus("warn", "FY " + fy + " is before the active planning year (" + activeFy + ") — read-only.");
+    }
+
+    var html = '<div class="scroll"><table><thead><tr><th class="band"></th>';
+    MONTHS.forEach(function (m) { html += "<th>" + m.label + "</th>"; });
+    html += "<th>Total</th></tr></thead><tbody>";
+
+    buckets.forEach(function (b) {
+      html += renderSection(b);
+    });
+    html += "</tbody></table></div>";
+    content.innerHTML = html;
+    attachInputs();
+  }
+
+  function renderSection(b) {
+    var planned = bandTotal(b.key, ROW_PLANNED);
+    var matches = nearly(planned, b.funded);
+    var html = '<tr class="section"><td colspan="' + (MONTHS.length + 2) + '">' +
+      esc(b.fundName || "Fund") + " / " + esc(b.sagName || "SAG") +
+      " — Planned <span data-role=\"planTot\" data-bkey=\"" + esc(b.key) + "\">" + fmt(planned) +
+      "</span> / Funded " + fmt(b.funded) +
+      ' <span class="badge ' + (matches ? "ok" : "off") + '" data-role="badge" data-bkey="' + esc(b.key) + '">' +
+      (matches ? "✓ matches" : "✎ in progress") + "</span></td></tr>";
+
+    html += bandRow(b, ROW_PLANNED, "Planned");
+    html += bandRow(b, ROW_ACTUAL, "Actual");
+    html += varianceRow(b);
+    return html;
+  }
+
+  function bandRow(b, rt, label) {
+    var html = '<tr><td class="label">' + label + "</td>";
+    for (var i = 0; i < 12; i++) {
+      html += '<td class="num">' + cellHtml(b.key, rt, i) + "</td>";
+    }
+    var totRole = rt === ROW_PLANNED ? "planTotCell" : "actTotCell";
+    html += '<td class="num" data-role="' + totRole + '" data-bkey="' + esc(b.key) + '">' + fmt(bandTotal(b.key, rt)) + "</td></tr>";
+    return html;
+  }
+
+  function cellHtml(bkey, rt, idx) {
+    if (cellEditable(rt, idx)) {
+      var val = effective(bkey, rt, idx);
+      return '<input class="month" type="number" step="0.01" data-bkey="' + esc(bkey) + '" data-rt="' + rt +
+        '" data-idx="' + idx + '" value="' + (val == null ? "" : val) + '" />';
+    }
+    var v = effective(bkey, rt, idx);
+    var locked = rt === ROW_PLANNED ? monthPassed(fy, idx) : !monthPassed(fy, idx);
+    var text = v == null ? (locked ? "—" : "") : fmt(v);
+    return '<span class="' + (locked ? "locked" : "") + '">' + text + "</span>";
+  }
+
+  function varianceRow(b) {
+    var html = '<tr><td class="label">Variance</td>';
+    for (var i = 0; i < 12; i++) {
+      html += '<td class="num" data-role="variance" data-bkey="' + esc(b.key) + '" data-idx="' + i + '">' + varianceHtml(b.key, i) + "</td>";
+    }
+    html += '<td class="num"></td></tr>';
+    return html;
+  }
+
+  function varianceHtml(bkey, idx) {
+    var planned = effective(bkey, ROW_PLANNED, idx) || 0;
+    var actual = effective(bkey, ROW_ACTUAL, idx);
+    if (!monthPassed(fy, idx) || actual == null) return "—";
+    var variance = actual - planned;
+    var cls = variance > 0.005 ? "over" : (variance < -0.005 ? "under" : "");
+    return '<span class="' + cls + '">' + fmt(variance) + "</span>";
+  }
+
+  function attachInputs() {
+    var inputs = document.querySelectorAll("input.month");
+    for (var i = 0; i < inputs.length; i++) {
+      inputs[i].addEventListener("input", onInput);
+    }
+  }
+
+  function onInput(e) {
+    var el = e.target;
+    var bkey = el.getAttribute("data-bkey");
+    var rt = Number(el.getAttribute("data-rt"));
+    var idx = Number(el.getAttribute("data-idx"));
+    edits[cellKey(bkey, rt, idx)] = el.value;
+    updateDerived(bkey);
+    updateButtons();
+  }
+
+  function updateDerived(bkey) {
+    var b = null;
+    for (var i = 0; i < buckets.length; i++) if (buckets[i].key === bkey) { b = buckets[i]; break; }
+    if (!b) return;
+    var planned = bandTotal(bkey, ROW_PLANNED);
+    var actual = bandTotal(bkey, ROW_ACTUAL);
+    setRole("planTot", bkey, fmt(planned));
+    setRole("planTotCell", bkey, fmt(planned));
+    setRole("actTotCell", bkey, fmt(actual));
+    var badge = document.querySelector('[data-role="badge"][data-bkey="' + cssEsc(bkey) + '"]');
+    if (badge) {
+      var m = nearly(planned, b.funded);
+      badge.className = "badge " + (m ? "ok" : "off");
+      badge.textContent = m ? "✓ matches" : "✎ in progress";
+    }
+    var vcells = document.querySelectorAll('[data-role="variance"][data-bkey="' + cssEsc(bkey) + '"]');
+    for (var j = 0; j < vcells.length; j++) {
+      vcells[j].innerHTML = varianceHtml(bkey, Number(vcells[j].getAttribute("data-idx")));
+    }
+  }
+  function setRole(role, bkey, text) {
+    var el = document.querySelector('[data-role="' + role + '"][data-bkey="' + cssEsc(bkey) + '"]');
+    if (el) el.textContent = text;
+  }
+  function cssEsc(s) { return String(s).replace(/["\\]/g, "\\$&"); }
+
+  // ---- edits / save ----
+  function hasEdits() {
+    for (var k in edits) {
+      if (!edits.hasOwnProperty(k)) continue;
+      var parts = k.split("|"); // fundId|sagId|rt|idx
+      var bkey = parts[0] + "|" + parts[1];
+      if (toNum(edits[k]) !== stored(bkey, Number(parts[2]), Number(parts[3]))) return true;
+    }
+    return false;
+  }
+  function updateButtons() {
+    var dirty = hasEdits();
+    $("saveBtn").disabled = !dirty || !isEditableFy();
+    $("discardBtn").disabled = !dirty;
+  }
+
+  function onSave() {
+    if (!hasEdits() || !isEditableFy()) return;
+    $("saveBtn").disabled = true;
+    setStatus("", "");
+
+    var groups = {}; // gKey -> {bkey, rt, changes}
+    for (var k in edits) {
+      if (!edits.hasOwnProperty(k)) continue;
+      var parts = k.split("|");
+      var bkey = parts[0] + "|" + parts[1];
+      var rt = Number(parts[2]), idx = Number(parts[3]);
+      if (toNum(edits[k]) === stored(bkey, rt, idx)) continue;
+      var gk = gKey(bkey, rt);
+      if (!groups[gk]) groups[gk] = { bkey: bkey, rt: rt, changes: {} };
+      groups[gk].changes[MONTHS[idx].col] = toNum(edits[k]);
+    }
+
+    var ops = [];
+    for (var g in groups) {
+      if (!groups.hasOwnProperty(g)) continue;
+      ops.push(saveGroup(groups[g]));
+    }
+    Promise.all(ops).then(function () {
+      edits = {};
+      setStatus("success", "Spend Plan saved.");
+      reload();
+    }).catch(function (err) {
+      setStatus("error", (err && err.message) ? err.message : "Some rows could not be saved.");
+      updateButtons();
+    });
+  }
+
+  function saveGroup(group) {
+    var rec = recordMap[gKey(group.bkey, group.rt)];
+    if (rec) return xrm.WebApi.updateRecord("book_spendplan", rec.id, group.changes);
+    var b = null;
+    for (var i = 0; i < buckets.length; i++) if (buckets[i].key === group.bkey) { b = buckets[i]; break; }
+    if (!b) return Promise.resolve();
+    var payload = {};
+    for (var c in group.changes) if (group.changes.hasOwnProperty(c)) payload[c] = group.changes[c];
+    // Mode-C rows anchor on State + Fund + SAG; PF / RF / Prio stay empty.
+    payload["book_State@odata.bind"] = "/book_states(" + stateId + ")";
+    payload["book_Fund@odata.bind"] = "/book_funds(" + b.fundId + ")";
+    payload["book_Sag@odata.bind"] = "/book_sags(" + b.sagId + ")";
+    payload["book_newfiscalyear"] = fy;
+    payload["book_rowtype"] = group.rt;
+    payload["book_name"] = "FY" + fy + "-" + (stateLabel || "State") + "-" + (b.fundName || "Fund") +
+      "-" + (b.sagName || "SAG") + "-Rollup-" + (group.rt === ROW_ACTUAL ? "Actual" : "Planned");
+    return xrm.WebApi.createRecord("book_spendplan", payload);
+  }
+
+  // ---- load / reload ----
+  function reload() {
+    $("content").innerHTML = '<div class="empty">Loading…</div>';
+    updateButtons();
+    if (!stateId) { render(); return; }
+    Promise.all([loadBuckets(), loadRecords()]).then(function (out) {
+      var byBucket = out[0], records = out[1];
+      recordMap = {};
+      records.forEach(function (r) {
+        recordMap[gKey(bKey(r.fundId, r.sagId), r.rowType)] = { id: r.id, months: r.months };
+      });
+      // union PF-derived buckets with any stored rows' buckets (so data never hides)
+      records.forEach(function (r) {
+        var key = bKey(r.fundId, r.sagId);
+        if (!byBucket[key]) byBucket[key] = { key: key, fundId: r.fundId, fundName: r.fundName, sagId: r.sagId, sagName: r.sagName, funded: 0 };
+      });
+      buckets = [];
+      for (var k in byBucket) if (byBucket.hasOwnProperty(k)) buckets.push(byBucket[k]);
+      buckets.sort(function (a, b) {
+        return (a.fundName + " " + a.sagName).localeCompare(b.fundName + " " + b.sagName);
+      });
+      render();
+      updateButtons();
+    }).catch(function (err) {
+      setStatus("error", (err && err.message) ? err.message : "Could not load the state spend plan.");
+      $("content").innerHTML = "";
+    });
+  }
+
+  function buildFySelect() {
+    var sel = $("fySelect");
+    sel.innerHTML = "";
+    var years = [];
+    for (var y = Math.max(MIN_FY, activeFy - 1); y <= activeFy + 1; y++) years.push(y);
+    if (years.indexOf(activeFy) < 0) years.push(activeFy);
+    years.forEach(function (y) {
+      var o = document.createElement("option");
+      o.value = String(y); o.textContent = "FY " + y + (y === activeFy ? " (active)" : "");
+      if (y === fy) o.selected = true;
+      sel.appendChild(o);
+    });
+    sel.onchange = function () { fy = Number(sel.value); edits = {}; setStatus("", ""); reload(); };
+  }
+
+  // ---- init ----
+  function init() {
+    xrm = getXrm();
+    if (!xrm || !xrm.WebApi) {
+      setStatus("error", "This page must be opened inside the model-driven app.");
+      $("content").innerHTML = "";
+      return;
+    }
+    $("saveBtn").onclick = onSave;
+    $("discardBtn").onclick = function () { edits = {}; setStatus("", ""); reload(); };
+    $("refreshBtn").onclick = function () { edits = {}; setStatus("", ""); reload(); };
+
+    Promise.all([resolveUserState(), resolveActiveFy()]).then(function (out) {
+      var st = out[0];
+      activeFy = out[1];
+      fy = activeFy;
+      if (st) {
+        stateId = stripGuid(st.book_stateid);
+        stateLabel = st.book_abbreviation || st.book_name || "";
+      } else {
+        stateBad = true;
+      }
+      buildFySelect();
+      reload();
+    }).catch(function (err) {
+      setStatus("error", (err && err.message) ? err.message : "Initialization failed.");
+      $("content").innerHTML = "";
+    });
+  }
+
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
+  else init();
+})();
+</script>
+</body>
+</html>
