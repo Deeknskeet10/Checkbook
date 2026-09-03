@@ -35,6 +35,11 @@
   .badge { margin-left: 10px; font-weight: 400; }
   .ok { color: #0e700e; }
   .off { color: #b56a00; }
+  tr.staterow { cursor: pointer; }
+  tr.staterow:hover td { background: #f3f2f1; }
+  tr.detail td { background: #faf9f8; color: #605e5c; }
+  td.detail-label { padding-left: 26px; white-space: nowrap; }
+  .caret { display: inline-block; width: 12px; color: #605e5c; }
 </style>
 </head>
 <body>
@@ -71,6 +76,9 @@
   var buckets = [];            // {key,fundId,fundName,sagId,sagName,funded}
   var recordMap = {};          // gKey -> {id, months:[]}
   var edits = {};              // cellKey -> string
+  var national = false;        // true for root/HQ users with no single state
+  var nationalRows = [];       // [{id,label,funded,planned,actual}]
+  var nationalNoFund = 0;      // count of active states with nothing in this mode/FY
 
   // ---- helpers ----
   function $(id) { return document.getElementById(id); }
@@ -136,6 +144,123 @@
         return buId ? collectBuChain(buId, [], 0) : [];
       })
       .then(function (chain) { return findStateByOwningBu(chain); });
+  }
+
+  // ---- national (all-states) rollup, for root/HQ users with no single state ----
+  // A user whose BU up-chain contains no state-owning BU (e.g. the ARNG root BU)
+  // isn't scoped to one state. Rather than dead-end, we show a read-only oversight
+  // roll-up across every state. Dataverse row-level security still scopes these
+  // org-wide reads to what the caller may read.
+  function retrieveAll(entity, query) {
+    var all = [];
+    function page(q) {
+      return xrm.WebApi.retrieveMultipleRecords(entity, q).then(function (res) {
+        all = all.concat(res.entities);
+        if (res.nextLink) {
+          var qi = res.nextLink.indexOf("?");
+          if (qi >= 0) return page(res.nextLink.substring(qi));
+        }
+        return all;
+      });
+    }
+    return page(query);
+  }
+
+  function loadAllStates() {
+    return retrieveAll("book_state",
+      "?$select=book_stateid,book_name,book_abbreviation&$filter=statecode eq 0"
+    ).then(function (rows) {
+      return rows.map(function (e) {
+        return { id: stripGuid(e.book_stateid), label: e.book_abbreviation || e.book_name || "State" };
+      });
+    });
+  }
+
+  // Funded per state per (Fund,SAG) bucket = State-Rollup PF amounts on the state's
+  // FY Prios, resolved through the PF's LOA to a (Fund,SAG) bucket.
+  // Returns { sid: { bkey: {key,fundId,fundName,sagId,sagName,funded} } }.
+  function loadNationalFunded() {
+    return retrieveAll("book_prioritization",
+      "?$select=book_prioritizationid,_book_state_value&$filter=book_newfiscalyear eq " + fy + " and statecode eq 0"
+    ).then(function (prios) {
+      var prioState = {}, prioIds = [];
+      prios.forEach(function (e) {
+        var pid = stripGuid(e.book_prioritizationid), sid = stripGuid(e._book_state_value);
+        if (pid && sid) { prioState[pid] = sid; prioIds.push(pid); }
+      });
+      if (!prioIds.length) return {};
+      return Promise.all(chunk(prioIds, 25).map(function (ids) {
+        var orf = ids.map(function (id) { return "_book_prioritization_value eq " + id; }).join(" or ");
+        return xrm.WebApi.retrieveMultipleRecords("book_prioritizationfunding",
+          "?$select=book_fundedamount,_book_prioritization_value,_book_lineofaccounting_value&$filter=book_spendplanmode eq " +
+          MODE_STATE_ROLLUP + " and statecode eq 0 and (" + orf + ")");
+      })).then(function (results) {
+        var pfRows = [], loaSet = {}, loaIds = [];
+        results.forEach(function (res) {
+          res.entities.forEach(function (e) {
+            var sid = prioState[stripGuid(e._book_prioritization_value)];
+            var loaId = stripGuid(e._book_lineofaccounting_value);
+            if (!sid || !loaId) return;
+            pfRows.push({ sid: sid, funded: num(e.book_fundedamount), loaId: loaId });
+            if (!loaSet[loaId]) { loaSet[loaId] = 1; loaIds.push(loaId); }
+          });
+        });
+        if (!loaIds.length) return {};
+        return Promise.all(chunk(loaIds, 25).map(function (ids) {
+          var orf = ids.map(function (id) { return "book_fundinglineid eq " + id; }).join(" or ");
+          return xrm.WebApi.retrieveMultipleRecords("book_fundingline",
+            "?$select=book_fundinglineid,_book_fund_value,_book_sag_value&$filter=" + orf);
+        })).then(function (loaResults) {
+          var loaMap = {};
+          loaResults.forEach(function (res) {
+            res.entities.forEach(function (e) {
+              loaMap[stripGuid(e.book_fundinglineid)] = {
+                fundId: stripGuid(e._book_fund_value) || "",
+                fundName: e["_book_fund_value" + FV] || "",
+                sagId: stripGuid(e._book_sag_value) || "",
+                sagName: e["_book_sag_value" + FV] || ""
+              };
+            });
+          });
+          var byStateBucket = {};
+          pfRows.forEach(function (p) {
+            var loa = loaMap[p.loaId];
+            if (!loa || !loa.fundId || !loa.sagId) return;
+            var key = bKey(loa.fundId, loa.sagId);
+            var sb = byStateBucket[p.sid] || (byStateBucket[p.sid] = {});
+            if (sb[key]) sb[key].funded += p.funded;
+            else sb[key] = { key: key, fundId: loa.fundId, fundName: loa.fundName, sagId: loa.sagId, sagName: loa.sagName, funded: p.funded };
+          });
+          return byStateBucket;
+        });
+      });
+    });
+  }
+
+  // Planned / Actual per state per (Fund,SAG) = month bands of the state's FY
+  // book_spendplan rows, grouped by the row's own Fund + SAG.
+  // Returns { sid: { bkey: {key,fundName,sagName,planned,actual} } }.
+  function loadNationalSpend() {
+    var monthCols = MONTHS.map(function (m) { return m.col; }).join(",");
+    return retrieveAll("book_spendplan",
+      "?$select=_book_state_value,_book_fund_value,_book_sag_value,book_rowtype," + monthCols +
+      "&$filter=book_newfiscalyear eq " + fy + " and statecode eq 0"
+    ).then(function (rows) {
+      var byState = {};
+      rows.forEach(function (e) {
+        var sid = stripGuid(e._book_state_value);
+        var fundId = stripGuid(e._book_fund_value) || "", sagId = stripGuid(e._book_sag_value) || "";
+        if (!sid || !fundId || !sagId) return;
+        var key = bKey(fundId, sagId);
+        var band = 0;
+        MONTHS.forEach(function (m) { band += num(e[m.col]); });
+        var sb = byState[sid] || (byState[sid] = {});
+        var b = sb[key] || (sb[key] = { key: key, fundName: e["_book_fund_value" + FV] || "", sagName: e["_book_sag_value" + FV] || "", planned: 0, actual: 0 });
+        if (toNum(e.book_rowtype) === ROW_ACTUAL) b.actual += band;
+        else b.planned += band;
+      });
+      return byState;
+    });
   }
 
   // ---- active planning FY (env var book_activeplanningfy, else federal FY) ----
@@ -283,6 +408,109 @@
     html += "</tbody></table></div>";
     content.innerHTML = html;
     attachInputs();
+  }
+
+  // ---- national render (read-only per-state summary with Fund/SAG drill-in) ----
+  function buildNationalRows(states, fundedMap, spendMap) {
+    var rows = [];
+    nationalNoFund = 0;
+    states.forEach(function (s) {
+      var fb = fundedMap[s.id] || {}, sb = spendMap[s.id] || {};
+      var keys = {}, k;
+      for (k in fb) if (fb.hasOwnProperty(k)) keys[k] = 1;
+      for (k in sb) if (sb.hasOwnProperty(k)) keys[k] = 1;
+      var buckets = [], funded = 0, planned = 0, actual = 0;
+      for (var key in keys) {
+        if (!keys.hasOwnProperty(key)) continue;
+        var f = fb[key], sp = sb[key];
+        var b = {
+          key: key,
+          fundName: (f && f.fundName) || (sp && sp.fundName) || "Fund",
+          sagName: (f && f.sagName) || (sp && sp.sagName) || "SAG",
+          funded: f ? f.funded : 0,
+          planned: sp ? sp.planned : 0,
+          actual: sp ? sp.actual : 0
+        };
+        funded += b.funded; planned += b.planned; actual += b.actual;
+        buckets.push(b);
+      }
+      if (!buckets.length) { nationalNoFund++; return; }
+      buckets.sort(function (a, b) { return (a.fundName + " " + a.sagName).localeCompare(b.fundName + " " + b.sagName); });
+      rows.push({ id: s.id, label: s.label, funded: funded, planned: planned, actual: actual, buckets: buckets });
+    });
+    rows.sort(function (a, b) { return a.label.localeCompare(b.label); });
+    return rows;
+  }
+
+  function amountCells(funded, planned, actual, withStatus) {
+    var delta = planned - funded;
+    var dcls = delta > 0.005 ? "over" : (delta < -0.005 ? "under" : "");
+    var html = '<td class="num">' + fmt(funded) + '</td>' +
+      '<td class="num">' + fmt(planned) + '</td>' +
+      '<td class="num"><span class="' + dcls + '">' + fmt(delta) + '</span></td>' +
+      '<td class="num">' + fmt(actual) + '</td>';
+    if (withStatus) {
+      var matches = nearly(planned, funded);
+      html += '<td class="num"><span class="badge ' + (matches ? "ok" : "off") + '">' +
+        (matches ? "✓ matches" : "✎ in progress") + '</span></td>';
+    } else {
+      html += '<td class="num"></td>';
+    }
+    return html;
+  }
+
+  function renderNational() {
+    $("title").textContent = "State Spend Plan — National Rollup" + (fy != null ? " (FY " + fy + ")" : "");
+    var content = $("content");
+    if (fy == null || fy < MIN_FY) {
+      content.innerHTML = '<div class="empty">State rollup spend plans cover FY ' + MIN_FY + ' and later.</div>';
+      return;
+    }
+    if (!nationalRows.length) {
+      content.innerHTML = '<div class="empty">No state has distributed, non-breakout funding in FY ' + fy + ' yet.</div>';
+      return;
+    }
+    setStatus("warn", "National oversight view — read-only. Click a state to see its Fund/SAG breakdown. Each state edits its own spend plan.");
+
+    var tf = 0, tp = 0, ta = 0;
+    var html = '<div class="scroll"><table><thead><tr>' +
+      '<th class="band">State</th><th>Funded</th><th>Planned</th><th>Δ vs Funded</th><th>Actual</th><th>Status</th>' +
+      '</tr></thead><tbody>';
+    nationalRows.forEach(function (r) {
+      tf += r.funded; tp += r.planned; ta += r.actual;
+      var sid = esc(r.id);
+      html += '<tr class="staterow" data-role="stateRow" data-state="' + sid + '">' +
+        '<td class="label"><span class="caret" data-state="' + sid + '">▸</span> ' + esc(r.label) + '</td>' +
+        amountCells(r.funded, r.planned, r.actual, true) + '</tr>';
+      r.buckets.forEach(function (b) {
+        html += '<tr class="detail" data-parent="' + sid + '" style="display:none">' +
+          '<td class="label detail-label">' + esc(b.fundName) + " / " + esc(b.sagName) + '</td>' +
+          amountCells(b.funded, b.planned, b.actual, true) + '</tr>';
+      });
+    });
+    html += '<tr class="section"><td>All states</td>' + amountCells(tf, tp, ta, false) + '</tr>';
+    html += "</tbody></table></div>";
+    if (nationalNoFund > 0) {
+      html += '<div class="empty">' + nationalNoFund + ' active state' + (nationalNoFund === 1 ? "" : "s") +
+        ' with no state-rollup funding or plan in FY ' + fy + '.</div>';
+    }
+    content.innerHTML = html;
+    attachNationalToggles();
+  }
+
+  function attachNationalToggles() {
+    var rows = document.querySelectorAll('[data-role="stateRow"]');
+    for (var i = 0; i < rows.length; i++) rows[i].addEventListener("click", onStateToggle);
+  }
+
+  function onStateToggle(e) {
+    var tr = e.currentTarget;
+    var sid = tr.getAttribute("data-state");
+    var details = document.querySelectorAll('tr.detail[data-parent="' + cssEsc(sid) + '"]');
+    var caret = tr.querySelector(".caret");
+    var open = caret && caret.textContent === "▾";
+    for (var i = 0; i < details.length; i++) details[i].style.display = open ? "none" : "table-row";
+    if (caret) caret.textContent = open ? "▸" : "▾";
   }
 
   function renderSection(b) {
@@ -452,9 +680,20 @@
   }
 
   // ---- load / reload ----
+  function reloadNational() {
+    Promise.all([loadAllStates(), loadNationalFunded(), loadNationalSpend()]).then(function (out) {
+      nationalRows = buildNationalRows(out[0], out[1], out[2]);
+      renderNational();
+    }).catch(function (err) {
+      setStatus("error", (err && err.message) ? err.message : "Could not load the national spend plan.");
+      $("content").innerHTML = "";
+    });
+  }
+
   function reload() {
     $("content").innerHTML = '<div class="empty">Loading…</div>';
     updateButtons();
+    if (national) { reloadNational(); return; }
     if (!stateId) { render(); return; }
     Promise.all([loadBuckets(), loadRecords()]).then(function (out) {
       var byBucket = out[0], records = out[1];
@@ -515,7 +754,10 @@
         stateId = stripGuid(st.book_stateid);
         stateLabel = st.book_abbreviation || st.book_name || "";
       } else {
-        stateBad = true;
+        // No single state (root/HQ user) -> read-only national roll-up across all states.
+        national = true;
+        $("saveBtn").style.display = "none";
+        $("discardBtn").style.display = "none";
       }
       buildFySelect();
       reload();
