@@ -306,7 +306,10 @@ namespace Checkbook.Plugins.Distributions
             Stopwatch stopwatch, TimeSpan budget)
         {
             var result = new CleanupResult();
-            var batch = new BatchWriter(service, tracing);
+            // Tolerant flush: Phase 4 updates rows off a snapshot taken up front, so
+            // a row a concurrent transaction deletes before the flush must be skipped,
+            // not allowed to abort the whole (idempotent) cleanup chunk.
+            var batch = new BatchWriter(service, tracing, continueOnError: true);
             tracing.Trace("Phase 4: orphan cleanup starting.");
 
             // Live bucket keys, re-derived from the same aggregations Phases 2+3 use.
@@ -456,7 +459,11 @@ namespace Checkbook.Plugins.Distributions
                     },
                 },
                 PageInfo = new PagingInfo { Count = 5000, PageNumber = 1, ReturnTotalRecordCount = false },
-                NoLock = true,
+                // Read-committed (no NoLock): every row here becomes a blind Update
+                // target at flush time, so a dirty read of an uncommitted/rolled-back
+                // row would queue an update against a GUID that never commits
+                // ("... With Id=... Does Not Exist"). Correctness over the marginal
+                // lock cost — Phase 4 touches far fewer rows than the group passes.
             };
 
             var manualFilter = new FilterExpression(LogicalOperator.Or);
@@ -533,7 +540,8 @@ namespace Checkbook.Plugins.Distributions
                             new ConditionExpression(DistributionsAttributes.EntryDocumentNumber, ConditionOperator.NotNull),
                         },
                     },
-                    NoLock = true,
+                    // Read-committed: this gates whether a paired debit is treated as
+                    // immutable (entered), so it must not hinge on a dirty read.
                 };
                 foreach (var row in service.RetrieveMultiple(query).Entities)
                     entered.Add(row.Id);

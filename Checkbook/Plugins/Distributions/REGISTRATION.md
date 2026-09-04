@@ -136,6 +136,13 @@ Phases:
    (deactivated when none remain). A pending credit paired to an already
    GFEBS-entered debit is left alone. Honors the `FundingType` and
    `FiscalYear` input filters so an AFP-only run never touches Allotment rows.
+   Its snapshot queries read **committed** (no `NoLock`) — every row becomes a
+   blind `Update` target at flush, so a dirty read of an uncommitted/rolled-back
+   row would queue an update against a GUID that never commits. Its batch flush
+   is **tolerant** (`ContinueOnError = true`): a row a concurrent transaction
+   deletes between snapshot and flush is skipped-and-traced, not allowed to
+   abort the rest of the (idempotent) cleanup — this is what previously surfaced
+   as `Batch write failed … book_distributions … With Id=… Does Not Exist`.
 
 ## Continuation & time budget
 
