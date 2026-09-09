@@ -23,6 +23,18 @@ namespace Checkbook.Plugins.Constants
         public const string PayerConcurrence = "book_payerconcurrence";
         public const string StateApproved = "book_newstateapproved";
         public const string BEDecision = "book_bedecision";
+
+        // Approval audit stamps + denial reason (State-Swap-style control on the
+        // approval process). Written by RealignmentValidator on the approval /
+        // denial transition; surfaced read-only on the form and by the
+        // RealignmentApprovalProcess PCF. New columns — create in the maker portal
+        // (Lookup -> systemuser for the *By fields, DateTime for the *On fields,
+        // multiline text for the reason).
+        public const string StateApprovedBy = "book_newstateapprovedby";
+        public const string StateApprovedOn = "book_newstateapprovedon";
+        public const string BEDecisionBy = "book_bedecisionby";
+        public const string BEDecisionOn = "book_bedecisionon";
+        public const string DenialReason = "book_denialreason";
         public const string ConfirmCreditedLOA = "book_confirmcreditedloa";
         public const string ConfirmDebitedAccount = "book_confirmdebitedaccount";
         public const string SameFundandSAG = "book_samefundandsag";

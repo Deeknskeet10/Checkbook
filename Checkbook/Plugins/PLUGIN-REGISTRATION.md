@@ -91,6 +91,29 @@ Required in the maker portal before enabling the State Swap steps:
 | Owner teams per state | Names `{StateAbbr} - State Approver` and `{StateAbbr} - State Administrator` (e.g. `AL - State Approver`). One pair per state. `SwapAutoSharePlugin` looks them up by name and shares each swap with both teams. Missing teams are logged and skipped, not fatal. |
 | Role privileges | Grant User-level Create/Read/Write/Delete/Append/AppendTo/Share on `book_stateswap` + `book_swapitem` to `Book - State Approver` and `Book - State Administrator`; Org-level Read to `Book - Budget Executor` and `Book - Read Only`; Org-level everything to `Book - Checkbook Administrator`. See schema doc §5.1. |
 
+### Realignment approval schema (BPF replacement)
+
+Ports the State-Swap approval control onto `book_realignments`: role/BU-gated
+approvals + audit stamps + a PCF chevron replacing the BPF. Full
+rollout/rollback: [`../dist/IMPLEMENTATION-RealignmentApprovalProcess.md`](../dist/IMPLEMENTATION-RealignmentApprovalProcess.md).
+The existing `book_newstateapproved` / `book_bedecision` choice fields are
+retained; add these audit/reason columns before deploying this build:
+
+| Column | Type | Notes |
+|---|---|---|
+| `book_newstateapprovedby` | Lookup → `systemuser` | Stamped by `RealignmentValidator` on the State approval transition |
+| `book_newstateapprovedon` | Date/Time | Stamped with the above |
+| `book_bedecisionby` | Lookup → `systemuser` | Stamped on the BE approval transition |
+| `book_bedecisionon` | Date/Time | Stamped with the above |
+| `book_denialreason` | Multiple Lines of Text (2000) | Written by the approval PCF on deny |
+
+Also: place `book_ARNGCheckbook.RealignmentApprovalProcess` on the
+`book_realignments` form (on `book_name`), and retire the BPF
+**Realignments - Review/Approve** + the business rules
+**Realignments - SetStateApproval** / **Realignments - LockSameSAGFundField**.
+Confirm the `book_approvals` option-set values (`Approved`/`Denied`) match the
+`RealignmentBEDecisionValues` 0/1 assumption in the plugin + PCF.
+
 ### FY27 Spend Plan / Itemized Detail FC schema
 
 The Itemized-Detail Fund Center + FY27 spend plan work (source in
@@ -339,9 +362,30 @@ Two-approval (State + BE Decision) gate on Realignment Update. Determines
 when each approval is required based on the realignment shape (RF-level vs
 Prio-to-Prio, Same Fund/SAG vs Cross-Fund/SAG). Throws on missing approvals.
 
+As of the State-Swap-parity work (`IMPLEMENTATION-RealignmentApprovalProcess.md`),
+it also **role-gates and stamps** every approval/denial transition — the
+"control" gained when the BPF was retired:
+- A **State stage** action (approve or deny `book_newstateapproved`) requires
+  `Book - State Approver` / `Book - State Administrator` /
+  `Book - Checkbook Administrator`, scoped (non-admins) to the **debiting
+  state's** BU via `StateScopeHelper.IsUserInStateBU`. The debiting state is
+  read live: realignment → `book_debitedprioritization` → `book_state`.
+- A **BE stage** action (approve or deny `book_bedecision`) requires
+  `Book - Budget Executor` / `Book - Checkbook Administrator`.
+- On each transition to Approved it stamps `book_newstateapprovedby/on` /
+  `book_bedecisionby/on` (initiating user + UtcNow) via pre-op target mutation.
+
+Mirrors `StateSwaps/SwapValidator.EnforceApprovalRoles` + `StampApproval`. The
+approval PCF `book_ARNGCheckbook.RealignmentApprovalProcess` mirrors these
+checks in the UI but this plugin is the authoritative boundary. Denials carry
+their reason in `book_denialreason` (written by the PCF); the validator does not
+require one. **New columns** (maker portal): `book_newstateapprovedby`,
+`book_newstateapprovedon`, `book_bedecisionby`, `book_bedecisionon`,
+`book_denialreason`.
+
 | # | Message | Primary entity      | Stage          | Mode | Filtering attributes                  | Notes |
 |---|---------|---------------------|----------------|------|---------------------------------------|-------|
-| 1 | Update  | `book_realignments` | Pre-Operation  | Sync | `book_newstateapproved, book_bedecision` | Triggers only on approval transitions. **Requires PreImage** (`book_newstateapproved, book_bedecision`). |
+| 1 | Update  | `book_realignments` | Pre-Operation  | Sync | `book_newstateapproved, book_bedecision` | Triggers on approval **and denial** transitions. **Requires PreImage** (`book_newstateapproved, book_bedecision`). Registration **unchanged** — the debit-prio → state read is a live Retrieve; stamps mutate the target. |
 
 ### `Checkbook.Plugins.Validation.RequirementDetailFundingGuard`
 
@@ -435,6 +479,14 @@ same write and the PF stamp derives the right mode.
 
 ## Realignments
 
+> **Approval process:** the "Realignments - Review/Approve" BPF is replaced by
+> the field-bound PCF `book_ARNGCheckbook.RealignmentApprovalProcess` (chevron
+> bar on `book_name`), with role/BU gating + audit stamps enforced by
+> `RealignmentValidator` (above). The two real-time business rules
+> `Realignments - SetStateApproval` and `Realignments - LockSameSAGFundField`
+> are retired too — `SetSameFundSagFlagPlugin` sets `book_samefundandsag`
+> server-side already. Full rollout/rollback: `dist/IMPLEMENTATION-RealignmentApprovalProcess.md`.
+
 ### `Checkbook.Plugins.Realignments.SetSameFundSagFlagPlugin`
 
 Sets `book_samefundandsag` on the realignment header from the selected debit
@@ -478,6 +530,12 @@ with nothing processed). No self re-entry guard is needed: `FinalizeRealignment`
 writes only `statecode`/`statuscode`, and this step is filtered on the decision
 attributes, so Finalize cannot re-trigger the processor. The payload-only
 decision check ensures only the actual decision write processes.
+
+> **Note (approval-PCF work):** retiring the two Business Rules above removes one
+> source of nesting, but the guard-free design stays — bulk approvals (Excel
+> Online / ExecuteMultiple) still arrive nested, and `RealignmentValidator` now
+> stamps the audit fields in the same pre-op write, so the decision save can
+> still run nested. Do not add a nesting/Depth guard here.
 
 | # | Message | Primary entity      | Stage           | Mode | Filtering attributes                     | Notes |
 |---|---------|---------------------|-----------------|------|------------------------------------------|-------|
