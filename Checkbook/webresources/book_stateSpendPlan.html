@@ -59,6 +59,11 @@
   var FV = "@OData.Community.Display.V1.FormattedValue";
   var MIN_FY = 2027;
   var MODE_STATE_ROLLUP = 1;
+  // The umbrella BU that all specific state BUs (Arizona, …) hang beneath.
+  // A user is scoped to a single state only if this BU is strictly above them
+  // in the BU tree; ARNG (national), Joint Staff and NGB sit at/above it and
+  // get the read-only national roll-up instead. See resolveUserState().
+  var STATES_BU_NAME = "States";
   var ROW_PLANNED = 0, ROW_ACTUAL = 1;
   var MONTHS = [
     { label: "Oct", col: "book_newoctober" }, { label: "Nov", col: "book_newnovember" },
@@ -105,7 +110,16 @@
   // subtree — including child BUs some states created below their state BU. So
   // we walk UP the user's BU parent chain (id-based, up to 50 levels — same rule
   // as the StateScopeHelper plugin) and find the book_state whose owning BU is
-  // the nearest ancestor in that chain. No name matching.
+  // the nearest ancestor in that chain.
+  //
+  // BUT: only real state BUs count. The tree is
+  //   ARNG (national root) → { States → { Arizona → [child FC BUs], … }, Joint Staff, NGB }
+  // where "States" is the umbrella over every specific state. National-tier BUs
+  // (ARNG, Joint Staff, NGB) also own book_state records (e.g. "JS"), so a naive
+  // owning-BU walk wrongly scopes an ARNG user to that pseudo-state. We therefore
+  // require the "States" umbrella BU to sit STRICTLY ABOVE the user, and only
+  // consider state-owning BUs below it. A user at/above "States" (ARNG, Joint
+  // Staff, NGB, or "States" itself) gets the national roll-up instead.
   var MAX_BU_DEPTH = 50;
 
   function collectBuChain(buId, acc, depth) {
@@ -135,22 +149,44 @@
     });
   }
 
+  // Resolve the "States" umbrella BU by name. Returns null if it can't be found
+  // (renamed/missing) — the caller then falls back to the legacy full-chain walk
+  // so real state users are never left without their editable view.
+  function findStatesBuId() {
+    return xrm.WebApi.retrieveMultipleRecords("businessunit",
+      "?$select=businessunitid&$filter=name eq '" + STATES_BU_NAME + "'&$top=1"
+    ).then(function (r) {
+      return r.entities.length ? stripGuid(r.entities[0].businessunitid) : null;
+    }).catch(function () { return null; });
+  }
+
   function resolveUserState() {
     var gc = xrm.Utility.getGlobalContext();
     var userId = stripGuid(gc.userSettings.userId);
-    return xrm.WebApi.retrieveRecord("systemuser", userId, "?$select=_businessunitid_value")
+    var chainP = xrm.WebApi.retrieveRecord("systemuser", userId, "?$select=_businessunitid_value")
       .then(function (u) {
         var buId = stripGuid(u._businessunitid_value);
         return buId ? collectBuChain(buId, [], 0) : [];
-      })
-      .then(function (chain) { return findStateByOwningBu(chain); });
+      });
+    return Promise.all([chainP, findStatesBuId()]).then(function (out) {
+      var chain = out[0], statesBu = out[1];
+      // Umbrella not found → don't regress state users; fall back to legacy walk.
+      if (!statesBu) return findStateByOwningBu(chain);
+      var idx = chain.indexOf(statesBu);
+      // "States" must be STRICTLY above the user (idx >= 1). idx 0 = user sits at
+      // the States BU itself; idx < 0 = user is at/above it (ARNG/JS/NGB) or on a
+      // sibling branch → national roll-up.
+      if (idx < 1) return null;
+      // Only match states owned by BUs below "States" (excludes ARNG-owned "JS").
+      return findStateByOwningBu(chain.slice(0, idx));
+    });
   }
 
   // ---- national (all-states) rollup, for root/HQ users with no single state ----
-  // A user whose BU up-chain contains no state-owning BU (e.g. the ARNG root BU)
-  // isn't scoped to one state. Rather than dead-end, we show a read-only oversight
-  // roll-up across every state. Dataverse row-level security still scopes these
-  // org-wide reads to what the caller may read.
+  // A user at or above the "States" umbrella BU (ARNG national root, Joint Staff,
+  // NGB, or "States" itself) isn't scoped to one state. Rather than dead-end, we
+  // show a read-only oversight roll-up across every state. Dataverse row-level
+  // security still scopes these org-wide reads to what the caller may read.
   function retrieveAll(entity, query) {
     var all = [];
     function page(q) {
