@@ -29,7 +29,10 @@ namespace Checkbook.Plugins.TurnIns
     ///        - Sum of item amounts equals header amount.
     ///        - Each item has either a Prioritization or a Requirement Funding (or both).
     ///        - Each item amount does not exceed available funds on its source
-    ///          (Prio.book_newfundedamounttdp, or RF.book_newfundedamount when RF-only).
+    ///          (Prio.book_newfundedamounttdp; for RF-only items, RF.book_newfundedamount
+    ///          on a leaf RF, but only RF.book_newwithholding when the RF has child
+    ///          Prioritizations — turning in more than Withholding there drives TDP below
+    ///          the roll-up-restored Funded amount → negative Withholding).
     ///        - State-only rule: a regular geographic-state user (member of a
     ///          "{ABBR} - State Approver/Administrator" owner team, ABBR not PEC/WTC)
     ///          may not turn in RF-only items — every item must carry a Prioritization.
@@ -342,7 +345,11 @@ namespace Checkbook.Plugins.TurnIns
         /// <summary>
         /// Validates that the sum of item amounts per source does not exceed available funds.
         /// - For items with a Prioritization: aggregate by Prio, compare to Prio.book_newfundedamounttdp.
-        /// - For RF-only items: aggregate by RF, compare to RF.book_newfundedamount.
+        /// - For RF-only items: aggregate by RF. A leaf RF (no child Prioritizations)
+        ///   compares to RF.book_newfundedamount; an RF WITH child Prioritizations
+        ///   compares only to RF.book_newwithholding, because its FundedAmount is a
+        ///   roll-up of the Prios and a direct reduction would be undone by the next
+        ///   roll-up, leaving TDP below Funded (negative Withholding).
         ///
         /// Aggregating before the check prevents two items on the same source from each fitting
         /// individually while together overdrawing — which the downstream updaters would silently
@@ -408,17 +415,55 @@ namespace Checkbook.Plugins.TurnIns
                 var rf = service.Retrieve(
                     EntityNames.RequirementFunding,
                     rfId,
-                    new ColumnSet(RequirementFundingAttributes.FundedAmount));
+                    new ColumnSet(
+                        RequirementFundingAttributes.FundedAmount,
+                        RequirementFundingAttributes.Withholding));
 
-                decimal available = NumericHelper.ToDecimal(rf, RequirementFundingAttributes.FundedAmount) ?? 0m;
+                decimal funded = NumericHelper.ToDecimal(rf, RequirementFundingAttributes.FundedAmount) ?? 0m;
+                decimal withholding = NumericHelper.ToDecimal(rf, RequirementFundingAttributes.Withholding) ?? 0m;
 
-                if (requested > available)
+                // An RF-only Turn-In reduces BOTH RF.TDP and RF.FundedAmount by the amount
+                // (see TurnInRequirementFundingUpdater). That is only sound on a leaf RF —
+                // one with no child Prioritizations — where FundedAmount is the RF's own
+                // direct funding. When the RF HAS child Prioritizations, FundedAmount is a
+                // roll-up of those Prios (PrioritizationRollupToRequirementFunding), so the
+                // direct FundedAmount reduction is transient: the next roll-up restores it
+                // to Σ(child Prios) while the TDP reduction sticks. The result is TDP <
+                // Funded — i.e. negative Withholding — which is exactly the phantom
+                // "-700,000 Withholding" defect. Only Withholding (TDP − Funded, the
+                // unprioritized slack) is free to turn in directly from such an RF.
+                //
+                // Mirrors the RF→RF realignment rule in SetSameFundSagFlagPlugin: RF with
+                // children → available = Withholding; leaf RF → available = FundedAmount.
+                // Applies to FY26 and FY27+ alike (no fiscal-year branch).
+                bool hasChildren = RequirementFundingHelpers.HasActiveChildren(service, rfId);
+
+                if (hasChildren)
+                {
+                    tracing.Trace(
+                        $"RF {rfId} has child Prioritizations → capping RF-only Turn-In at " +
+                        $"Withholding ({withholding:C}); requested {requested:C}.");
+
+                    if (requested > withholding)
+                    {
+                        throw new InvalidPluginExecutionException(
+                            $"This Turn-In would reduce Total Distribution Plan below the Funded amount " +
+                            $"on Requirement Funding {rfLabels[rfId]}. Because this RF has Prioritizations, " +
+                            $"only its Withholding may be turned in directly ({withholding:C} available, " +
+                            $"{requested:C} requested). Reduce Prioritizations on this Requirement Funding " +
+                            $"before turning in, or lower the Turn-In amount to the available Withholding.");
+                    }
+                }
+                else if (requested > funded)
                 {
                     throw new InvalidPluginExecutionException(
                         $"Combined Turn-In Item amount ({requested:C}) exceeds available funded amount " +
-                        $"({available:C}) on Requirement Funding {rfLabels[rfId]}.");
+                        $"({funded:C}) on Requirement Funding {rfLabels[rfId]}.");
                 }
-                tracing.Trace($"RF {rfId}: {available:C} available, taking {requested:C} (aggregated).");
+
+                tracing.Trace(
+                    $"RF {rfId}: hasChildren={hasChildren}, funded={funded:C}, withholding={withholding:C}, " +
+                    $"taking {requested:C} (aggregated).");
             }
         }
     }
