@@ -101,14 +101,32 @@ namespace Checkbook.Plugins.Helpers
                 $"Sibling sum={siblingSum}, oldFunded={oldFunded}, newFunded={newFunded}, " +
                 $"proposed={proposedTotal}");
 
-            if (proposedTotal > rfTDP)
+            // Only ENFORCE the cap when this row's FundedAmount is being
+            // INCREASED (newFunded > oldFunded; a Create is always an increase
+            // from 0). A reduction — or the pull-back deactivation — can never
+            // push the RF total further over its TDP cap, so blocking it is
+            // never correct and deadlocks legitimate remediation: this guard
+            // fires once per junction row, but a grid save that rebalances two
+            // or more rows is only valid in aggregate. When the first row is
+            // validated the sibling rows still hold their pre-save (higher)
+            // values, so proposedTotal reflects only this one row's change. If
+            // the RF is already over-cap (e.g. negative Withholding from a
+            // Turn-In), no single reduction can bring the per-row proposedTotal
+            // back under the cap and every row's save is rejected. Mirrors the
+            // increases-only intent of the NPM-Review approval check in the
+            // callers, and the same fix in PrioritizationFundingValidator.
+            bool isIncrease = newFunded > oldFunded;
+
+            if (isIncrease && proposedTotal > rfTDP)
             {
                 throw new InvalidPluginExecutionException(
                     $"This change would exceed the Requirement Funding's TDP cap. " +
                     $"RF TDP = {rfTDP:N2}, Proposed junction total = {proposedTotal:N2}.");
             }
 
-            tracing.Trace("TDP cap check passed.");
+            tracing.Trace(isIncrease
+                ? "TDP cap check passed."
+                : "Funded amount unchanged or reduced — skipping TDP cap enforcement.");
         }
     }
 }

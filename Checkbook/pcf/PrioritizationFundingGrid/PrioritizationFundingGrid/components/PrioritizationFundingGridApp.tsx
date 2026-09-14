@@ -721,13 +721,29 @@ export const PrioritizationFundingGridApp: React.FC<PrioritizationFundingGridPro
   const [expandedItems, setExpandedItems] = React.useState<Record<string, boolean>>({});
   const [reloadKey, setReloadKey] = React.useState(0);
 
+  // Reseed the editable rows/baseline from the dataset only when it genuinely
+  // changes identity (a real refresh) and never while an edit is in flight.
+  // A dataset.refresh() queued by a prior save resolves asynchronously; if that
+  // late updateView lands mid-edit, an unguarded reseed wipes the user's
+  // in-progress change — the reason only the first save "took" until you
+  // navigated away and back.
+  const lastSeenInitialRef = React.useRef<PrioRow[]>(initialPrioRows);
   React.useEffect(() => {
+    if (lastSeenInitialRef.current === initialPrioRows) return;
+    lastSeenInitialRef.current = initialPrioRows;
+    if (editMode || saving) return;
     setPrioRows(initialPrioRows);
     setBaselinePrio(initialPrioRows);
-  }, [initialPrioRows]);
+  }, [initialPrioRows, editMode, saving]);
 
   // ---- Itemized Details fetch (one query across all visible Prios) ----
   React.useEffect(() => {
+    // Don't refetch while an edit is in flight: a mid-edit refetch resets both
+    // itemRows and baselineItems, discarding the user's in-progress line-item
+    // edits (same failure mode as the main-grid reseed above). The post-save
+    // reload still fires because onSave clears editMode before bumping
+    // reloadKey.
+    if (editMode) return;
     let cancelled = false;
     const ids = initialPrioRows.map((r) => r.id);
     if (ids.length === 0) {
@@ -795,7 +811,7 @@ export const PrioritizationFundingGridApp: React.FC<PrioritizationFundingGridPro
     return () => {
       cancelled = true;
     };
-  }, [initialPrioRows, webAPI, reloadKey]);
+  }, [initialPrioRows, webAPI, reloadKey, editMode]);
 
   // ---- Junction rows per Prio (for the per-Prio "Allocate to RFs" dialog) ----
   const [junctions, setJunctions] = React.useState<Record<string, JunctionRow[]>>({});
@@ -1014,6 +1030,23 @@ export const PrioritizationFundingGridApp: React.FC<PrioritizationFundingGridPro
     setVfSuccess(null);
     setSaving(true);
     try {
+      // Collect every changed write tagged with its Funded delta, then run
+      // reductions before increases. Each write is awaited so it commits (and,
+      // for Itemized Details, rolls up onto its Prio) before the next is
+      // validated. The cap plugins (PrioritizationFundingValidator /
+      // JunctionGuard) only enforce the RF TDP cap on an *increase*, so landing
+      // all decreases first frees the headroom an increase needs. This lets a
+      // single save rebalance multiple rows around the cap — reducing some to
+      // make room for others — even though no individual row is valid mid-save
+      // and the RF may currently be over-cap (e.g. negative Withholding from a
+      // Turn-In). Both Prio-level and Item-level writes share the RF's sibling
+      // aggregate, so they are ordered together in one list.
+      interface PendingWrite {
+        fundedDelta: number;
+        run: () => Promise<unknown>;
+      }
+      const writes: PendingWrite[] = [];
+
       // Direct Prios (no Itemized Details) that changed.
       const prioBase = new Map(baselinePrio.map((r) => [r.id, r]));
       for (const r of prioRows) {
@@ -1025,9 +1058,13 @@ export const PrioritizationFundingGridApp: React.FC<PrioritizationFundingGridPro
           base.fundedAmount === r.fundedAmount
         )
           continue;
-        await webAPI.updateRecord(PRIORITIZATION_ENTITY, r.id, {
-          [PRIO_VALIDATED]: r.validatedAmount,
-          [PRIO_FUNDED]: r.fundedAmount,
+        writes.push({
+          fundedDelta: r.fundedAmount - (base?.fundedAmount ?? 0),
+          run: () =>
+            webAPI.updateRecord(PRIORITIZATION_ENTITY, r.id, {
+              [PRIO_VALIDATED]: r.validatedAmount,
+              [PRIO_FUNDED]: r.fundedAmount,
+            }),
         });
       }
 
@@ -1042,12 +1079,29 @@ export const PrioritizationFundingGridApp: React.FC<PrioritizationFundingGridPro
           base.npmComment === it.npmComment
         )
           continue;
-        await webAPI.updateRecord(ITEMIZED_DETAILS_ENTITY, it.id, {
-          [ITEM_VALIDATED]: it.validated,
-          [ITEM_FUNDED]: it.funded,
-          [ITEM_NPM_COMMENT]: it.npmComment.trim() === "" ? null : it.npmComment,
+        writes.push({
+          fundedDelta: it.funded - (base?.funded ?? 0),
+          run: () =>
+            webAPI.updateRecord(ITEMIZED_DETAILS_ENTITY, it.id, {
+              [ITEM_VALIDATED]: it.validated,
+              [ITEM_FUNDED]: it.funded,
+              [ITEM_NPM_COMMENT]:
+                it.npmComment.trim() === "" ? null : it.npmComment,
+            }),
         });
       }
+
+      // Reductions (and Funded-unchanged rows) first, increases last.
+      writes.sort((a, b) => a.fundedDelta - b.fundedDelta);
+      for (const w of writes) await w.run();
+
+      // Reseed baselines from what we just committed so the *next* Edit/Save
+      // cycle diffs against current values immediately — even if the host hands
+      // back a stable dataset snapshot on refresh (common for subgrids), in
+      // which case the reseed effect above never fires. Without this a second
+      // save could diff against stale values and write nothing.
+      setBaselinePrio(prioRows);
+      setBaselineItems(itemRows);
 
       setVfSuccess("Validation & funding saved.");
       setEditMode(false);
@@ -1121,6 +1175,16 @@ export const PrioritizationFundingGridApp: React.FC<PrioritizationFundingGridPro
     setAllocBusy(true);
     setAllocError(null);
     try {
+      // Same ordering rule as onSave: land junction reductions before
+      // increases so the RF TDP cap (JunctionGuard.EnforceTDPCap, increase-only)
+      // sees the freed headroom. Lets a save that reallocates across RFs —
+      // pulling funding off one to add it to another — go through even when the
+      // RF is momentarily at or over cap between rows.
+      interface PendingAlloc {
+        fundedDelta: number;
+        run: () => Promise<unknown>;
+      }
+      const allocWrites: PendingAlloc[] = [];
       for (const j of list) {
         const e = allocEdits[j.id];
         if (!e) continue;
@@ -1128,11 +1192,17 @@ export const PrioritizationFundingGridApp: React.FC<PrioritizationFundingGridPro
         const newValidated = e.validatedAmount ?? j.validatedAmount;
         if (newFunded === j.fundedAmount && newValidated === j.validatedAmount)
           continue;
-        await webAPI.updateRecord(PRIORITIZATION_FUNDING_ENTITY, j.id, {
-          book_fundedamount: newFunded,
-          book_validatedamount: newValidated,
+        allocWrites.push({
+          fundedDelta: newFunded - j.fundedAmount,
+          run: () =>
+            webAPI.updateRecord(PRIORITIZATION_FUNDING_ENTITY, j.id, {
+              book_fundedamount: newFunded,
+              book_validatedamount: newValidated,
+            }),
         });
       }
+      allocWrites.sort((a, b) => a.fundedDelta - b.fundedDelta);
+      for (const w of allocWrites) await w.run();
       setAllocEdits({});
       reloadJunctions(initialPrioRows.map((p) => p.id));
       refresh();

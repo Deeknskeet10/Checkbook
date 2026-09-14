@@ -304,6 +304,24 @@ checked by this plugin (an earlier revision fetched them but never validated;
 that dead code has been removed — do not re-add `book_validatedamount` to the
 filter).
 
+**Cap is enforced on INCREASES only** (`newFunded > oldFunded`; a Create is an
+increase from 0). A reduction — or an update that leaves Funded unchanged —
+can never push the RF total further over its cap, so it is always allowed even
+if the total is still over cap. This is required because the plugin fires once
+per Prioritization Update, but a grid save that rebalances two or more Prios is
+only valid in aggregate: when the first row is validated the siblings still
+hold their pre-save (higher) values, so the proposed total reflects only this
+one row's change. If the RF is already over-cap (e.g. negative Withholding from
+a Turn-In), no single reduction could get the per-row proposed total back under
+the cap and every row's save would be rejected. Allowing reductions
+unconditionally lets a user rebalance back into compliance while still blocking
+genuine over-allocation (always an increase). The Itemized funding path inherits
+this for free — an Itemized-detail reduction rolls a *lower* `book_newfundedamounttdp`
+onto the Prio via `PrioritizationItemizedRollup`, which the validator sees as a
+decrease and skips. The FY27 grid (`PrioritizationFundingGrid`) also orders its
+writes decreases-first so a mixed increase/decrease save lands all reductions —
+freeing headroom — before any increase is validated.
+
 Skips entirely when an ancestor context is an Update on `book_turnin`,
 `book_realignments`, or `book_stateswap` (recursive parent walk, same
 pattern as `RequirementFundingTDPValidator`). Those orchestrators own their
@@ -325,7 +343,18 @@ parents present + same Requirement + same FY + unique `(Prio, RF)` pair + sum
 of active junction FundedAmount on the RF ≤ RF.TDP + **funding only on an
 NPM-Review Prio** (FY27 mirror of `PrioritizationFundingApprovalGuard`: a
 funded-amount *increase* is rejected unless the parent Prioritization is in NPM
-Review — reductions and the pull-back deactivation stay allowed). Autopopulates
+Review — reductions and the pull-back deactivation stay allowed).
+
+The RF.TDP cap is enforced by the shared `JunctionGuard.EnforceTDPCap` helper
+and, like the approval check, fires **on INCREASES only** (`newFunded > oldFunded`).
+A junction reduction can never push the RF total further over cap, so it is
+always allowed — this is what lets the FY27 `PrioritizationFundingGrid` rebalance
+allocations across RFs (pull funding off one, add to another) when the RF is
+momentarily at/over cap between per-row writes, and lets a state reduce a
+junction to remediate a negative Withholding. Same fix and rationale as
+`PrioritizationFundingValidator` above. Because `EnforceTDPCap` is shared, the
+`book_requirementdetailfunding` junction (`RequirementDetailFundingGuard`)
+inherits the identical increase-only behavior. Autopopulates
 `book_name` on Create when blank. On Create, also **aligns `ownerid` to the
 parent Prioritization's owner** when the caller didn't set one — NPM creates
 these rows in the national BU, but States read them at BU/parent-BU depth, and
@@ -393,6 +422,11 @@ Pre-op guard for the `book_requirementdetailfunding` junction enforcing the
 Prio XOR RD-direct-funding invariant at the Requirement level. Also rejects
 new Prioritizations on a Requirement that already has active RD-direct
 funding.
+
+Shares the `JunctionGuard.EnforceTDPCap` helper with `PrioritizationFundingGuard`,
+so its RF.TDP cap fires **on INCREASES only** (`newFunded > oldFunded`) —
+reductions are always allowed even when the RF is over cap. See the
+`PrioritizationFundingGuard` note above for the rationale.
 
 | # | Message | Primary entity                    | Stage          | Mode | Filtering attributes                                                                              | Notes |
 |---|---------|-----------------------------------|----------------|------|---------------------------------------------------------------------------------------------------|-------|

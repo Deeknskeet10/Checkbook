@@ -113,23 +113,51 @@ namespace Checkbook.Plugins.Validation
 
             tracing.Trace($"Proposed total after change: {proposedTotal}");
 
-            // ---- 3. Enforce RF TDP cap ----
-            if (proposedTotal > rfTDP)
+            // ---------------------------------------------------------------
+            // Only ENFORCE the cap when this record's Funded amount is being
+            // INCREASED (delta > 0). A reduction (or an update that leaves
+            // Funded untouched) can never push the RF total further over its
+            // TDP cap, so blocking it is never correct — and doing so deadlocks
+            // legitimate remediation. Because this validator fires once per
+            // Prioritization Update, a multi-row grid save that rebalances two
+            // or more Prios is only valid in aggregate: when the first row is
+            // validated, the sibling rows still hold their pre-save (higher)
+            // values in the committed DB, so proposedTotal reflects only this
+            // one row's change. If the RF is currently over-cap (e.g. negative
+            // Withholding from a Turn-In), no single reduction can get the
+            // per-record proposedTotal back under the cap, and every row's save
+            // is rejected. Allowing reductions unconditionally lets the user
+            // rebalance back into compliance while still blocking any genuine
+            // over-allocation (which is always an increase, incl. Create).
+            // ---------------------------------------------------------------
+            bool isIncrease = newFunded > oldFunded;
+
+            if (isIncrease)
             {
-                throw new InvalidPluginExecutionException(
-                    $"This update would exceed the Requirement Funding’s TDP cap. " +
-                    $"RF TDP = {rfTDP:N2}, Proposed total = {proposedTotal:N2}."
+                // ---- 3. Enforce RF TDP cap ----
+                if (proposedTotal > rfTDP)
+                {
+                    throw new InvalidPluginExecutionException(
+                        $"This update would exceed the Requirement Funding’s TDP cap. " +
+                        $"RF TDP = {rfTDP:N2}, Proposed total = {proposedTotal:N2}."
+                    );
+                }
+
+                // ---- 4. Validate against LOA TDP remaining ----
+                var validate = TDPCalculationHelper.ValidateTDPAllocation(
+                    service, loaRef.Id, proposedTotal, parentRF.Id
                 );
+
+                if (!validate.IsValid)
+                {
+                    throw new InvalidPluginExecutionException(validate.ErrorMessage);
+                }
             }
-
-            // ---- 4. Validate against LOA TDP remaining ----
-            var validate = TDPCalculationHelper.ValidateTDPAllocation(
-                service, loaRef.Id, proposedTotal, parentRF.Id
-            );
-
-            if (!validate.IsValid)
+            else
             {
-                throw new InvalidPluginExecutionException(validate.ErrorMessage);
+                tracing.Trace(
+                    "Funded amount unchanged or reduced — skipping RF TDP / LOA cap enforcement " +
+                    "(a reduction cannot worsen an over-cap total).");
             }
 
             tracing.Trace("Prioritization validation passed.");
