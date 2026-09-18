@@ -88,8 +88,15 @@ namespace Checkbook.Plugins.TurnIns
             // Table-level privileges let a few State roles (PM, FC Reviewer) update
             // Turn-Ins for editing purposes, but only Approvers/Administrators may
             // actually carry the approval flags. Checkbook Administrators always pass.
+            //
+            // Use InitiatingUserId, NOT context.UserId. This step is registered to run
+            // under the elevated CDS service account, so context.UserId is that account
+            // (which holds admin roles and would pass every gate) — the person we must
+            // authorize is the initiating user. Same reason the state-only rule below
+            // reads InitiatingUserId. (See the plugins-run-as-sysadmin convention: role
+            // checks are about the initiating user, never the execution identity.)
             EnforceApprovalRoles(
-                service, tracing, context.UserId, stateApprovedInPayload, beApprovedInPayload);
+                service, tracing, context.InitiatingUserId, stateApprovedInPayload, beApprovedInPayload);
 
             // ---- Idempotency: have we already created ledgers for this Turn-In? ----
             // Per design choice (Q2 = option C), existence of ledger rows linked back to
@@ -210,9 +217,14 @@ namespace Checkbook.Plugins.TurnIns
             // RF-only). Checkbook Administrators / Budget Executors hold no such state team
             // and pass. Enforced on the State's approval save (the moment the State submits);
             // a BE approval save re-runs this but the BE user is not a state-team member.
+            //
+            // InitiatingUserId, NOT context.UserId: this step runs under the elevated CDS
+            // service account, so context.UserId belongs to no state team and this check
+            // would silently no-op (fail open) — the exact reason RF-only state turn-ins
+            // were slipping through. The initiating user is the state approver.
             if (items.Any(i => i.IsRFOnly) &&
                 StateTeamHelper.IsRestrictedStateUser(
-                    service, tracing, context.UserId, RfOnlyExemptAbbreviations))
+                    service, tracing, context.InitiatingUserId, RfOnlyExemptAbbreviations))
             {
                 throw new InvalidPluginExecutionException(
                     "A Turn-In submitted by a State must move funds through a Prioritization. " +

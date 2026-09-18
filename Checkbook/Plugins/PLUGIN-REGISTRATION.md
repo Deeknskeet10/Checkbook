@@ -202,6 +202,24 @@ When a row says "**Requires PreImage**", register a pre-image with
 **Name** = **Entity Alias** = `PreImage` containing the listed attributes.
 Mode is **Synchronous** unless explicitly noted Async.
 
+> ⚠ **Execution identity vs. the acting user — read before writing any role
+> gate.** These steps run under an elevated generic account (Microsoft CDS /
+> service account with admin-level roles), **not** the logged-in user. Inside a
+> plugin that means:
+> - `context.UserId` is the *service account* — it holds admin roles and sits
+>   in no state owner team / state BU. Authorizing against it silently
+>   rubber-stamps every role gate and, worse, makes cross-state BU-scope checks
+>   (`StateScopeHelper.IsUserInStateBU`) pass as "admin" and skip entirely.
+> - `context.InitiatingUserId` is the **actual approver** — this is what every
+>   role/team/BU authorization check must use.
+>
+> This bit the Turn-In "states must turn in through a Prioritization" rule and
+> the Realignment/Swap cross-state guards (all gated on `context.UserId`, so
+> they failed open). Fixed 2026-09-17: `TurnInValidator`, `RealignmentValidator`,
+> and `SwapValidator` now authorize on `context.InitiatingUserId`. Newer plugins
+> (`DeactivationRoleGuard`, `ToggleFundedAmountLockPlugin`, `CastVotePlugin`)
+> already follow this. **When adding a role/BU check, use `InitiatingUserId`.**
+
 ---
 
 ## Validation

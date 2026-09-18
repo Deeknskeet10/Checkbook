@@ -68,8 +68,15 @@ namespace Checkbook.Plugins.Validation
             }
 
             // ---- 1. Role gating ----
+            // InitiatingUserId, NOT context.UserId: this step runs under the elevated
+            // CDS service account. context.UserId is that account — it resolves as an
+            // admin (skipping the cross-state BU-scope check below) and belongs to no
+            // state BU, so gating on it both rubber-stamps the role and defeats the
+            // State-X-cannot-approve-for-State-Y protection. The initiating user is the
+            // actual approver. (See plugins-run-as-sysadmin: role checks are about the
+            // initiating user, never the execution identity.)
             EnforceApprovalRoles(
-                service, tracing, context.UserId,
+                service, tracing, context.InitiatingUserId,
                 stateApprovedTx || stateDeniedTx,
                 beApprovedTx || beDeniedTx,
                 context.PrimaryEntityId);
