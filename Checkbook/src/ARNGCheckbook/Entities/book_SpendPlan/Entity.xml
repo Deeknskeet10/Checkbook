@@ -2660,18 +2660,6 @@
           </displaynames>
         </EntityKey>
         <EntityKey>
-          <Name>book_uniqueStateSpendPlan</Name>
-          <LogicalName>book_uniquestatespendplan</LogicalName>
-          <IntroducedVersion>1.9.2.1</IntroducedVersion>
-          <IsCustomizable>0</IsCustomizable>
-          <EntityKeyAttributes>
-            <AttributeName>book_prioritization</AttributeName>
-          </EntityKeyAttributes>
-          <displaynames>
-            <displayname description="uniqueStateSpendPlan" languagecode="1033" />
-          </displaynames>
-        </EntityKey>
-        <EntityKey>
           <Name>book_uniqueUFRSpend</Name>
           <LogicalName>book_uniqueufrspend</LogicalName>
           <IntroducedVersion>1.9.2.1</IntroducedVersion>

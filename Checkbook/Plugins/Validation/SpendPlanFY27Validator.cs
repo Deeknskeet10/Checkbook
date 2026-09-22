@@ -80,6 +80,12 @@ namespace Checkbook.Plugins.Validation
             // Resolve funded amount + fiscal year + the sibling-anchor filter once.
             var resolved = Resolve(service, mode, target, preImage, pfRef, rfRef, stateRef, fundRef, sagRef);
 
+            // Stamp the Prioritization + LOA onto Breakout rows so State views can
+            // read them straight off the spend plan row (no PF walk). Done on
+            // Create only; the values are immutable for the anchor after that.
+            if (context.MessageName == "Create" && mode == Mode.Breakout)
+                StampBreakoutContext(tracing, target, resolved);
+
             var anchorAttrs = AnchorAttrs(mode).Concat(new[] { SpendPlanAttributes.FundCenter, SpendPlanAttributes.RowType });
             var anchorsChanged = context.MessageName == "Create" ||
                                  anchorAttrs.Any(a => HasAttributeChanged(target, a));
@@ -132,15 +138,17 @@ namespace Checkbook.Plugins.Validation
                 throw new InvalidPluginExecutionException(
                     "A state-rollup spend plan row requires a Fiscal Year.");
 
-            var legacyPrio = GetEffectiveEntityReference(target, preImage, SpendPlanAttributes.Prioritization);
             var legacyReq = GetEffectiveEntityReference(target, preImage, SpendPlanAttributes.Requirement);
             var legacyUfr = GetEffectiveEntityReference(target, preImage, SpendPlanAttributes.UnfundedRequest);
-            // Mode Central legitimately uses book_requirementfunding, never the
-            // legacy book_requirement lookup.
-            if (legacyPrio != null || legacyUfr != null || legacyReq != null)
+            // book_prioritization is now stamped on FY27 Breakout rows as an
+            // informational lookup (State views read it), so it is no longer a
+            // legacy-only marker. book_requirement / book_unfundedrequest stay
+            // FY26-only; Mode Central legitimately uses book_requirementfunding,
+            // never the legacy book_requirement lookup.
+            if (legacyUfr != null || legacyReq != null)
                 throw new InvalidPluginExecutionException(
-                    "FY27 spend plan rows must leave the legacy Prioritization / Requirement / " +
-                    "Unfunded Request lookups empty — those are reserved for FY26 spend plans.");
+                    "FY27 spend plan rows must leave the legacy Requirement and Unfunded " +
+                    "Request lookups empty — those are reserved for FY26 spend plans.");
         }
 
         // ── Resolved anchor context ──────────────────────────────────────────
@@ -152,6 +160,8 @@ namespace Checkbook.Plugins.Validation
             public int? FiscalYear;
             public string Label;
             public List<ConditionExpression> AnchorConditions; // identifies sibling rows of the same anchor
+            public EntityReference PrioRef;                    // Breakout: the PF's Prioritization (informational stamp)
+            public EntityReference LoaRef;                     // Breakout: the PF's Line of Accounting (informational stamp)
         }
 
         private Resolved Resolve(
@@ -166,17 +176,21 @@ namespace Checkbook.Plugins.Validation
                     var e = service.Retrieve(EntityNames.PrioritizationFunding, pf.Id, new ColumnSet(
                         PrioritizationFundingAttributes.FundedAmount,
                         PrioritizationFundingAttributes.Prioritization,
+                        PrioritizationFundingAttributes.LineOfAccounting,
                         PrioritizationFundingAttributes.Name));
+                    var prioRef = e.GetAttributeValue<EntityReference>(PrioritizationFundingAttributes.Prioritization);
                     return new Resolved
                     {
                         Mode = mode,
                         Funded = NumericHelper.ToDecimal(e.GetAttributeValue<object>(PrioritizationFundingAttributes.FundedAmount), 0m),
-                        FiscalYear = ResolveFyViaPrio(service, e.GetAttributeValue<EntityReference>(PrioritizationFundingAttributes.Prioritization)),
+                        FiscalYear = ResolveFyViaPrio(service, prioRef),
                         Label = e.GetAttributeValue<string>(PrioritizationFundingAttributes.Name) ?? "this Prioritization Funding row",
                         AnchorConditions = new List<ConditionExpression>
                         {
                             new ConditionExpression(SpendPlanAttributes.PrioritizationFunding, ConditionOperator.Equal, pf.Id),
                         },
+                        PrioRef = prioRef,
+                        LoaRef = e.GetAttributeValue<EntityReference>(PrioritizationFundingAttributes.LineOfAccounting),
                     };
                 }
                 case Mode.Central:
@@ -230,6 +244,24 @@ namespace Checkbook.Plugins.Validation
                     SpendPlanAttributes.Sag, SpendPlanAttributes.FiscalYear,
                 };
             }
+        }
+
+        // ── Stamping ─────────────────────────────────────────────────────────
+
+        /// <summary>
+        /// Copies the anchor Prioritization and its Line of Accounting onto a new
+        /// Breakout spend plan row (PreOperation Create — writes into Target).
+        /// Skips either field if the caller already supplied it, so an explicit
+        /// value is never overwritten.
+        /// </summary>
+        private static void StampBreakoutContext(ITracingService tracing, Entity target, Resolved resolved)
+        {
+            if (resolved.PrioRef != null && !target.Contains(SpendPlanAttributes.Prioritization))
+                target[SpendPlanAttributes.Prioritization] = resolved.PrioRef;
+            if (resolved.LoaRef != null && !target.Contains(SpendPlanAttributes.LineOfAccountingLOA))
+                target[SpendPlanAttributes.LineOfAccountingLOA] = resolved.LoaRef;
+            tracing.Trace(
+                $"Stamped Breakout context: prio={resolved.PrioRef?.Id}, loa={resolved.LoaRef?.Id}.");
         }
 
         // ── Rules ────────────────────────────────────────────────────────────

@@ -122,7 +122,7 @@ The Itemized-Detail Fund Center + FY27 spend plan work (source in
 | Item | Change |
 |---|---|
 | `book_itemizeddetails` (existing) | Add optional lookup `book_fundcenter` → `book_fundcenter`. Blank = state-level FC. Read by the ItemizedDetailsGrid PCF and the FY27 spend plan grid; no plugin requires it. |
-| `book_spendplan` (existing) | Add lookup `book_prioritizationfunding` → `book_prioritizationfunding` (FY27 row anchor; **leave `book_prioritization` empty on FY27 rows** — the `book_uniquestatespendplan` alternate key allows only one legacy row per Prio), lookup `book_fundcenter` → `book_fundcenter` (null on per-RF rollup rows), Choice `book_rowtype` (**Planned** = `0`, **Actual** = `1`), decimal twins `book_newoctober` … `book_newseptember` (12 columns, 2 decimals), calculated decimal `book_newspendplantotal` (sum of the 12 twins), and extend the `book_spendplantype` formula to treat PF-anchored rows as "Prioritization". |
+| `book_spendplan` (existing) | Add lookup `book_prioritizationfunding` → `book_prioritizationfunding` (FY27 row anchor). `book_prioritization` + `book_lineofaccountingloa` are now **stamped** on FY27 Breakout rows by `SpendPlanFY27Validator` (informational, for State views), so **delete** the single-column `book_uniquestatespendplan` alternate key — a Prio now has many rows (one per PF × FC × Row Type). Also: lookup `book_fundcenter` → `book_fundcenter` (null on per-RF rollup rows), Choice `book_rowtype` (**Planned** = `0`, **Actual** = `1`), decimal twins `book_newoctober` … `book_newseptember` (12 columns, 2 decimals), calculated decimal `book_newspendplantotal` (sum of the 12 twins), and extend the `book_spendplantype` formula to treat PF-anchored rows as "Prioritization". |
 
 Register the spend plan validator only after the `book_spendplan` changes
 are published.
@@ -167,6 +167,7 @@ Register the mode plugins only after these `book_spendplan` /
 | `book_DistributionHoldingFundCenter`  | Text | `GenerateDistributionsPlugin` | See [`Distributions/REGISTRATION.md`](Distributions/REGISTRATION.md). The A18 record's GUID. |
 | `book_TurnInCreditOPR`                | Text | `TurnInApprovalPlugin` (via `TurnInLOAResolver`)         | See [`TurnIns/REGISTRATION.md`](TurnIns/REGISTRATION.md). Required for FY27+ Turn-Ins. |
 | `book_LockManualFundedEdits`          | Yes/No | `PrioritizationFundedAmountLock` + `RequirementFundingFundedAmountLock`; written by `ToggleFundedAmountLockPlugin` | See [`../docs/FundedAmountLock-Setup.md`](../docs/FundedAmountLock-Setup.md). Ships default `false`; toggled via the Admin Center button. Blocks manual **reductions** only — increases stay allowed. |
+| `book_LockSpendPlanEdits`             | Yes/No | `SpendPlanEditLockGuard`; written by `ToggleSpendPlanLockPlugin` | See [`../docs/SpendPlanLock-Setup.md`](../docs/SpendPlanLock-Setup.md). Ships default `false`; toggled via the Admin Center button. Blocks **all** direct user create/update/delete of `book_spendplan`; system writes (roll-ups, cascades) pass. |
 | `book_activeplanningfy`               | Text (integer) | `RequirementSpendPlanModeCascade`, `RequirementFundingLoaCascade`, `SpendPlanImmutabilityGuard`, `FiscalYearHelper` | The open planning FY (calendar year, e.g. `2027`). FYs below it are frozen. **Optional** — when unset, `FiscalYearHelper` falls back to the computed federal FY (Oct-start). |
 
 ---
@@ -178,6 +179,7 @@ Register the mode plugins only after these `book_spendplan` /
 | `book_GenerateLOAs`                 | `Checkbook.Plugins.LOAs.LOAGenerator`                            | See [`LOAs/REGISTRATION.md`](LOAs/REGISTRATION.md). |
 | `book_GenerateDistributions`        | `Checkbook.Plugins.Distributions.GenerateDistributionsPlugin`    | See [`Distributions/REGISTRATION.md`](Distributions/REGISTRATION.md). |
 | `book_ToggleFundedAmountLock`       | `Checkbook.Plugins.Admin.ToggleFundedAmountLockPlugin`           | Global, no inputs, output `IsLocked` (Boolean). Full spec in [`../docs/FundedAmountLock-Setup.md`](../docs/FundedAmountLock-Setup.md). |
+| `book_ToggleSpendPlanLock`          | `Checkbook.Plugins.Admin.ToggleSpendPlanLockPlugin`             | Global, no inputs, output `IsLocked` (Boolean). Full spec in [`../docs/SpendPlanLock-Setup.md`](../docs/SpendPlanLock-Setup.md). |
 
 The Custom API record's **Plugin Type** field auto-wires the handler; no
 separate SDK Message Processing Step is required beyond setting that field on
@@ -217,8 +219,9 @@ Mode is **Synchronous** unless explicitly noted Async.
 > the Realignment/Swap cross-state guards (all gated on `context.UserId`, so
 > they failed open). Fixed 2026-09-17: `TurnInValidator`, `RealignmentValidator`,
 > and `SwapValidator` now authorize on `context.InitiatingUserId`. Newer plugins
-> (`DeactivationRoleGuard`, `ToggleFundedAmountLockPlugin`, `CastVotePlugin`)
-> already follow this. **When adding a role/BU check, use `InitiatingUserId`.**
+> (`DeactivationRoleGuard`, `ToggleFundedAmountLockPlugin`,
+> `ToggleSpendPlanLockPlugin`, `CastVotePlugin`) already follow this.
+> **When adding a role/BU check, use `InitiatingUserId`.**
 
 ---
 
@@ -487,7 +490,9 @@ Guards FY27+ spend plan rows across all three anchor modes — **Breakout**
 + `book_rowtype`), and **State-Rollup** (`book_state`+`book_fund`+`book_sag` +
 `book_newfiscalyear`). Legacy rows (Prio / Requirement / UFR anchored, no FY27
 marker) pass through untouched. Enforces: (1) **anchor exclusivity** — exactly
-one anchor, and none of the legacy lookups; (2) **one active row per anchor +
+one anchor, and none of the legacy `book_requirement` / `book_unfundedrequest`
+lookups (`book_prioritization` is now **allowed** on FY27 rows as a stamp — see
+below); (2) **one active row per anchor +
 Row Type** (Breakout also keys on Fund Center); (3) **Planned cap** — active
 Planned rows for the anchor may not exceed funded (Breakout vs PF funded,
 Central vs RF `book_newfundedamount`, State-Rollup vs the row's stored
@@ -498,8 +503,14 @@ months (FY resolved per anchor: Prio for Breakout, RF for Central, explicit
 
 | # | Message | Primary entity   | Stage          | Mode | Filtering attributes | Notes |
 |---|---------|------------------|----------------|------|----------------------|-------|
-| 1 | Create  | `book_spendplan` | Pre-Operation  | Sync | *(none)*             | Validates new FY27 rows; legacy creates return immediately. |
+| 1 | Create  | `book_spendplan` | Pre-Operation  | Sync | *(none)*             | Validates new FY27 rows; legacy creates return immediately. **Also stamps** `book_prioritization` + `book_lineofaccountingloa` onto Breakout rows from the anchor PF (informational, for State views). |
 | 2 | Update  | `book_spendplan` | Pre-Operation  | Sync | `book_prioritizationfunding, book_requirementfunding, book_state, book_fund, book_sag, book_newfiscalyear, book_fundcenter, book_rowtype, book_fundedamount, book_prioritization, book_newoctober, book_newnovember, book_newdecember, book_newjanuary, book_newfebruary, book_newmarch, book_newapril, book_newmay, book_newjune, book_newjuly, book_newaugust, book_newseptember` | **Requires PreImage** (same attributes plus `statecode`). |
+
+> **FY27 Prio/LOA stamp** — a Prioritization now has **many** spend plan rows
+> (one per PF × Fund Center × Row Type); the old single-column
+> `book_uniquestatespendplan` alternate key (on `book_prioritization`) must be
+> **deleted** in the Maker Portal. FY27 uniqueness is enforced by rule (2) above.
+> See [`../docs/SpendPlan-Access-and-Stamping.md`](../docs/SpendPlan-Access-and-Stamping.md).
 
 ### `Checkbook.Plugins.Validation.SpendPlanImmutabilityGuard`
 
@@ -514,6 +525,21 @@ related records; no pre-image needed.
 |---|---------|-----------------------------|----------------|------|----------------------|-------|
 | 1 | Update  | `book_prioritizationfunding`| Pre-Operation  | Sync | `book_centrallymanaged, book_spendplanmode, book_lineofaccounting` | Blocks stamp edits on closed-FY PFs. |
 | 2 | Update  | `book_spendplan`            | Pre-Operation  | Sync | `book_prioritizationfunding, book_requirementfunding, book_state, book_fund, book_sag, book_newfiscalyear, book_fundcenter, book_rowtype, book_fundedamount, book_newoctober, book_newnovember, book_newdecember, book_newjanuary, book_newfebruary, book_newmarch, book_newapril, book_newmay, book_newjune, book_newjuly, book_newaugust, book_newseptember` | Blocks planning edits on closed-FY rows. |
+
+### `Checkbook.Plugins.Validation.SpendPlanEditLockGuard`
+
+Admin edit-lock. When `book_LockSpendPlanEdits` is on, blocks direct user
+Create / Update / Delete of `book_spendplan`. Exits immediately when a
+`ParentContext` is present, so roll-ups, cascades, and the future automated
+Actual process pass through; a top-level Update touching only `book_fundedamount`
+(the roll-up field) is also allowed. Toggled by `ToggleSpendPlanLockPlugin`.
+Full setup in [`../docs/SpendPlanLock-Setup.md`](../docs/SpendPlanLock-Setup.md).
+
+| # | Message | Primary entity   | Stage         | Mode | Filtering attributes | Notes |
+|---|---------|------------------|---------------|------|----------------------|-------|
+| 1 | Create  | `book_spendplan` | Pre-Operation | Sync | *(none)* | **Rank 5** (before `SpendPlanFY27Validator`). No image. |
+| 2 | Update  | `book_spendplan` | Pre-Operation | Sync | *(none)* | **Rank 5**. No image. |
+| 3 | Delete  | `book_spendplan` | Pre-Operation | Sync | *(none)* | **Rank 5**. No image. |
 
 ### `Checkbook.Plugins.Validation.RequirementBreakoutConsistencyGuard`
 

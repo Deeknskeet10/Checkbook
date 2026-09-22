@@ -39,6 +39,9 @@ const SPEND_PLAN_ENTITY = "book_spendplan";
 const PRIORITIZATION_ENTITY = "book_prioritization";
 const ITEMIZED_DETAILS_ENTITY = "book_itemizeddetails";
 
+/** Admin edit-lock toggle; mirrors SpendPlanEditLockGuard / book_spendPlanLock.js. */
+const LOCK_ENV_VAR = "book_LockSpendPlanEdits";
+
 const FV = "@OData.Community.Display.V1.FormattedValue";
 
 /** Federal FY months in order, with their FY27+ decimal column names. */
@@ -314,6 +317,41 @@ export const PrioritizationSpendPlanGridApp: React.FC<
   const [loadError, setLoadError] = React.useState<string | null>(null);
   const [reloadKey, setReloadKey] = React.useState(0);
 
+  // ----- Admin edit-lock -----
+  const [locked, setLocked] = React.useState(false);
+
+  React.useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      try {
+        const res = await webAPI.retrieveMultipleRecords(
+          "environmentvariabledefinition",
+          `?$select=defaultvalue&$filter=schemaname eq '${LOCK_ENV_VAR}'` +
+            "&$expand=environmentvariabledefinition_environmentvariablevalue($select=value)"
+        );
+        if (cancelled) return;
+        const def = res.entities[0];
+        if (!def) {
+          setLocked(false);
+          return;
+        }
+        const values =
+          (def.environmentvariabledefinition_environmentvariablevalue as
+            | { value?: string }[]
+            | undefined) ?? [];
+        const raw = values.length ? values[0].value : def.defaultvalue;
+        const v = typeof raw === "string" ? raw.trim().toLowerCase() : "";
+        setLocked(v === "true" || v === "yes" || v === "1");
+      } catch {
+        // Lock state is advisory in the UI; the plugin guard is the real gate.
+        if (!cancelled) setLocked(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [webAPI, reloadKey]);
+
   React.useEffect(() => {
     if (!prioritizationId) return;
     let cancelled = false;
@@ -449,7 +487,7 @@ export const PrioritizationSpendPlanGridApp: React.FC<
   const fiscalYear = prioInfo?.fiscalYear ?? null;
   const isFy27Plus = fiscalYear !== null && fiscalYear >= MIN_FISCAL_YEAR;
   const isFinalApproved = prioInfo?.approvalStatus === APPROVAL_FINAL;
-  const canEdit = !isDisabled && isFy27Plus && isFinalApproved;
+  const canEdit = !isDisabled && isFy27Plus && isFinalApproved && !locked;
 
   /** True when the given FY month is fully in the past. */
   const monthPassed = React.useCallback(
@@ -659,8 +697,10 @@ export const PrioritizationSpendPlanGridApp: React.FC<
     idx: number
   ): React.ReactNode => {
     const passed = monthPassed(idx);
-    const editable =
-      canEdit && (rowType === ROW_TYPE_PLANNED ? !passed : passed);
+    // Only Planned cells are user-editable, and only for months that have not
+    // yet passed. Actual is populated by an automated process, so it is always
+    // read-only here — we just display whatever the process has written.
+    const editable = canEdit && rowType === ROW_TYPE_PLANNED && !passed;
     if (!editable) {
       const value = effectiveCell(pfId, fcKey, rowType, idx);
       const locked =
@@ -857,6 +897,12 @@ export const PrioritizationSpendPlanGridApp: React.FC<
             {fiscalYear === null
               ? "Set the Fiscal Year on this Prioritization to build a Spend Plan."
               : `FY ${fiscalYear} Prioritizations use the existing Spend Plan page; this grid covers FY ${MIN_FISCAL_YEAR} and later.`}
+          </div>
+        )}
+        {locked && (
+          <div className={`${styles.banner} ${styles.bannerWarn}`}>
+            Spend plans are locked by a Checkbook Administrator — entry is
+            read-only until the lock is lifted.
           </div>
         )}
         {!loading && isFy27Plus && !isFinalApproved && (

@@ -255,7 +255,7 @@
     <RolePrivilege name="prvReadbook_FundingTrack" level="Global" />
     <RolePrivilege name="prvReadbook_GFEBSOBSDOC" level="Deep" />
     <RolePrivilege name="prvReadbook_Item" level="Global" />
-    <RolePrivilege name="prvReadbook_ItemizedDetails" level="Local" />
+    <RolePrivilege name="prvReadbook_ItemizedDetails" level="Deep" />
     <RolePrivilege name="prvReadbook_Ledger" level="Global" />
     <RolePrivilege name="prvReadbook_LIN" level="Global" />
     <RolePrivilege name="prvReadbook_LocalityPay" level="Global" />
@@ -267,8 +267,8 @@
     <RolePrivilege name="prvReadbook_PayTable" level="Global" />
     <RolePrivilege name="prvReadbook_PG" level="Global" />
     <RolePrivilege name="prvReadbook_PointofContact" level="Global" />
-    <RolePrivilege name="prvReadbook_Prioritization" level="Local" />
-    <RolePrivilege name="prvReadbook_PrioritizationFunding" level="Local" />
+    <RolePrivilege name="prvReadbook_Prioritization" level="Deep" />
+    <RolePrivilege name="prvReadbook_PrioritizationFunding" level="Deep" />
     <RolePrivilege name="prvReadbook_PriorityBIN" level="Global" />
     <RolePrivilege name="prvReadbook_QuantityType" level="Global" />
     <RolePrivilege name="prvReadbook_Realignments" level="Local" />
@@ -279,7 +279,7 @@
     <RolePrivilege name="prvReadbook_requirementfundingvalidatefunding" level="Global" />
     <RolePrivilege name="prvReadbook_Requirements" level="Global" />
     <RolePrivilege name="prvReadbook_SAG" level="Global" />
-    <RolePrivilege name="prvReadbook_SpendPlan" level="Local" />
+    <RolePrivilege name="prvReadbook_SpendPlan" level="Deep" />
     <RolePrivilege name="prvReadbook_State" level="Global" />
     <RolePrivilege name="prvReadbook_TDC" level="Global" />
     <RolePrivilege name="prvReadbook_Ticket" level="Global" />

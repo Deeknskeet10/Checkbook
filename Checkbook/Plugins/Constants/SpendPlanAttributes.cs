@@ -2,11 +2,12 @@ namespace Checkbook.Plugins.Constants
 {
     /// <summary>
     /// Attribute schema names for book_spendplan entity.
-    /// FY27+ rows anchor on book_prioritizationfunding (book_prioritization
-    /// stays empty — the book_uniquestatespendplan alternate key allows only
-    /// one legacy row per Prio) and use the decimal month twins; legacy rows
-    /// keep the float months and the Prioritization / Requirement / UFR
-    /// lookups.
+    /// FY27+ rows anchor on book_prioritizationfunding and use the decimal
+    /// month twins; book_prioritization is now also stamped on FY27 rows as an
+    /// informational lookup (many rows per Prio — one per PF/FC/RowType — since
+    /// the single-Prio book_uniquestatespendplan alternate key was retired).
+    /// Legacy (FY26) rows keep the float months and the Prioritization /
+    /// Requirement / UFR lookups as their anchor.
     /// </summary>
     public static class SpendPlanAttributes
     {
@@ -23,6 +24,13 @@ namespace Checkbook.Plugins.Constants
         public const string PrioritizationFunding = "book_prioritizationfunding";
         public const string FundCenter = "book_fundcenter"; // null on rollup rows
         public const string RowType = "book_rowtype";       // 0 Planned, 1 Actual
+
+        /// <summary>
+        /// Lookup to book_lineofaccountingloa. Informational stamp copied from
+        /// the anchor (PF.book_lineofaccounting) on FY27 Breakout rows so State
+        /// users can pull the LOA off the spend plan row without walking the PF.
+        /// </summary>
+        public const string LineOfAccountingLOA = "book_lineofaccountingloa";
 
         // FY27 Mode-C (State-Rollup) anchor — a (State, Fund, SAG) bucket that
         // aggregates across every distributed non-breakout PF in the state.
