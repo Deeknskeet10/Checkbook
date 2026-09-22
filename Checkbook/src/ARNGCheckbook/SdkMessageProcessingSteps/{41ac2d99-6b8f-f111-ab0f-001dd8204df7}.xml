@@ -1,0 +1,30 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<SdkMessageProcessingStep Name="Checkbook.Plugins.Validation.SpendPlanValidator: Update of book_spendplan" SdkMessageProcessingStepId="{41ac2d99-6b8f-f111-ab0f-001dd8204df7}" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <SdkMessageId>20bebb1b-ea3e-db11-86a7-000a3a5473e8</SdkMessageId>
+  <PluginTypeName>Checkbook.Plugins.Validation.SpendPlanValidator, Checkbook_Plugins, Version=1.1.0.0, Culture=neutral, PublicKeyToken=041fde141b612e28</PluginTypeName>
+  <PluginTypeId>f9a73f32-8e2c-41ae-9586-7e3968bf19d6</PluginTypeId>
+  <PrimaryEntity>book_spendplan</PrimaryEntity>
+  <AsyncAutoDelete>0</AsyncAutoDelete>
+  <Description>Checkbook.Plugins.Validation.SpendPlanValidator: Update of book_spendplan</Description>
+  <FilteringAttributes>book_newapril,book_newaugust,book_newdecember,book_newfebruary,book_newfiscalyear,book_fund,book_fundcenter,book_fundedamount,book_newjanuary,book_newjuly,book_newjune,book_newmarch,book_newmay,book_newnovember,book_newoctober,book_prioritization,book_prioritizationfunding,book_requirementfunding,book_rowtype,book_sag,book_newseptember,book_state,statecode</FilteringAttributes>
+  <ImpersonatingUserIdName>Microsoft Flow CDS Integration Service DoD</ImpersonatingUserIdName>
+  <InvocationSource>1</InvocationSource>
+  <Mode>0</Mode>
+  <Rank>1</Rank>
+  <EventHandlerTypeCode>4602</EventHandlerTypeCode>
+  <Stage>20</Stage>
+  <IsCustomizable>1</IsCustomizable>
+  <IsHidden>0</IsHidden>
+  <SupportedDeployment>0</SupportedDeployment>
+  <IntroducedVersion>1.0</IntroducedVersion>
+  <SdkMessageProcessingStepImages>
+    <SdkMessageProcessingStepImage Name="PreImage">
+      <SdkMessageProcessingStepImageId>{7b1f1eba-6b8f-f111-ab0f-001dd8204135}</SdkMessageProcessingStepImageId>
+      <Attributes>book_newapril,book_newaugust,book_newdecember,book_newfebruary,book_newfiscalyear,book_fund,book_fundcenter,book_fundedamount,book_newjanuary,book_newjuly,book_newjune,book_newmarch,book_newmay,book_newnovember,book_newoctober,book_prioritization,book_prioritizationfunding,book_requirementfunding,book_rowtype,book_sag,book_newseptember,book_state,statecode</Attributes>
+      <EntityAlias>PreImage</EntityAlias>
+      <ImageType>0</ImageType>
+      <MessagePropertyName>Target</MessagePropertyName>
+      <IsCustomizable>1</IsCustomizable>
+    </SdkMessageProcessingStepImage>
+  </SdkMessageProcessingStepImages>
+</SdkMessageProcessingStep>

@@ -81,10 +81,11 @@
                         </labels>
                         <control id="book_appropriation" classid="{3EF39988-22BB-4F0B-BBBE-64B5A3748AEE}" datafieldname="book_appropriation" disabled="false" />
                       </cell>
-                      <cell locklevel="0" id="{17ca3f4f-e635-4d57-bdfb-763776a44057}" showlabel="false">
+                      <cell id="{776bc036-d4de-492e-b58d-5f90049a01a3}" locklevel="0" colspan="1" rowspan="1">
                         <labels>
-                          <label description="" languagecode="1033" />
+                          <label description="Category" languagecode="1033" />
                         </labels>
+                        <control id="book_category" classid="{3EF39988-22BB-4F0B-BBBE-64B5A3748AEE}" datafieldname="book_category" disabled="false" />
                       </cell>
                     </row>
                     <row>

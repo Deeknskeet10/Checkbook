@@ -26,6 +26,6 @@
   <IntroducedVersion>1.0</IntroducedVersion>
   <CdsDependencies>{"cdsdependencies":[{"logicalname":"book_distributions","componenttype":1}]}</CdsDependencies>
   <IsCustomizable>1</IsCustomizable>
-  <BackgroundImageUri>/CanvasApps/book_arngcheckbookledgerdefaultcommandlibrary18065_BackgroundImageUri</BackgroundImageUri>
-  <DocumentUri>/CanvasApps/book_arngcheckbookledgerdefaultcommandlibrary21298_DocumentUri.msapp</DocumentUri>
+  <BackgroundImageUri>/CanvasApps/book_arngcheckbookledgerdefaultcommandlibrary62672_BackgroundImageUri</BackgroundImageUri>
+  <DocumentUri>/CanvasApps/book_arngcheckbookledgerdefaultcommandlibrary47142_DocumentUri.msapp</DocumentUri>
 </CanvasApp>

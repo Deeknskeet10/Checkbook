@@ -6,7 +6,7 @@
   <PrimaryEntity>book_prioritizationfunding</PrimaryEntity>
   <AsyncAutoDelete>0</AsyncAutoDelete>
   <Description>Update of Prioritization Funding</Description>
-  <FilteringAttributes>book_fundedamount,book_prioritization,statecode,book_validatedamount</FilteringAttributes>
+  <FilteringAttributes>book_fundedamount,book_prioritization,book_requirementfunding,statecode,book_validatedamount</FilteringAttributes>
   <ImpersonatingUserIdName>Microsoft Flow CDS Integration Service DoD</ImpersonatingUserIdName>
   <InvocationSource>1</InvocationSource>
   <Mode>0</Mode>
@@ -20,7 +20,7 @@
   <SdkMessageProcessingStepImages>
     <SdkMessageProcessingStepImage Name="PreImage">
       <SdkMessageProcessingStepImageId>{f6ebafe2-6e66-f111-a824-001dd8204df7}</SdkMessageProcessingStepImageId>
-      <Attributes>book_fundedamount,book_prioritization,book_validatedamount</Attributes>
+      <Attributes>book_fundedamount,book_prioritization,book_requirementfunding,statecode,book_validatedamount</Attributes>
       <EntityAlias>PreImage</EntityAlias>
       <ImageType>0</ImageType>
       <MessagePropertyName>Target</MessagePropertyName>

@@ -1,0 +1,16 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<WebResource xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <WebResourceId>{57fd31de-04a7-f111-b8de-001dd8201529}</WebResourceId>
+  <Name>book_stateSpendPlan</Name>
+  <DisplayName>State Spend Plan Rollup</DisplayName>
+  <Description>Rolls-up Fund/SAG for non-breakout Prioritizations per State</Description>
+  <LanguageCode>0</LanguageCode>
+  <WebResourceType>1</WebResourceType>
+  <IntroducedVersion>1.11.0.111</IntroducedVersion>
+  <IsEnabledForMobileClient>0</IsEnabledForMobileClient>
+  <IsAvailableForMobileOffline>0</IsAvailableForMobileOffline>
+  <IsCustomizable>1</IsCustomizable>
+  <CanBeDeleted>1</CanBeDeleted>
+  <IsHidden>0</IsHidden>
+  <FileName>/WebResources/book_stateSpendPlan57FD31DE-04A7-F111-B8DE-001DD8201529</FileName>
+</WebResource>

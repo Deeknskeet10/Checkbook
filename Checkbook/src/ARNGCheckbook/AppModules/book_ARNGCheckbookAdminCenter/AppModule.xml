@@ -10,6 +10,8 @@
   <ClientType>4</ClientType>
   <NavigationType>0</NavigationType>
   <AppModuleComponents>
+    <AppModuleComponent type="1" schemaName="book_country" />
+    <AppModuleComponent type="1" schemaName="book_fundedprogram" />
     <AppModuleComponent type="1" schemaName="book_item" />
     <AppModuleComponent type="1" schemaName="book_itemizeddetails" />
     <AppModuleComponent type="1" schemaName="book_prioritization" />

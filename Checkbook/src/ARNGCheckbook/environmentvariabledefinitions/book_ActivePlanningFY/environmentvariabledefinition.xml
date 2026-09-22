@@ -1,0 +1,13 @@
+<environmentvariabledefinition schemaname="book_ActivePlanningFY">
+  <description default="The open planning FY as a plain integer string">
+    <label description="The open planning FY as a plain integer string" languagecode="1033" />
+  </description>
+  <displayname default="ARNG CHeckbook - Active Planning FY">
+    <label description="ARNG CHeckbook - Active Planning FY" languagecode="1033" />
+  </displayname>
+  <introducedversion>1.11.0.111</introducedversion>
+  <iscustomizable>1</iscustomizable>
+  <isrequired>0</isrequired>
+  <secretstore>0</secretstore>
+  <type>100000000</type>
+</environmentvariabledefinition>

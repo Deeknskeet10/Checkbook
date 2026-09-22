@@ -34,6 +34,7 @@
           </Titles>
         </SubArea>
         <SubArea Id="NewSubArea_749048c6" Entity="book_state" Client="All,Outlook,OutlookLaptopClient,OutlookWorkstationClient,Web" AvailableOffline="true" PassParams="false" Sku="All,OnPremise,Live,SPLA" />
+        <SubArea Id="subarea_686ccd55" Icon="/_imgs/imagestrips/transparent_spacer.gif" Entity="book_country" Client="All,Outlook,OutlookLaptopClient,OutlookWorkstationClient,Web" AvailableOffline="true" PassParams="false" Sku="All,OnPremise,Live,SPLA" />
       </Group>
       <Group Id="NewGroup_796740bf8" ResourceId="SitemapDesigner.NewGroup" IsProfile="false" ToolTipResourseId="SitemapDesigner.Unknown">
         <Titles>
@@ -87,6 +88,7 @@
           <Title LCID="1033" Title="Funding Structure" />
         </Titles>
         <SubArea Id="NewSubArea_2e44f3b3" Entity="book_fund" Client="All,Outlook,OutlookLaptopClient,OutlookWorkstationClient,Web" AvailableOffline="true" PassParams="false" Sku="All,OnPremise,Live,SPLA" />
+        <SubArea Id="subarea_428581f7" Icon="/_imgs/imagestrips/transparent_spacer.gif" Entity="book_fundedprogram" Client="All,Outlook,OutlookLaptopClient,OutlookWorkstationClient,Web" AvailableOffline="true" PassParams="false" Sku="All,OnPremise,Live,SPLA" />
         <SubArea Id="NewSubArea_1a15c0ff" Entity="book_pg" Client="All,Outlook,OutlookLaptopClient,OutlookWorkstationClient,Web" AvailableOffline="true" PassParams="false" Sku="All,OnPremise,Live,SPLA">
           <Titles>
             <Title LCID="1033" Title="PGs" />

@@ -4,6 +4,7 @@
   <Name>book_reqDetailFieldRequired</Name>
   <DisplayName>reqDetailFieldRequired</DisplayName>
   <Description>Makes TDC required IF an Item is selected that is related to TDCs</Description>
+  <LanguageCode>0</LanguageCode>
   <WebResourceType>3</WebResourceType>
   <IntroducedVersion>1.11.0.54</IntroducedVersion>
   <IsEnabledForMobileClient>0</IsEnabledForMobileClient>

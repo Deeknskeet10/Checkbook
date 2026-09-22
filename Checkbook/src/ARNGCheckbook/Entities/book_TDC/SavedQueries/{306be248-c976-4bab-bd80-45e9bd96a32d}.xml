@@ -13,6 +13,7 @@
           <cell name="book_name" width="118" />
           <cell name="book_tdcname" width="105" />
           <cell name="book_sag" width="100" />
+          <cell name="book_pg" width="100" />
           <cell name="book_mdep" width="100" />
           <cell name="book_gfebsio" width="102" />
           <cell name="book_appropriation" width="120" />
@@ -38,6 +39,7 @@
           <attribute name="book_mdep" />
           <attribute name="book_sag" />
           <attribute name="book_tdcname" />
+          <attribute name="book_pg" />
         </entity>
       </fetch>
     </fetchxml>

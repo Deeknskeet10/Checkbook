@@ -6,7 +6,7 @@
   <PrimaryEntity>book_turnin</PrimaryEntity>
   <AsyncAutoDelete>0</AsyncAutoDelete>
   <Description>Checkbook.Plugins.TurnIns.TurnInAmountCalculator: Update of book_turnin</Description>
-  <FilteringAttributes>book_newamount,book_fund,book_fundcenter,book_origin,book_pg</FilteringAttributes>
+  <FilteringAttributes>book_afpoverridden,book_allotmentoverridden,book_newamount,book_fund,book_fundcenter,book_origin,book_pg</FilteringAttributes>
   <InvocationSource>0</InvocationSource>
   <Mode>0</Mode>
   <Rank>1</Rank>
@@ -19,7 +19,7 @@
   <SdkMessageProcessingStepImages>
     <SdkMessageProcessingStepImage Name="PreImage">
       <SdkMessageProcessingStepImageId>{3cccc242-7366-f111-a824-001dd8204135}</SdkMessageProcessingStepImageId>
-      <Attributes>book_newamount,book_fund,book_fundcenter,book_origin,book_pg</Attributes>
+      <Attributes>book_afpoverridden,book_allotmentoverridden,book_newamount,book_fund,book_fundcenter,book_origin,book_pg</Attributes>
       <EntityAlias>PreImage</EntityAlias>
       <ImageType>0</ImageType>
       <MessagePropertyName>Target</MessagePropertyName>

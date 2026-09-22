@@ -1,0 +1,12 @@
+<customapirequestparameter uniquename="NextToken">
+  <description default="Supports batching on Generate Distributions">
+    <label description="Supports batching on Generate Distributions" languagecode="1033" />
+  </description>
+  <displayname default="NextToken">
+    <label description="NextToken" languagecode="1033" />
+  </displayname>
+  <iscustomizable>1</iscustomizable>
+  <isoptional>1</isoptional>
+  <name>NextToken</name>
+  <type>10</type>
+</customapirequestparameter>

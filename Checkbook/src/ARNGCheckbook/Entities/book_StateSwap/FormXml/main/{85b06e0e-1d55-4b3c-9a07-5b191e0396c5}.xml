@@ -1,0 +1,358 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<forms xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <systemform>
+    <formid>{85b06e0e-1d55-4b3c-9a07-5b191e0396c5}</formid>
+    <IntroducedVersion>1.11.0.76</IntroducedVersion>
+    <FormPresentation>1</FormPresentation>
+    <FormActivationState>1</FormActivationState>
+    <form headerdensity="HighWithControls">
+      <tabs>
+        <tab verticallayout="true" id="{92a24fd1-0879-4500-825d-1abfe80bdcad}" IsUserDefined="1">
+          <labels>
+            <label description="General" languagecode="1033" />
+          </labels>
+          <columns>
+            <column width="100%">
+              <sections>
+                <section showlabel="false" showbar="false" IsUserDefined="0" id="{a3e224f0-7751-4c77-a0fd-30c48085fc88}">
+                  <labels>
+                    <label description="General" languagecode="1033" />
+                  </labels>
+                  <rows>
+                    <row>
+                      <cell id="{a90e32cc-5ae2-4da1-9179-6651443f9448}" visible="true" showlabel="false">
+                        <labels>
+                          <label description="Name" languagecode="1033" />
+                        </labels>
+                        <control id="book_name" classid="{F9A8A302-114E-466A-B582-6771B2AE0D92}" datafieldname="book_name" uniqueid="{db6d6c7b-5763-485f-ad59-fa34d5d78eb0}" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{e12e0dbd-efbc-4643-87d4-280863e39723}" visible="false">
+                        <labels>
+                          <label description="Owner" languagecode="1033" />
+                        </labels>
+                        <control id="ownerid" classid="{270BD3DB-D9AF-4782-9025-509E298DEC0A}" datafieldname="ownerid" />
+                      </cell>
+                    </row>
+                  </rows>
+                </section>
+                <section name="null_section_5" id="5e6b6f4a-c9a9-4c37-8b3a-a1716a01b26d" IsUserDefined="0" locklevel="0" showlabel="true" showbar="false" layout="varwidth" celllabelalignment="Left" celllabelposition="Left" columns="111" labelwidth="115">
+                  <labels>
+                    <label description="BE Approval" languagecode="1033" />
+                  </labels>
+                  <rows>
+                    <row>
+                      <cell locklevel="0" id="{12d0f59d-c2e1-4060-9869-261900fb2d9a}">
+                        <labels>
+                          <label description="" languagecode="1033" />
+                        </labels>
+                      </cell>
+                      <cell locklevel="0" id="{34ef34c5-c020-4e59-9ba4-0c1860d4a942}">
+                        <labels>
+                          <label description="" languagecode="1033" />
+                        </labels>
+                      </cell>
+                      <cell locklevel="0" id="{d15f3ab3-6e84-4266-8886-5451770bdc95}">
+                        <labels>
+                          <label description="" languagecode="1033" />
+                        </labels>
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{3806a6ff-37cf-468e-9891-739336d561b9}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="BE Approved" languagecode="1033" />
+                        </labels>
+                        <control id="book_beapproved" classid="{67FAC785-CD58-4F9F-ABB3-4B7DDC6ED5ED}" datafieldname="book_beapproved" disabled="true" />
+                      </cell>
+                      <cell id="{e9fbceb3-b06d-45bc-8b19-91fb38bd23fd}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="BE Approved By" languagecode="1033" />
+                        </labels>
+                        <control id="book_beapprovedby" classid="{270BD3DB-D9AF-4782-9025-509E298DEC0A}" datafieldname="book_beapprovedby" disabled="true" />
+                      </cell>
+                      <cell id="{52e0874d-46a5-4a9e-ac9e-7a59dc1ab87c}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="BE Approved On" languagecode="1033" />
+                        </labels>
+                        <control id="book_beapprovedon" classid="{5B773807-9FB2-42DB-97C3-7A91EFF8ADFF}" datafieldname="book_beapprovedon" disabled="true" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{596a2d3a-1801-4262-a11e-8c615d7ec5a9}" locklevel="0" colspan="1" rowspan="1" visible="false">
+                        <labels>
+                          <label description="Denied" languagecode="1033" />
+                        </labels>
+                        <control id="book_denied" classid="{67FAC785-CD58-4F9F-ABB3-4B7DDC6ED5ED}" datafieldname="book_denied" disabled="false" />
+                      </cell>
+                      <cell id="{91cd3c43-3408-4c24-97c3-e1779adbd612}" locklevel="0" colspan="2" rowspan="3" visible="false">
+                        <labels>
+                          <label description="Denial Reason" languagecode="1033" />
+                        </labels>
+                        <control id="book_denialreason" classid="{E0DECE4B-6FC8-4A8F-A065-082708572369}" datafieldname="book_denialreason" disabled="false" />
+                      </cell>
+                    </row>
+                    <row />
+                    <row />
+                  </rows>
+                </section>
+                <section name="null_section_3" id="e65d2180-b5fd-44ba-842e-e5c98063de0f" IsUserDefined="0" locklevel="0" showlabel="true" showbar="false" layout="varwidth" celllabelalignment="Left" celllabelposition="Left" columns="11" labelwidth="115">
+                  <labels>
+                    <label description="Overview" languagecode="1033" />
+                  </labels>
+                  <rows>
+                    <row />
+                    <row>
+                      <cell id="{65df0385-e9a9-4e40-b657-3b16357d3dd1}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="Fiscal Year" languagecode="1033" />
+                        </labels>
+                        <control id="book_newfiscalyear" classid="{3EF39988-22BB-4F0B-BBBE-64B5A3748AEE}" datafieldname="book_newfiscalyear" disabled="false" />
+                      </cell>
+                      <cell locklevel="0" id="{dfd481b1-a617-4c15-bb3d-fb031aa53264}" rowspan="4" colspan="1" auto="false">
+                        <labels>
+                          <label description="Swap Items" languagecode="1033" />
+                        </labels>
+                        <control indicationOfSubgrid="true" id="Subgrid_new_1" classid="{E7A81278-8635-4D9E-8D4D-59480B391C5B}">
+                          <parameters>
+                            <RecordsPerPage>4</RecordsPerPage>
+                            <AutoExpand>Fixed</AutoExpand>
+                            <EnableQuickFind>false</EnableQuickFind>
+                            <EnableViewPicker>false</EnableViewPicker>
+                            <EnableChartPicker>true</EnableChartPicker>
+                            <ChartGridMode>All</ChartGridMode>
+                            <RelationshipName>book_StateSwap_book_StateSwap_book_SwapItem</RelationshipName>
+                            <TargetEntityType>book_swapitem</TargetEntityType>
+                            <ViewId>{B909CCA6-212D-4B30-BAB4-D9A31FF9308E}</ViewId>
+                            <ViewIds>{B909CCA6-212D-4B30-BAB4-D9A31FF9308E}</ViewIds>
+                          </parameters>
+                        </control>
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{a70f0101-8e71-4529-ba2a-316d2db8aa0e}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="State A" languagecode="1033" />
+                        </labels>
+                        <control id="book_statea" classid="{270BD3DB-D9AF-4782-9025-509E298DEC0A}" datafieldname="book_statea" disabled="false" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell locklevel="0" id="{8bb96e99-a770-4fc9-81e8-cda4636e87aa}">
+                        <labels>
+                          <label description="" languagecode="1033" />
+                        </labels>
+                      </cell>
+                    </row>
+                    <row>
+                      <cell locklevel="0" id="{c76b2786-d275-4996-8fc5-59dbadb4e35c}">
+                        <labels>
+                          <label description="" languagecode="1033" />
+                        </labels>
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{2994992b-ec62-47a9-9a43-739fba996c23}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="State B" languagecode="1033" />
+                        </labels>
+                        <control id="book_stateb" classid="{270BD3DB-D9AF-4782-9025-509E298DEC0A}" datafieldname="book_stateb" disabled="false" />
+                      </cell>
+                      <cell locklevel="0" id="{56e1d29f-8307-42d8-a690-110b143a27f9}">
+                        <labels>
+                          <label description="" languagecode="1033" />
+                        </labels>
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{61bcebc0-5a88-4c54-bbed-0d2beec1f310}" locklevel="0" colspan="1" rowspan="6">
+                        <labels>
+                          <label description="Notes" languagecode="1033" />
+                        </labels>
+                        <control id="book_notes" classid="{E0DECE4B-6FC8-4A8F-A065-082708572369}" datafieldname="book_notes" disabled="false" />
+                      </cell>
+                      <cell locklevel="0" id="{a9db0ad5-1b28-4f3c-b57a-ceb4cfbfd415}">
+                        <labels>
+                          <label description="" languagecode="1033" />
+                        </labels>
+                      </cell>
+                    </row>
+                    <row />
+                    <row />
+                    <row />
+                    <row />
+                    <row />
+                  </rows>
+                </section>
+                <section name="null_section_4" id="d6ad3f9a-b3b9-4b36-bca8-0df2f45327f3" IsUserDefined="0" locklevel="0" showlabel="true" showbar="false" layout="varwidth" celllabelalignment="Left" celllabelposition="Left" columns="11" labelwidth="115">
+                  <labels>
+                    <label description="State Approvals" languagecode="1033" />
+                  </labels>
+                  <rows>
+                    <row />
+                    <row>
+                      <cell locklevel="0" id="{c2e25667-3c09-4fc4-ab0d-640f12b96781}">
+                        <labels>
+                          <label description="" languagecode="1033" />
+                        </labels>
+                      </cell>
+                      <cell id="{f39a8eb7-95f9-40ad-a803-9bab99fd4b2c}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="State B Approved" languagecode="1033" />
+                        </labels>
+                        <control id="book_statebapproved" classid="{67FAC785-CD58-4F9F-ABB3-4B7DDC6ED5ED}" datafieldname="book_statebapproved" disabled="true" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell locklevel="0" id="{ff1ab5d1-b7a1-4a94-aac0-f55a7b3a51e1}">
+                        <labels>
+                          <label description="" languagecode="1033" />
+                        </labels>
+                      </cell>
+                      <cell id="{5a15fb36-2ea9-415f-ac55-94934069eecb}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="State B Approved By" languagecode="1033" />
+                        </labels>
+                        <control id="book_statebapprovedby" classid="{270BD3DB-D9AF-4782-9025-509E298DEC0A}" datafieldname="book_statebapprovedby" disabled="true" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{7013ad54-4c90-4e68-9164-ff5b9ec88041}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="State A Approved" languagecode="1033" />
+                        </labels>
+                        <control id="book_stateaapproved" classid="{67FAC785-CD58-4F9F-ABB3-4B7DDC6ED5ED}" datafieldname="book_stateaapproved" disabled="true" />
+                      </cell>
+                      <cell id="{b7731e2d-1fec-4b5f-9c37-4cd65436fc33}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="State B Approved On" languagecode="1033" />
+                        </labels>
+                        <control id="book_statebapprovedon" classid="{5B773807-9FB2-42DB-97C3-7A91EFF8ADFF}" datafieldname="book_statebapprovedon" disabled="true" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{5b379fd2-e68c-4775-81d2-1566c257947d}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="State A Approved By" languagecode="1033" />
+                        </labels>
+                        <control id="book_stateaapprovedby" classid="{270BD3DB-D9AF-4782-9025-509E298DEC0A}" datafieldname="book_stateaapprovedby" disabled="true" />
+                      </cell>
+                      <cell locklevel="0" id="{10b5be5b-6f7a-44e4-9c9b-e9ff0fbed8ca}">
+                        <labels>
+                          <label description="" languagecode="1033" />
+                        </labels>
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{85adf80e-6d0b-44dc-9609-526362ec665d}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="State A Approved On" languagecode="1033" />
+                        </labels>
+                        <control id="book_stateaapprovedon" classid="{5B773807-9FB2-42DB-97C3-7A91EFF8ADFF}" datafieldname="book_stateaapprovedon" disabled="true" />
+                      </cell>
+                      <cell locklevel="0" id="{767c632a-4212-4348-adab-e87b958f8ebd}">
+                        <labels>
+                          <label description="" languagecode="1033" />
+                        </labels>
+                      </cell>
+                    </row>
+                  </rows>
+                </section>
+              </sections>
+            </column>
+          </columns>
+        </tab>
+      </tabs>
+      <header id="{f8f48886-398b-48ea-8a62-c119363a5fcb}" celllabelposition="Top" columns="111" labelwidth="115" celllabelalignment="Left">
+        <rows>
+          <row>
+            <cell id="{e82bdce1-9f80-47c1-9510-af6e6c427d49}" showlabel="false">
+              <labels>
+                <label description="" languagecode="1033" />
+              </labels>
+            </cell>
+            <cell id="{6578be79-14d1-4faf-94d1-999376923bb9}" showlabel="false">
+              <labels>
+                <label description="" languagecode="1033" />
+              </labels>
+            </cell>
+            <cell id="{33f00c97-0dea-4795-aa2e-abcf60156b76}" showlabel="false">
+              <labels>
+                <label description="" languagecode="1033" />
+              </labels>
+            </cell>
+            <cell id="{4a5792ce-7342-4f37-a369-804bbff951c1}" locklevel="0" colspan="1" rowspan="1">
+              <labels>
+                <label description="Owning Business Unit" languagecode="1033" />
+              </labels>
+              <control id="header_owningbusinessunit" classid="{270BD3DB-D9AF-4782-9025-509E298DEC0A}" datafieldname="owningbusinessunit" disabled="false" />
+            </cell>
+            <cell id="{c5793374-dc26-4251-8993-ad924cbdf86c}" locklevel="0" colspan="1" rowspan="1">
+              <labels>
+                <label description="Status" languagecode="1033" />
+              </labels>
+              <control id="header_statecode" classid="{3EF39988-22BB-4F0B-BBBE-64B5A3748AEE}" datafieldname="statecode" disabled="false" />
+            </cell>
+          </row>
+        </rows>
+      </header>
+      <footer id="{d9fc4c8c-33a7-430e-93cf-2d9548ff3bbb}" celllabelposition="Top" columns="111" labelwidth="115" celllabelalignment="Left">
+        <rows>
+          <row>
+            <cell id="{f30e8332-3c60-4b89-948c-23606ba3fbb3}" showlabel="false">
+              <labels>
+                <label description="" languagecode="1033" />
+              </labels>
+            </cell>
+            <cell id="{e923796b-40ba-40b3-99e9-af2054b9c619}" showlabel="false">
+              <labels>
+                <label description="" languagecode="1033" />
+              </labels>
+            </cell>
+            <cell id="{668517b3-7265-4ada-b616-1be3440379ba}" showlabel="false">
+              <labels>
+                <label description="" languagecode="1033" />
+              </labels>
+            </cell>
+          </row>
+        </rows>
+      </footer>
+      <DisplayConditions Order="0" FallbackForm="true">
+        <Everyone />
+      </DisplayConditions>
+      <controlDescriptions>
+        <controlDescription forControl="{db6d6c7b-5763-485f-ad59-fa34d5d78eb0}">
+          <customControl id="{4273EDBD-AC1D-40D3-9FB2-095C621B552D}">
+            <parameters>
+              <datafieldname>book_name</datafieldname>
+            </parameters>
+          </customControl>
+          <customControl formFactor="0" name="book_ARNGCheckbook.StateSwapApprovalProcess">
+            <parameters>
+              <swapName type="SingleLine.Text">book_name</swapName>
+            </parameters>
+          </customControl>
+          <customControl formFactor="2" name="book_ARNGCheckbook.StateSwapApprovalProcess">
+            <parameters>
+              <swapName type="SingleLine.Text">book_name</swapName>
+            </parameters>
+          </customControl>
+          <customControl formFactor="1" name="book_ARNGCheckbook.StateSwapApprovalProcess">
+            <parameters>
+              <swapName type="SingleLine.Text">book_name</swapName>
+            </parameters>
+          </customControl>
+        </controlDescription>
+      </controlDescriptions>
+    </form>
+    <IsCustomizable>1</IsCustomizable>
+    <CanBeDeleted>1</CanBeDeleted>
+    <LocalizedNames>
+      <LocalizedName description="Information" languagecode="1033" />
+    </LocalizedNames>
+    <Descriptions>
+      <Description description="A form for this entity." languagecode="1033" />
+    </Descriptions>
+  </systemform>
+</forms>

@@ -1,0 +1,11 @@
+<customapiresponseproperty uniquename="NextToken">
+  <description default="Allows batching within Generate Distributions">
+    <label description="Allows batching within Generate Distributions" languagecode="1033" />
+  </description>
+  <displayname default="GD - Next Token">
+    <label description="GD - Next Token" languagecode="1033" />
+  </displayname>
+  <iscustomizable>1</iscustomizable>
+  <name>GD - Next Token</name>
+  <type>10</type>
+</customapiresponseproperty>

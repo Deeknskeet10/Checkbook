@@ -1,0 +1,15 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<WebResource xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <WebResourceId>{c25f2b0f-c689-f111-ab10-001dd8204135}</WebResourceId>
+  <Name>book_recalculateLOATDP</Name>
+  <DisplayName>Recalculate LOA TDP</DisplayName>
+  <Description>Launches custom API to recalculate LOA TDP</Description>
+  <WebResourceType>3</WebResourceType>
+  <IntroducedVersion>1.11.0.91</IntroducedVersion>
+  <IsEnabledForMobileClient>0</IsEnabledForMobileClient>
+  <IsAvailableForMobileOffline>0</IsAvailableForMobileOffline>
+  <IsCustomizable>1</IsCustomizable>
+  <CanBeDeleted>1</CanBeDeleted>
+  <IsHidden>0</IsHidden>
+  <FileName>/WebResources/book_recalculateLOATDPC25F2B0F-C689-F111-AB10-001DD8204135</FileName>
+</WebResource>

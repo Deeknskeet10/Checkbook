@@ -1,0 +1,12 @@
+<customapirequestparameter uniquename="FiscalYear">
+  <description default="Recalculate LOA TDP FY field">
+    <label description="Recalculate LOA TDP FY field" languagecode="1033" />
+  </description>
+  <displayname default="Fiscal Year">
+    <label description="Fiscal Year" languagecode="1033" />
+  </displayname>
+  <iscustomizable>1</iscustomizable>
+  <isoptional>1</isoptional>
+  <name>Fiscal Year</name>
+  <type>7</type>
+</customapirequestparameter>

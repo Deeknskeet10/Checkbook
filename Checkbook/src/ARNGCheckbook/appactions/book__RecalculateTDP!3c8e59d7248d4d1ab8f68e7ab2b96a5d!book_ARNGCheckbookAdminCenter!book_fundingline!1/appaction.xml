@@ -1,0 +1,41 @@
+<appaction uniquename="book__RecalculateTDP!3c8e59d7248d4d1ab8f68e7ab2b96a5d!book_ARNGCheckbookAdminCenter!book_fundingline!1">
+  <appmoduleid>
+    <uniquename>book_ARNGCheckbookAdminCenter</uniquename>
+  </appmoduleid>
+  <buttonaccessibilitytext default="Recalculate LOA TDP">
+    <label description="Recalculate LOA TDP" languagecode="1033" />
+  </buttonaccessibilitytext>
+  <buttonlabeltext default="Recalculate TDP">
+    <label description="Recalculate TDP" languagecode="1033" />
+  </buttonlabeltext>
+  <buttontooltipdescription default="Recalculate LOA TDP">
+    <label description="Recalculate LOA TDP" languagecode="1033" />
+  </buttontooltipdescription>
+  <buttontooltiptitle default="Recalculate LOA TDP">
+    <label description="Recalculate LOA TDP" languagecode="1033" />
+  </buttontooltiptitle>
+  <context>1</context>
+  <contextentity>
+    <logicalname>book_fundingline</logicalname>
+  </contextentity>
+  <contextvalue>book_fundingline</contextvalue>
+  <fonticon>Recurrence</fonticon>
+  <hidden>0</hidden>
+  <iscustomizable>1</iscustomizable>
+  <isdisabled>0</isdisabled>
+  <isgrouptitlehidden>0</isgrouptitlehidden>
+  <location>1</location>
+  <name>RecalculateTDP!3c8e59d7248d4d1ab8f68e7ab2b96a5d</name>
+  <onclickeventjavascriptfunctionname>LoaTdpReconciler.run</onclickeventjavascriptfunctionname>
+  <onclickeventjavascriptparameters>[{"type":5}]</onclickeventjavascriptparameters>
+  <onclickeventjavascriptwebresourceid>
+    <webresourceid>c25f2b0f-c689-f111-ab10-001dd8204135</webresourceid>
+  </onclickeventjavascriptwebresourceid>
+  <onclickeventtype>2</onclickeventtype>
+  <origin>0</origin>
+  <sequence>1000100010.0000000000</sequence>
+  <statecode>0</statecode>
+  <statuscode>1</statuscode>
+  <type>0</type>
+  <visibilitytype>0</visibilitytype>
+</appaction>

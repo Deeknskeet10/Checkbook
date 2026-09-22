@@ -1,0 +1,46 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<savedqueries xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <savedquery>
+    <IsCustomizable>1</IsCustomizable>
+    <CanBeDeleted>0</CanBeDeleted>
+    <isquickfindquery>0</isquickfindquery>
+    <isprivate>0</isprivate>
+    <isdefault>1</isdefault>
+    <savedqueryid>{88875e3d-7021-4300-9064-e57673a04089}</savedqueryid>
+    <layoutxml>
+      <grid name="resultset" jump="book_name" select="1" icon="1" preview="1">
+        <row name="result" id="book_stateswapid">
+          <cell name="book_newfiscalyear" width="103" />
+          <cell name="book_statea" width="100" />
+          <cell name="book_stateb" width="100" />
+          <cell name="book_stateaapproved" width="142" />
+          <cell name="book_statebapproved" width="141" />
+          <cell name="book_beapproved" width="118" />
+          <cell name="book_notes" width="100" />
+        </row>
+      </grid>
+    </layoutxml>
+    <querytype>0</querytype>
+    <fetchxml>
+      <fetch version="1.0" mapping="logical">
+        <entity name="book_stateswap">
+          <attribute name="book_stateswapid" />
+          <filter type="and">
+            <condition attribute="statecode" operator="eq" value="0" />
+          </filter>
+          <attribute name="book_statea" />
+          <attribute name="book_stateb" />
+          <attribute name="book_newfiscalyear" />
+          <attribute name="book_notes" />
+          <attribute name="book_beapproved" />
+          <attribute name="book_stateaapproved" />
+          <attribute name="book_statebapproved" />
+        </entity>
+      </fetch>
+    </fetchxml>
+    <IntroducedVersion>1.11.0.76</IntroducedVersion>
+    <LocalizedNames>
+      <LocalizedName description="Active State Swaps" languagecode="1033" />
+    </LocalizedNames>
+  </savedquery>
+</savedqueries>

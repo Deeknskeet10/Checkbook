@@ -947,13 +947,13 @@
       </DisplayConditions>
       <formLibraries>
         <Library name="book_turnInQC" libraryUniqueId="{1d57c30a-1d10-4e47-9088-5ae3c246d3ce}" />
-        <Library name="book_turnInFilterForm" libraryUniqueId="{3e2ed80b-d1f3-4f95-a6e5-d98ec852155f}" />
+        <Library name="book_TurnInItems" libraryUniqueId="{834f9898-a654-4a7a-84f3-411e462b02ea}" />
       </formLibraries>
       <events>
         <event name="onload" application="false" active="false">
           <Handlers>
             <Handler functionName="turnInQC" libraryName="book_turnInQC" handlerUniqueId="{ef388710-ce43-43bb-89c2-db12e64f47e5}" enabled="true" parameters="" passExecutionContext="true" />
-            <Handler functionName="TurnInItem.onLoad" libraryName="book_turnInFilterForm" handlerUniqueId="{2df126d6-555f-47cc-b601-2034dc87cb48}" enabled="true" parameters="" passExecutionContext="true" />
+            <Handler functionName="Book.TurnInItem.onLoad" libraryName="book_TurnInItems" handlerUniqueId="{7fbd568d-b4cb-4ef9-8953-46bc1fc3d72c}" enabled="true" parameters="" passExecutionContext="true" />
           </Handlers>
         </event>
       </events>

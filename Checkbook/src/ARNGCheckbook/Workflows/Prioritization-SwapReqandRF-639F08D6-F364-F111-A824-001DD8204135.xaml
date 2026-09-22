@@ -122,10 +122,10 @@
                 <mxswa:ActivityReference.Properties>
                   <sco:Collection x:TypeArguments="Variable" x:Key="Variables" />
                   <sco:Collection x:TypeArguments="Activity" x:Key="Activities">
-                    <Sequence DisplayName="SetVisibilityStep_ConditionBranchStep2_9_11: Don't show Req">
+                    <Sequence DisplayName="SetVisibilityStep11: Don't show Req">
                       <mcwc:SetVisibility ControlId="book_requirement" ControlType="standard" Entity="[InputEntities(&quot;primaryEntity&quot;)]" EntityName="book_prioritization" IsVisible="False" />
                     </Sequence>
-                    <Sequence DisplayName="SetVisibilityStep_ConditionBranchStep2_9_11_12: Don't show RF">
+                    <Sequence DisplayName="SetVisibilityStep12: Don't show RF">
                       <mcwc:SetVisibility ControlId="book_requirementfunding" ControlType="standard" Entity="[InputEntities(&quot;primaryEntity&quot;)]" EntityName="book_prioritization" IsVisible="False" />
                     </Sequence>
                   </sco:Collection>

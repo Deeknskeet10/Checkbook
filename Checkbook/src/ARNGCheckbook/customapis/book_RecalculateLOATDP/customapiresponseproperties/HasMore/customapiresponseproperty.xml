@@ -1,0 +1,11 @@
+<customapiresponseproperty uniquename="HasMore">
+  <description default="Determines need for continued pagination">
+    <label description="Determines need for continued pagination" languagecode="1033" />
+  </description>
+  <displayname default="Recalc-LOA HasMore">
+    <label description="Recalc-LOA HasMore" languagecode="1033" />
+  </displayname>
+  <iscustomizable>1</iscustomizable>
+  <name>HasMore</name>
+  <type>0</type>
+</customapiresponseproperty>

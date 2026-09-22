@@ -17,5 +17,14 @@
   <IsHidden>0</IsHidden>
   <SupportedDeployment>0</SupportedDeployment>
   <IntroducedVersion>1.0</IntroducedVersion>
-  <SdkMessageProcessingStepImages />
+  <SdkMessageProcessingStepImages>
+    <SdkMessageProcessingStepImage Name="PreImage">
+      <SdkMessageProcessingStepImageId>{f6179f12-5e6f-f111-ab0d-001dd8204df7}</SdkMessageProcessingStepImageId>
+      <Attributes>book_newfundedamounttdp,book_requirementfunding,book_validatedamount</Attributes>
+      <EntityAlias>PreImage</EntityAlias>
+      <ImageType>0</ImageType>
+      <MessagePropertyName>Target</MessagePropertyName>
+      <IsCustomizable>1</IsCustomizable>
+    </SdkMessageProcessingStepImage>
+  </SdkMessageProcessingStepImages>
 </SdkMessageProcessingStep>

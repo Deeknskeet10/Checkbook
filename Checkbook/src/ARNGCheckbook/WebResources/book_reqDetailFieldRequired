@@ -1,5 +1,12 @@
 function onBookItemChange(executionContext) {
     var formContext = executionContext.getFormContext();
+
+    if(formContext.getAttribute("book_linrequired").getValue() || formContext.getAttribute("book_countryrequired").getValue())
+    {
+        formContext.getAttribute("book_tdc").setRequiredLevel("required");
+	    return;
+    }
+
     var bookItem = formContext.getAttribute("book_item").getValue();
 
     // Clear requirement and value initially
@@ -27,4 +34,39 @@ function onBookItemChange(executionContext) {
     }, function (error) {
         console.log("Error checking book_tdc records:", error);
     });
+}
+
+function onBookLinOrCountryChange(executionContext) {
+    var context = executionContext.getFormContext();
+
+    if(context.getAttribute("book_linrequired").getValue() || context.getAttribute("book_countryrequired").getValue())
+        context.getAttribute("book_tdc").setRequiredLevel("required");
+}
+
+var TDCFilter = TDCFilter || {}
+
+TDCFilter.triggerPreSearch = function (ec){
+    let context =  ec.getFormContext();
+
+    context.getControl('book_tdc').removePreSearch(TDCFilter.preSearch);
+
+    if(!context.getAttribute("book_linrequired").getValue() && !context.getAttribute("book_countryrequired").getValue())
+        context.getControl('book_tdc').addPreSearch(TDCFilter.preSearch);
+}
+
+TDCFilter.preSearch = function (ec){
+    let context = ec.getFormContext();
+    let item = context.getAttribute('book_item').getValue();
+
+    if(item && item[0]){
+        let itemId = item[0].id;
+
+        let filter = `
+        <filter type='and'>
+            <condition attribute='book_item' operator='eq' value='${itemId}'/>
+        </filter>
+        `;
+
+        context.getControl('book_tdc').addCustomFilter(filter, 'book_tdc');
+    }
 }

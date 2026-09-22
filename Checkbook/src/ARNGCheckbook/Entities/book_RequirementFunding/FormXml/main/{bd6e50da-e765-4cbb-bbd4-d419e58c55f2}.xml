@@ -20,6 +20,14 @@
                   </labels>
                   <rows>
                     <row>
+                      <cell id="{8edfea0a-daab-46db-a9a0-3d2ad81e7e3a}" locklevel="0" colspan="1" rowspan="1" visible="true">
+                        <labels>
+                          <label description="Fiscal Year" languagecode="1033" />
+                        </labels>
+                        <control id="book_newfiscalyear" classid="{3EF39988-22BB-4F0B-BBBE-64B5A3748AEE}" datafieldname="book_newfiscalyear" disabled="false" />
+                      </cell>
+                    </row>
+                    <row>
                       <cell id="{25d83ce0-a721-48c1-9973-f8135f297c8e}" visible="false">
                         <labels>
                           <label description="Name" languagecode="1033" />
@@ -57,15 +65,9 @@
                         <labels>
                           <label description="Line of Accounting" languagecode="1033" />
                         </labels>
-                        <control id="book_lineofaccounting" classid="{270BD3DB-D9AF-4782-9025-509E298DEC0A}" datafieldname="book_lineofaccounting" disabled="false" />
-                      </cell>
-                    </row>
-                    <row>
-                      <cell id="{8edfea0a-daab-46db-a9a0-3d2ad81e7e3a}" locklevel="0" colspan="1" rowspan="1" visible="false">
-                        <labels>
-                          <label description="Fiscal Year" languagecode="1033" />
-                        </labels>
-                        <control id="book_newfiscalyear" classid="{3EF39988-22BB-4F0B-BBBE-64B5A3748AEE}" datafieldname="book_newfiscalyear" disabled="false" />
+                        <control id="book_lineofaccounting" classid="{270BD3DB-D9AF-4782-9025-509E298DEC0A}" datafieldname="book_lineofaccounting" disabled="false">
+                          <parameters />
+                        </control>
                       </cell>
                     </row>
                     <row>
@@ -475,30 +477,27 @@
         <Everyone />
       </DisplayConditions>
       <formLibraries>
-        <Library name="book_reqFundLockFields" libraryUniqueId="{e0fe3d68-0ff4-4bfb-b131-ce5aab908871}" />
-        <Library name="book_requirementFundingValidation" libraryUniqueId="{864a17a8-3755-4044-abab-7f0f8e4cff46}" />
-        <Library name="book_reqFundOnLOAChange" libraryUniqueId="{be5ad83b-2b29-432f-9789-90c866cd5614}" />
+        <Library name="book_RequirementFunding" libraryUniqueId="{45fb1ba6-382c-4a73-a53a-630407dd5436}" />
       </formLibraries>
       <events>
-        <event name="onchange" application="false" active="false" attribute="book_requirement">
-          <Handlers>
-            <Handler functionName="lockAmountFields" libraryName="book_reqFundLockFields" handlerUniqueId="{9ba33120-d05c-456d-b7fb-0caf9ed43960}" enabled="true" parameters="" passExecutionContext="true" />
-          </Handlers>
-        </event>
         <event name="onload" application="false" active="false">
           <Handlers>
-            <Handler functionName="lockAmountFields" libraryName="book_reqFundLockFields" handlerUniqueId="{c0ae6f20-06fa-46b8-b13e-e779b6661cb9}" enabled="true" parameters="" passExecutionContext="true" />
-            <Handler functionName="Book.RequirementFunding.onFormLoad" libraryName="book_requirementFundingValidation" handlerUniqueId="{e874cdb9-dcdb-43e7-b0d7-435551b9a69e}" enabled="true" parameters="" passExecutionContext="true" />
+            <Handler functionName="Book.RequirementFunding.onLoad" libraryName="book_RequirementFunding" handlerUniqueId="{99693f56-a66c-4a08-87ed-afdf535838be}" enabled="true" parameters="" passExecutionContext="true" />
           </Handlers>
         </event>
-        <event name="onsave" application="false" active="false">
+        <event name="onchange" application="false" active="false" attribute="book_requirement">
           <Handlers>
-            <Handler functionName="Book.RequirementFunding.onFormSave" libraryName="book_requirementFundingValidation" handlerUniqueId="{c4d7eca5-1a20-4141-8f73-2f32471d2e3b}" enabled="true" parameters="" passExecutionContext="true" />
+            <Handler functionName="Book.RequirementFunding.onRequirementChange" libraryName="book_RequirementFunding" handlerUniqueId="{c3b3364e-4661-45e1-937f-fb41ce05839f}" enabled="true" parameters="" passExecutionContext="true" />
           </Handlers>
         </event>
         <event name="onchange" application="false" active="false" attribute="book_lineofaccounting">
           <Handlers>
-            <Handler functionName="onFundingLineChange" libraryName="book_reqFundLockFields" handlerUniqueId="{bec96ed1-fcec-488f-a870-aba4d60c7e25}" enabled="true" parameters="" passExecutionContext="true" />
+            <Handler functionName="Book.RequirementFunding.onLOAChange" libraryName="book_RequirementFunding" handlerUniqueId="{a455b116-f5b8-4c52-822d-11b3c9c75e2d}" enabled="true" parameters="" passExecutionContext="true" />
+          </Handlers>
+        </event>
+        <event name="onchange" application="false" active="false" attribute="book_newfiscalyear">
+          <Handlers>
+            <Handler functionName="Book.RequirementFunding.onFiscalYearChange" libraryName="book_RequirementFunding" handlerUniqueId="{0e54ef7a-538b-4fc1-be93-0dc36a3f8b24}" enabled="true" parameters="" passExecutionContext="true" />
           </Handlers>
         </event>
       </events>

@@ -14,17 +14,63 @@
           <columns>
             <column width="33%">
               <sections>
-                <section showlabel="false" showbar="false" IsUserDefined="0" id="{bae787b8-bc37-49c3-a401-b780ac020ed7}">
+                <section showlabel="true" showbar="false" IsUserDefined="0" id="{bae787b8-bc37-49c3-a401-b780ac020ed7}" columns="11" name="GFEBS Details">
                   <labels>
                     <label description="General" languagecode="1033" />
                   </labels>
                   <rows>
                     <row>
-                      <cell id="{f9b90851-a21f-4e4e-aea6-193e5b689d50}" locklevel="0" colspan="1" rowspan="1">
+                      <cell id="{ab03c366-1a05-45de-a0be-761cf4578951}" locklevel="0" colspan="1" rowspan="1">
                         <labels>
-                          <label description="GFEBS OBS Document" languagecode="1033" />
+                          <label description="FMY" languagecode="1033" />
                         </labels>
-                        <control id="book_gfebsobsdocument" classid="{4273EDBD-AC1D-40D3-9FB2-095C621B552D}" datafieldname="book_gfebsobsdocument" disabled="false" />
+                        <control id="book_fmy" classid="{4273EDBD-AC1D-40D3-9FB2-095C621B552D}" datafieldname="book_fmy" disabled="false" />
+                      </cell>
+                      <cell id="{16aa04d0-831c-4cdd-80a3-8a410bbf9578}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="FMZ" languagecode="1033" />
+                        </labels>
+                        <control id="book_fmz" classid="{4273EDBD-AC1D-40D3-9FB2-095C621B552D}" datafieldname="book_fmz" disabled="false" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell locklevel="0" id="{42021013-c874-437b-b5ea-719840db578e}">
+                        <labels>
+                          <label description="" languagecode="1033" />
+                        </labels>
+                      </cell>
+                      <cell id="{f9fa7b9c-39da-4076-a467-723bb8ec35af}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="PO" languagecode="1033" />
+                        </labels>
+                        <control id="book_po" classid="{4273EDBD-AC1D-40D3-9FB2-095C621B552D}" datafieldname="book_po" disabled="false" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{6b2082ec-f9b8-4f51-a0ba-6a57127719dc}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="PR" languagecode="1033" />
+                        </labels>
+                        <control id="book_pr" classid="{4273EDBD-AC1D-40D3-9FB2-095C621B552D}" datafieldname="book_pr" disabled="false" />
+                      </cell>
+                      <cell id="{9efd81a7-1a7b-4afd-ba8a-0674d1b4e8c3}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="IO" languagecode="1033" />
+                        </labels>
+                        <control id="book_io" classid="{4273EDBD-AC1D-40D3-9FB2-095C621B552D}" datafieldname="book_io" disabled="false" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{7a04294f-2645-44e4-8bb5-397a67ac78cb}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="WBS" languagecode="1033" />
+                        </labels>
+                        <control id="book_wbs" classid="{4273EDBD-AC1D-40D3-9FB2-095C621B552D}" datafieldname="book_wbs" disabled="false" />
+                      </cell>
+                      <cell locklevel="0" id="{951badcf-a201-4b7c-964a-6382e519bf4b}">
+                        <labels>
+                          <label description="" languagecode="1033" />
+                        </labels>
                       </cell>
                     </row>
                     <row>
@@ -33,6 +79,35 @@
                           <label description="Owner" languagecode="1033" />
                         </labels>
                         <control id="ownerid" classid="{270BD3DB-D9AF-4782-9025-509E298DEC0A}" datafieldname="ownerid" />
+                      </cell>
+                      <cell locklevel="0" id="{a76c804f-a6b9-4b2f-929b-9f0d1289b05d}">
+                        <labels>
+                          <label description="" languagecode="1033" />
+                        </labels>
+                      </cell>
+                    </row>
+                  </rows>
+                </section>
+                <section name="null_section_4" id="54821804-fb81-45fe-91eb-0dc3f4ff8ec6" IsUserDefined="0" locklevel="0" showlabel="true" showbar="false" layout="varwidth" celllabelalignment="Left" celllabelposition="Left" columns="1" labelwidth="115">
+                  <labels>
+                    <label description="Related Record" languagecode="1033" />
+                  </labels>
+                  <rows>
+                    <row />
+                    <row>
+                      <cell id="{cd596df2-e0ec-481d-a3f7-6a1c45c0c77a}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="Prioritization" languagecode="1033" />
+                        </labels>
+                        <control id="book_prioritization" classid="{270BD3DB-D9AF-4782-9025-509E298DEC0A}" datafieldname="book_prioritization" disabled="false" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{f593f379-874d-4094-bc5e-90258342578a}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="Requirement" languagecode="1033" />
+                        </labels>
+                        <control id="book_requirement" classid="{270BD3DB-D9AF-4782-9025-509E298DEC0A}" datafieldname="book_requirement" disabled="false" />
                       </cell>
                     </row>
                   </rows>

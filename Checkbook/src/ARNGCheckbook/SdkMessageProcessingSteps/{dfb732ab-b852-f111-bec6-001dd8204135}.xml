@@ -20,7 +20,7 @@
   <SdkMessageProcessingStepImages>
     <SdkMessageProcessingStepImage Name="turnInPre">
       <SdkMessageProcessingStepImageId>{6b4354bd-b852-f111-bec5-001dd8204df7}</SdkMessageProcessingStepImageId>
-      <Attributes>book_newamount,book_beapproved,book_identifiedturninamount,book_stateapproved</Attributes>
+      <Attributes>book_afpamount,book_allotmentamount,book_newamount,book_beapproved,book_identifiedturninamount,book_origin,book_stateapproved</Attributes>
       <EntityAlias>PreImage</EntityAlias>
       <ImageType>0</ImageType>
       <MessagePropertyName>Target</MessagePropertyName>

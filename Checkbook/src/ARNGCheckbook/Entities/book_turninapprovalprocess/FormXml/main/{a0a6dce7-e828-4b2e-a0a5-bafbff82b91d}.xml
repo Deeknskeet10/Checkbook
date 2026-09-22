@@ -56,7 +56,7 @@
                         <labels>
                           <label description="Turn-In Details" languagecode="1033" />
                         </labels>
-                        <control id="bpf_book_turnin_book_turninapprovalprocess:book_turnindetails" classid="{e0dece4b-6fc8-4a8f-a065-082708572369}" datafieldname="book_turnindetails" relationship="bpf_book_turnin_book_turninapprovalprocess" isrequired="true" disabled="false" />
+                        <control id="bpf_book_turnin_book_turninapprovalprocess:book_turnindetails" classid="{e0dece4b-6fc8-4a8f-a065-082708572369}" datafieldname="book_turnindetails" disabled="false" relationship="bpf_book_turnin_book_turninapprovalprocess" isrequired="true" />
                       </cell>
                     </row>
                   </rows>

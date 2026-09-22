@@ -1,0 +1,18 @@
+<customapi uniquename="book_ToggleFundedAmountLock">
+  <allowedcustomprocessingsteptype>0</allowedcustomprocessingsteptype>
+  <bindingtype>0</bindingtype>
+  <description default="Enables/Disables ability for users to modify the Funded Amount (TDP) field on Prioritizations/Requirements">
+    <label description="Enables/Disables ability for users to modify the Funded Amount (TDP) field on Prioritizations/Requirements" languagecode="1033" />
+  </description>
+  <displayname default="Toggle Funded Amount Lock">
+    <label description="Toggle Funded Amount Lock" languagecode="1033" />
+  </displayname>
+  <iscustomizable>1</iscustomizable>
+  <isfunction>0</isfunction>
+  <isprivate>0</isprivate>
+  <name>book_ToggleFundedAmountLock</name>
+  <plugintypeid>
+    <plugintypeexportkey>27363dc2-e732-468f-be43-b6521c49dc88</plugintypeexportkey>
+  </plugintypeid>
+  <workflowsdkstepenabled>1</workflowsdkstepenabled>
+</customapi>

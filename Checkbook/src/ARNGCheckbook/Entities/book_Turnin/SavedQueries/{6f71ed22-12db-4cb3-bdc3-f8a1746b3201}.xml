@@ -10,8 +10,16 @@
     <layoutxml>
       <grid name="resultset" jump="book_name" select="1" icon="1" preview="1">
         <row name="result" id="book_turninid">
-          <cell name="book_name" width="300" />
-          <cell name="createdon" width="125" />
+          <cell name="book_fiscalyear" width="103" />
+          <cell name="book_fundcenter" width="110" />
+          <cell name="book_fund" width="100" />
+          <cell name="book_pg" width="100" />
+          <cell name="book_newamount" width="100" />
+          <cell name="book_identifiedturninamount" width="191" />
+          <cell name="book_afpamount" width="116" />
+          <cell name="book_allotmentamount" width="147" />
+          <cell name="book_stateapproved" width="128" />
+          <cell name="book_beapproved" width="118" />
         </row>
       </grid>
     </layoutxml>
@@ -20,12 +28,19 @@
       <fetch version="1.0" mapping="logical">
         <entity name="book_turnin">
           <attribute name="book_turninid" />
-          <attribute name="book_name" />
-          <attribute name="createdon" />
-          <order attribute="book_name" descending="false" />
           <filter type="and">
             <condition attribute="statecode" operator="eq" value="1" />
           </filter>
+          <attribute name="book_afpamount" />
+          <attribute name="book_allotmentamount" />
+          <attribute name="book_newamount" />
+          <attribute name="book_beapproved" />
+          <attribute name="book_fiscalyear" />
+          <attribute name="book_fund" />
+          <attribute name="book_fundcenter" />
+          <attribute name="book_identifiedturninamount" />
+          <attribute name="book_stateapproved" />
+          <attribute name="book_pg" />
         </entity>
       </fetch>
     </fetchxml>

@@ -4,16 +4,20 @@
 //   Recertification.certify    (pass SelectedControl)
 //   Recertification.decertify  (pass SelectedControl)
 //
-// Toggles book_recertification (two-options) across every selected row.
-// Sized for the full-view case (~1600 rows) — uses $batch so a few hundred
-// updates fit in 2 round-trips instead of 1600.
+// Toggles book_recertified (two-options) across every selected row.
+// Calls the Dataverse Web API directly via fetch — Xrm.WebApi.updateRecord
+// rejects with "Cannot convert ODataContract with $batch operation into a
+// serialized request" at the SDK layer (even for a single row), so we bypass
+// it entirely.
 var Recertification = (function () {
   "use strict";
 
   var FIELD = "book_recertified";
-  // Concurrency cap per wave — Xrm.WebApi.updateRecord fires one request each;
-  // small waves keep us off throttling limits while still finishing ~1600 rows fast.
-  var BATCH_SIZE = 40;
+  // Concurrency cap per wave — small enough to stay under throttling limits
+  // while still finishing ~1600 rows quickly.
+  var WAVE_SIZE = 40;
+
+  var entitySetNameCache = {};
 
   function certify(selectedControl)   { return run(selectedControl, true,  "Certify"); }
   function decertify(selectedControl) { return run(selectedControl, false, "Decertify"); }
@@ -67,42 +71,73 @@ var Recertification = (function () {
 
     Xrm.Utility.showProgressIndicator(verb + "… 0 of " + total);
 
-    runBatch();
+    getEntitySetName(selection.entityName).then(
+      function (setName) {
+        runWave(setName);
+      },
+      function (err) {
+        Xrm.Utility.closeProgressIndicator();
+        Xrm.Navigation.openErrorDialog({
+          message: "Could not resolve entity metadata for " + selection.entityName + ".",
+          details: (err && err.message) || String(err)
+        });
+      }
+    );
 
-    function runBatch() {
+    function runWave(setName) {
       if (done >= total) {
         Xrm.Utility.closeProgressIndicator();
         showResult(selectedControl, verb, total, failures);
         return;
       }
-      var chunk = selection.ids.slice(done, done + BATCH_SIZE);
-      sendBatch(selection.entityName, chunk, value).then(
-        function (batchFailures) {
-          done += chunk.length;
-          if (batchFailures && batchFailures.length) {
-            failures = failures.concat(batchFailures);
-          }
-          Xrm.Utility.showProgressIndicator(verb + "… " + done + " of " + total);
-          runBatch();
-        },
-        function (err) {
-          // Whole-batch failure (network / auth). Record and move on so a
-          // partial run still reports something useful.
-          done += chunk.length;
-          failures.push({ id: "(batch of " + chunk.length + ")", error: (err && err.message) || String(err) });
-          runBatch();
+      var chunk = selection.ids.slice(done, done + WAVE_SIZE);
+      sendWave(setName, chunk, value).then(function (waveFailures) {
+        done += chunk.length;
+        if (waveFailures && waveFailures.length) {
+          failures = failures.concat(waveFailures);
         }
-      );
+        Xrm.Utility.showProgressIndicator(verb + "… " + done + " of " + total);
+        runWave(setName);
+      });
     }
   }
 
-  function sendBatch(entityName, ids, value) {
-    var data = {};
-    data[FIELD] = value;
+  function getEntitySetName(logicalName) {
+    if (entitySetNameCache[logicalName]) {
+      return Promise.resolve(entitySetNameCache[logicalName]);
+    }
+    var base = Xrm.Utility.getGlobalContext().getClientUrl();
+    var url = base + "/api/data/v9.2/EntityDefinitions(LogicalName='" + logicalName + "')?$select=EntitySetName";
+    return fetch(url, {
+      method: "GET",
+      headers: {
+        "OData-MaxVersion": "4.0",
+        "OData-Version": "4.0",
+        "Accept": "application/json"
+      }
+    }).then(function (resp) {
+      if (!resp.ok) {
+        return resp.text().then(function (t) {
+          throw new Error("HTTP " + resp.status + " " + t);
+        });
+      }
+      return resp.json();
+    }).then(function (json) {
+      var setName = json && json.EntitySetName;
+      if (!setName) throw new Error("EntitySetName missing from metadata response");
+      entitySetNameCache[logicalName] = setName;
+      return setName;
+    });
+  }
+
+  function sendWave(setName, ids, value) {
+    var body = {};
+    body[FIELD] = value;
+    var bodyJson = JSON.stringify(body);
     var fails = [];
 
     var promises = ids.map(function (id) {
-      return Xrm.WebApi.updateRecord(entityName, id, data).then(
+      return updateOne(setName, id, bodyJson).then(
         function () { /* ok */ },
         function (err) {
           fails.push({ id: id, error: (err && err.message) || String(err) });
@@ -111,6 +146,35 @@ var Recertification = (function () {
     });
 
     return Promise.all(promises).then(function () { return fails; });
+  }
+
+  function updateOne(setName, id, bodyJson) {
+    var base = Xrm.Utility.getGlobalContext().getClientUrl();
+    var url = base + "/api/data/v9.2/" + setName + "(" + id + ")";
+    return fetch(url, {
+      method: "PATCH",
+      headers: {
+        "OData-MaxVersion": "4.0",
+        "OData-Version": "4.0",
+        "Accept": "application/json",
+        "Content-Type": "application/json; charset=utf-8",
+        "If-Match": "*"
+      },
+      body: bodyJson
+    }).then(function (resp) {
+      if (resp.ok) return;
+      return resp.text().then(function (t) {
+        var msg = "HTTP " + resp.status;
+        try {
+          var parsed = JSON.parse(t);
+          if (parsed && parsed.error && parsed.error.message) msg += ": " + parsed.error.message;
+          else if (t) msg += ": " + t;
+        } catch (e) {
+          if (t) msg += ": " + t;
+        }
+        throw new Error(msg);
+      });
+    });
   }
 
   function showResult(selectedControl, verb, total, failures) {

@@ -6,7 +6,7 @@
   <PrimaryEntity>book_prioritization</PrimaryEntity>
   <AsyncAutoDelete>0</AsyncAutoDelete>
   <Description>Checkbook.Plugins.Items.ItemizedDetailsSynchronizer: Update of book_prioritization</Description>
-  <FilteringAttributes>book_requirementfunding</FilteringAttributes>
+  <FilteringAttributes>book_requirement,book_requirementfunding</FilteringAttributes>
   <ImpersonatingUserIdName>Microsoft Flow CDS Integration Service DoD</ImpersonatingUserIdName>
   <InvocationSource>1</InvocationSource>
   <Mode>1</Mode>
@@ -20,7 +20,7 @@
   <SdkMessageProcessingStepImages>
     <SdkMessageProcessingStepImage Name="itemPre">
       <SdkMessageProcessingStepImageId>{5f0c416b-565f-f111-bec6-001dd8201529}</SdkMessageProcessingStepImageId>
-      <Attributes>book_requirementfunding</Attributes>
+      <Attributes>book_requirement,book_requirementfunding</Attributes>
       <EntityAlias>PreImage</EntityAlias>
       <ImageType>0</ImageType>
       <MessagePropertyName>Target</MessagePropertyName>

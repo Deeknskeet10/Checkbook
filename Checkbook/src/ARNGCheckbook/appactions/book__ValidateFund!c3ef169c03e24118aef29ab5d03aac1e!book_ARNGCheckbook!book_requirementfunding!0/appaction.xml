@@ -20,7 +20,7 @@
   </contextentity>
   <contextvalue>book_requirementfunding</contextvalue>
   <fonticon>$clientsvg:ActivateOrders</fonticon>
-  <hidden>0</hidden>
+  <hidden>1</hidden>
   <iscustomizable>1</iscustomizable>
   <isdisabled>0</isdisabled>
   <isgrouptitlehidden>0</isgrouptitlehidden>

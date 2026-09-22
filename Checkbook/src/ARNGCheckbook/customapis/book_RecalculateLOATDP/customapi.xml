@@ -1,0 +1,18 @@
+<customapi uniquename="book_RecalculateLOATDP">
+  <allowedcustomprocessingsteptype>2</allowedcustomprocessingsteptype>
+  <bindingtype>0</bindingtype>
+  <description default="User actioned recalculation of LOA TDP">
+    <label description="User actioned recalculation of LOA TDP" languagecode="1033" />
+  </description>
+  <displayname default="Recalculate LOA TDP">
+    <label description="Recalculate LOA TDP" languagecode="1033" />
+  </displayname>
+  <iscustomizable>1</iscustomizable>
+  <isfunction>0</isfunction>
+  <isprivate>0</isprivate>
+  <name>Recalculate LOA TDP</name>
+  <plugintypeid>
+    <plugintypeexportkey>dae5d0bd-f726-4525-b948-eff62570a3ca</plugintypeexportkey>
+  </plugintypeid>
+  <workflowsdkstepenabled>0</workflowsdkstepenabled>
+</customapi>

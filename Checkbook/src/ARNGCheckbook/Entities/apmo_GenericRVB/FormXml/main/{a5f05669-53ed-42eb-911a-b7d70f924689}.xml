@@ -131,7 +131,7 @@
                     <row>
                       <cell locklevel="0" id="{20604e76-8da6-4a74-adee-1e23446ee68b}" rowspan="4" colspan="1" auto="false">
                         <labels>
-                          <label description="RVBS" languagecode="1033" />
+                          <label description="Prejudices" languagecode="1033" />
                         </labels>
                         <control indicationOfSubgrid="true" id="Subgrid_new_2" classid="{E7A81278-8635-4D9E-8D4D-59480B391C5B}">
                           <parameters>
@@ -174,7 +174,7 @@
                     <row>
                       <cell locklevel="0" id="{ed6b5113-ec87-4280-8d02-00e6cece5541}" rowspan="4" colspan="1" auto="false">
                         <labels>
-                          <label description="RVBS" languagecode="1033" />
+                          <label description="SAs" languagecode="1033" />
                         </labels>
                         <control indicationOfSubgrid="true" id="Subgrid_new_3" classid="{E7A81278-8635-4D9E-8D4D-59480B391C5B}">
                           <parameters>

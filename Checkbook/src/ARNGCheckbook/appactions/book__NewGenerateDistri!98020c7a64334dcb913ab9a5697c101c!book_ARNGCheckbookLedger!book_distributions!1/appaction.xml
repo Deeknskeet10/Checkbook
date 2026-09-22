@@ -5,8 +5,8 @@
   <buttonaccessibilitytext default="Generates Distributions">
     <label description="Generates Distributions" languagecode="1033" />
   </buttonaccessibilitytext>
-  <buttonlabeltext default="New Generate Distributions">
-    <label description="New Generate Distributions" languagecode="1033" />
+  <buttonlabeltext default="Generate Distributions">
+    <label description="Generate Distributions" languagecode="1033" />
   </buttonlabeltext>
   <buttontooltipdescription default="Runs a custom API plugin to generate Distributions">
     <label description="Runs a custom API plugin to generate Distributions" languagecode="1033" />

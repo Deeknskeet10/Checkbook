@@ -6,7 +6,7 @@
   <PrimaryEntity>book_fundingtrack</PrimaryEntity>
   <AsyncAutoDelete>0</AsyncAutoDelete>
   <Description>Update of Funding Track</Description>
-  <FilteringAttributes>book_beginningbalancereadonly,book_lineofaccountingloa,book_newresourceamount</FilteringAttributes>
+  <FilteringAttributes>book_beginningbalancereadonly,book_lineofaccountingloa,book_newresourceamount,statecode</FilteringAttributes>
   <ImpersonatingUserIdName>Microsoft Flow CDS Integration Service DoD</ImpersonatingUserIdName>
   <InvocationSource>1</InvocationSource>
   <Mode>0</Mode>

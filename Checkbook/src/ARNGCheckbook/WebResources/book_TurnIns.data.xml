@@ -1,0 +1,16 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<WebResource xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <WebResourceId>{ffcff562-6ea5-f111-b8de-001dd8204df7}</WebResourceId>
+  <Name>book_TurnIns</Name>
+  <DisplayName>Turn-Ins</DisplayName>
+  <Description>Turn-in Form actions</Description>
+  <LanguageCode>0</LanguageCode>
+  <WebResourceType>3</WebResourceType>
+  <IntroducedVersion>1.11.0.109</IntroducedVersion>
+  <IsEnabledForMobileClient>0</IsEnabledForMobileClient>
+  <IsAvailableForMobileOffline>0</IsAvailableForMobileOffline>
+  <IsCustomizable>1</IsCustomizable>
+  <CanBeDeleted>1</CanBeDeleted>
+  <IsHidden>0</IsHidden>
+  <FileName>/WebResources/book_TurnInsFFCFF562-6EA5-F111-B8DE-001DD8204DF7</FileName>
+</WebResource>

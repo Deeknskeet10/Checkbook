@@ -48,7 +48,7 @@
                       </cell>
                       <cell id="{b8977236-b83b-5535-132a-ad80bb8d9317}" showlabel="true" locklevel="0">
                         <labels>
-                          <label description="Deprecated - Fund Center" languagecode="1033" />
+                          <label description="Fund Center" languagecode="1033" />
                         </labels>
                         <control id="book_fundcenter" classid="{270BD3DB-D9AF-4782-9025-509E298DEC0A}" datafieldname="book_fundcenter" disabled="false" />
                       </cell>
@@ -158,7 +158,7 @@
                     </row>
                   </rows>
                 </section>
-                <section name="null_section_3" id="3d318a9f-2aac-45e4-8b19-22863618f62c" IsUserDefined="0" locklevel="0" showlabel="true" showbar="false" layout="varwidth" celllabelalignment="Left" celllabelposition="Left" columns="111" labelwidth="115" labelid="{e950aa67-081b-4484-bf0c-23af8e65340b}">
+                <section name="null_section_3" id="3d318a9f-2aac-45e4-8b19-22863618f62c" IsUserDefined="0" locklevel="0" showlabel="true" showbar="false" layout="varwidth" celllabelalignment="Left" celllabelposition="Left" columns="11" labelwidth="115" labelid="{e950aa67-081b-4484-bf0c-23af8e65340b}">
                   <labels>
                     <label description="Additional Details" languagecode="1033" />
                   </labels>
@@ -175,12 +175,6 @@
                         </labels>
                         <control id="book_newrvb" classid="{270BD3DB-D9AF-4782-9025-509E298DEC0A}" datafieldname="book_newrvb" disabled="false" />
                       </cell>
-                      <cell id="{e4064ad4-a652-7441-5b4e-1145b8a706a1}" showlabel="true" locklevel="0">
-                        <labels>
-                          <label description="LIN" languagecode="1033" />
-                        </labels>
-                        <control id="book_lin" classid="{270BD3DB-D9AF-4782-9025-509E298DEC0A}" datafieldname="book_lin" disabled="false" />
-                      </cell>
                     </row>
                     <row>
                       <cell id="{b0dae479-dc1c-7d56-025d-dd049e209c22}" showlabel="true" locklevel="0">
@@ -193,17 +187,6 @@
                         <labels>
                           <label description="" languagecode="1033" />
                         </labels>
-                      </cell>
-                      <cell locklevel="0" id="{d4fd9e11-3370-4333-ad83-2e65b348d338}" colspan="1" rowspan="1">
-                        <labels>
-                          <label description="New QV control 1767103318582" languagecode="1033" />
-                        </labels>
-                        <control id="QuickviewControl1767103318582" classid="{5C5600E0-1D6E-4205-A272-BE80DA87FD42}" datafieldname="book_lin">
-                          <parameters>
-                            <DisplayAsCustomer360Tile>false</DisplayAsCustomer360Tile>
-                            <QuickForms>&lt;QuickFormIds&gt;&lt;QuickFormId entityname="book_lin"&gt;6debf06f-9c96-4cec-9155-c53ae65bafcd&lt;/QuickFormId&gt;&lt;/QuickFormIds&gt;</QuickForms>
-                          </parameters>
-                        </control>
                       </cell>
                     </row>
                     <row>
@@ -219,11 +202,6 @@
                         </control>
                       </cell>
                       <cell locklevel="0" id="{f530cad4-4499-4ed9-86ff-18cf670d6767}" showlabel="false">
-                        <labels>
-                          <label description="" languagecode="1033" />
-                        </labels>
-                      </cell>
-                      <cell locklevel="0" id="{facfa4a9-3dd5-49e1-bf19-2cd07902e3b7}" showlabel="false">
                         <labels>
                           <label description="" languagecode="1033" />
                         </labels>

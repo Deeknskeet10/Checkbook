@@ -7,7 +7,7 @@
   <Mode>0</Mode>
   <Scope>4</Scope>
   <OnDemand>0</OnDemand>
-  <TriggerOnUpdateAttributeList>book_sag,book_mdep,book_fiscalyear,book_dollartype,book_appropriation,book_ape</TriggerOnUpdateAttributeList>
+  <TriggerOnUpdateAttributeList>book_sag,book_pg,book_mdep,book_fund,book_fiscalyear,book_dollartype,book_category,book_boc,book_appropriation,book_ape</TriggerOnUpdateAttributeList>
   <TriggerOnCreate>1</TriggerOnCreate>
   <TriggerOnDelete>0</TriggerOnDelete>
   <AsyncAutodelete>1</AsyncAutodelete>

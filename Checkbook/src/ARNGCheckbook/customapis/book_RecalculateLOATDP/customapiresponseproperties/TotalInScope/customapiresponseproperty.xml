@@ -1,0 +1,11 @@
+<customapiresponseproperty uniquename="TotalInScope">
+  <description default="Grab Active LOAs matching the Scope">
+    <label description="Grab Active LOAs matching the Scope" languagecode="1033" />
+  </description>
+  <displayname default="Recalc-LOA Total-InScope">
+    <label description="Recalc-LOA Total-InScope" languagecode="1033" />
+  </displayname>
+  <iscustomizable>1</iscustomizable>
+  <name>TotalInScope</name>
+  <type>7</type>
+</customapiresponseproperty>

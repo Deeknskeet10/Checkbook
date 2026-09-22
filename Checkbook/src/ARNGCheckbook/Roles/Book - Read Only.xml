@@ -272,6 +272,8 @@
     <RolePrivilege name="prvReadbook_SAG" level="Global" />
     <RolePrivilege name="prvReadbook_SpendPlan" level="Global" />
     <RolePrivilege name="prvReadbook_State" level="Global" />
+    <RolePrivilege name="prvReadbook_StateSwap" level="Global" />
+    <RolePrivilege name="prvReadbook_SwapItem" level="Global" />
     <RolePrivilege name="prvReadbook_TDC" level="Global" />
     <RolePrivilege name="prvReadbook_Turnin" level="Global" />
     <RolePrivilege name="prvReadbook_turninapprovalprocess" level="Global" />

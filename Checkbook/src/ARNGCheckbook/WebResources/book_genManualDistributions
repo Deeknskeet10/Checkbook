@@ -168,7 +168,9 @@ var ManualDistribution = (function () {
   }
 
   function createOffsettingDebit(formContext, debitFundCenter) {
-    var amount = formContext.getAttribute("book_amount")?.getValue();
+    var amount = formContext.getAttribute("book_newamount")?.getValue();
+    var description = formContext.getAttribute("book_remarks")?.getValue();
+    var edn = formContext.getAttribute("book_entrydocumentnumber")?.getValue();
     var fundingEvent = formContext
       .getAttribute("book_fundingevent")
       ?.getValue();
@@ -177,7 +179,9 @@ var ManualDistribution = (function () {
 
     var debitRecord = {
       book_disbursementdirection: DEBIT_VALUE,
-      book_amount: amount,
+      book_newamount: amount,
+      book_entrydocumentnumber: edn,
+      book_remarks: description,
       book_manualentry: true,
       "book_FundCenter@odata.bind":
         "/book_fundcenters(" + debitFundCenter.id + ")",

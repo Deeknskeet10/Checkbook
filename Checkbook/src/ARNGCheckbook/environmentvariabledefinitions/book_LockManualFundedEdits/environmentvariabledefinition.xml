@@ -1,0 +1,14 @@
+<environmentvariabledefinition schemaname="book_LockManualFundedEdits">
+  <defaultvalue>no</defaultvalue>
+  <description default="Boolean for locking/unlocking funding">
+    <label description="Boolean for locking/unlocking funding" languagecode="1033" />
+  </description>
+  <displayname default="ARNG Checkbook - Lock Funding">
+    <label description="ARNG Checkbook - Lock Funding" languagecode="1033" />
+  </displayname>
+  <introducedversion>1.11.0.84</introducedversion>
+  <iscustomizable>1</iscustomizable>
+  <isrequired>0</isrequired>
+  <secretstore>0</secretstore>
+  <type>100000002</type>
+</environmentvariabledefinition>

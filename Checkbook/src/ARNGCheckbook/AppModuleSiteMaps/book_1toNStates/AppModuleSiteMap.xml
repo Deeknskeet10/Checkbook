@@ -15,6 +15,8 @@
           <Title LCID="1033" Title="Prioritizations" />
         </Titles>
         <SubArea Id="subarea_bb61b6f3" Icon="/_imgs/imagestrips/transparent_spacer.gif" Entity="book_prioritization" Client="All,Outlook,OutlookLaptopClient,OutlookWorkstationClient,Web" AvailableOffline="true" PassParams="false" Sku="All,OnPremise,Live,SPLA" />
+        <SubArea Id="subarea_831a0cd2" Icon="/_imgs/imagestrips/transparent_spacer.gif" Entity="book_prioritizationfunding" Client="All,Outlook,OutlookLaptopClient,OutlookWorkstationClient,Web" AvailableOffline="true" PassParams="false" Sku="All,OnPremise,Live,SPLA" />
+        <SubArea Id="subarea_6e984239" Icon="/_imgs/imagestrips/transparent_spacer.gif" Entity="book_itemizeddetails" Client="All,Outlook,OutlookLaptopClient,OutlookWorkstationClient,Web" AvailableOffline="true" PassParams="false" Sku="All,OnPremise,Live,SPLA" />
       </Group>
       <Group Id="NewGroup_9a975d058" ResourceId="SitemapDesigner.NewGroup" IsProfile="false" ToolTipResourseId="SitemapDesigner.Unknown">
         <Titles>

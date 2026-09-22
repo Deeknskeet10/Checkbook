@@ -54,11 +54,11 @@
                         </labels>
                         <control id="book_appropriation" classid="{3EF39988-22BB-4F0B-BBBE-64B5A3748AEE}" datafieldname="book_appropriation" disabled="false" />
                       </cell>
-                      <cell id="{c3626d72-769a-4f23-8dd8-55397b204ded}" locklevel="0" colspan="1" rowspan="1">
+                      <cell id="{30d34643-ffaa-445c-b142-7f27a927554f}" locklevel="0" colspan="1" rowspan="1">
                         <labels>
                           <label description="Funded Program" languagecode="1033" />
                         </labels>
-                        <control id="book_fundedprogram" classid="{3EF39988-22BB-4F0B-BBBE-64B5A3748AEE}" datafieldname="book_fundedprogram" disabled="false" />
+                        <control id="book_newfundedprogram" classid="{270BD3DB-D9AF-4782-9025-509E298DEC0A}" datafieldname="book_newfundedprogram" disabled="false" />
                       </cell>
                     </row>
                   </rows>

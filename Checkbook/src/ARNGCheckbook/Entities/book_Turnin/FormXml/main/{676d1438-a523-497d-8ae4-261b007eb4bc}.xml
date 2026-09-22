@@ -12,9 +12,25 @@
             <label description="General" languagecode="1033" />
           </labels>
           <columns>
-            <column width="40%">
+            <column width="100%">
               <sections>
-                <section showlabel="true" showbar="false" IsUserDefined="0" id="{470a18c5-6a1c-49aa-9ed3-cfa231d21559}" name="pri_section" columns="1">
+                <section name="general_section_4" id="4ce6d772-80a2-486a-9829-c2d009856f76" IsUserDefined="0" locklevel="0" showlabel="false" showbar="false" layout="varwidth" celllabelalignment="Left" celllabelposition="Left" columns="1" labelwidth="115">
+                  <labels>
+                    <label description="New Section" languagecode="1033" />
+                  </labels>
+                  <rows>
+                    <row />
+                    <row>
+                      <cell id="{ad619fbb-cabf-48b1-81bc-77e364222c85}" locklevel="0" colspan="1" rowspan="1" showlabel="false">
+                        <labels>
+                          <label description="Name" languagecode="1033" />
+                        </labels>
+                        <control id="book_name" classid="{F9A8A302-114E-466A-B582-6771B2AE0D92}" datafieldname="book_name" disabled="false" uniqueid="{071b5e4b-d4a5-4b67-93db-19b1dd446136}" />
+                      </cell>
+                    </row>
+                  </rows>
+                </section>
+                <section showlabel="true" showbar="false" IsUserDefined="0" id="{470a18c5-6a1c-49aa-9ed3-cfa231d21559}" name="pri_section" columns="11">
                   <labels>
                     <label description="Reduction Details" languagecode="1033" />
                   </labels>
@@ -25,6 +41,12 @@
                           <label description="Fiscal Year" languagecode="1033" />
                         </labels>
                         <control id="book_fiscalyear" classid="{3EF39988-22BB-4F0B-BBBE-64B5A3748AEE}" datafieldname="book_fiscalyear" disabled="false" />
+                      </cell>
+                      <cell id="{422d1142-174d-4b6a-8321-0dc9021fe45b}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="Turn-In Details" languagecode="1033" />
+                        </labels>
+                        <control id="book_turnindetails" classid="{E0DECE4B-6FC8-4A8F-A065-082708572369}" datafieldname="book_turnindetails" disabled="false" />
                       </cell>
                     </row>
                     <row>
@@ -39,6 +61,12 @@
                           </parameters>
                         </control>
                       </cell>
+                      <cell id="{825524a1-8fbe-455b-b8b8-4e4e44b9de62}" locklevel="0" colspan="1" rowspan="1" visible="false">
+                        <labels>
+                          <label description="Origin" languagecode="1033" />
+                        </labels>
+                        <control id="book_origin" classid="{3EF39988-22BB-4F0B-BBBE-64B5A3748AEE}" datafieldname="book_origin" disabled="false" />
+                      </cell>
                     </row>
                     <row>
                       <cell id="{10560166-de69-4620-ac77-18ae310bf69a}" locklevel="0" colspan="1" rowspan="1">
@@ -46,6 +74,11 @@
                           <label description="Fund" languagecode="1033" />
                         </labels>
                         <control id="book_fund" classid="{270BD3DB-D9AF-4782-9025-509E298DEC0A}" datafieldname="book_fund" disabled="false" />
+                      </cell>
+                      <cell locklevel="0" id="{7d88792c-2233-41eb-93df-b48cf9d4cdb3}">
+                        <labels>
+                          <label description="" languagecode="1033" />
+                        </labels>
                       </cell>
                     </row>
                     <row>
@@ -55,91 +88,30 @@
                         </labels>
                         <control id="book_pg" classid="{270BD3DB-D9AF-4782-9025-509E298DEC0A}" datafieldname="book_pg" disabled="false" />
                       </cell>
-                    </row>
-                    <row>
-                      <cell id="{422d1142-174d-4b6a-8321-0dc9021fe45b}" locklevel="0" colspan="1" rowspan="1">
-                        <labels>
-                          <label description="Turn-In Details" languagecode="1033" />
-                        </labels>
-                        <control id="book_turnindetails" classid="{E0DECE4B-6FC8-4A8F-A065-082708572369}" datafieldname="book_turnindetails" disabled="false" />
-                      </cell>
-                    </row>
-                  </rows>
-                </section>
-                <section name="general_section_6" id="fb4472d7-0e29-40cb-b4bf-3c5fdcf4d1c5" IsUserDefined="0" locklevel="0" showlabel="true" showbar="false" layout="varwidth" celllabelalignment="Left" celllabelposition="Left" columns="1" labelwidth="115">
-                  <labels>
-                    <label description="Timeline" languagecode="1033" />
-                  </labels>
-                  <rows>
-                    <row />
-                    <row>
-                      <cell locklevel="0" id="{d13f4a34-0959-4c90-b89f-17ac84a71062}" rowspan="15" colspan="1">
-                        <labels>
-                          <label description="Note Text" languagecode="1033" />
-                        </labels>
-                        <control id="notescontrol" classid="{06375649-C143-495E-A496-C962E5B4488E}" disabled="false" />
-                      </cell>
-                    </row>
-                    <row />
-                    <row />
-                    <row />
-                    <row />
-                    <row />
-                    <row />
-                    <row />
-                    <row />
-                    <row />
-                    <row />
-                    <row />
-                    <row />
-                    <row />
-                    <row />
-                  </rows>
-                </section>
-              </sections>
-            </column>
-            <column width="60%">
-              <sections>
-                <section name="null_section_4" id="361c57d0-5b07-4522-8c10-72f0f21d6cee" IsUserDefined="0" locklevel="0" showlabel="true" showbar="false" layout="varwidth" celllabelalignment="Left" celllabelposition="Left" columns="1" labelwidth="115">
-                  <labels>
-                    <label description="Funding" languagecode="1033" />
-                  </labels>
-                  <rows>
-                    <row>
-                      <cell id="{d805af60-9418-47ed-987a-bb60da6467ac}">
+                      <cell locklevel="0" id="{389bd0b6-98c2-4e94-94a3-f2d8ed907bc7}">
                         <labels>
                           <label description="" languagecode="1033" />
                         </labels>
                       </cell>
                     </row>
+                  </rows>
+                </section>
+                <section name="general_section_4" id="03caef5b-c4c1-49cd-b8cd-5ef9e6da6b7f" IsUserDefined="0" locklevel="0" showlabel="true" showbar="false" layout="varwidth" celllabelalignment="Left" celllabelposition="Left" columns="11" labelwidth="115">
+                  <labels>
+                    <label description="Funding Details" languagecode="1033" />
+                  </labels>
+                  <rows>
+                    <row />
                     <row>
-                      <cell id="{fa243c51-4864-4b9e-9f00-0a132cad5cd4}" locklevel="0" colspan="1" rowspan="1">
+                      <cell id="{8e144d5b-fbe0-40b2-a2fe-5877f8fdced5}" locklevel="0" colspan="1" rowspan="1">
                         <labels>
                           <label description="Amount" languagecode="1033" />
                         </labels>
                         <control id="book_newamount" classid="{C3EFE0C3-0EC6-42BE-8349-CBD9079DFD8E}" datafieldname="book_newamount" disabled="false" />
                       </cell>
-                    </row>
-                    <row>
-                      <cell id="{f44ee456-b20c-4c6a-b00d-14c2b87dc6c5}" locklevel="0" colspan="1" rowspan="1">
+                      <cell locklevel="0" id="{ff038ac4-1ea7-4697-bd2c-95418c9fbdfd}" rowspan="4" colspan="1" auto="false" showlabel="true">
                         <labels>
-                          <label description="Identified Turn-In Amount" languagecode="1033" />
-                        </labels>
-                        <control id="book_identifiedturninamount" classid="{C3EFE0C3-0EC6-42BE-8349-CBD9079DFD8E}" datafieldname="book_identifiedturninamount" disabled="false" />
-                      </cell>
-                    </row>
-                  </rows>
-                </section>
-                <section name="_section_541" id="6761cf81-4911-40eb-bb0e-9a42f35d0cf5" IsUserDefined="0" locklevel="0" showlabel="true" showbar="false" layout="varwidth" celllabelalignment="Left" celllabelposition="Left" columns="1" labelwidth="115">
-                  <labels>
-                    <label description="Turn-In Items" languagecode="1033" />
-                  </labels>
-                  <rows>
-                    <row />
-                    <row>
-                      <cell locklevel="0" id="{82b25a39-089a-46a5-bb31-5750409dae99}" rowspan="4" colspan="1" auto="false" showlabel="false">
-                        <labels>
-                          <label description="New SG control 1767717231537" languagecode="1033" />
+                          <label description="Turn-in Items" languagecode="1033" />
                         </labels>
                         <control indicationOfSubgrid="true" id="Subgrid_new_1" classid="{E7A81278-8635-4D9E-8D4D-59480B391C5B}">
                           <parameters>
@@ -160,6 +132,45 @@
                     <row />
                     <row />
                     <row />
+                    <row>
+                      <cell id="{81fceacc-1627-4a9d-a816-adef323554da}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="AFP Amount" languagecode="1033" />
+                        </labels>
+                        <control id="book_afpamount" classid="{C3EFE0C3-0EC6-42BE-8349-CBD9079DFD8E}" datafieldname="book_afpamount" disabled="false" />
+                      </cell>
+                      <cell locklevel="0" id="{24cce376-2947-40f3-afdf-6e5569874fbf}">
+                        <labels>
+                          <label description="" languagecode="1033" />
+                        </labels>
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{5cb4bc79-7612-4d9b-a967-21b49c70885b}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="Allotment Amount" languagecode="1033" />
+                        </labels>
+                        <control id="book_allotmentamount" classid="{C3EFE0C3-0EC6-42BE-8349-CBD9079DFD8E}" datafieldname="book_allotmentamount" disabled="false" />
+                      </cell>
+                      <cell locklevel="0" id="{1fd1d6fc-2378-4368-a8f7-11eed0165903}">
+                        <labels>
+                          <label description="" languagecode="1033" />
+                        </labels>
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{df0ac833-a0a1-4b53-bff8-d7266cdeb892}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="Identified Turn-In Amount" languagecode="1033" />
+                        </labels>
+                        <control id="book_identifiedturninamount" classid="{C3EFE0C3-0EC6-42BE-8349-CBD9079DFD8E}" datafieldname="book_identifiedturninamount" disabled="false" />
+                      </cell>
+                      <cell locklevel="0" id="{56ac5509-757e-47a1-9433-7e1f35047810}">
+                        <labels>
+                          <label description="" languagecode="1033" />
+                        </labels>
+                      </cell>
+                    </row>
                   </rows>
                 </section>
               </sections>
@@ -244,17 +255,37 @@
                 <label description="" languagecode="1033" />
               </labels>
             </cell>
-            <cell id="{ab1d6497-8c7e-4544-af61-7136cf67e5c8}" locklevel="0" colspan="1" rowspan="1">
+            <cell locklevel="0" id="{b7c1e072-1e28-43f1-a8ac-6c690e1b08be}">
               <labels>
-                <label description="Owning Business Unit" languagecode="1033" />
+                <label description="" languagecode="1033" />
               </labels>
-              <control id="header_owningbusinessunit" classid="{270BD3DB-D9AF-4782-9025-509E298DEC0A}" datafieldname="owningbusinessunit" disabled="false" />
             </cell>
-            <cell id="{04c9afd8-9faa-4f68-a0fa-9d7583454949}" locklevel="0" colspan="1" rowspan="1">
+            <cell locklevel="0" id="{d76a1aff-82e5-4561-9d92-6b54048c985c}">
+              <labels>
+                <label description="" languagecode="1033" />
+              </labels>
+            </cell>
+            <cell locklevel="0" id="{da16f174-e40f-476e-8b22-6ab092e422de}">
+              <labels>
+                <label description="" languagecode="1033" />
+              </labels>
+            </cell>
+            <cell locklevel="0" id="{d7b8f7e4-f555-41a1-b59a-01eebe9b9eb4}">
+              <labels>
+                <label description="" languagecode="1033" />
+              </labels>
+            </cell>
+            <cell id="{04c9afd8-9faa-4f68-a0fa-9d7583454949}" locklevel="0" colspan="1" rowspan="1" visible="true">
               <labels>
                 <label description="Status" languagecode="1033" />
               </labels>
               <control id="header_statecode" classid="{3EF39988-22BB-4F0B-BBBE-64B5A3748AEE}" datafieldname="statecode" disabled="false" />
+            </cell>
+            <cell id="{dc1886a2-26ab-418c-bca2-5ef29ebc11b8}" locklevel="0" colspan="1" rowspan="1">
+              <labels>
+                <label description="Owning Business Unit" languagecode="1033" />
+              </labels>
+              <control id="header_owningbusinessunit" classid="{270BD3DB-D9AF-4782-9025-509E298DEC0A}" datafieldname="owningbusinessunit" disabled="false" />
             </cell>
           </row>
         </rows>
@@ -281,7 +312,7 @@
         </rows>
       </footer>
       <formLibraries>
-        <Library name="book_hidePriTurnIns" libraryUniqueId="{70ef46af-2c60-4ec0-b3af-697304a422fc}" />
+        <Library name="book_TurnIns" libraryUniqueId="{0b062d8a-e137-4c36-b19d-8d4820479bec}" />
       </formLibraries>
       <Navigation>
         <NavBar />
@@ -316,6 +347,52 @@
       <DisplayConditions Order="0" FallbackForm="true">
         <Everyone />
       </DisplayConditions>
+      <controlDescriptions>
+        <controlDescription forControl="{071b5e4b-d4a5-4b67-93db-19b1dd446136}">
+          <customControl id="{4273EDBD-AC1D-40D3-9FB2-095C621B552D}">
+            <parameters>
+              <datafieldname>book_name</datafieldname>
+            </parameters>
+          </customControl>
+          <customControl formFactor="0" name="book_ARNGCheckbook.TurnInApprovalProcess">
+            <parameters>
+              <turnInName type="SingleLine.Text">book_name</turnInName>
+            </parameters>
+          </customControl>
+          <customControl formFactor="2" name="book_ARNGCheckbook.TurnInApprovalProcess">
+            <parameters>
+              <turnInName type="SingleLine.Text">book_name</turnInName>
+            </parameters>
+          </customControl>
+          <customControl formFactor="1" name="book_ARNGCheckbook.TurnInApprovalProcess">
+            <parameters>
+              <turnInName type="SingleLine.Text">book_name</turnInName>
+            </parameters>
+          </customControl>
+        </controlDescription>
+      </controlDescriptions>
+      <events>
+        <event name="onload" application="false" active="false">
+          <Handlers>
+            <Handler functionName="Book.TurnIn.onLoad" libraryName="book_TurnIns" handlerUniqueId="{4f41ba5d-20d5-49e8-9e21-b6e3607f9d8a}" enabled="true" parameters="" passExecutionContext="true" />
+          </Handlers>
+        </event>
+        <event name="onchange" application="false" active="false" attribute="book_origin">
+          <Handlers>
+            <Handler functionName="Book.TurnIn.onOriginChange" libraryName="book_TurnIns" handlerUniqueId="{1b6d371a-6fc3-4bf4-b532-85e1713384b1}" enabled="true" parameters="" passExecutionContext="true" />
+          </Handlers>
+        </event>
+        <event name="onchange" application="false" active="false" attribute="book_allotmentamount">
+          <Handlers>
+            <Handler functionName="Book.TurnIn.onAmountChange" libraryName="book_TurnIns" handlerUniqueId="{bc15dc6a-f484-418d-8b81-8d991f19f0ed}" enabled="true" parameters="" passExecutionContext="true" />
+          </Handlers>
+        </event>
+        <event name="onchange" application="false" active="false" attribute="book_afpamount">
+          <Handlers>
+            <Handler functionName="Book.TurnIn.onAmountChange" libraryName="book_TurnIns" handlerUniqueId="{19425512-3c2c-4ad6-a909-b0b4d632d130}" enabled="true" parameters="" passExecutionContext="true" />
+          </Handlers>
+        </event>
+      </events>
     </form>
     <IsCustomizable>1</IsCustomizable>
     <CanBeDeleted>1</CanBeDeleted>

@@ -1,0 +1,11 @@
+<customapiresponseproperty uniquename="Updated">
+  <description default="Pending sweep rows amended in place (amount / FE retag / re-pairing). Per-invocation count.">
+    <label description="Pending sweep rows amended in place (amount / FE retag / re-pairing). Per-invocation count." languagecode="1033" />
+  </description>
+  <displayname default="Generate Distributions - Update">
+    <label description="Generate Distributions - Update" languagecode="1033" />
+  </displayname>
+  <iscustomizable>1</iscustomizable>
+  <name>Generate Distributions - Update</name>
+  <type>7</type>
+</customapiresponseproperty>

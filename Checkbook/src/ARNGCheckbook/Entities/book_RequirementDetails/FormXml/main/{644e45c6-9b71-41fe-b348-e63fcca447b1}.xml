@@ -57,11 +57,7 @@
                           <label description="TDC" languagecode="1033" />
                         </labels>
                         <control id="book_tdc" classid="{270BD3DB-D9AF-4782-9025-509E298DEC0A}" datafieldname="book_tdc" disabled="false">
-                          <parameters>
-                            <DependentAttributeName>book_requirementdetails.book_item</DependentAttributeName>
-                            <DependentAttributeType>book_item</DependentAttributeType>
-                            <FilterRelationshipName>book_tdc_Item_book_item</FilterRelationshipName>
-                          </parameters>
+                          <parameters />
                         </control>
                       </cell>
                     </row>
@@ -82,6 +78,39 @@
                             <QuickForms>&lt;QuickFormIds&gt;&lt;QuickFormId entityname="book_tdc"&gt;aad1cfe2-5774-4e8c-b620-b8af336b314e&lt;/QuickFormId&gt;&lt;/QuickFormIds&gt;</QuickForms>
                           </parameters>
                         </control>
+                      </cell>
+                    </row>
+                  </rows>
+                </section>
+                <section name="null_section_3" id="3081d510-52ad-46d2-96c5-b50afe1c6242" IsUserDefined="0" locklevel="0" showlabel="false" showbar="false" layout="varwidth" celllabelalignment="Left" celllabelposition="Left" columns="11" labelwidth="115" visible="false">
+                  <labels>
+                    <label description="New Section" languagecode="1033" />
+                  </labels>
+                  <rows>
+                    <row>
+                      <cell locklevel="0" id="{a19c0e5c-c1a1-4ac9-b85f-0add7479345e}">
+                        <labels>
+                          <label description="" languagecode="1033" />
+                        </labels>
+                      </cell>
+                      <cell locklevel="0" id="{de9fc8bc-55ad-4671-9940-1a777fc30595}">
+                        <labels>
+                          <label description="" languagecode="1033" />
+                        </labels>
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{dd251ef7-f267-41a0-977e-906bfccd55b9}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="LIN Required" languagecode="1033" />
+                        </labels>
+                        <control id="book_linrequired" classid="{67FAC785-CD58-4F9F-ABB3-4B7DDC6ED5ED}" datafieldname="book_linrequired" disabled="false" />
+                      </cell>
+                      <cell id="{70ef4a7f-5f7c-45cb-9739-f1e3c889ed4c}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="Country Required" languagecode="1033" />
+                        </labels>
+                        <control id="book_countryrequired" classid="{67FAC785-CD58-4F9F-ABB3-4B7DDC6ED5ED}" datafieldname="book_countryrequired" disabled="false" />
                       </cell>
                     </row>
                   </rows>
@@ -108,6 +137,12 @@
               <labels>
                 <label description="" languagecode="1033" />
               </labels>
+            </cell>
+            <cell id="{82b6f058-bdd9-4ba0-a725-3c2e7508b533}" locklevel="0" colspan="1" rowspan="1">
+              <labels>
+                <label description="Requirement" languagecode="1033" />
+              </labels>
+              <control id="header_book_requirement" classid="{270BD3DB-D9AF-4782-9025-509E298DEC0A}" datafieldname="book_requirement" disabled="true" />
             </cell>
           </row>
         </rows>
@@ -143,6 +178,12 @@
         <event name="onchange" application="false" active="false" attribute="book_item">
           <Handlers>
             <Handler functionName="onBookItemChange" libraryName="book_reqDetailFieldRequired" handlerUniqueId="{634e489e-872e-4db2-b094-a7d9549eb5e7}" enabled="true" parameters="" passExecutionContext="true" />
+            <Handler functionName="TDCFilter.triggerPreSearch" libraryName="book_reqDetailFieldRequired" handlerUniqueId="{e446c06c-cb57-4762-b5a9-1fab796fec56}" enabled="true" parameters="" passExecutionContext="true" />
+          </Handlers>
+        </event>
+        <event name="onload" application="false" active="false">
+          <Handlers>
+            <Handler functionName="TDCFilter.triggerPreSearch" libraryName="book_reqDetailFieldRequired" handlerUniqueId="{44793892-e00e-4c62-8a24-1f48051089e3}" enabled="true" parameters="" passExecutionContext="true" />
           </Handlers>
         </event>
       </events>

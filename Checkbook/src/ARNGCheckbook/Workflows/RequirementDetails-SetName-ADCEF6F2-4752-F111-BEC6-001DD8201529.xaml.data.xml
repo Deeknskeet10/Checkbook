@@ -7,7 +7,7 @@
   <Mode>0</Mode>
   <Scope>4</Scope>
   <OnDemand>0</OnDemand>
-  <TriggerOnUpdateAttributeList>book_tdc,book_requirement,book_item</TriggerOnUpdateAttributeList>
+  <TriggerOnUpdateAttributeList>book_tdc,book_requirement,book_lin,book_item,book_country</TriggerOnUpdateAttributeList>
   <TriggerOnCreate>1</TriggerOnCreate>
   <TriggerOnDelete>0</TriggerOnDelete>
   <AsyncAutodelete>1</AsyncAutodelete>

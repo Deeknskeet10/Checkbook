@@ -20,7 +20,7 @@
   <SdkMessageProcessingStepImages>
     <SdkMessageProcessingStepImage Name="PreImage">
       <SdkMessageProcessingStepImageId>{2b284756-6f66-f111-a824-001dd8201529}</SdkMessageProcessingStepImageId>
-      <Attributes>book_prioritization</Attributes>
+      <Attributes>book_prioritization,book_requirementfunding</Attributes>
       <EntityAlias>PreImage</EntityAlias>
       <ImageType>0</ImageType>
       <MessagePropertyName>Target</MessagePropertyName>

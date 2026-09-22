@@ -1,11 +1,11 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <CanvasApp xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
   <Name>book_arngcheckbookadmincenterdefaultcommandlibrary_1362b</Name>
-  <AppVersion>2026-06-10T14:31:20Z</AppVersion>
+  <AppVersion>2026-07-27T14:21:20Z</AppVersion>
   <Status>Ready</Status>
-  <CreatedByClientVersion>3.26054.13.0</CreatedByClientVersion>
+  <CreatedByClientVersion>3.26071.9.0</CreatedByClientVersion>
   <MinClientVersion>0.0.0.0</MinClientVersion>
-  <Tags>{"primaryDeviceWidth":"640","primaryDeviceHeight":"1136","sienaVersion":"20260609T193802Z-3.26053.13.0","deviceCapabilities":"","supportsPortrait":"true","supportsLandscape":"false","primaryFormFactor":"Phone","publisherVersion":"3.26013.14.0","minimumRequiredApiVersion":"2.2.0","hasComponent":"true","hasUnlockedComponent":"true","isUnifiedRootApp":"false"}</Tags>
+  <Tags>{"primaryDeviceWidth":"640","primaryDeviceHeight":"1136","sienaVersion":"20260717T135759Z-3.26064.5.0","deviceCapabilities":"","supportsPortrait":"true","supportsLandscape":"false","primaryFormFactor":"Phone","publisherVersion":"3.26013.14.0","minimumRequiredApiVersion":"2.2.0","hasComponent":"true","hasUnlockedComponent":"true","isUnifiedRootApp":"false"}</Tags>
   <IsCdsUpgraded>0</IsCdsUpgraded>
   <GalleryItemId xsi:nil="true"></GalleryItemId>
   <BackgroundColor>rgba(0, 176, 240, 1)</BackgroundColor>
@@ -15,7 +15,7 @@
   <Publisher xsi:nil="true"></Publisher>
   <AuthorizationReferences>[]</AuthorizationReferences>
   <ConnectionReferences>{}</ConnectionReferences>
-  <DatabaseReferences>{"default.cds":{"databaseDetails":{"referenceType":"Environmental","environmentName":"default.cds"},"dataSources":{"Unfunded Requests":{"entitySetName":"book_unfundedrequestses","logicalName":"book_unfundedrequests"},"Requirements":{"entitySetName":"book_requirementses","logicalName":"book_requirements"}}}}</DatabaseReferences>
+  <DatabaseReferences>{"default.cds":{"databaseDetails":{"referenceType":"Environmental","environmentName":"default.cds"},"dataSources":{"Unfunded Requests":{"entitySetName":"book_unfundedrequestses","logicalName":"book_unfundedrequests"},"Requirements":{"entitySetName":"book_requirementses","logicalName":"book_requirements"},"Prioritizations":{"entitySetName":"book_prioritizations","logicalName":"book_prioritization"}}}}</DatabaseReferences>
   <AppComponents>[]</AppComponents>
   <AppComponentDependencies>[]</AppComponentDependencies>
   <CanConsumeAppPass>1</CanConsumeAppPass>
@@ -24,8 +24,8 @@
   <AdminControlBypassConsent>0</AdminControlBypassConsent>
   <EmbeddedApp xsi:nil="true"></EmbeddedApp>
   <IntroducedVersion>1.0</IntroducedVersion>
-  <CdsDependencies>{"cdsdependencies":[{"logicalname":"book_unfundedrequests","componenttype":1},{"logicalname":"book_requirements","componenttype":1}]}</CdsDependencies>
+  <CdsDependencies>{"cdsdependencies":[{"logicalname":"book_unfundedrequests","componenttype":1},{"logicalname":"book_requirements","componenttype":1},{"logicalname":"book_prioritization","componenttype":1}]}</CdsDependencies>
   <IsCustomizable>1</IsCustomizable>
-  <BackgroundImageUri>/CanvasApps/book_arngcheckbookadmincenterdefaultcommandli66152_BackgroundImageUri</BackgroundImageUri>
-  <DocumentUri>/CanvasApps/book_arngcheckbookadmincenterdefaultcommandli22943_DocumentUri.msapp</DocumentUri>
+  <BackgroundImageUri>/CanvasApps/book_arngcheckbookadmincenterdefaultcommandli79858_BackgroundImageUri</BackgroundImageUri>
+  <DocumentUri>/CanvasApps/book_arngcheckbookadmincenterdefaultcommandli28388_DocumentUri.msapp</DocumentUri>
 </CanvasApp>

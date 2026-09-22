@@ -20,7 +20,7 @@
   <SdkMessageProcessingStepImages>
     <SdkMessageProcessingStepImage Name="ProcessorPre">
       <SdkMessageProcessingStepImageId>{87ba65ad-b652-f111-bec5-001dd8204df7}</SdkMessageProcessingStepImageId>
-      <Attributes>book_newamount,book_bedecision,book_newcreditedloa,book_creditedprioritization,book_newcreditedrequirement,book_newdebitedloa,book_debitedprioritization,book_newdebitedrequirement,book_samefundandsag,book_newstateapproved</Attributes>
+      <Attributes>book_newamount,book_bedecision,book_newcreditedloa,book_creditedprioritization,book_newcreditedrequirement,book_newdebitedloa,book_debitedprioritization,book_newdebitedrequirement,book_samefundandsag,book_newstateapproved,statecode</Attributes>
       <EntityAlias>PreImage</EntityAlias>
       <ImageType>0</ImageType>
       <MessagePropertyName>Target</MessagePropertyName>

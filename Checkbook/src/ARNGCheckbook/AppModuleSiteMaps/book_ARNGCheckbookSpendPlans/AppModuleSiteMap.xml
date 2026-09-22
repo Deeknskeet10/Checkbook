@@ -15,6 +15,11 @@
           <Title LCID="1033" Title="Plans" />
         </Titles>
         <SubArea Id="subarea_2d175528" Icon="/_imgs/imagestrips/transparent_spacer.gif" Entity="book_spendplan" Client="All,Outlook,OutlookLaptopClient,OutlookWorkstationClient,Web" AvailableOffline="true" PassParams="false" Sku="All,OnPremise,Live,SPLA" />
+        <SubArea Id="subarea_1356151e" ResourceId="SitemapDesigner.NewSubArea" Icon="/_imgs/imagestrips/transparent_spacer.gif" Url="$webresource:book_stateSpendPlan" Client="All,Outlook,OutlookLaptopClient,OutlookWorkstationClient,Web" AvailableOffline="true" PassParams="false" Sku="All,OnPremise,Live,SPLA">
+          <Titles>
+            <Title LCID="1033" Title="Spend Plan Roll-Up" />
+          </Titles>
+        </SubArea>
       </Group>
     </Area>
   </SiteMap>

@@ -1,0 +1,41 @@
+<appaction uniquename="book__FundingLock!3cd3c618b6284b0ab3298a1cd2f95bba!book_ARNGCheckbookAdminCenter!book_prioritization!1">
+  <appmoduleid>
+    <uniquename>book_ARNGCheckbookAdminCenter</uniquename>
+  </appmoduleid>
+  <buttonaccessibilitytext default="Lock/Unlock Funded Amount (TDP) Fields">
+    <label description="Lock/Unlock Funded Amount (TDP) Fields" languagecode="1033" />
+  </buttonaccessibilitytext>
+  <buttonlabeltext default="Funding Lock">
+    <label description="Funding Lock" languagecode="1033" />
+  </buttonlabeltext>
+  <buttontooltipdescription default="Lock/Unlock Funded Amount (TDP) Fields">
+    <label description="Lock/Unlock Funded Amount (TDP) Fields" languagecode="1033" />
+  </buttontooltipdescription>
+  <buttontooltiptitle default="Lock/Unlock Funded Amount (TDP) Fields">
+    <label description="Lock/Unlock Funded Amount (TDP) Fields" languagecode="1033" />
+  </buttontooltiptitle>
+  <context>1</context>
+  <contextentity>
+    <logicalname>book_prioritization</logicalname>
+  </contextentity>
+  <contextvalue>book_prioritization</contextvalue>
+  <fonticon>Lock</fonticon>
+  <hidden>0</hidden>
+  <iscustomizable>1</iscustomizable>
+  <isdisabled>0</isdisabled>
+  <isgrouptitlehidden>0</isgrouptitlehidden>
+  <location>1</location>
+  <name>FundingLock!3cd3c618b6284b0ab3298a1cd2f95bba</name>
+  <onclickeventjavascriptfunctionname>FundedAmountLock.run</onclickeventjavascriptfunctionname>
+  <onclickeventjavascriptparameters>[{"type":5}]</onclickeventjavascriptparameters>
+  <onclickeventjavascriptwebresourceid>
+    <webresourceid>c4c28245-e781-f111-ab0f-001dd8204df7</webresourceid>
+  </onclickeventjavascriptwebresourceid>
+  <onclickeventtype>2</onclickeventtype>
+  <origin>0</origin>
+  <sequence>1000100010.0000000000</sequence>
+  <statecode>0</statecode>
+  <statuscode>1</statuscode>
+  <type>0</type>
+  <visibilitytype>0</visibilitytype>
+</appaction>

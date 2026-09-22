@@ -12,11 +12,20 @@
       </Titles>
       <Group Id="group_04d7ee38" ResourceId="SitemapDesigner.NewGroup" DescriptionResourceId="SitemapDesigner.NewGroup" IntroducedVersion="7.0.0.0" IsProfile="false" ToolTipResourseId="SitemapDesigner.Unknown">
         <Titles>
-          <Title LCID="1033" Title="1 to N" />
+          <Title LCID="1033" Title="Requirements" />
         </Titles>
         <SubArea Id="subarea_b4eb9c63" Entity="book_requirements" Client="All,Outlook,OutlookLaptopClient,OutlookWorkstationClient,Web" AvailableOffline="true" PassParams="false" Sku="All,OnPremise,Live,SPLA" />
         <SubArea Id="subarea_5b36eae3" Entity="book_requirementfunding" Client="All,Outlook,OutlookLaptopClient,OutlookWorkstationClient,Web" AvailableOffline="true" PassParams="false" Sku="All,OnPremise,Live,SPLA" />
+        <SubArea Id="subarea_9409f658" Icon="/_imgs/imagestrips/transparent_spacer.gif" Entity="book_requirementdetails" Client="All,Outlook,OutlookLaptopClient,OutlookWorkstationClient,Web" AvailableOffline="true" PassParams="false" Sku="All,OnPremise,Live,SPLA" />
+        <SubArea Id="subarea_5ab1688f" Icon="/_imgs/imagestrips/transparent_spacer.gif" Entity="book_requirementdetailfunding" Client="All,Outlook,OutlookLaptopClient,OutlookWorkstationClient,Web" AvailableOffline="true" PassParams="false" Sku="All,OnPremise,Live,SPLA" />
+      </Group>
+      <Group Id="group_b28ec601" ResourceId="SitemapDesigner.NewGroup" DescriptionResourceId="SitemapDesigner.NewGroup" IntroducedVersion="7.0.0.0" IsProfile="false" ToolTipResourseId="SitemapDesigner.Unknown">
+        <Titles>
+          <Title LCID="1033" Title="State Prioritizations" />
+        </Titles>
         <SubArea Id="subarea_7c817c3c" Entity="book_prioritization" Client="All,Outlook,OutlookLaptopClient,OutlookWorkstationClient,Web" AvailableOffline="true" PassParams="false" Sku="All,OnPremise,Live,SPLA" />
+        <SubArea Id="subarea_6e41f1ff" Icon="/_imgs/imagestrips/transparent_spacer.gif" Entity="book_prioritizationfunding" Client="All,Outlook,OutlookLaptopClient,OutlookWorkstationClient,Web" AvailableOffline="true" PassParams="false" Sku="All,OnPremise,Live,SPLA" />
+        <SubArea Id="subarea_ef643525" Icon="/_imgs/imagestrips/transparent_spacer.gif" Entity="book_itemizeddetails" Client="All,Outlook,OutlookLaptopClient,OutlookWorkstationClient,Web" AvailableOffline="true" PassParams="false" Sku="All,OnPremise,Live,SPLA" />
       </Group>
     </Area>
     <Area Id="NewArea_f8e40f6a" ResourceId="SitemapDesigner.NewArea" ShowGroups="false">

@@ -10,9 +10,13 @@
   <ClientType>4</ClientType>
   <NavigationType>0</NavigationType>
   <AppModuleComponents>
+    <AppModuleComponent type="1" schemaName="book_itemizeddetails" />
     <AppModuleComponent type="1" schemaName="book_lin" />
     <AppModuleComponent type="1" schemaName="book_obligationauthority" />
     <AppModuleComponent type="1" schemaName="book_prioritization" />
+    <AppModuleComponent type="1" schemaName="book_prioritizationfunding" />
+    <AppModuleComponent type="1" schemaName="book_requirementdetailfunding" />
+    <AppModuleComponent type="1" schemaName="book_requirementdetails" />
     <AppModuleComponent type="1" schemaName="book_requirementfunding" />
     <AppModuleComponent type="1" schemaName="book_requirementfundingvalidatefunding" />
     <AppModuleComponent type="1" schemaName="book_requirements" />

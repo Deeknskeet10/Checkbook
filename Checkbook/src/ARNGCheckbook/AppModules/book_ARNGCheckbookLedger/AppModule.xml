@@ -17,6 +17,7 @@
     <AppModuleComponent type="1" schemaName="book_obligationauthority" />
     <AppModuleComponent type="1" schemaName="book_obligationperiods" />
     <AppModuleComponent type="1" schemaName="book_realignments" />
+    <AppModuleComponent type="1" schemaName="book_stateswap" />
     <AppModuleComponent type="1" schemaName="book_turnin" />
     <AppModuleComponent type="1" schemaName="book_turninitems" />
     <AppModuleComponent type="60" id="{af33228b-9095-f011-b4cc-001dd8059413}" />

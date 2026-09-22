@@ -6,11 +6,15 @@
   <Description>Maintains LIN Entity</Description>
   <SummaryOfCoreTablePermissions>Maintains LIN Entity</SummaryOfCoreTablePermissions>
   <RolePrivileges>
+    <RolePrivilege name="prvAppendbook_Country" level="Global" />
     <RolePrivilege name="prvAppendbook_LIN" level="Global" />
+    <RolePrivilege name="prvAppendTobook_Country" level="Global" />
     <RolePrivilege name="prvAppendTobook_LIN" level="Global" />
     <RolePrivilege name="prvAssignbook_LIN" level="Global" />
+    <RolePrivilege name="prvCreatebook_Country" level="Global" />
     <RolePrivilege name="prvCreatebook_LIN" level="Global" />
     <RolePrivilege name="prvCreateSharePointData" level="Global" />
+    <RolePrivilege name="prvReadbook_Country" level="Global" />
     <RolePrivilege name="prvReadbook_LIN" level="Global" />
     <RolePrivilege name="prvReadPluginAssembly" level="Global" />
     <RolePrivilege name="prvReadPluginType" level="Global" />
@@ -20,6 +24,7 @@
     <RolePrivilege name="prvReadSharePointData" level="Global" />
     <RolePrivilege name="prvReadSharePointDocument" level="Global" />
     <RolePrivilege name="prvSharebook_LIN" level="Global" />
+    <RolePrivilege name="prvWritebook_Country" level="Global" />
     <RolePrivilege name="prvWritebook_LIN" level="Global" />
     <RolePrivilege name="prvWriteSharePointData" level="Global" />
   </RolePrivileges>

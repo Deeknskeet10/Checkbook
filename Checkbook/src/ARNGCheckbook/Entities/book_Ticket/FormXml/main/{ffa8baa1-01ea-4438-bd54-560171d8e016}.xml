@@ -1,0 +1,166 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<forms xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <systemform>
+    <formid>{ffa8baa1-01ea-4438-bd54-560171d8e016}</formid>
+    <IntroducedVersion>1.11.0.115</IntroducedVersion>
+    <FormPresentation>1</FormPresentation>
+    <FormActivationState>1</FormActivationState>
+    <form headerdensity="HighWithControls">
+      <tabs>
+        <tab verticallayout="true" id="{67379582-ddae-4610-bcdd-6b1bafa88630}" IsUserDefined="1">
+          <labels>
+            <label description="General" languagecode="1033" />
+          </labels>
+          <columns>
+            <column width="100%">
+              <sections>
+                <section showlabel="false" showbar="false" IsUserDefined="0" id="{4ca13b9f-272f-472b-bf27-770bb7b2fecc}">
+                  <labels>
+                    <label description="General" languagecode="1033" />
+                  </labels>
+                  <rows>
+                    <row>
+                      <cell id="{02110bdf-6d26-4082-9703-6b35379607eb}">
+                        <labels>
+                          <label description="Name" languagecode="1033" />
+                        </labels>
+                        <control id="book_name" classid="{4273EDBD-AC1D-40d3-9FB2-095C621B552D}" datafieldname="book_name" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{92c2d56c-786b-4799-a2f2-362e63f30502}" visible="false">
+                        <labels>
+                          <label description="Owner" languagecode="1033" />
+                        </labels>
+                        <control id="ownerid" classid="{270BD3DB-D9AF-4782-9025-509E298DEC0A}" datafieldname="ownerid" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{9a86a731-1ba0-4592-b787-5549c641aed8}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="Ticket Type" languagecode="1033" />
+                        </labels>
+                        <control id="header_book_tickettype" classid="{3EF39988-22BB-4F0B-BBBE-64B5A3748AEE}" datafieldname="book_tickettype" disabled="false" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{0ca0823a-f892-4238-b008-222cbf737061}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="Module" languagecode="1033" />
+                        </labels>
+                        <control id="book_module" classid="{3EF39988-22BB-4F0B-BBBE-64B5A3748AEE}" datafieldname="book_module" disabled="false" />
+                      </cell>
+                    </row>
+                    <row>
+                      <cell id="{63d9aa82-12c4-4e85-91a3-0fc51eed8538}" locklevel="0" colspan="1" rowspan="1">
+                        <labels>
+                          <label description="Description" languagecode="1033" />
+                        </labels>
+                        <control id="book_description" classid="{E0DECE4B-6FC8-4A8F-A065-082708572369}" datafieldname="book_description" disabled="false" />
+                      </cell>
+                    </row>
+                  </rows>
+                </section>
+                <section name="null_section_4" id="82974a09-4765-40b6-b370-eab87f0a4c41" IsUserDefined="0" locklevel="0" showlabel="false" showbar="false" layout="varwidth" celllabelalignment="Left" celllabelposition="Left" columns="1" labelwidth="115">
+                  <labels>
+                    <label description="New Section" languagecode="1033" />
+                  </labels>
+                  <rows>
+                    <row />
+                    <row>
+                      <cell locklevel="0" id="{f6f0ed16-2b7e-4c90-bddc-b57b832b3a8d}" rowspan="15" colspan="1">
+                        <labels>
+                          <label description="Note Text" languagecode="1033" />
+                        </labels>
+                        <control id="notescontrol" classid="{06375649-C143-495E-A496-C962E5B4488E}" disabled="false" />
+                      </cell>
+                    </row>
+                    <row />
+                    <row />
+                    <row />
+                    <row />
+                    <row />
+                    <row />
+                    <row />
+                    <row />
+                    <row />
+                    <row />
+                    <row />
+                    <row />
+                    <row />
+                    <row />
+                  </rows>
+                </section>
+              </sections>
+            </column>
+          </columns>
+        </tab>
+      </tabs>
+      <header id="{acfabf24-95e0-492b-ad93-5841281a74b6}" celllabelposition="Top" columns="111" labelwidth="115" celllabelalignment="Left">
+        <rows>
+          <row>
+            <cell id="{85a4dd00-2905-4700-9d16-440ca3297632}" showlabel="false">
+              <labels>
+                <label description="" languagecode="1033" />
+              </labels>
+            </cell>
+            <cell id="{32f4abf4-81d5-4394-838f-c58f3e063a8b}" showlabel="false">
+              <labels>
+                <label description="" languagecode="1033" />
+              </labels>
+            </cell>
+            <cell id="{4742215f-6181-4635-a239-726be8d37120}" showlabel="false">
+              <labels>
+                <label description="" languagecode="1033" />
+              </labels>
+            </cell>
+            <cell id="{1ca77958-d426-472f-ae41-7210b4a8295f}" locklevel="0" colspan="1" rowspan="1">
+              <labels>
+                <label description="Score" languagecode="1033" />
+              </labels>
+              <control id="header_book_score" classid="{C6D124CA-7EDA-4A60-AEA9-7FB8D318B68F}" datafieldname="book_score" disabled="false" />
+            </cell>
+            <cell id="{5ecee206-3d0b-4598-b571-37b2475d1298}" locklevel="0" colspan="1" rowspan="1">
+              <labels>
+                <label description="Ticket Status" languagecode="1033" />
+              </labels>
+              <control id="header_book_ticketstatus" classid="{3EF39988-22BB-4F0B-BBBE-64B5A3748AEE}" datafieldname="book_ticketstatus" disabled="false" />
+            </cell>
+          </row>
+        </rows>
+      </header>
+      <footer id="{a432f622-2d93-4de0-8958-0971735c6d1b}" celllabelposition="Top" columns="111" labelwidth="115" celllabelalignment="Left">
+        <rows>
+          <row>
+            <cell id="{5a0dd4bb-6643-4c96-80db-afd40a73cc28}" showlabel="false">
+              <labels>
+                <label description="" languagecode="1033" />
+              </labels>
+            </cell>
+            <cell id="{15b33567-1aad-4abc-b91f-6ab05b0046b8}" showlabel="false">
+              <labels>
+                <label description="" languagecode="1033" />
+              </labels>
+            </cell>
+            <cell id="{551a24e4-4c9b-4ef3-bdfa-1b40694e1574}" showlabel="false">
+              <labels>
+                <label description="" languagecode="1033" />
+              </labels>
+            </cell>
+          </row>
+        </rows>
+      </footer>
+      <DisplayConditions Order="0" FallbackForm="true">
+        <Everyone />
+      </DisplayConditions>
+    </form>
+    <IsCustomizable>1</IsCustomizable>
+    <CanBeDeleted>1</CanBeDeleted>
+    <LocalizedNames>
+      <LocalizedName description="Information" languagecode="1033" />
+    </LocalizedNames>
+    <Descriptions>
+      <Description description="A form for this entity." languagecode="1033" />
+    </Descriptions>
+  </systemform>
+</forms>

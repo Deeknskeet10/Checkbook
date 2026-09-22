@@ -30,15 +30,7 @@
     </option>
     <option value="2" IsHidden="0">
       <labels>
-        <label description="Add" languagecode="1033" />
-      </labels>
-      <Descriptions>
-        <Description description="" languagecode="1033" />
-      </Descriptions>
-    </option>
-    <option value="3" IsHidden="0">
-      <labels>
-        <label description="Cut" languagecode="1033" />
+        <label description="Swap" languagecode="1033" />
       </labels>
       <Descriptions>
         <Description description="" languagecode="1033" />

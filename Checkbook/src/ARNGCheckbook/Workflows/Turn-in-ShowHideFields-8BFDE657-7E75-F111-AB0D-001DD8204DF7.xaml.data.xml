@@ -1,0 +1,31 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Workflow WorkflowId="{8bfde657-7e75-f111-ab0d-001dd8204df7}" Name="Turn-in - Show/Hide Fields" Description="Shows/Hides the AFP and Allotment Amount fields based on Origin value" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <XamlFileName>/Workflows/Turn-in-ShowHideFields-8BFDE657-7E75-F111-AB0D-001DD8204DF7.xaml</XamlFileName>
+  <Type>1</Type>
+  <Subprocess>0</Subprocess>
+  <Category>2</Category>
+  <Mode>1</Mode>
+  <Scope>4</Scope>
+  <OnDemand>0</OnDemand>
+  <TriggerOnCreate>0</TriggerOnCreate>
+  <TriggerOnDelete>0</TriggerOnDelete>
+  <AsyncAutodelete>0</AsyncAutodelete>
+  <SyncWorkflowLogOnFailure>0</SyncWorkflowLogOnFailure>
+  <StateCode>0</StateCode>
+  <StatusCode>1</StatusCode>
+  <RunAs>1</RunAs>
+  <IsTransacted>1</IsTransacted>
+  <IntroducedVersion>1.11.0.75</IntroducedVersion>
+  <IsCustomizable>1</IsCustomizable>
+  <BusinessProcessType>0</BusinessProcessType>
+  <IsCustomProcessingStepAllowedForOtherPublishers>1</IsCustomProcessingStepAllowedForOtherPublishers>
+  <ProcessTriggerScope>2</ProcessTriggerScope>
+  <ModernFlowType>0</ModernFlowType>
+  <PrimaryEntity>book_Turnin</PrimaryEntity>
+  <LocalizedNames>
+    <LocalizedName languagecode="1033" description="Turn-in - Show/Hide Fields" />
+  </LocalizedNames>
+  <Descriptions>
+    <Description languagecode="1033" description="Shows/Hides the AFP and Allotment Amount fields based on Origin value" />
+  </Descriptions>
+</Workflow>

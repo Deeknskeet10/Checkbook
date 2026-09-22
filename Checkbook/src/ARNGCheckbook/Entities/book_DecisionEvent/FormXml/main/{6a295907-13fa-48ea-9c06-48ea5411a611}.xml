@@ -34,11 +34,11 @@
                       </cell>
                     </row>
                     <row>
-                      <cell id="{4b29a11c-8a50-4e2c-af58-3f6e8010b5a9}" visible="true">
+                      <cell id="{51c6c619-5be7-4d9f-bec2-8ca329199a0c}" locklevel="0" colspan="1" rowspan="1">
                         <labels>
-                          <label description="Name" languagecode="1033" />
+                          <label description="Appropriation" languagecode="1033" />
                         </labels>
-                        <control id="book_name" classid="{4273EDBD-AC1D-40d3-9FB2-095C621B552D}" datafieldname="book_name" />
+                        <control id="book_appropriation" classid="{3EF39988-22BB-4F0B-BBBE-64B5A3748AEE}" datafieldname="book_appropriation" disabled="false" />
                       </cell>
                       <cell id="{24212461-de84-42b2-9a05-368e36f764f5}" locklevel="0" colspan="1" rowspan="1">
                         <labels>
@@ -48,13 +48,26 @@
                       </cell>
                     </row>
                     <row>
+                      <cell id="{4b29a11c-8a50-4e2c-af58-3f6e8010b5a9}" visible="true">
+                        <labels>
+                          <label description="Name" languagecode="1033" />
+                        </labels>
+                        <control id="book_name" classid="{4273EDBD-AC1D-40d3-9FB2-095C621B552D}" datafieldname="book_name" />
+                      </cell>
+                      <cell locklevel="0" id="{d954a608-57da-4e86-a380-88dce4723aca}">
+                        <labels>
+                          <label description="" languagecode="1033" />
+                        </labels>
+                      </cell>
+                    </row>
+                    <row>
                       <cell id="{1ee231bd-fee3-40cb-9819-17cd9dad7dd5}" visible="false">
                         <labels>
                           <label description="Owner" languagecode="1033" />
                         </labels>
                         <control id="ownerid" classid="{270BD3DB-D9AF-4782-9025-509E298DEC0A}" datafieldname="ownerid" />
                       </cell>
-                      <cell locklevel="0" id="{d954a608-57da-4e86-a380-88dce4723aca}">
+                      <cell locklevel="0" id="{42927198-39c4-4d55-b4d0-d81a4c4fc5b5}">
                         <labels>
                           <label description="" languagecode="1033" />
                         </labels>
@@ -67,13 +80,6 @@
                         </labels>
                         <control id="book_description" classid="{E0DECE4B-6FC8-4A8F-A065-082708572369}" datafieldname="book_description" disabled="false" />
                       </cell>
-                      <cell locklevel="0" id="{42927198-39c4-4d55-b4d0-d81a4c4fc5b5}">
-                        <labels>
-                          <label description="" languagecode="1033" />
-                        </labels>
-                      </cell>
-                    </row>
-                    <row>
                       <cell locklevel="0" id="{df9898a6-8468-4e7f-93a7-8b5d37d38163}">
                         <labels>
                           <label description="" languagecode="1033" />
@@ -89,6 +95,13 @@
                     </row>
                     <row>
                       <cell locklevel="0" id="{068c70a4-d28f-43b5-bb08-c169a2e66334}">
+                        <labels>
+                          <label description="" languagecode="1033" />
+                        </labels>
+                      </cell>
+                    </row>
+                    <row>
+                      <cell locklevel="0" id="{f4bd763c-195b-4762-9894-c3c50d97e1ba}">
                         <labels>
                           <label description="" languagecode="1033" />
                         </labels>

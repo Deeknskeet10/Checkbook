@@ -12,6 +12,7 @@
         <row name="result" id="book_decisionid">
           <cell name="book_fundingline" width="178" />
           <cell name="book_decisionamount" width="140" />
+          <cell name="createdon" width="105" />
           <cell name="book_description" width="300" />
         </row>
       </grid>
@@ -27,6 +28,7 @@
           <attribute name="book_fundingline" />
           <attribute name="book_description" />
           <attribute name="book_decisionamount" />
+          <attribute name="createdon" />
         </entity>
       </fetch>
     </fetchxml>

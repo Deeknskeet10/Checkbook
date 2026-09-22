@@ -5,8 +5,8 @@
   <buttonaccessibilitytext default="Generate LOAs from Funding Tracks">
     <label description="Generate LOAs from Funding Tracks" languagecode="1033" />
   </buttonaccessibilitytext>
-  <buttonlabeltext default="New Generate LOAs">
-    <label description="New Generate LOAs" languagecode="1033" />
+  <buttonlabeltext default="Generate LOAs">
+    <label description="Generate LOAs" languagecode="1033" />
   </buttonlabeltext>
   <buttontooltipdescription default="Aggregates Funding Tracks creating new LOAs; if LOA exists, aggregates Resource Amount, updating existing LOA's TDP.">
     <label description="Aggregates Funding Tracks creating new LOAs; if LOA exists, aggregates Resource Amount, updating existing LOA's TDP." languagecode="1033" />

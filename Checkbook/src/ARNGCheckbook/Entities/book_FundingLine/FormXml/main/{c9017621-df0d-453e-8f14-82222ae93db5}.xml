@@ -132,7 +132,7 @@
                         <labels>
                           <label description="TDP" languagecode="1033" />
                         </labels>
-                        <control id="book_newtdp" classid="{C3EFE0C3-0EC6-42BE-8349-CBD9079DFD8E}" datafieldname="book_newtdp" disabled="false" />
+                        <control id="book_newtdp" classid="{C3EFE0C3-0EC6-42BE-8349-CBD9079DFD8E}" datafieldname="book_newtdp" disabled="true" />
                       </cell>
                       <cell locklevel="0" id="{75382abb-fdf7-4ed8-9fb1-bdcdfdc41e4d}">
                         <labels>
@@ -150,7 +150,7 @@
                         <labels>
                           <label description="TDP Remaining" languagecode="1033" />
                         </labels>
-                        <control id="book_newtdpremaining" classid="{C3EFE0C3-0EC6-42BE-8349-CBD9079DFD8E}" datafieldname="book_newtdpremaining" disabled="false" />
+                        <control id="book_newtdpremaining" classid="{C3EFE0C3-0EC6-42BE-8349-CBD9079DFD8E}" datafieldname="book_newtdpremaining" disabled="true" />
                       </cell>
                       <cell locklevel="0" id="{3049651c-c864-4563-a39f-208414752051}">
                         <labels>

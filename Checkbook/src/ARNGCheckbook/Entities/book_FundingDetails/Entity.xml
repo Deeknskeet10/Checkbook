@@ -922,6 +922,22 @@
           </Descriptions>
         </attribute>
       </attributes>
+      <EntityKeys>
+        <EntityKey>
+          <Name>book_uniqueFundDetails</Name>
+          <LogicalName>book_uniquefunddetails</LogicalName>
+          <IntroducedVersion>1.11.0.83</IntroducedVersion>
+          <IsCustomizable>0</IsCustomizable>
+          <EntityKeyAttributes>
+            <AttributeName>book_fund</AttributeName>
+            <AttributeName>book_fundingevent</AttributeName>
+            <AttributeName>book_pgsag</AttributeName>
+          </EntityKeyAttributes>
+          <displaynames>
+            <displayname description="uniqueFundDetails" languagecode="1033" />
+          </displaynames>
+        </EntityKey>
+      </EntityKeys>
       <EntitySetName>book_fundingdetailses</EntitySetName>
       <IsDuplicateCheckSupported>1</IsDuplicateCheckSupported>
       <IsBusinessProcessEnabled>0</IsBusinessProcessEnabled>

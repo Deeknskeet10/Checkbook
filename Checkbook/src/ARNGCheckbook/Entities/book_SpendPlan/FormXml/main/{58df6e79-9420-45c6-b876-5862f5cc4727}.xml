@@ -88,19 +88,19 @@
                     <row>
                       <cell id="{a823fe8a-f697-45c8-99a3-d57ca323b227}" locklevel="0" colspan="1" rowspan="1">
                         <labels>
-                          <label description="October" languagecode="1033" />
+                          <label description="Deprecated - October" languagecode="1033" />
                         </labels>
                         <control id="book_october" classid="{0D2C745A-E5A8-4C8F-BA63-C6D3BB604660}" datafieldname="book_october" disabled="false" />
                       </cell>
                       <cell id="{0f518cc9-2d0e-440a-be71-79328c3d64e1}" locklevel="0" colspan="1" rowspan="1">
                         <labels>
-                          <label description="November" languagecode="1033" />
+                          <label description="Deprecated - November" languagecode="1033" />
                         </labels>
                         <control id="book_november" classid="{0D2C745A-E5A8-4C8F-BA63-C6D3BB604660}" datafieldname="book_november" disabled="false" />
                       </cell>
                       <cell id="{ddf9cbb4-969a-449c-8a27-1097c44549b8}" locklevel="0" colspan="1" rowspan="1">
                         <labels>
-                          <label description="December" languagecode="1033" />
+                          <label description="Deprecated - December" languagecode="1033" />
                         </labels>
                         <control id="book_december" classid="{0D2C745A-E5A8-4C8F-BA63-C6D3BB604660}" datafieldname="book_december" disabled="false" />
                       </cell>
@@ -108,19 +108,19 @@
                     <row>
                       <cell id="{d92294b9-584e-445f-8c44-3ca39bd5ad48}" locklevel="0" colspan="1" rowspan="1">
                         <labels>
-                          <label description="January" languagecode="1033" />
+                          <label description="Deprecated - January" languagecode="1033" />
                         </labels>
                         <control id="book_january" classid="{0D2C745A-E5A8-4C8F-BA63-C6D3BB604660}" datafieldname="book_january" disabled="false" />
                       </cell>
                       <cell id="{18db5ec1-79fc-4227-b1b9-caa634629878}" locklevel="0" colspan="1" rowspan="1">
                         <labels>
-                          <label description="February" languagecode="1033" />
+                          <label description="Deprecated - February" languagecode="1033" />
                         </labels>
                         <control id="book_february" classid="{0D2C745A-E5A8-4C8F-BA63-C6D3BB604660}" datafieldname="book_february" disabled="false" />
                       </cell>
                       <cell id="{786fad10-a3e0-4b80-9e19-819cf1a83602}" locklevel="0" colspan="1" rowspan="1">
                         <labels>
-                          <label description="March" languagecode="1033" />
+                          <label description="Deprecated - March" languagecode="1033" />
                         </labels>
                         <control id="book_march" classid="{0D2C745A-E5A8-4C8F-BA63-C6D3BB604660}" datafieldname="book_march" disabled="false" />
                       </cell>
@@ -128,19 +128,19 @@
                     <row>
                       <cell id="{e570235f-dc61-412a-a55e-9ce4ea055452}" locklevel="0" colspan="1" rowspan="1">
                         <labels>
-                          <label description="April" languagecode="1033" />
+                          <label description="Deprecated - April" languagecode="1033" />
                         </labels>
                         <control id="book_april" classid="{0D2C745A-E5A8-4C8F-BA63-C6D3BB604660}" datafieldname="book_april" disabled="false" />
                       </cell>
                       <cell id="{1181e308-152f-4420-8ebe-c935beb262be}" locklevel="0" colspan="1" rowspan="1">
                         <labels>
-                          <label description="May" languagecode="1033" />
+                          <label description="Deprecated - May" languagecode="1033" />
                         </labels>
                         <control id="book_may" classid="{0D2C745A-E5A8-4C8F-BA63-C6D3BB604660}" datafieldname="book_may" disabled="false" />
                       </cell>
                       <cell id="{4caea5de-c675-4fad-8c6a-9d4c03a58a6b}" locklevel="0" colspan="1" rowspan="1">
                         <labels>
-                          <label description="June" languagecode="1033" />
+                          <label description="Deprecated - June" languagecode="1033" />
                         </labels>
                         <control id="book_june" classid="{0D2C745A-E5A8-4C8F-BA63-C6D3BB604660}" datafieldname="book_june" disabled="false" />
                       </cell>
@@ -148,19 +148,19 @@
                     <row>
                       <cell id="{d4a76cdc-1d3f-454f-8e7a-3dbe36a747a3}" locklevel="0" colspan="1" rowspan="1">
                         <labels>
-                          <label description="July" languagecode="1033" />
+                          <label description="Deprecated - July" languagecode="1033" />
                         </labels>
                         <control id="book_july" classid="{0D2C745A-E5A8-4C8F-BA63-C6D3BB604660}" datafieldname="book_july" disabled="false" />
                       </cell>
                       <cell id="{a212f444-a78d-42b7-a106-4cd26cdc0fcd}" locklevel="0" colspan="1" rowspan="1">
                         <labels>
-                          <label description="August" languagecode="1033" />
+                          <label description="Deprecated - August" languagecode="1033" />
                         </labels>
                         <control id="book_august" classid="{0D2C745A-E5A8-4C8F-BA63-C6D3BB604660}" datafieldname="book_august" disabled="false" />
                       </cell>
                       <cell id="{a3c227ee-1bae-4a9a-bb88-a06c1b11a52c}" locklevel="0" colspan="1" rowspan="1">
                         <labels>
-                          <label description="September" languagecode="1033" />
+                          <label description="Deprecated - September" languagecode="1033" />
                         </labels>
                         <control id="book_september" classid="{0D2C745A-E5A8-4C8F-BA63-C6D3BB604660}" datafieldname="book_september" disabled="false" />
                       </cell>
@@ -168,7 +168,7 @@
                     <row>
                       <cell id="{10a2703a-7fd2-40c7-abb4-81e5d011b441}" locklevel="0" colspan="1" rowspan="1">
                         <labels>
-                          <label description="Spend Plan Total" languagecode="1033" />
+                          <label description="Deprecated - Spend Plan Total" languagecode="1033" />
                         </labels>
                         <control id="book_spendplantotal" classid="{0D2C745A-E5A8-4C8F-BA63-C6D3BB604660}" datafieldname="book_spendplantotal" disabled="false" />
                       </cell>

@@ -14,6 +14,7 @@
           <cell name="book_requirement" width="113" />
           <cell name="book_lineofaccounting" width="150" />
           <cell name="book_newtdp" width="100" />
+          <cell name="book_requestedamount" width="148" />
           <cell name="book_newwithholding" width="111" />
           <cell name="book_newvalidatedamount" width="143" />
           <cell name="book_newfundedamount" width="132" />
@@ -37,6 +38,7 @@
           <attribute name="book_newwithholding" />
           <attribute name="book_newtdp" />
           <attribute name="book_newfundedamount" />
+          <attribute name="book_requestedamount" />
         </entity>
       </fetch>
     </fetchxml>

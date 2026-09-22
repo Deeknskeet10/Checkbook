@@ -1,0 +1,11 @@
+<customapiresponseproperty uniquename="Processed">
+  <description default="LOAs reconciled this invocation">
+    <label description="LOAs reconciled this invocation" languagecode="1033" />
+  </description>
+  <displayname default="Recalc-LOA Processed">
+    <label description="Recalc-LOA Processed" languagecode="1033" />
+  </displayname>
+  <iscustomizable>1</iscustomizable>
+  <name>Processed</name>
+  <type>7</type>
+</customapiresponseproperty>

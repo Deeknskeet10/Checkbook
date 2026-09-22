@@ -1,0 +1,11 @@
+<customapiresponseproperty uniquename="IsLocked">
+  <description default="Boolean for locking/unlocking editing of funds">
+    <label description="Boolean for locking/unlocking editing of funds" languagecode="1033" />
+  </description>
+  <displayname default="Is Locked">
+    <label description="Is Locked" languagecode="1033" />
+  </displayname>
+  <iscustomizable>1</iscustomizable>
+  <name>IsLocked</name>
+  <type>0</type>
+</customapiresponseproperty>

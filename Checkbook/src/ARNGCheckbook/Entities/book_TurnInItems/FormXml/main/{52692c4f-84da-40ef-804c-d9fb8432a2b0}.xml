@@ -48,7 +48,11 @@
                         <labels>
                           <label description="Requirement Funding" languagecode="1033" />
                         </labels>
-                        <control id="book_requirementfunding" classid="{270BD3DB-D9AF-4782-9025-509E298DEC0A}" datafieldname="book_requirementfunding" disabled="false" />
+                        <control id="book_requirementfunding" classid="{270BD3DB-D9AF-4782-9025-509E298DEC0A}" datafieldname="book_requirementfunding" disabled="false">
+                          <parameters>
+                            <DisableMru>true</DisableMru>
+                          </parameters>
+                        </control>
                       </cell>
                     </row>
                     <row>
@@ -62,6 +66,7 @@
                             <DependentAttributeType>book_requirementfunding</DependentAttributeType>
                             <FilterRelationshipName>book_prioritization_RequirementFunding_book_requirementfunding</FilterRelationshipName>
                             <AllowFilterOff>true</AllowFilterOff>
+                            <DisableMru>true</DisableMru>
                           </parameters>
                         </control>
                       </cell>
@@ -139,12 +144,12 @@
         <Everyone />
       </DisplayConditions>
       <formLibraries>
-        <Library name="book_turnInFilterForm" libraryUniqueId="{b79f86e9-90e7-412e-b071-6ebb42fa28a5}" />
+        <Library name="book_TurnInItems" libraryUniqueId="{efa82ba7-dfff-4f5f-ad01-93c7f9c5c9de}" />
       </formLibraries>
       <events>
         <event name="onload" application="false" active="false">
           <Handlers>
-            <Handler functionName="TurnInItem.onLoad" libraryName="book_turnInFilterForm" handlerUniqueId="{e0e56969-2f07-4785-bb1f-1b743d388874}" enabled="true" parameters="" passExecutionContext="true" />
+            <Handler functionName="Book.TurnInItem.onLoad" libraryName="book_TurnInItems" handlerUniqueId="{4ec09073-6ac6-45ed-ae9c-530c114df4b1}" enabled="true" parameters="" passExecutionContext="true" />
           </Handlers>
         </event>
       </events>

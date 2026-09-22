@@ -62,12 +62,14 @@
     <RolePrivilege name="prvAppendbook_arngcheckbookufr" level="Global" />
     <RolePrivilege name="prvAppendbook_arngcheckbookufrvalidation" level="Global" />
     <RolePrivilege name="prvAppendbook_BOC" level="Global" />
+    <RolePrivilege name="prvAppendbook_Country" level="Global" />
     <RolePrivilege name="prvAppendbook_Decision" level="Global" />
     <RolePrivilege name="prvAppendbook_DecisionEvent" level="Global" />
     <RolePrivilege name="prvAppendbook_Distributions" level="Global" />
     <RolePrivilege name="prvAppendbook_DollarType" level="Global" />
     <RolePrivilege name="prvAppendbook_Fund" level="Global" />
     <RolePrivilege name="prvAppendbook_FundCenter" level="Global" />
+    <RolePrivilege name="prvAppendbook_FundedProgram" level="Global" />
     <RolePrivilege name="prvAppendbook_FundingDetails" level="Global" />
     <RolePrivilege name="prvAppendbook_FundingEvent" level="Global" />
     <RolePrivilege name="prvAppendbook_FundingLine" level="Global" />
@@ -84,7 +86,9 @@
     <RolePrivilege name="prvAppendbook_OPR" level="Global" />
     <RolePrivilege name="prvAppendbook_PayTable" level="Global" />
     <RolePrivilege name="prvAppendbook_PG" level="Global" />
+    <RolePrivilege name="prvAppendbook_PointofContact" level="Global" />
     <RolePrivilege name="prvAppendbook_Prioritization" level="Global" />
+    <RolePrivilege name="prvAppendbook_PrioritizationFunding" level="Global" />
     <RolePrivilege name="prvAppendbook_PriorityBIN" level="Global" />
     <RolePrivilege name="prvAppendbook_QuantityType" level="Global" />
     <RolePrivilege name="prvAppendbook_Realignments" level="Global" />
@@ -97,7 +101,11 @@
     <RolePrivilege name="prvAppendbook_SAG" level="Global" />
     <RolePrivilege name="prvAppendbook_SpendPlan" level="Global" />
     <RolePrivilege name="prvAppendbook_State" level="Global" />
+    <RolePrivilege name="prvAppendbook_StateSwap" level="Global" />
+    <RolePrivilege name="prvAppendbook_SwapItem" level="Global" />
     <RolePrivilege name="prvAppendbook_TDC" level="Global" />
+    <RolePrivilege name="prvAppendbook_Ticket" level="Global" />
+    <RolePrivilege name="prvAppendbook_TicketEndorsement" level="Global" />
     <RolePrivilege name="prvAppendbook_Turnin" level="Global" />
     <RolePrivilege name="prvAppendbook_turninapprovalprocess" level="Global" />
     <RolePrivilege name="prvAppendbook_TurnInItems" level="Global" />
@@ -509,12 +517,14 @@
     <RolePrivilege name="prvAppendTobook_arngcheckbookufr" level="Global" />
     <RolePrivilege name="prvAppendTobook_arngcheckbookufrvalidation" level="Global" />
     <RolePrivilege name="prvAppendTobook_BOC" level="Global" />
+    <RolePrivilege name="prvAppendTobook_Country" level="Global" />
     <RolePrivilege name="prvAppendTobook_Decision" level="Global" />
     <RolePrivilege name="prvAppendTobook_DecisionEvent" level="Global" />
     <RolePrivilege name="prvAppendTobook_Distributions" level="Global" />
     <RolePrivilege name="prvAppendTobook_DollarType" level="Global" />
     <RolePrivilege name="prvAppendTobook_Fund" level="Global" />
     <RolePrivilege name="prvAppendTobook_FundCenter" level="Global" />
+    <RolePrivilege name="prvAppendTobook_FundedProgram" level="Global" />
     <RolePrivilege name="prvAppendTobook_FundingDetails" level="Global" />
     <RolePrivilege name="prvAppendTobook_FundingEvent" level="Global" />
     <RolePrivilege name="prvAppendTobook_FundingLine" level="Global" />
@@ -531,7 +541,9 @@
     <RolePrivilege name="prvAppendTobook_OPR" level="Global" />
     <RolePrivilege name="prvAppendTobook_PayTable" level="Global" />
     <RolePrivilege name="prvAppendTobook_PG" level="Global" />
+    <RolePrivilege name="prvAppendTobook_PointofContact" level="Global" />
     <RolePrivilege name="prvAppendTobook_Prioritization" level="Global" />
+    <RolePrivilege name="prvAppendTobook_PrioritizationFunding" level="Global" />
     <RolePrivilege name="prvAppendTobook_PriorityBIN" level="Global" />
     <RolePrivilege name="prvAppendTobook_QuantityType" level="Global" />
     <RolePrivilege name="prvAppendTobook_Realignments" level="Global" />
@@ -544,7 +556,11 @@
     <RolePrivilege name="prvAppendTobook_SAG" level="Global" />
     <RolePrivilege name="prvAppendTobook_SpendPlan" level="Global" />
     <RolePrivilege name="prvAppendTobook_State" level="Global" />
+    <RolePrivilege name="prvAppendTobook_StateSwap" level="Global" />
+    <RolePrivilege name="prvAppendTobook_SwapItem" level="Global" />
     <RolePrivilege name="prvAppendTobook_TDC" level="Global" />
+    <RolePrivilege name="prvAppendTobook_Ticket" level="Global" />
+    <RolePrivilege name="prvAppendTobook_TicketEndorsement" level="Global" />
     <RolePrivilege name="prvAppendTobook_Turnin" level="Global" />
     <RolePrivilege name="prvAppendTobook_turninapprovalprocess" level="Global" />
     <RolePrivilege name="prvAppendTobook_TurnInItems" level="Global" />
@@ -916,6 +932,8 @@
     <RolePrivilege name="prvAppendTousermobileofflineprofilemembership" level="Global" />
     <RolePrivilege name="prvAppendTouserrating" level="Global" />
     <RolePrivilege name="prvAppendToUserSettings" level="Global" />
+    <RolePrivilege name="prvAppendTouxagentcomponent" level="Global" />
+    <RolePrivilege name="prvAppendTouxagentcomponentrevision" level="Global" />
     <RolePrivilege name="prvAppendToviewasexamplequestion" level="Global" />
     <RolePrivilege name="prvAppendToVirtualEntityMetadata" level="Global" />
     <RolePrivilege name="prvAppendToWebResource" level="Global" />
@@ -933,6 +951,8 @@
     <RolePrivilege name="prvAppendUser" level="Global" />
     <RolePrivilege name="prvAppendusermobileofflineprofilemembership" level="Global" />
     <RolePrivilege name="prvAppenduserrating" level="Global" />
+    <RolePrivilege name="prvAppenduxagentcomponent" level="Global" />
+    <RolePrivilege name="prvAppenduxagentcomponentrevision" level="Global" />
     <RolePrivilege name="prvAppendviewasexamplequestion" level="Global" />
     <RolePrivilege name="prvAppendVirtualEntityMetadata" level="Global" />
     <RolePrivilege name="prvAppendWebResource" level="Global" />
@@ -975,6 +995,7 @@
     <RolePrivilege name="prvAssignbook_DollarType" level="Global" />
     <RolePrivilege name="prvAssignbook_Fund" level="Global" />
     <RolePrivilege name="prvAssignbook_FundCenter" level="Global" />
+    <RolePrivilege name="prvAssignbook_FundedProgram" level="Global" />
     <RolePrivilege name="prvAssignbook_FundingDetails" level="Global" />
     <RolePrivilege name="prvAssignbook_FundingEvent" level="Global" />
     <RolePrivilege name="prvAssignbook_FundingLine" level="Global" />
@@ -990,7 +1011,9 @@
     <RolePrivilege name="prvAssignbook_OPR" level="Global" />
     <RolePrivilege name="prvAssignbook_PayTable" level="Global" />
     <RolePrivilege name="prvAssignbook_PG" level="Global" />
+    <RolePrivilege name="prvAssignbook_PointofContact" level="Global" />
     <RolePrivilege name="prvAssignbook_Prioritization" level="Global" />
+    <RolePrivilege name="prvAssignbook_PrioritizationFunding" level="Global" />
     <RolePrivilege name="prvAssignbook_PriorityBIN" level="Global" />
     <RolePrivilege name="prvAssignbook_QuantityType" level="Global" />
     <RolePrivilege name="prvAssignbook_Realignments" level="Global" />
@@ -1001,7 +1024,11 @@
     <RolePrivilege name="prvAssignbook_SAG" level="Global" />
     <RolePrivilege name="prvAssignbook_SpendPlan" level="Global" />
     <RolePrivilege name="prvAssignbook_State" level="Global" />
+    <RolePrivilege name="prvAssignbook_StateSwap" level="Global" />
+    <RolePrivilege name="prvAssignbook_SwapItem" level="Global" />
     <RolePrivilege name="prvAssignbook_TDC" level="Global" />
+    <RolePrivilege name="prvAssignbook_Ticket" level="Global" />
+    <RolePrivilege name="prvAssignbook_TicketEndorsement" level="Global" />
     <RolePrivilege name="prvAssignbook_Turnin" level="Global" />
     <RolePrivilege name="prvAssignbook_UnfundedRequests" level="Global" />
     <RolePrivilege name="prvAssignbot" level="Global" />
@@ -1218,6 +1245,8 @@
     <RolePrivilege name="prvAssignUserForm" level="Basic" />
     <RolePrivilege name="prvAssignUserQuery" level="Basic" />
     <RolePrivilege name="prvAssignUserQueryVisualizations" level="Basic" />
+    <RolePrivilege name="prvAssignuxagentcomponent" level="Global" />
+    <RolePrivilege name="prvAssignuxagentcomponentrevision" level="Global" />
     <RolePrivilege name="prvAssignWorkflow" level="Global" />
     <RolePrivilege name="prvAssignworkflowbinary" level="Global" />
     <RolePrivilege name="prvAssignWorkflowMetadata" level="Global" />
@@ -1283,12 +1312,14 @@
     <RolePrivilege name="prvCreatebook_arngcheckbookufr" level="Global" />
     <RolePrivilege name="prvCreatebook_arngcheckbookufrvalidation" level="Global" />
     <RolePrivilege name="prvCreatebook_BOC" level="Global" />
+    <RolePrivilege name="prvCreatebook_Country" level="Global" />
     <RolePrivilege name="prvCreatebook_Decision" level="Global" />
     <RolePrivilege name="prvCreatebook_DecisionEvent" level="Global" />
     <RolePrivilege name="prvCreatebook_Distributions" level="Global" />
     <RolePrivilege name="prvCreatebook_DollarType" level="Global" />
     <RolePrivilege name="prvCreatebook_Fund" level="Global" />
     <RolePrivilege name="prvCreatebook_FundCenter" level="Global" />
+    <RolePrivilege name="prvCreatebook_FundedProgram" level="Global" />
     <RolePrivilege name="prvCreatebook_FundingDetails" level="Global" />
     <RolePrivilege name="prvCreatebook_FundingEvent" level="Global" />
     <RolePrivilege name="prvCreatebook_FundingLine" level="Global" />
@@ -1305,7 +1336,9 @@
     <RolePrivilege name="prvCreatebook_OPR" level="Global" />
     <RolePrivilege name="prvCreatebook_PayTable" level="Global" />
     <RolePrivilege name="prvCreatebook_PG" level="Global" />
+    <RolePrivilege name="prvCreatebook_PointofContact" level="Global" />
     <RolePrivilege name="prvCreatebook_Prioritization" level="Global" />
+    <RolePrivilege name="prvCreatebook_PrioritizationFunding" level="Global" />
     <RolePrivilege name="prvCreatebook_PriorityBIN" level="Global" />
     <RolePrivilege name="prvCreatebook_QuantityType" level="Global" />
     <RolePrivilege name="prvCreatebook_Realignments" level="Global" />
@@ -1318,7 +1351,11 @@
     <RolePrivilege name="prvCreatebook_SAG" level="Global" />
     <RolePrivilege name="prvCreatebook_SpendPlan" level="Global" />
     <RolePrivilege name="prvCreatebook_State" level="Global" />
+    <RolePrivilege name="prvCreatebook_StateSwap" level="Global" />
+    <RolePrivilege name="prvCreatebook_SwapItem" level="Global" />
     <RolePrivilege name="prvCreatebook_TDC" level="Global" />
+    <RolePrivilege name="prvCreatebook_Ticket" level="Global" />
+    <RolePrivilege name="prvCreatebook_TicketEndorsement" level="Global" />
     <RolePrivilege name="prvCreatebook_Turnin" level="Global" />
     <RolePrivilege name="prvCreatebook_turninapprovalprocess" level="Global" />
     <RolePrivilege name="prvCreatebook_TurnInItems" level="Global" />
@@ -1701,6 +1738,8 @@
     <RolePrivilege name="prvCreateUserQueryVisualizations" level="Basic" />
     <RolePrivilege name="prvCreateuserrating" level="Global" />
     <RolePrivilege name="prvCreateUserSettings" level="Global" />
+    <RolePrivilege name="prvCreateuxagentcomponent" level="Global" />
+    <RolePrivilege name="prvCreateuxagentcomponentrevision" level="Global" />
     <RolePrivilege name="prvCreateviewasexamplequestion" level="Global" />
     <RolePrivilege name="prvCreateVirtualEntityMetadata" level="Global" />
     <RolePrivilege name="prvCreateWebWizard" level="Global" />
@@ -1771,6 +1810,7 @@
     <RolePrivilege name="prvDeletebook_DollarType" level="Global" />
     <RolePrivilege name="prvDeletebook_Fund" level="Global" />
     <RolePrivilege name="prvDeletebook_FundCenter" level="Global" />
+    <RolePrivilege name="prvDeletebook_FundedProgram" level="Global" />
     <RolePrivilege name="prvDeletebook_FundingDetails" level="Global" />
     <RolePrivilege name="prvDeletebook_FundingEvent" level="Global" />
     <RolePrivilege name="prvDeletebook_FundingLine" level="Global" />
@@ -1786,7 +1826,9 @@
     <RolePrivilege name="prvDeletebook_OPR" level="Global" />
     <RolePrivilege name="prvDeletebook_PayTable" level="Global" />
     <RolePrivilege name="prvDeletebook_PG" level="Global" />
+    <RolePrivilege name="prvDeletebook_PointofContact" level="Global" />
     <RolePrivilege name="prvDeletebook_Prioritization" level="Global" />
+    <RolePrivilege name="prvDeletebook_PrioritizationFunding" level="Global" />
     <RolePrivilege name="prvDeletebook_PriorityBIN" level="Global" />
     <RolePrivilege name="prvDeletebook_QuantityType" level="Global" />
     <RolePrivilege name="prvDeletebook_Realignments" level="Global" />
@@ -1798,7 +1840,11 @@
     <RolePrivilege name="prvDeletebook_SAG" level="Global" />
     <RolePrivilege name="prvDeletebook_SpendPlan" level="Global" />
     <RolePrivilege name="prvDeletebook_State" level="Global" />
+    <RolePrivilege name="prvDeletebook_StateSwap" level="Global" />
+    <RolePrivilege name="prvDeletebook_SwapItem" level="Global" />
     <RolePrivilege name="prvDeletebook_TDC" level="Global" />
+    <RolePrivilege name="prvDeletebook_Ticket" level="Global" />
+    <RolePrivilege name="prvDeletebook_TicketEndorsement" level="Global" />
     <RolePrivilege name="prvDeletebook_Turnin" level="Global" />
     <RolePrivilege name="prvDeletebook_turninapprovalprocess" level="Global" />
     <RolePrivilege name="prvDeletebook_UnfundedRequests" level="Global" />
@@ -2170,6 +2216,8 @@
     <RolePrivilege name="prvDeleteUserQueryVisualizations" level="Basic" />
     <RolePrivilege name="prvDeleteuserrating" level="Global" />
     <RolePrivilege name="prvDeleteUserSettings" level="Global" />
+    <RolePrivilege name="prvDeleteuxagentcomponent" level="Global" />
+    <RolePrivilege name="prvDeleteuxagentcomponentrevision" level="Global" />
     <RolePrivilege name="prvDeleteviewasexamplequestion" level="Global" />
     <RolePrivilege name="prvDeleteVirtualEntityMetadata" level="Global" />
     <RolePrivilege name="prvDeleteWebWizard" level="Global" />
@@ -2228,6 +2276,7 @@
     <RolePrivilege name="prvReadAIPluginTitle" level="Global" />
     <RolePrivilege name="prvReadAIPluginUserSetting" level="Global" />
     <RolePrivilege name="prvReadAnalyticalDataflowsData" level="Global" />
+    <RolePrivilege name="prvReadapmo_Funding" level="Global" />
     <RolePrivilege name="prvReadappaction" level="Global" />
     <RolePrivilege name="prvReadappactionmigration" level="Global" />
     <RolePrivilege name="prvReadappactionrule" level="Global" />
@@ -2259,12 +2308,14 @@
     <RolePrivilege name="prvReadbook_arngcheckbookufr" level="Global" />
     <RolePrivilege name="prvReadbook_arngcheckbookufrvalidation" level="Global" />
     <RolePrivilege name="prvReadbook_BOC" level="Global" />
+    <RolePrivilege name="prvReadbook_Country" level="Global" />
     <RolePrivilege name="prvReadbook_Decision" level="Global" />
     <RolePrivilege name="prvReadbook_DecisionEvent" level="Global" />
     <RolePrivilege name="prvReadbook_Distributions" level="Global" />
     <RolePrivilege name="prvReadbook_DollarType" level="Global" />
     <RolePrivilege name="prvReadbook_Fund" level="Global" />
     <RolePrivilege name="prvReadbook_FundCenter" level="Global" />
+    <RolePrivilege name="prvReadbook_FundedProgram" level="Global" />
     <RolePrivilege name="prvReadbook_FundingDetails" level="Global" />
     <RolePrivilege name="prvReadbook_FundingEvent" level="Global" />
     <RolePrivilege name="prvReadbook_FundingLine" level="Global" />
@@ -2282,7 +2333,9 @@
     <RolePrivilege name="prvReadbook_OPR" level="Global" />
     <RolePrivilege name="prvReadbook_PayTable" level="Global" />
     <RolePrivilege name="prvReadbook_PG" level="Global" />
+    <RolePrivilege name="prvReadbook_PointofContact" level="Global" />
     <RolePrivilege name="prvReadbook_Prioritization" level="Global" />
+    <RolePrivilege name="prvReadbook_PrioritizationFunding" level="Global" />
     <RolePrivilege name="prvReadbook_PriorityBIN" level="Global" />
     <RolePrivilege name="prvReadbook_QuantityType" level="Global" />
     <RolePrivilege name="prvReadbook_Realignments" level="Global" />
@@ -2295,7 +2348,11 @@
     <RolePrivilege name="prvReadbook_SAG" level="Global" />
     <RolePrivilege name="prvReadbook_SpendPlan" level="Global" />
     <RolePrivilege name="prvReadbook_State" level="Global" />
+    <RolePrivilege name="prvReadbook_StateSwap" level="Global" />
+    <RolePrivilege name="prvReadbook_SwapItem" level="Global" />
     <RolePrivilege name="prvReadbook_TDC" level="Global" />
+    <RolePrivilege name="prvReadbook_Ticket" level="Global" />
+    <RolePrivilege name="prvReadbook_TicketEndorsement" level="Global" />
     <RolePrivilege name="prvReadbook_Turnin" level="Global" />
     <RolePrivilege name="prvReadbook_turninapprovalprocess" level="Global" />
     <RolePrivilege name="prvReadbook_TurnInItems" level="Global" />
@@ -2704,6 +2761,8 @@
     <RolePrivilege name="prvReadUserQueryVisualizations" level="Basic" />
     <RolePrivilege name="prvReaduserrating" level="Global" />
     <RolePrivilege name="prvReadUserSettings" level="Global" />
+    <RolePrivilege name="prvReaduxagentcomponent" level="Global" />
+    <RolePrivilege name="prvReaduxagentcomponentrevision" level="Global" />
     <RolePrivilege name="prvReadviewasexamplequestion" level="Global" />
     <RolePrivilege name="prvReadVirtualEntityMetadata" level="Global" />
     <RolePrivilege name="prvReadWebResource" level="Global" />
@@ -2752,6 +2811,7 @@
     <RolePrivilege name="prvSharebook_DollarType" level="Global" />
     <RolePrivilege name="prvSharebook_Fund" level="Global" />
     <RolePrivilege name="prvSharebook_FundCenter" level="Global" />
+    <RolePrivilege name="prvSharebook_FundedProgram" level="Global" />
     <RolePrivilege name="prvSharebook_FundingDetails" level="Global" />
     <RolePrivilege name="prvSharebook_FundingEvent" level="Global" />
     <RolePrivilege name="prvSharebook_FundingLine" level="Global" />
@@ -2767,7 +2827,9 @@
     <RolePrivilege name="prvSharebook_OPR" level="Global" />
     <RolePrivilege name="prvSharebook_PayTable" level="Global" />
     <RolePrivilege name="prvSharebook_PG" level="Global" />
+    <RolePrivilege name="prvSharebook_PointofContact" level="Global" />
     <RolePrivilege name="prvSharebook_Prioritization" level="Global" />
+    <RolePrivilege name="prvSharebook_PrioritizationFunding" level="Global" />
     <RolePrivilege name="prvSharebook_PriorityBIN" level="Global" />
     <RolePrivilege name="prvSharebook_QuantityType" level="Global" />
     <RolePrivilege name="prvSharebook_Realignments" level="Global" />
@@ -2778,7 +2840,11 @@
     <RolePrivilege name="prvSharebook_SAG" level="Global" />
     <RolePrivilege name="prvSharebook_SpendPlan" level="Global" />
     <RolePrivilege name="prvSharebook_State" level="Global" />
+    <RolePrivilege name="prvSharebook_StateSwap" level="Global" />
+    <RolePrivilege name="prvSharebook_SwapItem" level="Global" />
     <RolePrivilege name="prvSharebook_TDC" level="Global" />
+    <RolePrivilege name="prvSharebook_Ticket" level="Global" />
+    <RolePrivilege name="prvSharebook_TicketEndorsement" level="Global" />
     <RolePrivilege name="prvSharebook_Turnin" level="Global" />
     <RolePrivilege name="prvSharebook_UnfundedRequests" level="Global" />
     <RolePrivilege name="prvSharebot" level="Global" />
@@ -2985,6 +3051,8 @@
     <RolePrivilege name="prvShareUserForm" level="Basic" />
     <RolePrivilege name="prvShareUserQuery" level="Basic" />
     <RolePrivilege name="prvShareUserQueryVisualizations" level="Basic" />
+    <RolePrivilege name="prvShareuxagentcomponent" level="Global" />
+    <RolePrivilege name="prvShareuxagentcomponentrevision" level="Global" />
     <RolePrivilege name="prvShareWorkflow" level="Global" />
     <RolePrivilege name="prvShareworkflowbinary" level="Global" />
     <RolePrivilege name="prvShareWorkflowMetadata" level="Global" />
@@ -3053,12 +3121,14 @@
     <RolePrivilege name="prvWritebook_arngcheckbookufr" level="Global" />
     <RolePrivilege name="prvWritebook_arngcheckbookufrvalidation" level="Global" />
     <RolePrivilege name="prvWritebook_BOC" level="Global" />
+    <RolePrivilege name="prvWritebook_Country" level="Global" />
     <RolePrivilege name="prvWritebook_Decision" level="Global" />
     <RolePrivilege name="prvWritebook_DecisionEvent" level="Global" />
     <RolePrivilege name="prvWritebook_Distributions" level="Global" />
     <RolePrivilege name="prvWritebook_DollarType" level="Global" />
     <RolePrivilege name="prvWritebook_Fund" level="Global" />
     <RolePrivilege name="prvWritebook_FundCenter" level="Global" />
+    <RolePrivilege name="prvWritebook_FundedProgram" level="Global" />
     <RolePrivilege name="prvWritebook_FundingDetails" level="Global" />
     <RolePrivilege name="prvWritebook_FundingEvent" level="Global" />
     <RolePrivilege name="prvWritebook_FundingLine" level="Global" />
@@ -3075,7 +3145,9 @@
     <RolePrivilege name="prvWritebook_OPR" level="Global" />
     <RolePrivilege name="prvWritebook_PayTable" level="Global" />
     <RolePrivilege name="prvWritebook_PG" level="Global" />
+    <RolePrivilege name="prvWritebook_PointofContact" level="Global" />
     <RolePrivilege name="prvWritebook_Prioritization" level="Global" />
+    <RolePrivilege name="prvWritebook_PrioritizationFunding" level="Global" />
     <RolePrivilege name="prvWritebook_PriorityBIN" level="Global" />
     <RolePrivilege name="prvWritebook_QuantityType" level="Global" />
     <RolePrivilege name="prvWritebook_Realignments" level="Global" />
@@ -3088,7 +3160,11 @@
     <RolePrivilege name="prvWritebook_SAG" level="Global" />
     <RolePrivilege name="prvWritebook_SpendPlan" level="Global" />
     <RolePrivilege name="prvWritebook_State" level="Global" />
+    <RolePrivilege name="prvWritebook_StateSwap" level="Global" />
+    <RolePrivilege name="prvWritebook_SwapItem" level="Global" />
     <RolePrivilege name="prvWritebook_TDC" level="Global" />
+    <RolePrivilege name="prvWritebook_Ticket" level="Global" />
+    <RolePrivilege name="prvWritebook_TicketEndorsement" level="Global" />
     <RolePrivilege name="prvWritebook_Turnin" level="Global" />
     <RolePrivilege name="prvWritebook_turninapprovalprocess" level="Global" />
     <RolePrivilege name="prvWritebook_TurnInItems" level="Global" />
@@ -3469,6 +3545,8 @@
     <RolePrivilege name="prvWriteUserQueryVisualizations" level="Basic" />
     <RolePrivilege name="prvWriteuserrating" level="Global" />
     <RolePrivilege name="prvWriteUserSettings" level="Global" />
+    <RolePrivilege name="prvWriteuxagentcomponent" level="Global" />
+    <RolePrivilege name="prvWriteuxagentcomponentrevision" level="Global" />
     <RolePrivilege name="prvWriteviewasexamplequestion" level="Global" />
     <RolePrivilege name="prvWriteVirtualEntityMetadata" level="Global" />
     <RolePrivilege name="prvWriteWebResource" level="Global" />

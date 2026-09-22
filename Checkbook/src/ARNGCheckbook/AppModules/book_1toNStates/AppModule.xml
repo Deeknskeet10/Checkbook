@@ -10,8 +10,10 @@
   <ClientType>4</ClientType>
   <NavigationType>0</NavigationType>
   <AppModuleComponents>
+    <AppModuleComponent type="1" schemaName="book_itemizeddetails" />
     <AppModuleComponent type="1" schemaName="book_obligationauthority" />
     <AppModuleComponent type="1" schemaName="book_prioritization" />
+    <AppModuleComponent type="1" schemaName="book_prioritizationfunding" />
     <AppModuleComponent type="1" schemaName="book_requirements" />
     <AppModuleComponent type="1" schemaName="expiredprocess" />
     <AppModuleComponent type="1" schemaName="knowledgearticle" />
