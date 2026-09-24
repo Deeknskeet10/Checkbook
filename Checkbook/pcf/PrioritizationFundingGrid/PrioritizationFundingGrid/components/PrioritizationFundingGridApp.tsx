@@ -1129,9 +1129,24 @@ export const PrioritizationFundingGridApp: React.FC<PrioritizationFundingGridPro
     Record<string, Partial<Record<JunctionField, number>>>
   >({});
 
+  // Last resolved Prio snapshot for the open dialog. Every in-dialog write
+  // (add/save/delete) calls refresh() -> dataset.refresh(), and while the PCF
+  // host reloads the dataset the row transiently drops out of initialPrioRows.
+  // Without this fallback the lookup below would go null mid-refresh and the
+  // dialog (gated on allocPrio) would tear down after every action. Retaining
+  // the last snapshot keeps the modal open until the user actually closes it.
+  const lastAllocPrioRef = React.useRef<PrioRow | null>(null);
   const allocPrio = React.useMemo<PrioRow | null>(() => {
     if (!allocPrioId) return null;
-    return initialPrioRows.find((p) => p.id === allocPrioId) ?? null;
+    const found = initialPrioRows.find((p) => p.id === allocPrioId);
+    if (found) {
+      lastAllocPrioRef.current = found;
+      return found;
+    }
+    // Dataset mid-refresh: fall back to the last snapshot for this same Prio.
+    return lastAllocPrioRef.current?.id === allocPrioId
+      ? lastAllocPrioRef.current
+      : null;
   }, [allocPrioId, initialPrioRows]);
 
   const openAllocate = (prio: PrioRow): void => {
@@ -1248,7 +1263,10 @@ export const PrioritizationFundingGridApp: React.FC<PrioritizationFundingGridPro
       }
 
       await webAPI.createRecord(PRIORITIZATION_FUNDING_ENTITY, payload);
-      setAllocAddOpen(false);
+      // Keep the add panel open (just clear the selection) so the user can add
+      // several RFs back-to-back without re-opening it each time. The just-added
+      // RF drops out of eligibleRFs; the panel collapses on its own once none
+      // remain, or the user closes it with Cancel / the dialog with Close.
       setAllocAddRFId("");
       reloadJunctions(initialPrioRows.map((p) => p.id));
       refresh();
