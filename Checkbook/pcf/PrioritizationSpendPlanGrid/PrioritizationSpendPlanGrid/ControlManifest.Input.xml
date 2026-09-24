@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <manifest>
-  <control namespace="ARNGCheckbook" constructor="PrioritizationSpendPlanGrid" version="0.3.0"
+  <control namespace="ARNGCheckbook" constructor="PrioritizationSpendPlanGrid" version="0.4.0"
            display-name-key="PrioritizationSpendPlanGrid"
-           description-key="FY27+ Spend Plan grid for a Prioritization: one section per Prioritization Funding row (per allocated Requirement Funding) with Planned, Actual and Variance bands across the 12 federal fiscal year months (Oct-Sep). When the Prioritizations Itemized Details span multiple Fund Centers, each section expands into per-Fund-Center bands. Only Planned cells are user-editable and lock as each month passes; Actual is populated by an automated process and shown read-only; Variance is computed. A Checkbook Administrator can lock all entry from the Admin Center. Rows are stored on book_spendplan anchored by book_prioritizationfunding, with book_prioritization and the LOA stamped on each FY27 row for State views."
+           description-key="FY27+ Spend Plan grid for a Prioritization: one section per Prioritization Funding row (per allocated Requirement Funding) with Planned, Actual and Variance bands across the 12 federal fiscal year months (Oct-Sep). Each funding line is planned at the Prioritization Funding level; the per-Fund-Center breakout driven by the Prioritizations Itemized Details is currently disabled. Only Planned cells are user-editable and lock as each month passes; Actual is populated by an automated process and shown read-only; Variance is computed. A Checkbook Administrator can lock all entry from the Admin Center. Rows are stored on book_spendplan anchored by book_prioritizationfunding, with book_prioritization and the LOA stamped on each FY27 row for State views."
            control-type="virtual" >
     <external-service-usage enabled="false">
     </external-service-usage>

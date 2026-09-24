@@ -35,6 +35,14 @@ const ALIAS = {
 /** book_spendplanmode option values (mirror of the C# SpendPlanModeValues). */
 const MODE_BREAKOUT = 0;
 
+/**
+ * Fund Center breakout is disabled for now: funding lines are planned at the
+ * Prioritization Funding level only, with a single Planned/Actual/Variance
+ * band each. Flip to true to restore the per-Fund-Center breakout driven by
+ * the Prio's Itemized Details (the expandable bands and the ID crosscheck).
+ */
+const ENABLE_FC_BREAKOUT = false;
+
 const SPEND_PLAN_ENTITY = "book_spendplan";
 const PRIORITIZATION_ENTITY = "book_prioritization";
 const ITEMIZED_DETAILS_ENTITY = "book_itemizeddetails";
@@ -375,6 +383,13 @@ export const PrioritizationSpendPlanGridApp: React.FC<
             (prio[`_book_fundcenter_value${FV}`] as string) ?? "",
         });
 
+        // Fund Center breakout is off — skip the Itemized Details lookup that
+        // builds the per-FC bands; every funding line plans at the state level.
+        if (!ENABLE_FC_BREAKOUT) {
+          setIdBuckets([]);
+          return;
+        }
+
         const ids = await webAPI.retrieveMultipleRecords(
           ITEMIZED_DETAILS_ENTITY,
           "?$select=_book_fundcenter_value,book_fundedamount" +
@@ -480,8 +495,9 @@ export const PrioritizationSpendPlanGridApp: React.FC<
   }, [idBuckets, spRecords, prioInfo]);
 
   // Only a real breakdown (2+ distinct destinations) warrants expandable
-  // bands; a single destination stays on the rollup row (fc empty).
-  const multiFc = fcBuckets.length > 1;
+  // bands; a single destination stays on the rollup row (fc empty). Gated off
+  // for now (see ENABLE_FC_BREAKOUT) so every line plans at the state level.
+  const multiFc = ENABLE_FC_BREAKOUT && fcBuckets.length > 1;
 
   // ----- Gating -----
   const fiscalYear = prioInfo?.fiscalYear ?? null;
