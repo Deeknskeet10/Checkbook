@@ -256,13 +256,30 @@ namespace Checkbook.Plugins.Validation
         /// </summary>
         private static void StampBreakoutContext(ITracingService tracing, Entity target, Resolved resolved)
         {
-            if (resolved.PrioRef != null && !target.Contains(SpendPlanAttributes.Prioritization))
+            // Only skip when the caller supplied a REAL (non-null) value — a
+            // present-but-null attribute in the create payload must not suppress
+            // the stamp. Contains() alone returns true for an explicit null, which
+            // silently strands the LOA when the client sends an empty lookup.
+            var prioStamped = false;
+            var loaStamped = false;
+            if (resolved.PrioRef != null && !HasValue(target, SpendPlanAttributes.Prioritization))
+            {
                 target[SpendPlanAttributes.Prioritization] = resolved.PrioRef;
-            if (resolved.LoaRef != null && !target.Contains(SpendPlanAttributes.LineOfAccountingLOA))
+                prioStamped = true;
+            }
+            if (resolved.LoaRef != null && !HasValue(target, SpendPlanAttributes.LineOfAccountingLOA))
+            {
                 target[SpendPlanAttributes.LineOfAccountingLOA] = resolved.LoaRef;
+                loaStamped = true;
+            }
             tracing.Trace(
-                $"Stamped Breakout context: prio={resolved.PrioRef?.Id}, loa={resolved.LoaRef?.Id}.");
+                $"Stamped Breakout context: prio={resolved.PrioRef?.Id} (written={prioStamped}), " +
+                $"loa={resolved.LoaRef?.Id} (written={loaStamped}).");
         }
+
+        /// <summary>True only when the attribute is present AND carries a non-null value.</summary>
+        private static bool HasValue(Entity e, string attr)
+            => e.Contains(attr) && e[attr] != null;
 
         // ── Rules ────────────────────────────────────────────────────────────
 
