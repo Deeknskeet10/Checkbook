@@ -62,6 +62,17 @@ const Stars: React.FC<{ count: number; size: number }> = ({ count, size }) => (
     </svg>
 );
 
+// Decision Point flag — a single gold star, deliberately distinct from the
+// silver rank insignia stars (different fill + heavier outline) so the two
+// never read as the same symbol when both appear on a tile.
+export const DecisionStar: React.FC<{ size?: number }> = ({ size = 14 }) => (
+    <span className="cal__decision" title="Decision Point">
+        <svg width={size} height={size} viewBox="0 0 16 16" role="img" focusable="false" aria-label="Decision Point">
+            <polygon points={STAR_POINTS} fill="#ffcc33" stroke="#7a5c00" strokeWidth="1.1" />
+        </svg>
+    </span>
+);
+
 export interface RankBadgeProps {
     value: number | null;
     // Height of the badge chip in px.

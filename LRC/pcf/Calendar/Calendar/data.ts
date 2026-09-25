@@ -75,10 +75,18 @@ export function readEvents(dataset: DataSet): CalEvent[] {
         }
         const laneKey = path.length ? path[path.length - 1].key : UNASSIGNED;
 
+        // lrc_EventType choice value 7 = "Decision Point"; match on the numeric
+        // value, falling back to the label so the test harness (which surfaces
+        // choices as formatted text) flags them too.
+        const typeValue = asChoiceValue(rec.getValue("eventType"));
+        const typeLabel = rec.getFormattedValue("eventType") || "Other";
+
         out.push({
             id,
             name: rec.getFormattedValue("eventName") || "(untitled)",
-            type: rec.getFormattedValue("eventType") || "Other",
+            type: typeLabel,
+            subcategory: rec.getFormattedValue("eventSubcategory") || "",
+            isDecisionPoint: typeValue === 7 || typeLabel === "Decision Point",
             start,
             end: end < start ? start : end,
             orgs,

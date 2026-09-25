@@ -251,6 +251,14 @@ columns `description`, `location`, `pocName`, `pocEmail`, `pocPhone`; and a
   (bitmaps from the doc), 1–4 SVG stars for O7–O10 and the general-officer
   roles (G-3/5/7 = 1★, DDARNG = 2★, DARNG = 3★, CNGB = 4★, ARNG G3 = eagle);
   Action Officer, Branch Chief, Division Chief, and Other show no insignia.
+- **Event subcategory** (`lrc_EventSubcategory` choice, manifest `eventSubcategory`):
+  shown as the first field under the title in the detail panel (label only).
+- **Decision Point flag** (`lrc_EventType` value **7 = "Decision Point"**): a gold
+  `DecisionStar` (in `insignia.tsx`) pinned to the **right** end of the tile, kept
+  deliberately distinct from the left-aligned silver rank stars (gold fill / heavier
+  outline / opposite end). "Decision Point" is also a first-class type in
+  `TYPE_COLORS` (magenta) so it filters and shows in the legend. Requires the
+  value-7 option to exist on `lrc_EventType` in Dataverse.
 
 ### Still to build (need schema columns first — see gap analysis)
 

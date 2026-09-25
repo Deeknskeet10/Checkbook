@@ -1,6 +1,7 @@
 import * as React from "react";
 import { EVENT_TYPES, Level, LEVELS, VIEW_CONFIGS, VIEW_MODES, ViewMode, colorFor } from "./types";
 import { monthShort, toISODate } from "./dateUtils";
+import { DecisionStar } from "./insignia";
 
 export interface ToolbarProps {
     view: ViewMode;
@@ -145,6 +146,10 @@ export const Toolbar: React.FC<ToolbarProps> = (props) => {
                 <span className="cal-legend" title="A (T) after an event name marks it Tentative">
                     <span className="cal-legend__glyph">(T)</span>
                     Tentative
+                </span>
+                <span className="cal-legend" title="A gold star marks a Decision Point event">
+                    <DecisionStar size={12} />
+                    Decision Point
                 </span>
                 {props.busy && <span className="cal-tb__busy">Saving…</span>}
                 {props.error && <span className="cal-tb__error">{props.error}</span>}

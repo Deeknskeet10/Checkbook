@@ -1,7 +1,7 @@
 import * as React from "react";
 import { CalEvent, ColumnUnit, DueOut, UNASSIGNED, VisibleLane, colorFor } from "./types";
 import { addDays, diffDays, isWeekStart, monthShort, weekdayShort } from "./dateUtils";
-import { RankBadge, roleRankMeta } from "./insignia";
+import { DecisionStar, RankBadge, roleRankMeta } from "./insignia";
 
 const HEADER_H = 48;
 const BAR_H = 22;
@@ -280,6 +280,7 @@ export const CalendarGrid: React.FC<CalendarGridProps> = (props) => {
                                     {p.e.name}
                                     {p.e.tentative ? " (T)" : ""}
                                 </span>
+                                                {p.e.isDecisionPoint && <DecisionStar />}
                                             </div>
                                         );
                                     })

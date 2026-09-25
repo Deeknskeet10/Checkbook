@@ -359,6 +359,20 @@
 .cal__evname {
     overflow: hidden;
     text-overflow: ellipsis;
+    /* Allow the name to shrink so a trailing decision-point star stays visible. */
+    min-width: 0;
+}
+
+/* Decision Point flag: gold star pinned to the far (right) end of the tile so it
+   never sits next to the left-aligned silver rank insignia stars. */
+.cal__decision {
+    margin-left: auto;
+    padding-left: 4px;
+    display: inline-flex;
+    align-items: center;
+    flex: 0 0 auto;
+    line-height: 0;
+    filter: drop-shadow(0 0 1px rgba(0, 0, 0, 0.55));
 }
 
 .cal__info {

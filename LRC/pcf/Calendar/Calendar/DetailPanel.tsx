@@ -47,6 +47,7 @@ export const DetailPanel: React.FC<DetailPanelProps> = ({ event, dueOuts, onClos
                 </div>
             </div>
             <div className="cal-dp__body">
+                <Field label="Subcategory" value={event.subcategory} />
                 <Field label="Type" value={event.type} />
                 <Field label="Dates" value={formatRangeNoYear(event.start, event.end)} />
                 {(event.roleRank != null || event.roleRankLabel) && (

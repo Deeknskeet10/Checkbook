@@ -53,6 +53,7 @@ export const TYPE_COLORS: Record<string, string> = {
     "Training Event": "#bf8700",
     "Significant Due-Out (O-6/O-7)": "#cf222e",
     "External Public Event": "#0f6e6e",
+    "Decision Point": "#bf3989",
     Other: "#6e7781",
 };
 
@@ -66,6 +67,11 @@ export interface CalEvent {
     id: string;
     name: string;
     type: string;
+    // lrc_EventSubcategory formatted choice label; empty when not set.
+    subcategory: string;
+    // True when lrc_EventType is "Decision Point" (choice value 7); drives the
+    // gold star flag on the tile. Kept separate from the rank insignia stars.
+    isDecisionPoint: boolean;
     start: Date;
     end: Date;
     // Org assignment per level (only levels that are set are present).
