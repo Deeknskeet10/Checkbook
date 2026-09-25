@@ -251,8 +251,11 @@ columns `description`, `location`, `pocName`, `pocEmail`, `pocPhone`; and a
   (bitmaps from the doc), 1–4 SVG stars for O7–O10 and the general-officer
   roles (G-3/5/7 = 1★, DDARNG = 2★, DARNG = 3★, CNGB = 4★, ARNG G3 = eagle);
   Action Officer, Branch Chief, Division Chief, and Other show no insignia.
-- **Event subcategory** (`lrc_EventSubcategory` choice, manifest `eventSubcategory`):
-  shown as the first field under the title in the detail panel (label only).
+- **Event subcategory** (`lrc_EventSubcategory` **multi-select** choice, manifest
+  `eventSubcategory` of-type `MultiSelectOptionSet`): shown as the first field under
+  the title in the detail panel (selected labels, semicolon-separated). Note the
+  property-set must be typed `MultiSelectOptionSet`, not `OptionSet`, or the column
+  is filtered out of the control's field picker.
 - **Decision Point flag** (`lrc_EventType` value **7 = "Decision Point"**): a gold
   `DecisionStar` (in `insignia.tsx`) pinned to the **right** end of the tile, kept
   deliberately distinct from the left-aligned silver rank stars (gold fill / heavier

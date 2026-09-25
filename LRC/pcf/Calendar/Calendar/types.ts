@@ -67,7 +67,8 @@ export interface CalEvent {
     id: string;
     name: string;
     type: string;
-    // lrc_EventSubcategory formatted choice label; empty when not set.
+    // lrc_EventSubcategory selected labels (multi-select choice), semicolon-
+    // separated as returned by getFormattedValue; empty when none selected.
     subcategory: string;
     // True when lrc_EventType is "Decision Point" (choice value 7); drives the
     // gold star flag on the tile. Kept separate from the rank insignia stars.
