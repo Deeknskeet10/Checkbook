@@ -7,12 +7,13 @@ using Microsoft.Xrm.Sdk.Query;
 namespace Checkbook.Plugins.Validation
 {
     /// <summary>
-    /// Shared Pre-Operation guard that blocks direct REDUCTIONS of a funded
-    /// amount field when the admin toggle <c>book_LockManualFundedEdits</c>
-    /// is on. Increases (and no-op writes) are always allowed — the lock only
-    /// protects against funding being manually taken away outside the
-    /// authorized tools: Turn-Ins, Realignments, State Swaps, the Distribution
-    /// generator, and the roll-up plugins that recompute funded totals.
+    /// Shared Pre-Operation guard that blocks direct REDUCTIONS of a protected
+    /// amount field (a funded amount or a TDP) when the admin toggle
+    /// <c>book_LockManualFundedEdits</c> is on. Increases (and no-op writes) are
+    /// always allowed — the lock only protects against money being manually
+    /// taken away outside the authorized tools: Turn-Ins, Realignments, State
+    /// Swaps, the Distribution generator, and the roll-up plugins that recompute
+    /// funded totals.
     ///
     /// "Am I inside an authorized operation?" is answered by walking
     /// <see cref="IPluginExecutionContext.ParentContext"/> — the same pattern
@@ -23,9 +24,10 @@ namespace Checkbook.Plugins.Validation
     ///
     /// Subclasses supply the entity, the locked attribute, and any extra
     /// authorized ancestors (the entities whose roll-up plugins write the
-    /// field). See <see cref="PrioritizationFundedAmountLock"/> and
-    /// <see cref="RequirementFundingFundedAmountLock"/> for registration
-    /// intent.
+    /// field). See <see cref="PrioritizationFundedAmountLock"/> (Prio rolled-up
+    /// funded amount), <see cref="PrioritizationFundingFundedAmountLock"/> (FY27
+    /// junction funded amount), and <see cref="RequirementFundingTDPLock"/>
+    /// (RF TDP) for registration intent.
     /// </summary>
     public abstract class FundedAmountLockBase : PluginBase
     {
