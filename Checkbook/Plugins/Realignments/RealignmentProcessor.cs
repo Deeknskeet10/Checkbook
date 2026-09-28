@@ -159,8 +159,12 @@ namespace Checkbook.Plugins.Realignments
                     amount,
                     context.PrimaryEntityId);
 
-                TDPCalculationHelper.RecalculateLOATDP(service, debitLOA.Id, tracing);
-                TDPCalculationHelper.RecalculateLOATDP(service, creditLOA.Id, tracing);
+                // Intermediate recalc: the ledger pair is written but the paired RF
+                // move has not happened yet, so the debit LOA transiently shows a
+                // reduced remaining. Do not enforce the non-negative guard here — the
+                // final recalc below validates the settled state.
+                TDPCalculationHelper.RecalculateLOATDP(service, debitLOA.Id, tracing, enforceNonNegative: false);
+                TDPCalculationHelper.RecalculateLOATDP(service, creditLOA.Id, tracing, enforceNonNegative: false);
             }
 
             if (isPriorPath)

@@ -33,6 +33,15 @@ namespace Checkbook.Plugins.Helpers
         public Guid Id { get; set; }
         public string Name { get; set; }
         public decimal TotalTDP { get; set; }
+
+        /// <summary>
+        /// The LOA's last-committed <c>book_newtdpremaining</c> (TDP − allocated)
+        /// as stored before the current action. The non-negative guard compares a
+        /// freshly-computed remaining against this to block only actions that
+        /// drive remaining below zero *and* below where it already sat — legacy
+        /// negatives can still be corrected upward.
+        /// </summary>
+        public decimal TDPRemaining { get; set; }
     }
 
     /// <summary>
@@ -147,7 +156,8 @@ namespace Checkbook.Plugins.Helpers
         {
             var columns = new ColumnSet(
                 FundingLineAttributes.Name,
-                FundingLineAttributes.TDP // renamed, decimal
+                FundingLineAttributes.TDP,          // renamed, decimal
+                FundingLineAttributes.TDPRemaining  // stored remaining (delta-guard baseline)
             );
 
             var loaEntity = service.Retrieve(EntityNames.FundingLine, loaId, columns);
@@ -162,11 +172,16 @@ namespace Checkbook.Plugins.Helpers
                 totalTdp = NumericHelper.ToDecimal(raw, 0m);
             }
 
+            decimal remaining = 0m;
+            if (loaEntity.Attributes.Contains(FundingLineAttributes.TDPRemaining))
+                remaining = NumericHelper.ToDecimal(loaEntity[FundingLineAttributes.TDPRemaining], 0m);
+
             return new LOAInfo
             {
                 Id = loaId,
                 Name = loaEntity.GetAttributeValue<string>(FundingLineAttributes.Name) ?? loaId.ToString(),
-                TotalTDP = totalTdp
+                TotalTDP = totalTdp,
+                TDPRemaining = remaining
             };
         }
 
@@ -193,6 +208,7 @@ namespace Checkbook.Plugins.Helpers
                     <attribute name='{FundingLineAttributes.Id}' />
                     <attribute name='{FundingLineAttributes.Name}' />
                     <attribute name='{FundingLineAttributes.TDP}' />
+                    <attribute name='{FundingLineAttributes.TDPRemaining}' />
                     <filter type='and'>
                     <condition attribute='{FundingLineAttributes.Id}' operator='in'>
                         {string.Join("\n", conditions)}
@@ -211,11 +227,16 @@ namespace Checkbook.Plugins.Helpers
                     totalTdp = NumericHelper.ToDecimal(raw, 0m);
                 }
 
+                decimal remaining = 0m;
+                if (entity.Attributes.Contains(FundingLineAttributes.TDPRemaining))
+                    remaining = NumericHelper.ToDecimal(entity[FundingLineAttributes.TDPRemaining], 0m);
+
                 results.Add(new LOAInfo
                 {
                     Id = entity.Id,
                     Name = entity.GetAttributeValue<string>(FundingLineAttributes.Name) ?? entity.Id.ToString(),
-                    TotalTDP = totalTdp
+                    TotalTDP = totalTdp,
+                    TDPRemaining = remaining
                 });
             }
 
@@ -333,14 +354,69 @@ namespace Checkbook.Plugins.Helpers
         }
 
         /// <summary>
-        /// Recalculates and updates TDP and TDP Remaining on an LOA.
-        /// TDP = Sum of Funding Track ResourceAmount
-        /// TDP Remaining = TDP - Sum of Requirement Funding NewTDPs
+        /// Rounding tolerance for the non-negative TDP Remaining guard. Aggregate
+        /// FetchXml sums can leave sub-cent artifacts; without a tolerance a
+        /// −0.0001 rounding wisp would spuriously block a legitimate action.
         /// </summary>
+        private const decimal RemainingEpsilon = 0.005m;
+
+        /// <summary>
+        /// Enforces the invariant that an action may not drive an LOA's TDP
+        /// Remaining negative. This is a <em>delta</em> guard: it blocks only when
+        /// the newly-computed remaining is below zero <b>and</b> below the LOA's
+        /// last-committed remaining — so a corrective edit that improves an
+        /// already-negative LOA (e.g. −100 → −50) is still allowed, but any edit
+        /// that worsens a deficit or newly creates one is rejected and rolls back
+        /// the whole transaction.
+        ///
+        /// Callers running legitimate multi-step transients (a Realignment /
+        /// State-Swap recalc issued after the ledger write but before the paired
+        /// RF move) must pass <paramref name="enforce"/> = false for that
+        /// intermediate call and enforce only on the final settling recalc. The
+        /// bulk reconcile API passes false throughout — it reports reality rather
+        /// than blocking on legacy negatives.
+        /// </summary>
+        private static void GuardNonNegativeRemaining(
+            bool enforce,
+            LOAInfo loaInfo,
+            decimal newTdp,
+            decimal allocated,
+            decimal newRemaining,
+            ITracingService tracing)
+        {
+            if (!enforce) return;
+
+            bool wouldBeNegative = newRemaining < -RemainingEpsilon;
+            bool worsening = newRemaining < loaInfo.TDPRemaining - RemainingEpsilon;
+            if (!wouldBeNegative || !worsening)
+                return;
+
+            tracing.Trace(
+                $"BLOCK: LOA '{loaInfo.Name}' TDP Remaining would fall to {newRemaining} " +
+                $"(was {loaInfo.TDPRemaining}); TDP={newTdp}, allocated={allocated}.");
+
+            throw new InvalidPluginExecutionException(
+                Validation.ValidationMessages.TDPRemainingWouldGoNegative(
+                    loaInfo.Name, newTdp, allocated, newRemaining));
+        }
+
+        /// <summary>
+        /// Recalculates and updates TDP and TDP Remaining on an LOA.
+        /// TDP = Sum of Funding Track ResourceAmount + Ledger net.
+        /// TDP Remaining = TDP - Sum of Requirement Funding TDPs.
+        /// </summary>
+        /// <param name="enforceNonNegative">
+        /// When true (default), blocks the action if it would drive TDP Remaining
+        /// negative and worse than its current value (see
+        /// <see cref="GuardNonNegativeRemaining"/>). Pass false for the
+        /// intermediate recalc of a multi-step orchestration and for bulk
+        /// reconcile passes.
+        /// </param>
         public static void RecalculateLOATDP(
             IOrganizationService service,
             Guid loaId,
-            ITracingService tracingService)
+            ITracingService tracingService,
+            bool enforceNonNegative = true)
         {
             tracingService.Trace($"Recalculating TDP for LOA: {loaId}");
 
@@ -363,6 +439,16 @@ namespace Checkbook.Plugins.Helpers
             var tdpRemaining = totalTDP - allocatedTDP;
             tracingService.Trace($"TDP Remaining: {tdpRemaining}");
 
+            // Reject any action that would push (or push further) into deficit.
+            // Only read the pre-action remaining (the delta baseline) when we will
+            // actually enforce — intermediate orchestrator recalcs skip this.
+            if (enforceNonNegative)
+            {
+                var loaInfo = GetLOAInfo(service, loaId)
+                              ?? new LOAInfo { Id = loaId, Name = loaId.ToString() };
+                GuardNonNegativeRemaining(true, loaInfo, totalTDP, allocatedTDP, tdpRemaining, tracingService);
+            }
+
             // Update the LOA record (decimal writes)
             var updateEntity = new Entity(EntityNames.FundingLine, loaId);
             updateEntity[FundingLineAttributes.TDP] = totalTDP;
@@ -375,10 +461,19 @@ namespace Checkbook.Plugins.Helpers
         /// <summary>
         /// Batch recalculates TDP and TDP Remaining for multiple LOAs.
         /// </summary>
+        /// <param name="enforceNonNegative">
+        /// When true (default), a computed TDP Remaining that would drop below
+        /// zero and below the LOA's current value aborts the whole pass (the
+        /// guard's <see cref="InvalidPluginExecutionException"/> is re-thrown, not
+        /// swallowed). Real-time propagators leave this true; the bulk reconcile
+        /// API passes false so it reports the true value on legacy-negative LOAs
+        /// instead of blocking.
+        /// </param>
         public static void BatchRecalculateLOATDP(
             IOrganizationService service,
             IEnumerable<Guid> loaIds,
-            ITracingService tracingService)
+            ITracingService tracingService,
+            bool enforceNonNegative = true)
             {
                 var cache = new LOACache();
                 var idsToProcess = new HashSet<Guid>(loaIds);
@@ -398,12 +493,26 @@ namespace Checkbook.Plugins.Helpers
                         var allocatedTDP = TDPCalculationHelper.GetAllocatedTDP(service, loaId);
                         var tdpRemaining = totalTDP - allocatedTDP;
 
+                        if (enforceNonNegative)
+                        {
+                            var loaInfo = cache.GetLOAInfo(service, loaId)
+                                          ?? new LOAInfo { Id = loaId, Name = loaId.ToString() };
+                            GuardNonNegativeRemaining(true, loaInfo, totalTDP, allocatedTDP, tdpRemaining, tracingService);
+                        }
+
                         var updateEntity = new Entity(EntityNames.FundingLine, loaId);
                         updateEntity[FundingLineAttributes.TDP] = totalTDP;
                         updateEntity[FundingLineAttributes.TDPRemaining] = tdpRemaining;
 
                         service.Update(updateEntity);
                         tracingService.Trace($"LOA {loaId}: TDP={totalTDP}, Remaining={tdpRemaining}");
+                    }
+                    catch (InvalidPluginExecutionException)
+                    {
+                        // The non-negative guard fired. This is a deliberate
+                        // rejection of the originating action — let it propagate so
+                        // the platform rolls the transaction back. Do NOT swallow.
+                        throw;
                     }
                     catch (Exception ex)
                     {

@@ -65,6 +65,27 @@ namespace Checkbook.Plugins.Validation
             return $"Funded Amount ({fundedAmount:C}) cannot be negative.";
         }
 
+        /// <summary>
+        /// Error when an action would drive an LOA's TDP Remaining below zero
+        /// (and below where it already stood). Thrown by the shared LOA TDP
+        /// recalc so every path — RF allocation, Funding Track reduction/delete,
+        /// Ledger debit, Realignment / Turn-In / State-Swap settlement — is
+        /// covered at the point TDP Remaining is written.
+        /// </summary>
+        public static string TDPRemainingWouldGoNegative(
+            string loaName,
+            decimal tdp,
+            decimal allocated,
+            decimal resultingRemaining)
+        {
+            return $"This action would over-allocate Line of Accounting '{loaName}'.\n" +
+                   $"LOA TDP: {tdp:C}\n" +
+                   $"Allocated: {allocated:C}\n" +
+                   $"Resulting TDP Remaining: {resultingRemaining:C}\n" +
+                   "TDP Remaining cannot go negative. Reduce the allocation, or " +
+                   "increase the LOA's Funding Track / Ledger amounts, and try again.";
+        }
+
         #endregion
 
         #region Prioritization Funding / Approval Messages

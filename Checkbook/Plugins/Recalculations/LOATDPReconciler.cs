@@ -102,8 +102,12 @@ namespace Checkbook.Plugins.Recalculations
 
             tracing.Trace($"Scope: {totalInScope} active LOA(s); reconciling {loaIds.Count} this invocation.");
 
+            // Reconcile is a reporting / fix-up pass over historical data: it writes
+            // the true computed value even where that is negative (legacy over-
+            // allocations), rather than blocking. The non-negative guard is left to
+            // the real-time write paths.
             if (loaIds.Count > 0)
-                TDPCalculationHelper.BatchRecalculateLOATDP(service, loaIds, tracing);
+                TDPCalculationHelper.BatchRecalculateLOATDP(service, loaIds, tracing, enforceNonNegative: false);
 
             tracing.Trace($"Reconcile done: {loaIds.Count} processed, HasMore={hasMore}.");
 

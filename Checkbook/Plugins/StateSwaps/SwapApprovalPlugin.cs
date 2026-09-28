@@ -139,8 +139,11 @@ namespace Checkbook.Plugins.StateSwaps
             }
 
             // ---- 4. Recalc LOA TDP after ledger writes ----
+            // Intermediate: ledgers are in but the RF/Prio deltas (step 5) are not,
+            // so remaining is transiently off. The non-negative guard runs on the
+            // final recalc in step 6, not here.
             foreach (var loaId in touchedLOAs)
-                TDPCalculationHelper.RecalculateLOATDP(service, loaId, tracing);
+                TDPCalculationHelper.RecalculateLOATDP(service, loaId, tracing, enforceNonNegative: false);
 
             // ---- 5. Apply Prio + RF deltas ----
             // The RF validator's IsTriggeredByStateSwap bypass covers the

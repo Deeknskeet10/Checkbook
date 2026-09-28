@@ -939,6 +939,27 @@ partial runs are safe to re-run.
 > Per-LOA failures are caught, traced, and skipped inside
 > `BatchRecalculateLOATDP`; re-run to pick up any that failed.
 
+> **TDP Remaining non-negative guard.** `TDPCalculationHelper.RecalculateLOATDP`
+> / `BatchRecalculateLOATDP` refuse to write a TDP Remaining that would drop
+> **below zero and below the LOA's current value**, throwing
+> `InvalidPluginExecutionException` (which rolls the transaction back). This is a
+> *delta* guard — a corrective edit that improves an already-negative LOA is
+> still allowed; only actions that worsen or newly create a deficit are blocked.
+> Because every write to `book_newtdpremaining` funnels through these two
+> methods, the guard covers **all** paths at once: RF allocation, Funding Track
+> reduction/delete, Ledger debit, and Realignment / Turn-In / State-Swap
+> settlement. No new step registration is needed — the guard rides the existing
+> Post-Operation recalc steps and the orchestrator recalc calls.
+>
+> Exemptions (callers pass `enforceNonNegative: false`): the **intermediate**
+> recalc inside `RealignmentProcessor` and `SwapApprovalPlugin` (issued after the
+> ledger write but before the paired RF move — a legitimate transient; the final
+> recalc in each still enforces), and the **`book_RecalculateLOATDP` reconcile
+> API**, which reports the true value on legacy-negative LOAs rather than
+> blocking. Not covered: bulk Funding Track edits at Depth ≥ 2, which skip the
+> real-time recalc entirely (see the bulk-load caveat above) — reconcile still
+> writes their true value.
+
 ### `Checkbook.Plugins.Recalculations.LedgerCreateFundingLineUpdater`
 
 On Ledger Create, recalculates the LOA's TDP / Remaining to reflect the new
