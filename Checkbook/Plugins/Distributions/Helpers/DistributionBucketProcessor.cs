@@ -378,7 +378,14 @@ namespace Checkbook.Plugins.Distributions.Helpers
                     },
                 },
                 PageInfo = new PagingInfo { Count = 5000, PageNumber = 1, ReturnTotalRecordCount = false },
-                NoLock = true,
+                // Read-committed (no NoLock): every amendable row returned here
+                // becomes a blind batched Update/Deactivate target (and immutable
+                // rows feed the target-sizing net). A dirty read (READ UNCOMMITTED)
+                // can hand back a row a concurrent transaction created and then
+                // rolled back — queuing an Update against a GUID that never commits
+                // → "book_distributions … With Id = … Does Not Exist", which aborts
+                // the (fail-fast) group chunk. Same fix applied to Phase 4's
+                // snapshot queries on 2026-09-04; this one was overlooked.
             };
             var feLink = query.AddLink(EntityNames.FundingEvent, DistributionsAttributes.FundingEvent, FundingEventAttributes.Id);
             feLink.LinkCriteria.AddCondition(FundingEventAttributes.FundingType, ConditionOperator.Equal, fundingType);
@@ -526,7 +533,10 @@ namespace Checkbook.Plugins.Distributions.Helpers
                     },
                 },
                 PageInfo = new PagingInfo { Count = 5000, PageNumber = 1, ReturnTotalRecordCount = false },
-                NoLock = true,
+                // Read-committed (no NoLock): these Turn-Ins become blind batched
+                // Update/Delete targets (ZeroTypeAmount / UpdateTypeAmount), so a
+                // dirty read of an uncommitted/rolled-back row would queue a write
+                // against a GUID that never commits ("book_turnin … Does Not Exist").
             };
 
             var byFc = new Dictionary<Guid, Entity>();
