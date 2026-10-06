@@ -110,14 +110,27 @@ reductions blocked; a realignment reduces a PF (450k→400k) fine with the lock 
 > the realignment's reduction. Production approvals are form/PCF **Update** saves, so they chain
 > correctly. The data-seed `dvapi.patch` now sends `If-Match: *` to force Update semantics.
 
-## 5. Open sub-decision — Realignment ↔ itemized interaction
+## 5. Realignment ↔ itemized interaction — RESOLVED (stakeholder 2026-10-06)
 A realignment that debits a PF (an authorized reduction) drops Σ PF below the Prio total,
-breaking the invariant — and the NPM can't fix it (reductions are locked). So the realignment
-must reduce the **detail** total by the same amount in the same transaction. With no
-per-(detail, RF) link, *which* detail loses the funding is undefined. Options to resolve when
-wiring [[realignment-fy27-redesign]] to this model: (a) the realignment debit on an itemized
-Prio targets a specified ItemizedDetail; (b) reduce proportionally across details; (c) realign
-itemized Prios only at the detail level. **Defer until this reconciliation lands.**
+breaking the invariant — and the NPM can't fix it afterward (reductions are locked). **Resolution:
+the NPM explicitly selects which ItemizedDetails give up the funding, reducing them to a sum equal
+to the realignment amount, as part of the realignment — and it cannot process until those detail
+reductions balance to the move.** Example: a $10,000 realignment across 2 PFs requires the NPM to
+pick N details and reduce them by a total of $10,000 before approval.
+
+Implementation (folds into the `RealignmentBuilder` entry + the processor):
+- **Schema:** a new child `book_realignmentdetailreduction` on `book_realignments` — lookup to the
+  `book_itemizeddetails` being reduced + a reduction amount. (Only used when the debit Prio is
+  Itemized; Direct-mode debit has no details — the PF reduction *is* the Prio-total reduction.)
+- **Validator:** for an Itemized-debit realignment, block approval/processing unless
+  Σ(detail reductions) == realignment amount (== Σ PF-item debit amounts).
+- **Processor:** on execution (the authorized reducer, so the lock lets it through) reduce each
+  selected ItemizedDetail by its amount — `PrioritizationItemizedRollup` recomputes the Prio total
+  down — in the same transaction as the PF moves, keeping Σ PF ≡ Σ details on both sides.
+- **UI (`RealignmentBuilder`):** a detail-selection grid where the NPM picks funded details and
+  enters reductions, with a live remaining-to-balance against the realignment total.
+
+See [[realignment-fy27-redesign]] §5 — this is built together with the (still-pending) RealignmentBuilder entry PCF.
 
 ## 6. Migration
 Existing divergent Prios (Σ PF ≠ Σ details) are surfaced **externally via a Power BI report**
