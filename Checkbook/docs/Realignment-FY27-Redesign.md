@@ -280,12 +280,18 @@ items share the parent's debit Prio by construction.
 7. **Direct-path credit XOR** — the credit requirement on an RDF item must itself be on the
    direct (RD) path, not the Prio path (`RequirementDetailFundingGuard` enforces Prio-XOR-RD). The
    entry PCF must only offer RF-Y targets whose requirement is RD-funded. *(verify while building)*
-8. **Itemized-debit detail reduction — RESOLVED (stakeholder 2026-10-06):** debiting an **Itemized**
-   Prio must keep Σ PF ≡ Σ details, so the NPM **selects which ItemizedDetails give up the funding
-   and reduces them to a sum equal to the realignment amount** — and the realignment can't process
-   until they balance. New child `book_realignmentdetailreduction` (ItemizedDetail + amount);
-   validator blocks approval unless Σ(detail reductions) == realignment amount; processor reduces
-   the selected details (authorized reducer, so the increase-only lock allows it) in the same
-   transaction as the PF moves. Built with the `RealignmentBuilder` entry PCF (detail-selection
-   grid, live remaining-to-balance). See `Prioritization-Funding-Reconciliation.md` §5. Direct-mode
+8. **Itemized-debit detail reduction — SERVER MECHANISM BUILT + validated 2026-10-06
+   (stakeholder-decided):** debiting an **Itemized** Prio must keep Σ PF ≡ Σ details, so the NPM
+   **selects which ItemizedDetails give up the funding and reduces them to a sum equal to the
+   realignment amount** — and the realignment can't process until they balance. New child
+   `book_realignmentdetailreduction` (`book_itemizeddetail` lookup + `book_newamount`), no plugin
+   steps. `RealignmentValidator.EnforceItemizedDebitBalance` blocks any approval transition unless
+   Σ(active detail reductions) == Σ(item amounts whose debit PF sits on an Itemized Prio), each
+   reduced detail belonging to a debiting Prio. `RealignmentProcessor.ApplyDetailReductions` reduces
+   the selected details (authorized reducer, so the increase-only `ItemizedDetailFundedAmountLock`
+   allows it) after the PF moves; `PrioritizationItemizedRollup` (no depth guard) recomputes the Prio
+   total down. Schema `realign_detailreduction_schema.py`; validated
+   `fy27_realign_detailreduction_validate.py` (block-then-balance, invariant restored both sides).
+   The **UI** (detail-selection grid + live remaining-to-balance) ships with the still-pending
+   `RealignmentBuilder` entry PCF. See `Prioritization-Funding-Reconciliation.md` §5. Direct-mode
    debit needs none (PF reduction *is* the Prio-total reduction).

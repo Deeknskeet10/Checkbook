@@ -105,6 +105,14 @@ namespace Checkbook.Plugins.Validation
                 sameFundSAG = shape.GetAttributeValue<bool>(RealignmentsAttributes.AllSameFundSAG);
                 itemPriorPath = shape.GetAttributeValue<OptionSetValue>(RealignmentsAttributes.EntryMode)?.Value
                     == RealignmentEntryModeValues.State;
+
+                // FY27 itemized-debit balance (docs/Prioritization-Funding-Reconciliation.md §5):
+                // when items pull funding out of PF junctions on an Itemized Prioritization,
+                // Σ PF drops below the Prio total; the NPM must reduce selected ItemizedDetails
+                // by the same amount so the invariant holds on both sides. Block any approval of
+                // an unbalanced itemized-debit realignment. Runs before the stamp; the processor
+                // applies the reductions after approval.
+                EnforceItemizedDebitBalance(service, tracing, context.PrimaryEntityId);
             }
 
             int? statePre = preImage?.GetAttributeValue<OptionSetValue>(
@@ -213,6 +221,111 @@ namespace Checkbook.Plugins.Validation
                 },
             };
             return service.RetrieveMultiple(q).Entities.Count > 0;
+        }
+
+        private const decimal BalanceEpsilon = 0.005m;
+
+        /// <summary>
+        /// Itemized-debit balance gate (FY27 §5). For every active item that debits a
+        /// Prioritization Funding whose parent Prioritization is in Itemized funding mode,
+        /// the realignment pulls that amount out of the PF junctions — dropping Σ PF below
+        /// the Prio's detail-driven total. The NPM must reduce selected ItemizedDetails on
+        /// those debit Prioritization(s) by the SAME total (via book_realignmentdetailreduction
+        /// child rows) before this can be approved. Enforces
+        ///   Σ(active detail reductions)  ==  Σ(item amount for itemized-debit PF items),
+        /// and that each reduced detail belongs to one of the realignment's itemized debit
+        /// Prioritizations. Direct-mode debit (no details) and RF/RDF debit contribute nothing.
+        /// </summary>
+        private static void EnforceItemizedDebitBalance(
+            IOrganizationService service, ITracingService tracing, Guid realignmentId)
+        {
+            // 1. Sum the amount pulled out of Itemized Prioritizations via PF-debit items,
+            //    collecting the set of itemized debit Prioritizations.
+            var items = new QueryExpression(RealignmentItemAttributes.EntityLogicalName)
+            {
+                ColumnSet = new ColumnSet(
+                    RealignmentItemAttributes.Amount,
+                    RealignmentItemAttributes.DebitPrioritizationFunding),
+                Criteria = new FilterExpression(LogicalOperator.And)
+                {
+                    Conditions =
+                    {
+                        new ConditionExpression(RealignmentItemAttributes.Realignment, ConditionOperator.Equal, realignmentId),
+                        new ConditionExpression(RealignmentItemAttributes.StateCode, ConditionOperator.Equal, StateCodeValues.Active),
+                        new ConditionExpression(RealignmentItemAttributes.DebitPrioritizationFunding, ConditionOperator.NotNull),
+                    },
+                },
+            };
+
+            decimal itemizedDebit = 0m;
+            var itemizedPrios = new System.Collections.Generic.HashSet<Guid>();
+            foreach (var item in service.RetrieveMultiple(items).Entities)
+            {
+                var pfRef = item.GetAttributeValue<EntityReference>(RealignmentItemAttributes.DebitPrioritizationFunding);
+                if (pfRef == null) continue;
+
+                var pf = service.Retrieve(EntityNames.PrioritizationFunding, pfRef.Id,
+                    new ColumnSet(PrioritizationFundingAttributes.Prioritization));
+                var prioRef = pf.GetAttributeValue<EntityReference>(PrioritizationFundingAttributes.Prioritization);
+                if (prioRef == null) continue;
+
+                var prio = service.Retrieve(EntityNames.Prioritization, prioRef.Id,
+                    new ColumnSet(PrioritizationAttributes.FundingMode));
+                var mode = prio.GetAttributeValue<OptionSetValue>(PrioritizationAttributes.FundingMode)?.Value;
+                if (mode != FundingModeValues.Itemized) continue;
+
+                itemizedDebit += item.GetAttributeValue<decimal?>(RealignmentItemAttributes.Amount) ?? 0m;
+                itemizedPrios.Add(prioRef.Id);
+            }
+
+            if (itemizedDebit <= 0m)
+            {
+                tracing.Trace("RealignmentValidator: no itemized-debit amount; detail-reduction balance not required.");
+                return;
+            }
+
+            // 2. Sum the active detail reductions and validate their details belong to a debit Prio.
+            var reductions = new QueryExpression(RealignmentDetailReductionAttributes.EntityLogicalName)
+            {
+                ColumnSet = new ColumnSet(
+                    RealignmentDetailReductionAttributes.Amount,
+                    RealignmentDetailReductionAttributes.ItemizedDetail),
+                Criteria = new FilterExpression(LogicalOperator.And)
+                {
+                    Conditions =
+                    {
+                        new ConditionExpression(RealignmentDetailReductionAttributes.Realignment, ConditionOperator.Equal, realignmentId),
+                        new ConditionExpression(RealignmentDetailReductionAttributes.StateCode, ConditionOperator.Equal, StateCodeValues.Active),
+                    },
+                },
+            };
+
+            decimal reduced = 0m;
+            foreach (var r in service.RetrieveMultiple(reductions).Entities)
+            {
+                var detailRef = r.GetAttributeValue<EntityReference>(RealignmentDetailReductionAttributes.ItemizedDetail);
+                if (detailRef == null)
+                    throw new InvalidPluginExecutionException(
+                        "A Realignment Detail Reduction has no Itemized Detail selected.");
+
+                var detail = service.Retrieve(EntityNames.ItemizedDetails, detailRef.Id,
+                    new ColumnSet(ItemizedDetailsAttributes.Prioritization));
+                var detailPrio = detail.GetAttributeValue<EntityReference>(ItemizedDetailsAttributes.Prioritization);
+                if (detailPrio == null || !itemizedPrios.Contains(detailPrio.Id))
+                    throw new InvalidPluginExecutionException(
+                        "A selected Itemized Detail does not belong to a Prioritization this realignment debits. " +
+                        "Reduce only details on the debiting Prioritization.");
+
+                reduced += r.GetAttributeValue<decimal?>(RealignmentDetailReductionAttributes.Amount) ?? 0m;
+            }
+
+            tracing.Trace($"RealignmentValidator: itemized-debit balance — reduced={reduced:N2}, required={itemizedDebit:N2}.");
+
+            if (Math.Abs(reduced - itemizedDebit) >= BalanceEpsilon)
+                throw new InvalidPluginExecutionException(
+                    $"This realignment pulls {itemizedDebit:N2} out of an itemized Prioritization. Before it can be " +
+                    $"approved, select Itemized Details on the debiting Prioritization and reduce them by a total of " +
+                    $"{itemizedDebit:N2} (currently {reduced:N2}).");
         }
 
         /// <summary>

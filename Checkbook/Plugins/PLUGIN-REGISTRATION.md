@@ -727,6 +727,37 @@ active items.
 | 2 | Update  | `book_realignmentitem`  | Post-Operation | Sync | `book_newamount, book_samefundandsag, book_realignment, statecode` | **PreImage** `PreImage` (`book_realignment`). |
 | 3 | Delete  | `book_realignmentitem`  | Post-Operation | Sync | *(none)*             | **PreImage** `PreImage` (`book_realignment`). |
 
+#### FY27 itemized-debit detail reduction — `book_realignmentdetailreduction`
+
+> See [`../docs/Prioritization-Funding-Reconciliation.md`](../docs/Prioritization-Funding-Reconciliation.md) §5.
+> When a realignment pulls funding out of PF junctions on an **Itemized**
+> Prioritization, Σ PF drops below the detail-driven Prio total. The NPM must
+> reduce selected ItemizedDetails by the same total before approval, recorded as
+> child `book_realignmentdetailreduction` rows. **No plugin steps on this table** —
+> it is pure data read by `RealignmentValidator` (balance gate) and
+> `RealignmentProcessor` (applies the reductions). Only used for Itemized-debit
+> realignments; Direct-mode debit carries none.
+
+**Schema (`devtools/sandbox-import/schema/realign_detailreduction_schema.py`):**
+
+| Object | Create |
+|--------|--------|
+| `book_realignmentdetailreduction` (new table) | UserOwned; primary name `book_name`. |
+| lookups | `book_realignment`→`book_realignments` (Cascade delete), `book_itemizeddetail`→`book_itemizeddetails`. |
+| columns | `book_newamount` (Decimal) — the amount to reduce the ItemizedDetail by. |
+
+These two existing steps gained item-aware behavior for this feature (no
+registration change — code only):
+
+- **`RealignmentValidator`** (PreOp Update of `book_realignments`, already registered):
+  `EnforceItemizedDebitBalance` now blocks any approval transition of an item-based
+  realignment unless Σ(active detail reductions) == Σ(item amounts whose debit PF is
+  on an Itemized Prio), each reduced detail belonging to a debiting Prio.
+- **`RealignmentProcessor`** (PostOp Update of `book_realignments`, already registered):
+  `ApplyDetailReductions` reduces the selected ItemizedDetails after the PF moves (as
+  the authorized reducer — the increase-only `ItemizedDetailFundedAmountLock` lets it
+  through); `PrioritizationItemizedRollup` recomputes the Prio total down.
+
 ---
 
 ## Items

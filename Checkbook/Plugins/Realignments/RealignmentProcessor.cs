@@ -294,6 +294,62 @@ namespace Checkbook.Plugins.Realignments
             tracing.Trace($"ProcessItems: processing {items.Count} active realignment item(s).");
             foreach (var item in items)
                 ProcessItem(service, tracing, item, creditPrio, realignmentId);
+
+            // FY27 itemized-debit reconciliation (docs §5): the PF moves above dropped
+            // Σ PF on the debiting Itemized Prioritization(s). Apply the NPM-selected
+            // ItemizedDetail reductions (validated to balance to the move by
+            // RealignmentValidator.EnforceItemizedDebitBalance) so Σ details — and thus
+            // the Prio total via PrioritizationItemizedRollup — come down to match.
+            // This processor is the authorized reducer, so the increase-only
+            // FundedAmountLock lets the reduction through.
+            ApplyDetailReductions(service, tracing, realignmentId);
+        }
+
+        /// <summary>
+        /// Reduces each selected ItemizedDetail's Funded amount by its
+        /// book_realignmentdetailreduction amount. PrioritizationItemizedRollup (no depth
+        /// guard) recomputes the parent Prioritization total from the reduced details.
+        /// </summary>
+        private void ApplyDetailReductions(
+            IOrganizationService service, ITracingService tracing, Guid realignmentId)
+        {
+            var q = new QueryExpression(RealignmentDetailReductionAttributes.EntityLogicalName)
+            {
+                ColumnSet = new ColumnSet(
+                    RealignmentDetailReductionAttributes.Amount,
+                    RealignmentDetailReductionAttributes.ItemizedDetail),
+                Criteria = new FilterExpression(LogicalOperator.And)
+                {
+                    Conditions =
+                    {
+                        new ConditionExpression(RealignmentDetailReductionAttributes.Realignment, ConditionOperator.Equal, realignmentId),
+                        new ConditionExpression(RealignmentDetailReductionAttributes.StateCode, ConditionOperator.Equal, StateCodeValues.Active),
+                    },
+                },
+            };
+
+            var rows = service.RetrieveMultiple(q).Entities;
+            if (rows.Count == 0) { tracing.Trace("ApplyDetailReductions: no detail reductions on this realignment."); return; }
+
+            foreach (var row in rows)
+            {
+                var detailRef = row.GetAttributeValue<EntityReference>(RealignmentDetailReductionAttributes.ItemizedDetail);
+                decimal reduceBy = row.GetAttributeValue<decimal?>(RealignmentDetailReductionAttributes.Amount) ?? 0m;
+                if (detailRef == null || reduceBy <= 0m) continue;
+
+                var detail = service.Retrieve(EntityNames.ItemizedDetails, detailRef.Id,
+                    new ColumnSet(ItemizedDetailsAttributes.FundedAmount));
+                decimal funded = detail.GetAttributeValue<decimal?>(ItemizedDetailsAttributes.FundedAmount) ?? 0m;
+                if (reduceBy > funded)
+                    throw new InvalidPluginExecutionException(
+                        $"Realignment cannot execute: an Itemized Detail holds {funded:N2} funded but a detail " +
+                        $"reduction of {reduceBy:N2} was entered. Re-balance the detail reductions.");
+
+                var upd = new Entity(EntityNames.ItemizedDetails, detailRef.Id);
+                upd[ItemizedDetailsAttributes.FundedAmount] = funded - reduceBy;
+                service.Update(upd);
+                tracing.Trace($"ApplyDetailReductions: ItemizedDetail {detailRef.Id} funded {funded:N2} -> {(funded - reduceBy):N2}.");
+            }
         }
 
         /// <summary>
