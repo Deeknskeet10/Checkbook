@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <manifest>
-  <control namespace="ARNGCheckbook" constructor="RealignmentApprovalProcess" version="0.1.0"
+  <control namespace="ARNGCheckbook" constructor="RealignmentApprovalProcess" version="0.1.1"
            display-name-key="RealignmentApprovalProcess"
            description-key="Header approval-process bar for book_realignments. Renders shape-aware chevrons (State Approval, NPM Concurrence, BE Approval, Approved) with role-gated Approve buttons per stage and a Deny button on any active stage. State Approval is scoped to the debiting state business unit. NPM Concurrence is a soft stage until dedicated NPM contacts exist: a State approver cannot advance it, only a Budget Executor can move the record forward past it. Approve writes the book_newstateapproved / book_bedecision choice fields; deny writes the choice value plus book_denialreason. All role checks are mirrored in RealignmentValidator as the authoritative security boundary."
            control-type="virtual" >
