@@ -185,6 +185,19 @@ methods stay; the item path is additive) and needs **no migration** of in-flight
 
 ## 5. Entry PCF (`RealignmentBuilder`, new)
 
+> **Build status — State path BUILT + deployed 2026-10-06 (v0.1.0).** `pcf/RealignmentBuilder`
+> (virtual, React/Fluent 9.46.2, bound to `book_newamount`). Reads the parent id from
+> `context.mode.contextInfo.entityId`; on a saved active Realignment it offers debit/credit
+> Prioritization comboboxes, the debit Prio's PF subgrid (multi-select + per-line move amount ≤
+> funded), a single credit-RF picker (from the credit Prio's Requirement RFs), and — when the debit
+> Prio is Itemized — the detail-reduction grid with a live remaining-to-balance badge. Save rebuilds
+> the `book_realignmentitem` + `book_realignmentdetailreduction` rows and stamps
+> `book_realignmententrymode=State`. Added to `ARNGCheckbookExtensions`, dist rebuilt, imported +
+> published (control `book_ARNGCheckbook.RealignmentBuilder`). **Still pending:** place it on the
+> `book_realignments` form (maker portal); automatic role detection + dropdown override; the **OPR /
+> direct (RDF, RF→RF) path**; and per-item (rather than single) credit-RF selection. The server
+> contract it drives is the one validated in `fy27_realign_detailreduction_validate.py`.
+
 A virtual PCF (React/Fluent, like `ItemizedDetailsGrid` / the FundingGrid family), hosted on
 a custom page or embedded on the realignment form, reading the parent id from
 `context.mode.contextInfo.entityId`.

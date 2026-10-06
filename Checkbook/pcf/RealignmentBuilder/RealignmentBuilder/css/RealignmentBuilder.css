@@ -1,0 +1,5 @@
+/* RealignmentBuilder: layout is driven by Fluent makeStyles; this file exists
+   so the manifest <css> resource resolves. Keep global overrides minimal. */
+.RealignmentBuilder-container {
+  font-size: 13px;
+}
