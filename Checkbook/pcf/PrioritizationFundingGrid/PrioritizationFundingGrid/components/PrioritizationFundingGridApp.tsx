@@ -1187,6 +1187,26 @@ export const PrioritizationFundingGridApp: React.FC<PrioritizationFundingGridPro
   const saveAllocations = async (): Promise<void> => {
     if (!allocPrioId) return;
     const list = junctions[allocPrioId] ?? [];
+    // Funding reconciliation: the per-RF allocations must total exactly the Prio
+    // Funded amount (mirror of the PrioritizationFundingGuard server cap — blocks
+    // under- AND over-allocation before the round-trip). Validated is NOT reconciled
+    // (it may exceed Funded), so only the funded sum is checked.
+    const target = allocPrio ? effective(allocPrio).funded : 0;
+    const finalFundedSum = list.reduce(
+      (s, j) => s + allocJunctionValue(j, "fundedAmount"),
+      0
+    );
+    if (Math.abs(finalFundedSum - target) >= 0.005) {
+      setAllocError(
+        `Allocations must total the Prioritization Funded amount (${formatCurrency(
+          target
+        )}). Current total is ${formatCurrency(finalFundedSum)} — ` +
+          `allocate the remaining ${formatCurrency(
+            target - finalFundedSum
+          )} before saving.`
+      );
+      return;
+    }
     setAllocBusy(true);
     setAllocError(null);
     try {
@@ -1500,6 +1520,14 @@ export const PrioritizationFundingGridApp: React.FC<PrioritizationFundingGridPro
                 </MessageBar>
               )}
 
+              <MessageBar intent="info" className={styles.drawerErrorBar}>
+                <MessageBarBody>
+                  Identify all source RFs for this Prioritization up front. The
+                  allocations must total the Prio Funded amount before you can save;
+                  Validated may exceed Funded and is not reconciled.
+                </MessageBarBody>
+              </MessageBar>
+
               {/* Sum vs Prio total */}
               <div className={styles.drawerSummaryRow}>
                 <div className={styles.drawerSummaryStat}>
@@ -1529,8 +1557,9 @@ export const PrioritizationFundingGridApp: React.FC<PrioritizationFundingGridPro
                   <MessageBarBody>
                     Allocation sum {formatCurrency(allocFundedSum)} differs
                     from Prio Funded {formatCurrency(eff.funded)} by{" "}
-                    {formatCurrency(Math.abs(fundedDelta))}. Either adjust this
-                    distribution, the items, or the Prio total.
+                    {formatCurrency(Math.abs(fundedDelta))}. Allocate exactly the
+                    Prio Funded total across the RFs to save — Save Allocations is
+                    disabled until the sums match.
                   </MessageBarBody>
                 </MessageBar>
               )}
@@ -1543,7 +1572,17 @@ export const PrioritizationFundingGridApp: React.FC<PrioritizationFundingGridPro
               </DialogTrigger>
               <Button
                 appearance="primary"
-                disabled={isDisabled || allocBusy || !dirty}
+                disabled={
+                  isDisabled ||
+                  allocBusy ||
+                  !dirty ||
+                  Math.abs(fundedDelta) >= 0.005
+                }
+                title={
+                  Math.abs(fundedDelta) >= 0.005
+                    ? "Allocations must total the Prio Funded amount before saving"
+                    : undefined
+                }
                 onClick={() => void saveAllocations()}
               >
                 {allocBusy ? <Spinner size="extra-tiny" /> : "Save Allocations"}
