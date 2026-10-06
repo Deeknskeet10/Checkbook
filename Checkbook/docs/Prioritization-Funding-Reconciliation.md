@@ -37,7 +37,9 @@ breakdowns of the same total.
 
 ### Invariant
 > Σ `ItemizedDetail.funded`  ≡  `Prio.book_newfundedamounttdp`  ≡  Σ `book_prioritizationfunding.funded`
-> (and the same for Validated).
+>
+> **Funded only.** Validated is *not* reconciled — Validated may exceed Funded (you can validate
+> more than you fund), so no aggregate check is placed on the Validated amounts.
 
 ## 3. Decisions
 
@@ -68,10 +70,11 @@ breakdowns of the same total.
 
 ### 4.1 Enforcement — server guards (authoritative)
 - **Over-allocation cap (extend `PrioritizationFundingGuard`, no new step):** reject any
-  `book_prioritizationfunding` Create/Update whose write would make Σ PF.funded (or Σ PF.validated)
-  for the Prio **exceed** the Prio total (Σ details). This is the aggregate check the guard is
-  missing today (it only caps each PF at its RF's TDP + the NPM-Review gate). Under-allocation is
-  not dangerous (just incomplete) — the PCF blocks leaving it unbalanced (4.2) and the flag shows it.
+  `book_prioritizationfunding` Create/Update whose write would make **Σ PF.funded** for the Prio
+  **exceed** the Prio total (Σ details). Funded only — Validated is not reconciled (may exceed
+  Funded). This is the aggregate check the guard was missing (it only caps each PF at its RF's TDP
+  + the NPM-Review gate). Under-allocation is not dangerous (just incomplete) — the PCF blocks
+  leaving it unbalanced (4.2) and the flag shows it.
 - **≥1-RF precondition (new guard, decision #7):** on a funding write — `book_itemizeddetails`
   Update of `book_fundedamount`/`book_validatedamount`, and `book_prioritization` Update of
   `book_newfundedamounttdp`/`book_validatedamount` (direct mode) — require ≥1 active

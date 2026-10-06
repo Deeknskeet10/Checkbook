@@ -395,9 +395,10 @@ elevation needed.
 | 2 | Update  | `book_prioritizationfunding`  | Pre-Operation  | Sync | `book_prioritization, book_requirementfunding, book_fundedamount, book_validatedamount`    | Re-validates on amount or parent change. **Requires PreImage** (same four attrs). |
 
 > **FY27 reconciliation cap (2026-10-06, no new step):** the guard now also rejects a junction
-> write that would make **Σ active PF.funded (or validated) for the Prioritization exceed the
-> Prio's funded total** — but only when the Prio is **Itemized** (Σ ItemizedDetails is the
-> authoritative total the junctions distribute). Direct-mode Prios have no independent item total
+> write that would make **Σ active PF.funded for the Prioritization exceed the Prio's funded
+> total** — but only when the Prio is **Itemized** (Σ ItemizedDetails is the authoritative total
+> the junctions distribute). **Funded only — Validated is not reconciled (may exceed Funded).**
+> Direct-mode Prios have no independent item total
 > (`PrioritizationFundingRollup` makes Prio.funded = Σ PF) so the cap is a no-op there.
 > Under-allocation stays allowed (incomplete) — the grid blocks leaving it unbalanced.
 > See `docs/Prioritization-Funding-Reconciliation.md`.

@@ -66,7 +66,6 @@ namespace Checkbook.Plugins.Validation
                     PrioritizationAttributes.ApprovalStatus,
                     PrioritizationAttributes.FundingMode,
                     PrioritizationAttributes.FundedAmountTDP,
-                    PrioritizationAttributes.ValidatedAmount,
                     PrioritizationAttributes.Name,
                     "ownerid"
                 )
@@ -142,23 +141,16 @@ namespace Checkbook.Plugins.Validation
             // total (PrioritizationFundingRollup makes Prio.funded = Σ PF) so the cap is a no-op
             // there. Under-allocation stays allowed (incomplete) — the grid blocks leaving it
             // unbalanced. See docs/Prioritization-Funding-Reconciliation.md.
+            // Funded only — Validated is intentionally NOT reconciled (Validated may exceed Funded).
             var prioMode = prio.GetAttributeValue<OptionSetValue>(PrioritizationAttributes.FundingMode)?.Value;
             if (prioMode == FundingModeValues.Itemized)
             {
-                var newValidated = GetEffectiveDecimal(
-                    target, preImage, PrioritizationFundingAttributes.ValidatedAmount);
                 var prioFunded = prio.GetAttributeValue<decimal?>(PrioritizationAttributes.FundedAmountTDP) ?? 0m;
-                var prioValidated = prio.GetAttributeValue<decimal?>(PrioritizationAttributes.ValidatedAmount) ?? 0m;
-                var (otherFunded, otherValidated) = SumOtherActivePF(service, prioRef.Id, context);
-
+                var otherFunded = SumOtherActivePF(service, prioRef.Id, context);
                 if (otherFunded + newFunded > prioFunded)
                     throw new InvalidPluginExecutionException(
                         $"Allocations to RFs ({otherFunded + newFunded:N2}) would exceed the Prioritization's " +
                         $"funded total ({prioFunded:N2}). Lower this allocation or raise the detail funding.");
-                if (otherValidated + newValidated > prioValidated)
-                    throw new InvalidPluginExecutionException(
-                        $"Allocations to RFs ({otherValidated + newValidated:N2}) would exceed the Prioritization's " +
-                        $"validated total ({prioValidated:N2}).");
             }
 
             // ---- 5. Funding only on an NPM-Review Prioritization ----
@@ -215,11 +207,11 @@ namespace Checkbook.Plugins.Validation
         }
 
         /// <summary>
-        /// Σ funded/validated of the OTHER active junctions on this Prioritization
+        /// Σ FundedAmount of the OTHER active junctions on this Prioritization
         /// (excludes the row being written on Update) — used for the aggregate
-        /// "Σ PF ≤ Prio total" cap.
+        /// "Σ PF.funded ≤ Prio funded total" cap. (Validated is not reconciled.)
         /// </summary>
-        private static (decimal funded, decimal validated) SumOtherActivePF(
+        private static decimal SumOtherActivePF(
             IOrganizationService service, Guid prioId, IPluginExecutionContext context)
         {
             var extra = (context.MessageName == "Update" && context.PrimaryEntityId != Guid.Empty)
@@ -229,7 +221,6 @@ namespace Checkbook.Plugins.Validation
                 <fetch aggregate='true'>
                     <entity name='{EntityNames.PrioritizationFunding}'>
                         <attribute name='{PrioritizationFundingAttributes.FundedAmount}' alias='f' aggregate='sum'/>
-                        <attribute name='{PrioritizationFundingAttributes.ValidatedAmount}' alias='v' aggregate='sum'/>
                         <filter type='and'>
                             <condition attribute='{PrioritizationFundingAttributes.Prioritization}' operator='eq' value='{prioId}'/>
                             <condition attribute='{PrioritizationFundingAttributes.StateCode}' operator='eq' value='{StateCodeValues.Active}'/>
@@ -238,8 +229,8 @@ namespace Checkbook.Plugins.Validation
                     </entity>
                 </fetch>";
             var rows = service.RetrieveMultiple(new FetchExpression(fetch)).Entities;
-            if (rows.Count == 0) return (0m, 0m);
-            return (AliasedValueHelper.GetDecimal(rows[0], "f"), AliasedValueHelper.GetDecimal(rows[0], "v"));
+            if (rows.Count == 0) return 0m;
+            return AliasedValueHelper.GetDecimal(rows[0], "f");
         }
     }
 }
