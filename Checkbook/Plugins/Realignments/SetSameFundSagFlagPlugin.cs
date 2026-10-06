@@ -36,6 +36,24 @@ namespace Checkbook.Plugins.Realignments
             var isUpdate = context.MessageName.Equals("Update", StringComparison.OrdinalIgnoreCase);
             var preImg = isUpdate ? GetPreImage(context, "PreImage") : null;
 
+            // FY27 item-based realignments carry Fund/SAG + funds-availability on their
+            // child book_realignmentitem rows (RealignmentItemDerivedFields + RealignmentRollup)
+            // and never populate the parent's single Debited/Credited LOA. The entry-mode
+            // choice is the discriminator (legacy single-row realignments leave it null);
+            // skip this legacy LOA-centric validation for the item path.
+            var entryMode = GetEffectiveOptionSetValue(target, preImg, RealignmentsAttributes.EntryMode);
+            if (entryMode == null && isUpdate && context.PrimaryEntityId != Guid.Empty)
+            {
+                var rec = service.Retrieve(EntityNames.Realignments, context.PrimaryEntityId,
+                    new ColumnSet(RealignmentsAttributes.EntryMode));
+                entryMode = rec.GetAttributeValue<OptionSetValue>(RealignmentsAttributes.EntryMode);
+            }
+            if (entryMode != null)
+            {
+                tracing.Trace("Item-based realignment (entry mode set) — skipping legacy SetSameFundSag validation.");
+                return;
+            }
+
             // Effective inputs
             var amount = GetEffectiveDecimal(target, preImg, RealignmentsAttributes.Amount, 0m);
             var debitLoaRef = GetEffectiveEntityReference(target, preImg, RealignmentsAttributes.DebitedLOA);

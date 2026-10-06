@@ -238,7 +238,7 @@ items share the parent's debit Prio by construction.
 | `RealignmentRollup` (**new**) | PostOp Create/Update/Delete of `book_realignmentitem`: maintain parent `book_totalamount`, `book_allsamefundsag`, `book_itemcount`. Mirror `SwapRollupPlugin` (PreImage for Update/Delete). |
 | `RealignmentProcessor` | Iterate active items on approval; per-item PF debit/credit (§4); reuse Ledger/Distribution helpers per cross-Fund/SAG item; finalize once. |
 | `RealignmentValidator` | Shape prerequisites read the item rollup (`book_allsamefundsag`, mode) instead of single parent lookups. Role/BU gate + stamps unchanged. |
-| `SetSameFundSagFlagPlugin` | Superseded at the parent by the item-derived + rollup; retire or repurpose to set the parent rollup only. |
+| `SetSameFundSagFlagPlugin` | **Guarded (2026-10-06):** early-returns when `book_realignmententrymode` is set (item-based), since its legacy "both parent LOAs required" check would reject item realignments (which carry Fund/SAG on the items). Legacy single-row realignments (no entry mode) still run it unchanged. |
 
 ---
 
