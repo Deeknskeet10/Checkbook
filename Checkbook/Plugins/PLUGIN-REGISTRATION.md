@@ -394,6 +394,30 @@ elevation needed.
 | 1 | Create  | `book_prioritizationfunding`  | Pre-Operation  | Sync | *(none)*                                                                                   | Validates new junction + autopops name + aligns `ownerid` to parent Prio's owner. |
 | 2 | Update  | `book_prioritizationfunding`  | Pre-Operation  | Sync | `book_prioritization, book_requirementfunding, book_fundedamount, book_validatedamount`    | Re-validates on amount or parent change. **Requires PreImage** (same four attrs). |
 
+> **FY27 reconciliation cap (2026-10-06, no new step):** the guard now also rejects a junction
+> write that would make **Σ active PF.funded (or validated) for the Prioritization exceed the
+> Prio's funded total** — but only when the Prio is **Itemized** (Σ ItemizedDetails is the
+> authoritative total the junctions distribute). Direct-mode Prios have no independent item total
+> (`PrioritizationFundingRollup` makes Prio.funded = Σ PF) so the cap is a no-op there.
+> Under-allocation stays allowed (incomplete) — the grid blocks leaving it unbalanced.
+> See `docs/Prioritization-Funding-Reconciliation.md`.
+
+### `Checkbook.Plugins.Validation.FundingRequiresRequirementFundingGuard`
+
+FY27 funding-reconciliation precondition (decision #7). Populating Validated/Funded — on a
+`book_itemizeddetails` row (Itemized mode) or directly on the `book_prioritization` (Direct mode) —
+requires **≥1 active `book_requirementfunding`** for the Prio's (Requirement, Fiscal Year). This
+guarantees a funding source exists (and, when it is the only one, `PrioritizationSingleRfAutoAllocate`
+materializes the junction so the allocation is always balanced). Only enforces that **one** exists;
+the UI gives a soft notice to identify all sources up front. Gated to **Depth == 1** (originating
+user/API write) so nested rollup/auto-allocate/orchestrator writes are never blocked. Resolves the
+Requirement/FY via a Retrieve of the committed row when a funded-only Update omits them (no PreImage).
+
+| # | Message | Primary entity           | Stage          | Mode | Filtering attributes                        | Notes |
+|---|---------|--------------------------|----------------|------|---------------------------------------------|-------|
+| 1 | Update  | `book_itemizeddetails`   | Pre-Operation  | Sync | `book_fundedamount, book_validatedamount`   | Blocks funding a detail when its Prio's Requirement has no RF for the FY. No PreImage (Retrieve fallback). |
+| 2 | Update  | `book_prioritization`    | Pre-Operation  | Sync | `book_newfundedamounttdp, book_validatedamount` | Direct-mode analog on the Prio total. No PreImage (Retrieve fallback). |
+
 ### `Checkbook.Plugins.Validation.PrioritizationPullbackFundingCleanup`
 
 FY27 companion to `PrioritizationFundingApprovalGuard`'s pull-back strip. When a

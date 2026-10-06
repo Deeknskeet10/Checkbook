@@ -64,6 +64,9 @@ namespace Checkbook.Plugins.Validation
                     PrioritizationAttributes.Requirement,
                     PrioritizationAttributes.FiscalYear,
                     PrioritizationAttributes.ApprovalStatus,
+                    PrioritizationAttributes.FundingMode,
+                    PrioritizationAttributes.FundedAmountTDP,
+                    PrioritizationAttributes.ValidatedAmount,
                     PrioritizationAttributes.Name,
                     "ownerid"
                 )
@@ -132,6 +135,32 @@ namespace Checkbook.Plugins.Validation
                 newFunded, oldFunded,
                 context);
 
+            // ---- 4b. Aggregate cap: Σ active PF ≤ the Prioritization total (Itemized) ----
+            // Per-RF allocations may not exceed the Prioritization's funded total. For Itemized
+            // Prios that total is the authoritative Σ(ItemizedDetails); the junctions distribute
+            // it across RFs and must reconcile to it. Direct-mode Prios have no independent item
+            // total (PrioritizationFundingRollup makes Prio.funded = Σ PF) so the cap is a no-op
+            // there. Under-allocation stays allowed (incomplete) — the grid blocks leaving it
+            // unbalanced. See docs/Prioritization-Funding-Reconciliation.md.
+            var prioMode = prio.GetAttributeValue<OptionSetValue>(PrioritizationAttributes.FundingMode)?.Value;
+            if (prioMode == FundingModeValues.Itemized)
+            {
+                var newValidated = GetEffectiveDecimal(
+                    target, preImage, PrioritizationFundingAttributes.ValidatedAmount);
+                var prioFunded = prio.GetAttributeValue<decimal?>(PrioritizationAttributes.FundedAmountTDP) ?? 0m;
+                var prioValidated = prio.GetAttributeValue<decimal?>(PrioritizationAttributes.ValidatedAmount) ?? 0m;
+                var (otherFunded, otherValidated) = SumOtherActivePF(service, prioRef.Id, context);
+
+                if (otherFunded + newFunded > prioFunded)
+                    throw new InvalidPluginExecutionException(
+                        $"Allocations to RFs ({otherFunded + newFunded:N2}) would exceed the Prioritization's " +
+                        $"funded total ({prioFunded:N2}). Lower this allocation or raise the detail funding.");
+                if (otherValidated + newValidated > prioValidated)
+                    throw new InvalidPluginExecutionException(
+                        $"Allocations to RFs ({otherValidated + newValidated:N2}) would exceed the Prioritization's " +
+                        $"validated total ({prioValidated:N2}).");
+            }
+
             // ---- 5. Funding only on an NPM-Review Prioritization ----
             // FY27 funding lives on these junction rows, so mirror the
             // Prio-level PrioritizationFundingApprovalGuard here: a Prio that
@@ -183,6 +212,34 @@ namespace Checkbook.Plugins.Validation
             }
 
             tracing.Trace("Prioritization Funding guard passed.");
+        }
+
+        /// <summary>
+        /// Σ funded/validated of the OTHER active junctions on this Prioritization
+        /// (excludes the row being written on Update) — used for the aggregate
+        /// "Σ PF ≤ Prio total" cap.
+        /// </summary>
+        private static (decimal funded, decimal validated) SumOtherActivePF(
+            IOrganizationService service, Guid prioId, IPluginExecutionContext context)
+        {
+            var extra = (context.MessageName == "Update" && context.PrimaryEntityId != Guid.Empty)
+                ? $"<condition attribute='{PrioritizationFundingAttributes.Id}' operator='ne' value='{context.PrimaryEntityId}'/>"
+                : string.Empty;
+            var fetch = $@"
+                <fetch aggregate='true'>
+                    <entity name='{EntityNames.PrioritizationFunding}'>
+                        <attribute name='{PrioritizationFundingAttributes.FundedAmount}' alias='f' aggregate='sum'/>
+                        <attribute name='{PrioritizationFundingAttributes.ValidatedAmount}' alias='v' aggregate='sum'/>
+                        <filter type='and'>
+                            <condition attribute='{PrioritizationFundingAttributes.Prioritization}' operator='eq' value='{prioId}'/>
+                            <condition attribute='{PrioritizationFundingAttributes.StateCode}' operator='eq' value='{StateCodeValues.Active}'/>
+                            {extra}
+                        </filter>
+                    </entity>
+                </fetch>";
+            var rows = service.RetrieveMultiple(new FetchExpression(fetch)).Entities;
+            if (rows.Count == 0) return (0m, 0m);
+            return (AliasedValueHelper.GetDecimal(rows[0], "f"), AliasedValueHelper.GetDecimal(rows[0], "v"));
         }
     }
 }

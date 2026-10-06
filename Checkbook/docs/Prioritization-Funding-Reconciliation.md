@@ -55,20 +55,29 @@ breakdowns of the same total.
    **cannot be saved/finalized** until balanced. A mismatch is never committable.
 5. **Keep the "Allocate to RFs" popup** for now — strengthen its existing "sum ≠ target" warning
    into a hard block; no inline-grid rebuild yet.
+6. **Maintain the single-RF auto-allocate** (`PrioritizationSingleRfAutoAllocate`): when the
+   Requirement has exactly one active RF for the FY, setting the funded total still auto-syncs the
+   one PF — the common case stays zero-extra-effort and always balanced.
+7. **Require ≥1 RF before funding details.** The NPM cannot populate detail/Prio Validated or
+   Funded until at least one `book_requirementfunding` exists for the Prio's (Requirement, Fiscal
+   Year). This guarantees a funding source is present (and, when it's the only one, auto-allocates).
+   A **soft notice** encourages identifying *all* source RFs up front, but only the presence of
+   **one** is enforced (we can't force them to list every source).
 
 ## 4. Build
 
-### 4.1 Enforcement — the reconciliation guard (server, authoritative)
-- **Never allow over-allocation:** reject any `book_prioritizationfunding` Create/Update whose
-  write would make Σ PF.funded (or Σ PF.validated) for the Prio **exceed** the Prio total
-  (Σ details). This is the aggregate check the current `PrioritizationFundingGuard` is missing
-  (it caps each PF at its RF's TDP, not the aggregate at the Prio total). Add it there or in a
-  sibling guard.
-- **Block finalize/approve while under-allocated:** the Prio cannot reach its funded end-state
-  (or be treated as funding-complete) while Σ PF < Prio total. Exact hook: a guard on the Prio
-  funding-complete transition (NPM Review is the funding state, so key off the funded-lock/
-  finalize action rather than a status change). Under-allocation is otherwise surfaced by the
-  flag (4.2) so the NPM knows to finish allocating.
+### 4.1 Enforcement — server guards (authoritative)
+- **Over-allocation cap (extend `PrioritizationFundingGuard`, no new step):** reject any
+  `book_prioritizationfunding` Create/Update whose write would make Σ PF.funded (or Σ PF.validated)
+  for the Prio **exceed** the Prio total (Σ details). This is the aggregate check the guard is
+  missing today (it only caps each PF at its RF's TDP + the NPM-Review gate). Under-allocation is
+  not dangerous (just incomplete) — the PCF blocks leaving it unbalanced (4.2) and the flag shows it.
+- **≥1-RF precondition (new guard, decision #7):** on a funding write — `book_itemizeddetails`
+  Update of `book_fundedamount`/`book_validatedamount`, and `book_prioritization` Update of
+  `book_newfundedamounttdp`/`book_validatedamount` (direct mode) — require ≥1 active
+  `book_requirementfunding` for the Prio's (Requirement, Fiscal Year); else throw
+  "Add at least one Requirement Funding for FY{x} before funding details." One class, two PreOp
+  steps (mirror `RequirementDetailFundingGuard`'s multi-entity shape).
 
 ### 4.2 PCF — `PrioritizationFundingGrid` "Allocate to RFs" popup
 - The dialog already computes "Sum of Allocations vs Prio Funded (target)" and shows a warning.
@@ -94,6 +103,6 @@ Prio targets a specified ItemizedDetail; (b) reduce proportionally across detail
 itemized Prios only at the detail level. **Defer until this reconciliation lands.**
 
 ## 6. Migration
-Existing divergent Prios (Σ PF ≠ Σ details) need a one-time reconcile report/pass: list every
-Prio where the sums disagree so NPMs can rebalance (increase-only, so most fixes are completing
-an under-allocation). Build a read-only audit query first; no silent auto-fix.
+Existing divergent Prios (Σ PF ≠ Σ details) are surfaced **externally via a Power BI report**
+(decision 2026-10-06) to inform NPMs — no in-app audit/auto-fix. Increase-only means most fixes
+are completing an under-allocation.
