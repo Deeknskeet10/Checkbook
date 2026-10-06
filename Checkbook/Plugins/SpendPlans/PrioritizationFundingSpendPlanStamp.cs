@@ -3,7 +3,7 @@ using Microsoft.Xrm.Sdk.Query;
 using Checkbook.Plugins.Base;
 using Checkbook.Plugins.Constants;
 
-namespace Checkbook.Plugins.Items
+namespace Checkbook.Plugins.SpendPlans
 {
     /// <summary>
     /// Stamps the spend-plan classification onto a Prioritization Funding (PF)

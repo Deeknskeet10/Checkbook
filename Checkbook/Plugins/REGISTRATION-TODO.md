@@ -32,7 +32,7 @@ Do these **in order**; each step points at the detail below:
    lookup + the six `book_spendplan` changes → section **A**.
 2. **Env var**: confirm `book_DistributionHoldingFundCenter` is set → section **C**.
 3. **Assembly**: re-register `Checkbook_Plugins.dll` in PRT → section **D**.
-4. **Steps**: register `SpendPlanFY27Validator` → section **E**.
+4. **Steps**: register `SpendPlanValidator` → section **E**.
    ⚠️ Only after step 1 is published — the validator needs the
    `book_spendplan` columns. *(The FC-lock pair formerly listed here was
    retired 2026-08-05 — see the update note above.)*
@@ -106,7 +106,7 @@ code-only** — two deploy actions, no step or schema changes:
 - [ ] Update **`Checkbook_Plugins.dll`** in PRT. This one assembly carries: the
   **RealignmentProcessor fix** (code-only, no step change), the RF-rollup change,
   Swap Distributions, GenerateDistributions amend-in-place, plus — from
-  `794cac1` ⭐ — the new `SpendPlanFY27Validator` plugin type below
+  `794cac1` ⭐ — the new `SpendPlanValidator` plugin type below
   (`RequirementFundCenterCascade` is back to its pre-FY27 behavior after the
   2026-08-05 FC-lock retirement; code-only, its existing step needs no
   edit). 🔧 Also carries the
@@ -125,7 +125,7 @@ code-only** — two deploy actions, no step or schema changes:
 
 ## E. New plugin STEPS to register
 
-- [ ] **`Validation.SpendPlanFY27Validator`** **[⭐ FY27 SpendPlan/FC — `794cac1`]**
+- [ ] **`Validation.SpendPlanValidator`** **[⭐ FY27 SpendPlan/FC — `794cac1`]**
   - Create `book_spendplan` — Pre-Op **Sync**, no filter
   - Update `book_spendplan` — Pre-Op **Sync**, **PreImage** (all month/anchor attrs **+ `statecode`**),
     filter = `book_prioritizationfunding, book_fundcenter, book_rowtype, book_prioritization, book_newoctober…book_newseptember` (all 12 months)

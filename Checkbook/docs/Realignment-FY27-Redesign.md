@@ -121,8 +121,8 @@ or one RF→RF leg (OPR path).
 **Same Fund/SAG (debit RF-X == credit RF-Y):** fungible within one bucket.
 - Debit PF (Prio-A ↔ RF-X) `book_fundedamount` −= amount.
 - Credit PF (Prio-B ↔ RF-X): get-or-create, `book_fundedamount` += amount.
-- `PrioritizationFundingRollup` recomputes RF.funded from the junctions (no manual RF write).
-- No ledger, no distributions (same LOA/bucket).
+- Processor recalculates RF.funded from the junctions (see §4.2 — the rollup is depth-guarded off).
+- No TDP move (same RF), no ledger, no distributions (same LOA/bucket).
 
 **Cross Fund/SAG (RF-X ≠ RF-Y, different Fund or PG/SAG):**
 - Debit PF (Prio-A ↔ RF-X) −= amount; credit PF (Prio-B ↔ RF-Y) += amount (get-or-create).
@@ -142,9 +142,30 @@ Requirement Detail to a different RF.
 legacy shapes).
 
 This **replaces** today's `ExecutePriorToPrior` raw-funded manipulation: because we move the PF
-(or RDF) junction amounts, the Prio/RF funded totals are recomputed by the existing rollups
-instead of being hand-written — closing the junction-desync gap. The conservation guards
-(abort, don't clamp, when the debit source is short) carry over per item.
+(or RDF) junction amounts, the Prio/RF funded totals are the sum of the junctions. The
+junction rollups (`PrioritizationFundingRollup`, `RequirementDetailFundingRollup`) self-guard on
+`Depth > 1` and the processor's writes land deeper, so the processor **recalculates explicitly**
+(`PrioritizationRollupHelper.RecalculateRFFunded`, `…RecalculatePrioritizationFunded`,
+`RequirementDetailFundingRollupHelper.RecalculateRequirementDetail`) — same pattern the legacy
+processor already used for the RF leg. The conservation guards (abort, don't clamp, when the debit
+source is short) carry over per item.
+
+### 4.2 TDP movement ordering — the headroom invariant
+
+RF.TDP is a real allocation off the LOA (`LOA.remaining = LOA.TDP − ΣRF.TDP`), so the credit RF's
+TDP can only be raised if its LOA has headroom. The processor therefore moves money in an order
+that **always frees/creates headroom before any increase**:
+
+1. **Cross-LOA:** create the ledger pair FIRST and recalc LOA TDP — the credit **LOA's TDP rises by
+   `amount`** before anything downstream (answers "what changes on the LOA when the LOAs differ").
+2. **Debit side before credit side (per item):** reduce the debit junction → lower the debit RF
+   Funded **and** TDP together (one `BuildRFFundedUpdate`, so the entity-scoped "Funded vs TDP"
+   business rule never sees Funded > TDP; this returns `amount` of TDP to the debit LOA) → **then**
+   raise the credit RF.TDP → then add the credit junction (now within the TDP cap).
+
+Net effect per LOA: `remaining` is unchanged end-to-end (cross-LOA: ledger +`amount` offsets the
+credit RF +`amount`; same-LOA: debit RF −`amount` offsets credit RF +`amount`), and no step ever
+relies on the `RequirementFundingTDPValidator` realignment bypass to push TDP past LOA remaining.
 
 ### 4.1 Legacy FY26 coexistence (single-row, no items)
 

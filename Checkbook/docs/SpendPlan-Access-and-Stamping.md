@@ -80,7 +80,7 @@ Tables → **Spend Plan** (`book_spendplan`) → **Keys** → delete
 
 - The repo copy has been removed from
   `src/ARNGCheckbook/Entities/book_SpendPlan/Entity.xml`.
-- FY27 uniqueness is enforced in code instead: `SpendPlanFY27Validator`
+- FY27 uniqueness is enforced in code instead: `SpendPlanValidator`
   rejects a second active row for the same (PF, Fund Center, Row Type) anchor —
   so a state still cannot submit two spend plans for one Prioritization Funding.
 - FY26 rows are frozen and no longer created, so losing the FY26 uniqueness key
@@ -89,7 +89,7 @@ Tables → **Spend Plan** (`book_spendplan`) → **Keys** → delete
 
 ### 2b. Stamping (already in the plugin — no maker step)
 
-`SpendPlanFY27Validator` (Pre-Operation **Create** on `book_spendplan`) stamps
+`SpendPlanValidator` (Pre-Operation **Create** on `book_spendplan`) stamps
 Breakout rows from the anchor Prioritization Funding:
 
 - `book_prioritization` ← PF `book_prioritization`

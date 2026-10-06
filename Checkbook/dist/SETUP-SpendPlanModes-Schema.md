@@ -133,7 +133,7 @@ computed federal FY (October-start), which is a safe default.
    `RequirementSpendPlanModeCascade`, `RequirementFundingLoaCascade`,
    `SpendPlanStateRollup`, `SpendPlanImmutabilityGuard`,
    `RequirementBreakoutConsistencyGuard`, plus the updated
-   `SpendPlanFY27Validator` step filters.
+   `SpendPlanValidator` step filters.
 3. Smoke test before the PCF/form work:
    - Create a PF under a Distributed, non-breakout Requirement → it stamps
      `book_spendplanmode = State-Rollup (1)`, `book_centrallymanaged = No`,

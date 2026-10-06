@@ -226,7 +226,7 @@ This generalizes the existing hard rule *"FY26 stays on legacy, nothing touches
 it"*: each FY, once below the active boundary, is frozen; the PF snapshot is
 what history reads.
 
-### 7.3 Spend-plan row rules (extends `SpendPlanFY27Validator`)
+### 7.3 Spend-plan row rules (extends `SpendPlanValidator`)
 
 Carry the existing FY27 rules to the two new anchor types:
 
@@ -289,7 +289,7 @@ Carry the existing FY27 rules to the two new anchor types:
 - `Items/RequirementSpendPlanModeCascade` — FY-gated flag-flip re-stamp.
 - `Items/RequirementFundingLoaCascade` — FY-gated LOA re-stamp.
 - `Recalculations/SpendPlanStateRollup` — Mode-C bucket funded rollup.
-- `Validation/SpendPlanFY27Validator` — extended to all three anchor modes.
+- `Validation/SpendPlanValidator` — extended to all three anchor modes.
 - `Validation/SpendPlanImmutabilityGuard` — closed-FY freeze net.
 - `Validation/RequirementBreakoutConsistencyGuard` — CM ⇒ not breakout.
 - Registration for every step: [`../Plugins/PLUGIN-REGISTRATION.md`](../Plugins/PLUGIN-REGISTRATION.md)

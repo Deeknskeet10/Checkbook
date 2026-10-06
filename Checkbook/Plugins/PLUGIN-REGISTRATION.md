@@ -122,7 +122,7 @@ The Itemized-Detail Fund Center + FY27 spend plan work (source in
 | Item | Change |
 |---|---|
 | `book_itemizeddetails` (existing) | Add optional lookup `book_fundcenter` → `book_fundcenter`. Blank = state-level FC. Read by the ItemizedDetailsGrid PCF and the FY27 spend plan grid; no plugin requires it. |
-| `book_spendplan` (existing) | Add lookup `book_prioritizationfunding` → `book_prioritizationfunding` (FY27 row anchor). `book_prioritization` + `book_lineofaccountingloa` are now **stamped** on FY27 Breakout rows by `SpendPlanFY27Validator` (informational, for State views), so **delete** the single-column `book_uniquestatespendplan` alternate key — a Prio now has many rows (one per PF × FC × Row Type). Also: lookup `book_fundcenter` → `book_fundcenter` (null on per-RF rollup rows), Choice `book_rowtype` (**Planned** = `0`, **Actual** = `1`), decimal twins `book_newoctober` … `book_newseptember` (12 columns, 2 decimals), calculated decimal `book_newspendplantotal` (sum of the 12 twins), and extend the `book_spendplantype` formula to treat PF-anchored rows as "Prioritization". |
+| `book_spendplan` (existing) | Add lookup `book_prioritizationfunding` → `book_prioritizationfunding` (FY27 row anchor). `book_prioritization` + `book_lineofaccountingloa` are now **stamped** on FY27 Breakout rows by `SpendPlanValidator` (informational, for State views), so **delete** the single-column `book_uniquestatespendplan` alternate key — a Prio now has many rows (one per PF × FC × Row Type). Also: lookup `book_fundcenter` → `book_fundcenter` (null on per-RF rollup rows), Choice `book_rowtype` (**Planned** = `0`, **Actual** = `1`), decimal twins `book_newoctober` … `book_newseptember` (12 columns, 2 decimals), calculated decimal `book_newspendplantotal` (sum of the 12 twins), and extend the `book_spendplantype` formula to treat PF-anchored rows as "Prioritization". |
 
 Register the spend plan validator only after the `book_spendplan` changes
 are published.
@@ -509,7 +509,7 @@ LOA-allocation check when the update is mid-realignment (detected by walking
 | 1 | Create  | `book_requirementfunding` | Pre-Operation  | Sync | *(none)*                                                                          | Validates new RF against its LOA. |
 | 2 | Update  | `book_requirementfunding` | Pre-Operation  | Sync | `book_tdp, book_fundedamount, book_lineofaccounting`                              | Re-validates on TDP / Funded / LOA change. **Requires PreImage** (`book_tdp, book_fundedamount, book_lineofaccounting`). |
 
-### `Checkbook.Plugins.Validation.SpendPlanFY27Validator`
+### `Checkbook.Plugins.Validation.SpendPlanValidator`
 
 Guards FY27+ spend plan rows across all three anchor modes — **Breakout**
 (`book_prioritizationfunding`), **Centrally Managed** (`book_requirementfunding`
@@ -563,7 +563,7 @@ Full setup in [`../docs/SpendPlanLock-Setup.md`](../docs/SpendPlanLock-Setup.md)
 
 | # | Message | Primary entity   | Stage         | Mode | Filtering attributes | Notes |
 |---|---------|------------------|---------------|------|----------------------|-------|
-| 1 | Create  | `book_spendplan` | Pre-Operation | Sync | *(none)* | **Rank 5** (before `SpendPlanFY27Validator`). No image. |
+| 1 | Create  | `book_spendplan` | Pre-Operation | Sync | *(none)* | **Rank 5** (before `SpendPlanValidator`). No image. |
 | 2 | Update  | `book_spendplan` | Pre-Operation | Sync | *(none)* | **Rank 5**. No image. |
 | 3 | Delete  | `book_spendplan` | Pre-Operation | Sync | *(none)* | **Rank 5**. No image. |
 
@@ -644,6 +644,48 @@ decision check ensures only the actual decision write processes.
 | # | Message | Primary entity      | Stage           | Mode | Filtering attributes                     | Notes |
 |---|---------|---------------------|-----------------|------|------------------------------------------|-------|
 | 1 | Update  | `book_realignments` | Post-Operation  | Sync | `book_newstateapproved, book_bedecision` | Fires when a decision value is in the payload and the record is active. **Requires PreImage** (full image — must include `statecode`; reads many attrs via `GetEffective*` and `TryGetPreImage`). |
+
+### FY27 multi-line redesign — `book_realignmentitem`
+
+> See [`../docs/Realignment-FY27-Redesign.md`](../docs/Realignment-FY27-Redesign.md).
+> A realignment may now carry child `book_realignmentitem` rows, each moving one
+> Fund/SAG at **PrioritizationFunding** (State), **RequirementDetailFunding**
+> (direct/OPR), or plain **RequirementFunding** granularity. `RealignmentProcessor`
+> and `RealignmentValidator` branch on "has active items?" — with items they take
+> their shape from the rollup (`book_allsamefundsag` + `book_realignmententrymode`)
+> and the processor iterates items (`ProcessItems`); without items the legacy
+> FY26 single-row path runs unchanged (coexistence, no migration).
+
+**Schema (maker portal / `devtools/sandbox-import/schema/realign_item_schema.py`):**
+
+| Object | Create |
+|--------|--------|
+| `book_realignmentitem` (new table) | UserOwned; primary name `book_name`. |
+| lookups | `book_realignment`→`book_realignments` (Cascade delete), `book_debitprioritizationfunding`→`book_prioritizationfunding`, `book_debitrequirementdetailfunding`→`book_requirementdetailfunding`, `book_debitrequirementfunding`→`book_requirementfunding`, `book_creditrequirementfunding`→`book_requirementfunding`, `book_fund`/`book_pg`/`book_sag`, `book_debitstate`→`book_state`. |
+| columns | `book_newamount` (Decimal), `book_samefundandsag` (Two Options). |
+| `book_realignments` (existing) | add `book_realignmententrymode` (choice State=0/OPR=1), `book_totalamount` (Decimal), `book_allsamefundsag` (Two Options), `book_itemcount` (Whole Number) — all rollup-maintained. |
+
+#### `Checkbook.Plugins.Realignments.RealignmentItemDerivedFields`
+
+Denormalizes `book_fund`/`book_pg`/`book_sag` (+ `book_debitstate` for the PF path)
+from the debit unit's LOA, computes `book_samefundandsag` vs the credit RF, autonames
+the row, and XOR-validates the debit source + amount.
+
+| # | Message | Primary entity          | Stage         | Mode | Filtering attributes | Notes |
+|---|---------|-------------------------|---------------|------|----------------------|-------|
+| 1 | Create  | `book_realignmentitem`  | Pre-Operation | Sync | *(none)*             | |
+| 2 | Update  | `book_realignmentitem`  | Pre-Operation | Sync | `book_debitprioritizationfunding, book_debitrequirementdetailfunding, book_debitrequirementfunding, book_creditrequirementfunding, book_newamount` | **PreImage** `PreImage` (the debit/credit lookups + amount). |
+
+#### `Checkbook.Plugins.Realignments.RealignmentRollup`
+
+Maintains parent `book_totalamount` / `book_itemcount` / `book_allsamefundsag` from
+active items.
+
+| # | Message | Primary entity          | Stage          | Mode | Filtering attributes | Notes |
+|---|---------|-------------------------|----------------|------|----------------------|-------|
+| 1 | Create  | `book_realignmentitem`  | Post-Operation | Sync | *(none)*             | |
+| 2 | Update  | `book_realignmentitem`  | Post-Operation | Sync | `book_newamount, book_samefundandsag, book_realignment, statecode` | **PreImage** `PreImage` (`book_realignment`). |
+| 3 | Delete  | `book_realignmentitem`  | Post-Operation | Sync | *(none)*             | **PreImage** `PreImage` (`book_realignment`). |
 
 ---
 

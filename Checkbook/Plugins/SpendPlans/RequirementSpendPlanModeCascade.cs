@@ -4,7 +4,7 @@ using Checkbook.Plugins.Base;
 using Checkbook.Plugins.Constants;
 using Checkbook.Plugins.Helpers;
 
-namespace Checkbook.Plugins.Items
+namespace Checkbook.Plugins.SpendPlans
 {
     /// <summary>
     /// When a Requirement's centrally-managed (book_national) or breakout

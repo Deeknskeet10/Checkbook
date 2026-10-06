@@ -120,7 +120,7 @@ Register the **same step three times**, once per message:
 | Filtering Attributes | *(none — leave all)* |
 | Event Pipeline Stage | **Pre-Operation** |
 | Execution Mode | Synchronous |
-| Execution Order (Rank) | `5` (run before `SpendPlanFY27Validator`, rank 10-ish) |
+| Execution Order (Rank) | `5` (run before `SpendPlanValidator`, rank 10-ish) |
 | Deployment | Server |
 
 No pre-image required — the guard reads `ParentContext` and the Target only.

@@ -77,6 +77,24 @@ namespace Checkbook.Plugins.Realignments
             bool isPriorPath = debitPrior != null && creditPrior != null;
             bool isRFPath = debitRF != null && creditRF != null;
 
+            // FY27 multi-line: a realignment that carries child book_realignmentitem
+            // rows takes its approval shape from the item rollup (all-same-Fund/SAG +
+            // entry mode), not the single parent lookups. Legacy FY26 single-row
+            // realignments (no items) fall through to the existing path unchanged.
+            bool hasItems = HasActiveItems(service, context.PrimaryEntityId);
+            if (hasItems)
+            {
+                var shape = service.Retrieve(EntityNames.Realignments, context.PrimaryEntityId,
+                    new ColumnSet(RealignmentsAttributes.AllSameFundSAG, RealignmentsAttributes.EntryMode));
+                sameFundSAG = shape.GetAttributeValue<bool>(RealignmentsAttributes.AllSameFundSAG);
+                var entryMode = shape.GetAttributeValue<OptionSetValue>(RealignmentsAttributes.EntryMode)?.Value;
+                isPriorPath = entryMode == RealignmentEntryModeValues.State;
+                isRFPath = !isPriorPath;
+                tracing.Trace(
+                    $"RealignmentProcessor: item-based realignment (entryMode={(entryMode?.ToString() ?? "null")}, " +
+                    $"allSameFundSAG={sameFundSAG}).");
+            }
+
 
             // =============================================================
             // APPROVAL & DENIAL DETECTION (Choice-Based, value + active)
@@ -138,6 +156,16 @@ namespace Checkbook.Plugins.Realignments
             }
 
             tracing.Trace("RealignmentProcessor: Approved and beginning execution.");
+
+            // FY27 item path: iterate the child items (each a Fund/SAG move) and
+            // deactivate. The legacy single-row path below runs only when there
+            // are no items.
+            if (hasItems)
+            {
+                ProcessItems(service, tracing, context);
+                FinalizeRealignment(service, tracing, context.PrimaryEntityId);
+                return;
+            }
 
             // Note on "is this update happening because of a realignment?" downstream:
             // RequirementFundingTDPValidator detects this by walking context.ParentContext
@@ -204,6 +232,398 @@ namespace Checkbook.Plugins.Realignments
             }
 
             FinalizeRealignment(service, tracing, context.PrimaryEntityId);
+        }
+
+        // ============================================================
+        // FY27 multi-line item processing
+        // ============================================================
+
+        private static bool HasActiveItems(IOrganizationService service, Guid realignmentId)
+        {
+            var q = new QueryExpression(RealignmentItemAttributes.EntityLogicalName)
+            {
+                ColumnSet = new ColumnSet(false),
+                TopCount = 1,
+                NoLock = true,
+                Criteria = new FilterExpression(LogicalOperator.And)
+                {
+                    Conditions =
+                    {
+                        new ConditionExpression(RealignmentItemAttributes.Realignment, ConditionOperator.Equal, realignmentId),
+                        new ConditionExpression(RealignmentItemAttributes.StateCode, ConditionOperator.Equal, StateCodeValues.Active),
+                    },
+                },
+            };
+            return service.RetrieveMultiple(q).Entities.Count > 0;
+        }
+
+        private static System.Collections.Generic.List<Entity> GetActiveItems(
+            IOrganizationService service, Guid realignmentId)
+        {
+            var q = new QueryExpression(RealignmentItemAttributes.EntityLogicalName)
+            {
+                ColumnSet = new ColumnSet(
+                    RealignmentItemAttributes.Amount,
+                    RealignmentItemAttributes.DebitPrioritizationFunding,
+                    RealignmentItemAttributes.DebitRequirementDetailFunding,
+                    RealignmentItemAttributes.DebitRequirementFunding,
+                    RealignmentItemAttributes.CreditRequirementFunding,
+                    RealignmentItemAttributes.SameFundandSAG),
+                Criteria = new FilterExpression(LogicalOperator.And)
+                {
+                    Conditions =
+                    {
+                        new ConditionExpression(RealignmentItemAttributes.Realignment, ConditionOperator.Equal, realignmentId),
+                        new ConditionExpression(RealignmentItemAttributes.StateCode, ConditionOperator.Equal, StateCodeValues.Active),
+                    },
+                },
+            };
+            return new System.Collections.Generic.List<Entity>(service.RetrieveMultiple(q).Entities);
+        }
+
+        private void ProcessItems(
+            IOrganizationService service, ITracingService tracing, IPluginExecutionContext context)
+        {
+            var realignmentId = context.PrimaryEntityId;
+            var realignment = service.Retrieve(EntityNames.Realignments, realignmentId,
+                new ColumnSet(RealignmentsAttributes.CreditedPrioritization));
+            var creditPrio = realignment.GetAttributeValue<EntityReference>(
+                RealignmentsAttributes.CreditedPrioritization);
+
+            var items = GetActiveItems(service, realignmentId);
+            tracing.Trace($"ProcessItems: processing {items.Count} active realignment item(s).");
+            foreach (var item in items)
+                ProcessItem(service, tracing, item, creditPrio, realignmentId);
+        }
+
+        /// <summary>
+        /// Executes one Fund/SAG move. The debit source is exactly one of a
+        /// Prioritization Funding (State path), a Requirement Detail Funding
+        /// (direct path), or a Requirement Funding (plain RF→RF); the credit always
+        /// lands on the item's credit RF. Moves the junction amount (and RF.TDP for
+        /// cross-RF), creating the ledger pair + A18 distributions for cross-LOA /
+        /// cross-Fund-SAG moves. The junction rollups are depth-guarded off at this
+        /// depth, so RF/Prio totals are recalculated explicitly.
+        /// </summary>
+        private void ProcessItem(
+            IOrganizationService service, ITracingService tracing,
+            Entity item, EntityReference creditPrio, Guid realignmentId)
+        {
+            decimal amount = item.GetAttributeValue<decimal?>(RealignmentItemAttributes.Amount) ?? 0m;
+            if (amount <= 0m) { tracing.Trace("Item amount <= 0; skipping."); return; }
+
+            var debitPf = item.GetAttributeValue<EntityReference>(RealignmentItemAttributes.DebitPrioritizationFunding);
+            var debitRdf = item.GetAttributeValue<EntityReference>(RealignmentItemAttributes.DebitRequirementDetailFunding);
+            var debitRfDirect = item.GetAttributeValue<EntityReference>(RealignmentItemAttributes.DebitRequirementFunding);
+            var creditRf = item.GetAttributeValue<EntityReference>(RealignmentItemAttributes.CreditRequirementFunding);
+            bool sameFundSag = item.GetAttributeValue<bool>(RealignmentItemAttributes.SameFundandSAG);
+
+            if (creditRf == null)
+                throw new InvalidPluginExecutionException(
+                    "A Realignment Item has no Credit Requirement Funding; cannot execute.");
+
+            EntityReference debitRf;
+            EntityReference debitPrio = null;
+            EntityReference debitRd = null;
+            decimal debitJunctionFunded = 0m;
+
+            if (debitPf != null)
+            {
+                var pf = service.Retrieve(EntityNames.PrioritizationFunding, debitPf.Id,
+                    new ColumnSet(PrioritizationFundingAttributes.RequirementFunding,
+                                  PrioritizationFundingAttributes.Prioritization,
+                                  PrioritizationFundingAttributes.FundedAmount));
+                debitRf = pf.GetAttributeValue<EntityReference>(PrioritizationFundingAttributes.RequirementFunding);
+                debitPrio = pf.GetAttributeValue<EntityReference>(PrioritizationFundingAttributes.Prioritization);
+                debitJunctionFunded = pf.GetAttributeValue<decimal?>(PrioritizationFundingAttributes.FundedAmount) ?? 0m;
+            }
+            else if (debitRdf != null)
+            {
+                var rdf = service.Retrieve(EntityNames.RequirementDetailFunding, debitRdf.Id,
+                    new ColumnSet(RequirementDetailFundingAttributes.RequirementFunding,
+                                  RequirementDetailFundingAttributes.RequirementDetail,
+                                  RequirementDetailFundingAttributes.FundedAmount));
+                debitRf = rdf.GetAttributeValue<EntityReference>(RequirementDetailFundingAttributes.RequirementFunding);
+                debitRd = rdf.GetAttributeValue<EntityReference>(RequirementDetailFundingAttributes.RequirementDetail);
+                debitJunctionFunded = rdf.GetAttributeValue<decimal?>(RequirementDetailFundingAttributes.FundedAmount) ?? 0m;
+            }
+            else if (debitRfDirect != null)
+            {
+                debitRf = debitRfDirect;
+            }
+            else
+            {
+                throw new InvalidPluginExecutionException("A Realignment Item has no debit source; cannot execute.");
+            }
+
+            if (debitRf == null)
+                throw new InvalidPluginExecutionException(
+                    "The Realignment Item's debit source does not resolve to a Requirement Funding.");
+
+            var debitLoa = GetRfLoa(service, debitRf.Id);
+            var creditLoa = GetRfLoa(service, creditRf.Id);
+            bool crossLoa = debitLoa != null && creditLoa != null && debitLoa.Id != creditLoa.Id;
+            bool sameRf = debitRf.Id == creditRf.Id;
+
+            // 1) Ledger-first for cross-LOA; intermediate recalc without enforcement.
+            if (crossLoa)
+            {
+                LedgerCreator.CreateRealignmentPair(service, tracing, debitLoa, creditLoa, amount, realignmentId);
+                TDPCalculationHelper.RecalculateLOATDP(service, debitLoa.Id, tracing, enforceNonNegative: false);
+                TDPCalculationHelper.RecalculateLOATDP(service, creditLoa.Id, tracing, enforceNonNegative: false);
+            }
+
+            // 2) Junction + RF.TDP movement, per debit-unit shape.
+            if (debitPf != null)
+            {
+                MovePfJunction(service, tracing, debitPf, debitJunctionFunded, debitRf, creditPrio, creditRf, amount, sameRf);
+                if (debitPrio != null)
+                    PrioritizationFundingRollupHelper.RecalculatePrioritizationFunded(service, debitPrio.Id, tracing);
+                if (creditPrio != null)
+                    PrioritizationFundingRollupHelper.RecalculatePrioritizationFunded(service, creditPrio.Id, tracing);
+            }
+            else if (debitRdf != null)
+            {
+                MoveRdfJunction(service, tracing, debitRdf, debitJunctionFunded, debitRd, debitRf, creditRf, amount, sameRf);
+            }
+            else
+            {
+                if (!sameRf)
+                {
+                    ApplyDebitToRF(service, tracing, debitRf, amount, false);
+                    ApplyCreditToRF(service, tracing, creditRf, amount);
+                }
+            }
+
+            // 3) Settle LOA TDP (cross-LOA) with enforcement.
+            if (crossLoa)
+            {
+                TDPCalculationHelper.RecalculateLOATDP(service, debitLoa.Id, tracing);
+                TDPCalculationHelper.RecalculateLOATDP(service, creditLoa.Id, tracing);
+            }
+
+            // 4) Cross-Fund/SAG: A18 round-trip AFP/Allotment distributions.
+            if (!sameFundSag)
+            {
+                var debitAnchorFc = debitPrio != null
+                    ? ResolveAnchorFundCenter(service, EntityNames.Prioritization, debitPrio, PrioritizationAttributes.FundCenter)
+                    : ResolveRFFundCenter(service, debitRf);
+                var creditAnchorFc = creditPrio != null
+                    ? ResolveAnchorFundCenter(service, EntityNames.Prioritization, creditPrio, PrioritizationAttributes.FundCenter)
+                    : ResolveRFFundCenter(service, creditRf);
+
+                RealignmentDistributionCreator.CreateDistributions(
+                    service, tracing, realignmentId,
+                    debitAnchorFc, creditAnchorFc, debitLoa, creditLoa, amount);
+            }
+        }
+
+        /// <summary>State-path move: debit PF −amount; credit Prio↔creditRF PF +amount.</summary>
+        private void MovePfJunction(
+            IOrganizationService service, ITracingService tracing,
+            EntityReference debitPf, decimal debitPfFunded, EntityReference debitRf,
+            EntityReference creditPrio, EntityReference creditRf, decimal amount, bool sameRf)
+        {
+            if (creditPrio == null)
+                throw new InvalidPluginExecutionException(
+                    "A State-path Realignment Item has no Credit Prioritization on the parent Realignment.");
+
+            if (debitPfFunded < amount)
+                throw new InvalidPluginExecutionException(
+                    $"Realignment cannot execute: the debit Prioritization Funding holds only {debitPfFunded:N2} " +
+                    $"but the item moves {amount:N2}.");
+
+            // Free the debit side BEFORE raising the credit side so real TDP headroom
+            // always exists for the credit RF.TDP increase (no reliance on the
+            // RequirementFundingTDPValidator realignment bypass). For cross-LOA moves
+            // the credit LOA's headroom comes from the ledger created in ProcessItem;
+            // for same-LOA moves it comes from the debit RF.TDP reduction here.
+
+            // 1. Reduce the debit junction.
+            var updDebitPf = new Entity(EntityNames.PrioritizationFunding, debitPf.Id);
+            updDebitPf[PrioritizationFundingAttributes.FundedAmount] = debitPfFunded - amount;
+            service.Update(updDebitPf);
+
+            if (!sameRf)
+            {
+                // 2. Lower the debit RF Funded (from the reduced junction) and TDP
+                //    together, so the entity-scoped "Funded vs TDP" business rule
+                //    never sees Funded > TDP, and the LOA regains `amount` of TDP.
+                var debitTdp = GetRfTdp(service, debitRf.Id);
+                if (debitTdp < amount)
+                    throw new InvalidPluginExecutionException(
+                        $"Realignment cannot execute: the debit Requirement Funding TDP {debitTdp:N2} " +
+                        $"is less than the move amount {amount:N2}.");
+                var debitUpd = PrioritizationRollupHelper.BuildRFFundedUpdate(service, debitRf.Id, tracing);
+                debitUpd[RequirementFundingAttributes.TDP] = debitTdp - amount;
+                service.Update(debitUpd);
+
+                // 3. Raise the credit RF.TDP (headroom now exists on its LOA).
+                BumpRfTdp(service, tracing, creditRf.Id, amount);
+            }
+
+            // 4. Add/raise the credit junction (RF.TDP cap now satisfied).
+            UpsertCreditPf(service, tracing, creditPrio, creditRf, amount);
+
+            // 5. Refresh the credit RF funded from its junctions (same RF when in-house).
+            PrioritizationRollupHelper.RecalculateRFFunded(service, sameRf ? debitRf.Id : creditRf.Id, tracing);
+        }
+
+        /// <summary>Direct-path move: debit RDF −amount; same RD ↔ creditRF RDF +amount.</summary>
+        private void MoveRdfJunction(
+            IOrganizationService service, ITracingService tracing,
+            EntityReference debitRdf, decimal debitRdfFunded, EntityReference debitRd,
+            EntityReference debitRf, EntityReference creditRf, decimal amount, bool sameRf)
+        {
+            if (debitRd == null)
+                throw new InvalidPluginExecutionException(
+                    "A direct-path Realignment Item's debit Requirement Detail Funding has no Requirement Detail.");
+
+            if (debitRdfFunded < amount)
+                throw new InvalidPluginExecutionException(
+                    $"Realignment cannot execute: the debit Requirement Detail Funding holds only {debitRdfFunded:N2} " +
+                    $"but the item moves {amount:N2}.");
+
+            // Free the debit side before raising the credit side (see MovePfJunction).
+            // 1. Reduce the debit junction.
+            var updDebitRdf = new Entity(EntityNames.RequirementDetailFunding, debitRdf.Id);
+            updDebitRdf[RequirementDetailFundingAttributes.FundedAmount] = debitRdfFunded - amount;
+            service.Update(updDebitRdf);
+
+            if (!sameRf)
+            {
+                // 2. Lower debit RF Funded + TDP together (returns `amount` of LOA TDP).
+                var debitTdp = GetRfTdp(service, debitRf.Id);
+                if (debitTdp < amount)
+                    throw new InvalidPluginExecutionException(
+                        $"Realignment cannot execute: the debit Requirement Funding TDP {debitTdp:N2} " +
+                        $"is less than the move amount {amount:N2}.");
+                var debitUpd = PrioritizationRollupHelper.BuildRFFundedUpdate(service, debitRf.Id, tracing);
+                debitUpd[RequirementFundingAttributes.TDP] = debitTdp - amount;
+                service.Update(debitUpd);
+
+                // 3. Raise the credit RF.TDP (headroom now exists on its LOA).
+                BumpRfTdp(service, tracing, creditRf.Id, amount);
+            }
+
+            // 4. Add/raise the credit junction (RF.TDP cap now satisfied).
+            UpsertCreditRdf(service, tracing, debitRd, creditRf, amount);
+
+            // 5. Refresh the credit RF funded from its junctions.
+            PrioritizationRollupHelper.RecalculateRFFunded(service, sameRf ? debitRf.Id : creditRf.Id, tracing);
+
+            // Refresh the RD display totals (both junctions hang off the same RD).
+            RequirementDetailFundingRollupHelper.RecalculateRequirementDetail(service, debitRd.Id, tracing);
+        }
+
+        private void UpsertCreditPf(
+            IOrganizationService service, ITracingService tracing,
+            EntityReference creditPrio, EntityReference creditRf, decimal amount)
+        {
+            var existing = GetActiveJunction(service, EntityNames.PrioritizationFunding,
+                PrioritizationFundingAttributes.Prioritization, creditPrio.Id,
+                PrioritizationFundingAttributes.RequirementFunding, creditRf.Id,
+                PrioritizationFundingAttributes.StateCode,
+                PrioritizationFundingAttributes.FundedAmount, PrioritizationFundingAttributes.ValidatedAmount);
+
+            if (existing != null)
+            {
+                decimal funded = existing.GetAttributeValue<decimal?>(PrioritizationFundingAttributes.FundedAmount) ?? 0m;
+                decimal validated = existing.GetAttributeValue<decimal?>(PrioritizationFundingAttributes.ValidatedAmount) ?? 0m;
+                decimal newFunded = funded + amount;
+                var upd = new Entity(EntityNames.PrioritizationFunding, existing.Id);
+                upd[PrioritizationFundingAttributes.FundedAmount] = newFunded;
+                if (validated < newFunded) upd[PrioritizationFundingAttributes.ValidatedAmount] = newFunded;
+                service.Update(upd);
+            }
+            else
+            {
+                var create = new Entity(EntityNames.PrioritizationFunding);
+                create[PrioritizationFundingAttributes.Prioritization] = creditPrio;
+                create[PrioritizationFundingAttributes.RequirementFunding] = creditRf;
+                create[PrioritizationFundingAttributes.FundedAmount] = amount;
+                create[PrioritizationFundingAttributes.ValidatedAmount] = amount;
+                service.Create(create);
+            }
+        }
+
+        private void UpsertCreditRdf(
+            IOrganizationService service, ITracingService tracing,
+            EntityReference creditRd, EntityReference creditRf, decimal amount)
+        {
+            var existing = GetActiveJunction(service, EntityNames.RequirementDetailFunding,
+                RequirementDetailFundingAttributes.RequirementDetail, creditRd.Id,
+                RequirementDetailFundingAttributes.RequirementFunding, creditRf.Id,
+                RequirementDetailFundingAttributes.StateCode,
+                RequirementDetailFundingAttributes.FundedAmount, RequirementDetailFundingAttributes.ValidatedAmount);
+
+            if (existing != null)
+            {
+                decimal funded = existing.GetAttributeValue<decimal?>(RequirementDetailFundingAttributes.FundedAmount) ?? 0m;
+                decimal validated = existing.GetAttributeValue<decimal?>(RequirementDetailFundingAttributes.ValidatedAmount) ?? 0m;
+                decimal newFunded = funded + amount;
+                var upd = new Entity(EntityNames.RequirementDetailFunding, existing.Id);
+                upd[RequirementDetailFundingAttributes.FundedAmount] = newFunded;
+                if (validated < newFunded) upd[RequirementDetailFundingAttributes.ValidatedAmount] = newFunded;
+                service.Update(upd);
+            }
+            else
+            {
+                var create = new Entity(EntityNames.RequirementDetailFunding);
+                create[RequirementDetailFundingAttributes.RequirementDetail] = creditRd;
+                create[RequirementDetailFundingAttributes.RequirementFunding] = creditRf;
+                create[RequirementDetailFundingAttributes.FundedAmount] = amount;
+                create[RequirementDetailFundingAttributes.ValidatedAmount] = amount;
+                service.Create(create);
+            }
+        }
+
+        /// <summary>Returns the single active junction row for a (parentA, parentB) pair, or null.</summary>
+        private static Entity GetActiveJunction(
+            IOrganizationService service, string entity,
+            string parentAAttr, Guid parentAId, string parentBAttr, Guid parentBId,
+            string stateCodeAttr, params string[] columns)
+        {
+            var q = new QueryExpression(entity)
+            {
+                ColumnSet = new ColumnSet(columns),
+                TopCount = 1,
+                NoLock = true,
+                Criteria = new FilterExpression(LogicalOperator.And)
+                {
+                    Conditions =
+                    {
+                        new ConditionExpression(parentAAttr, ConditionOperator.Equal, parentAId),
+                        new ConditionExpression(parentBAttr, ConditionOperator.Equal, parentBId),
+                        new ConditionExpression(stateCodeAttr, ConditionOperator.Equal, StateCodeValues.Active),
+                    },
+                },
+            };
+            var r = service.RetrieveMultiple(q);
+            return r.Entities.Count > 0 ? r.Entities[0] : null;
+        }
+
+        private static EntityReference GetRfLoa(IOrganizationService service, Guid rfId)
+        {
+            var rf = service.Retrieve(EntityNames.RequirementFunding, rfId,
+                new ColumnSet(RequirementFundingAttributes.LineOfAccounting));
+            return rf.GetAttributeValue<EntityReference>(RequirementFundingAttributes.LineOfAccounting);
+        }
+
+        private static decimal GetRfTdp(IOrganizationService service, Guid rfId)
+        {
+            var rf = service.Retrieve(EntityNames.RequirementFunding, rfId,
+                new ColumnSet(RequirementFundingAttributes.TDP));
+            return rf.GetAttributeValue<decimal?>(RequirementFundingAttributes.TDP) ?? 0m;
+        }
+
+        private static void BumpRfTdp(IOrganizationService service, ITracingService tracing, Guid rfId, decimal delta)
+        {
+            var tdp = GetRfTdp(service, rfId);
+            var upd = new Entity(EntityNames.RequirementFunding, rfId);
+            upd[RequirementFundingAttributes.TDP] = tdp + delta;
+            service.Update(upd);
+            tracing.Trace($"RF {rfId} TDP {tdp:N2} -> {(tdp + delta):N2}.");
         }
 
         private void ExecutePriorToPrior(

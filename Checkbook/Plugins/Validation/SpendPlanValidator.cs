@@ -37,7 +37,7 @@ namespace Checkbook.Plugins.Validation
     ///      book_new* month columns. Pre-image "PreImage": the same attributes
     ///      plus statecode.
     /// </remarks>
-    public class SpendPlanFY27Validator : PluginBase
+    public class SpendPlanValidator : PluginBase
     {
         private const decimal Tolerance = 0.005m;
 

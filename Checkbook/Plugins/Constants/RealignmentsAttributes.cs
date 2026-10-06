@@ -41,5 +41,13 @@ namespace Checkbook.Plugins.Constants
         public const string Remarks = "book_remarks";
         public const string Fund = "book_fund";
         public const string StateCode = "statecode";
+
+        // FY27 multi-line redesign (see docs/Realignment-FY27-Redesign.md).
+        // EntryMode drives which debit unit the child items carry; the three
+        // rollup fields are maintained by RealignmentRollup from active items.
+        public const string EntryMode = "book_realignmententrymode";
+        public const string TotalAmount = "book_totalamount";
+        public const string AllSameFundSAG = "book_allsamefundsag";
+        public const string ItemCount = "book_itemcount";
     }
 }

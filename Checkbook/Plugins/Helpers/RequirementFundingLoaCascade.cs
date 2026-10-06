@@ -4,7 +4,7 @@ using Checkbook.Plugins.Base;
 using Checkbook.Plugins.Constants;
 using Checkbook.Plugins.Helpers;
 
-namespace Checkbook.Plugins.Items
+namespace Checkbook.Plugins.Helpers
 {
     /// <summary>
     /// When a Requirement Funding's LOA (book_lineofaccounting) changes, push the

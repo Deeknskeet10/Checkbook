@@ -72,7 +72,7 @@ Register `Checkbook_Plugins.dll` steps per
 
 | Plugin | What it does |
 |---|---|
-| `Validation.SpendPlanFY27Validator` (new) | FY27 rows only: PF/Prio anchor exclusivity, one active row per (PF, FC, RowType), **Planned total ≤ PF funded** (equality intentionally not enforced so plans can be entered incrementally — the grid badge shows completeness), and month locks (Planned frozen once the month passes; Actual only for completed months). |
+| `Validation.SpendPlanValidator` (new) | FY27 rows only: PF/Prio anchor exclusivity, one active row per (PF, FC, RowType), **Planned total ≤ PF funded** (equality intentionally not enforced so plans can be entered incrementally — the grid badge shows completeness), and month locks (Planned frozen once the month passes; Actual only for completed months). |
 
 *(The FC lock pair originally listed here — `PrioritizationItemizedFundCenterDefault`
 and `PrioritizationFundCenterLockGuard` — was retired Aug 2026 before
@@ -137,6 +137,6 @@ unchanged from its pre-FY27 behavior.)*
 - [ ] FY27 Prio (final approved): tab visible; enter Planned months, Save →
       rows created with PF anchor, no `book_prioritization`, type shows
       "Prioritization".
-- [ ] Planned > funded → save blocked by `SpendPlanFY27Validator`.
+- [ ] Planned > funded → save blocked by `SpendPlanValidator`.
 - [ ] Past month: Planned cell locked, Actual cell editable, Variance shown.
 - [ ] Multi-FC Prio: section expands per FC; rollup bands read-only sums.

@@ -92,6 +92,21 @@ namespace Checkbook.Plugins.Validation
             // ---- 2. Shape-based prerequisites (unchanged Case 1/2/3) ----
             var sameFundSAG = GetEffectiveBool(target, preImage, RealignmentsAttributes.SameFundandSAG);
 
+            // FY27 multi-line: when the realignment carries child items, the shape
+            // comes from the item rollup (all-same-Fund/SAG) + entry mode, not the
+            // single parent Prioritization lookups. Legacy single-row realignments
+            // keep the lookup-based shape below.
+            bool hasItems = HasActiveItems(service, context.PrimaryEntityId);
+            bool itemPriorPath = false;
+            if (hasItems)
+            {
+                var shape = service.Retrieve(EntityNames.Realignments, context.PrimaryEntityId,
+                    new ColumnSet(RealignmentsAttributes.AllSameFundSAG, RealignmentsAttributes.EntryMode));
+                sameFundSAG = shape.GetAttributeValue<bool>(RealignmentsAttributes.AllSameFundSAG);
+                itemPriorPath = shape.GetAttributeValue<OptionSetValue>(RealignmentsAttributes.EntryMode)?.Value
+                    == RealignmentEntryModeValues.State;
+            }
+
             int? statePre = preImage?.GetAttributeValue<OptionSetValue>(
                 RealignmentsAttributes.StateApproved)?.Value;
             int? statePost = target.Contains(RealignmentsAttributes.StateApproved)
@@ -120,8 +135,13 @@ namespace Checkbook.Plugins.Validation
             else
             {
                 // Case 1: RF-level realignment (NO prioritizations) — State Approval
-                // NOT required; BE Decision IS required.
-                if (debitPrior == null && creditPrior == null)
+                // NOT required; BE Decision IS required. For item-based realignments
+                // the shape is the entry mode (OPR → RF-level); for legacy single-row
+                // it's the absence of both Prioritization lookups.
+                bool isPrioShape = hasItems
+                    ? itemPriorPath
+                    : (debitPrior != null || creditPrior != null);
+                if (!isPrioShape)
                 {
                     tracing.Trace("Validator: RF-level realignment detected.");
                     if (beDecisionValue == null)
@@ -173,6 +193,26 @@ namespace Checkbook.Plugins.Validation
             target[onAttribute] = DateTime.UtcNow;
             tracing.Trace(
                 $"RealignmentValidator: stamped {byAttribute}/{onAttribute} for user {context.InitiatingUserId}.");
+        }
+
+        /// <summary>True when the realignment has at least one active child item (FY27).</summary>
+        private static bool HasActiveItems(IOrganizationService service, Guid realignmentId)
+        {
+            var q = new QueryExpression(RealignmentItemAttributes.EntityLogicalName)
+            {
+                ColumnSet = new ColumnSet(false),
+                TopCount = 1,
+                NoLock = true,
+                Criteria = new FilterExpression(LogicalOperator.And)
+                {
+                    Conditions =
+                    {
+                        new ConditionExpression(RealignmentItemAttributes.Realignment, ConditionOperator.Equal, realignmentId),
+                        new ConditionExpression(RealignmentItemAttributes.StateCode, ConditionOperator.Equal, StateCodeValues.Active),
+                    },
+                },
+            };
+            return service.RetrieveMultiple(q).Entities.Count > 0;
         }
 
         /// <summary>
