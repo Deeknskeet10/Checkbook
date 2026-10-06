@@ -500,6 +500,21 @@ their orchestrator Update in the parent chain. Full setup:
 > (which guarded `book_newfundedamount`). Un-register that step before
 > registering this one — its plugin type no longer exists in the DLL.
 
+### `Checkbook.Plugins.Validation.ItemizedDetailFundedAmountLock`
+
+Itemized-detail sibling of the funded locks (`FundedAmountLockBase`). When
+`book_LockManualFundedEdits` is `true`, blocks direct **reductions** of
+`book_itemizeddetails.book_fundedamount` — the per-detail funded the NPM enters, the
+authoritative total for an Itemized Prioritization (see
+[`../docs/Prioritization-Funding-Reconciliation.md`](../docs/Prioritization-Funding-Reconciliation.md)).
+Leaf field (nothing rolls up into it), so only the base authorized ancestors apply:
+Turn-Ins / Realignments / State Swaps / the Distribution generator. **Added 2026-10-06**
+to close the gap where detail funded could be reduced directly even with the toggle on.
+
+| # | Message | Primary entity          | Stage          | Mode | Filtering attributes | Notes |
+|---|---------|-------------------------|----------------|------|----------------------|-------|
+| 1 | Update  | `book_itemizeddetails`  | Pre-Operation  | Sync | `book_fundedamount`  | Rank 10 (before PrioritizationItemizedRollup). **PreImage** `PreImage` (`book_fundedamount`). |
+
 | # | Message | Primary entity            | Stage          | Mode | Filtering attributes | Notes |
 |---|---------|---------------------------|----------------|------|----------------------|-------|
 | 1 | Update  | `book_requirementfunding` | Pre-Operation  | Sync | `book_newtdp`        | Rank **10** (runs before `RequirementFundingTDPValidator` so users get the lock message, not a cap error). **Requires PreImage** (`book_newtdp`) — falls back to a Retrieve if the image is missing. |

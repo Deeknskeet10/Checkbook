@@ -57,7 +57,11 @@ def post(entityset, body):
             if k.endswith("id") and isinstance(v, str) and _re.fullmatch(r"[0-9a-fA-F-]{36}", v):
                 return v
     return None
-def patch(entityset, gid, body): _req("PATCH", f"{entityset}({gid})", body)
+def patch(entityset, gid, body):
+    # If-Match:* forces UPDATE semantics (not Upsert) so the Update message fires —
+    # matters for plugins/locks that key off the Update message or walk ParentContext
+    # for an authorizing Update ancestor (e.g. FundedAmountLockBase).
+    _req("PATCH", f"{entityset}({gid})", body, {"If-Match": "*"})
 def delete(entityset, gid): _req("DELETE", f"{entityset}({gid})")
 def action(name, body=None):
     """invoke an unbound action/function; returns the parsed JSON response (or None)."""

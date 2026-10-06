@@ -90,11 +90,25 @@ breakdowns of the same total.
 - Respect increase-only: the per-PF inputs can't reduce an existing committed amount here
   (reductions flow through Realignment/Turn-In).
 
-### 4.3 Increase-only lock
-- Confirm `book_LockManualFundedEdits` is ON in each env (prod + sandbox) so the FundedAmountLock
-  plugins enforce increase-only on `book_prioritization`, `book_prioritizationfunding`,
-  `book_itemizeddetails` funded. Extend coverage if `book_itemizeddetails.book_fundedamount`
-  isn't already locked.
+### 4.3 Increase-only lock — BUILT 2026-10-06
+`book_LockManualFundedEdits` is **ON in gov**; the sandbox was set ON to match. Funded is now
+increase-only across all levels via `FundedAmountLockBase` subclasses:
+- `PrioritizationFundedAmountLock` (`book_prioritization`) — existing.
+- `RequirementFundingTDPLock` (`book_requirementfunding`) — existing.
+- `PrioritizationFundingFundedAmountLock` (`book_prioritizationfunding`) — **registered** (was in repo,
+  not registered in the sandbox).
+- `ItemizedDetailFundedAmountLock` (`book_itemizeddetails.book_fundedamount`) — **new**, closes the
+  gap so the authoritative per-detail funded can't be reduced directly.
+
+Reductions are allowed **only** through Turn-Ins / Realignments / State Swaps / the Distribution
+generator — `FundedAmountLockBase` walks `ParentContext` for an authorizing Update on
+`book_turnin`/`book_realignments`/`book_stateswap`. Validated in the sandbox: direct detail/PF
+reductions blocked; a realignment reduces a PF (450k→400k) fine with the lock ON.
+
+> **Gotcha (test tooling):** a raw Web-API `PATCH` is processed as the **Upsert** message, so the
+> authorized-ancestor walk (which matches the **Update** message) didn't recognize it and blocked
+> the realignment's reduction. Production approvals are form/PCF **Update** saves, so they chain
+> correctly. The data-seed `dvapi.patch` now sends `If-Match: *` to force Update semantics.
 
 ## 5. Open sub-decision — Realignment ↔ itemized interaction
 A realignment that debits a PF (an authorized reduction) drops Σ PF below the Prio total,
