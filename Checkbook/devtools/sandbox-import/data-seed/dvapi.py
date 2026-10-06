@@ -41,6 +41,11 @@ def _req(method, path, body=None, extra=None):
         raise RuntimeError(f"{method} {path} -> HTTP {e.code}: {e.read().decode()[:500]}")
 
 def get(path): return _req("GET", path)[1]
+def query(entityset, **params):
+    """GET with URL-encoded OData params, e.g. query('book_x', **{'$filter': \"a eq 'b'\"}).
+    Returns the 'value' list."""
+    qs = urllib.parse.urlencode(params, quote_via=urllib.parse.quote)
+    return (get(f"{entityset}?{qs}") or {}).get("value", [])
 import re as _re
 def post(entityset, body):
     """create; returns new record GUID (from header or representation body)"""
@@ -53,6 +58,26 @@ def post(entityset, body):
                 return v
     return None
 def patch(entityset, gid, body): _req("PATCH", f"{entityset}({gid})", body)
+def delete(entityset, gid): _req("DELETE", f"{entityset}({gid})")
+def action(name, body=None):
+    """invoke an unbound action/function; returns the parsed JSON response (or None)."""
+    return _req("POST", name, body if body is not None else {})[1]
+
+_nav = {}
+def navprop(entity, attr):
+    """Resolve the single-valued navigation property for a lookup attribute
+    (the name used in '<nav>@odata.bind'), from relationship metadata. Cached."""
+    key = (entity, attr)
+    if key in _nav:
+        return _nav[key]
+    j = get(f"EntityDefinitions(LogicalName='{entity}')/ManyToOneRelationships"
+            "?$select=ReferencingAttribute,ReferencingEntityNavigationPropertyName")
+    nav = None
+    for r in j.get("value", []):
+        if r.get("ReferencingAttribute") == attr:
+            nav = r.get("ReferencingEntityNavigationPropertyName"); break
+    _nav[key] = nav
+    return nav
 def find_id(entityset, name):
     """return GUID of record whose book_name == name, else None"""
     flt = "book_name eq '%s'" % name.replace("'", "''")
