@@ -185,18 +185,20 @@ methods stay; the item path is additive) and needs **no migration** of in-flight
 
 ## 5. Entry PCF (`RealignmentBuilder`, new)
 
-> **Build status — State path BUILT + deployed 2026-10-06 (v0.1.0).** `pcf/RealignmentBuilder`
+> **Build status — State path BUILT + deployed 2026-10-07 (v0.1.1).** `pcf/RealignmentBuilder`
 > (virtual, React/Fluent 9.46.2, bound to `book_newamount`). Reads the parent id from
 > `context.mode.contextInfo.entityId`; on a saved active Realignment it offers debit/credit
 > Prioritization comboboxes, the debit Prio's PF subgrid (multi-select + per-line move amount ≤
-> funded), a single credit-RF picker (from the credit Prio's Requirement RFs), and — when the debit
-> Prio is Itemized — the detail-reduction grid with a live remaining-to-balance badge. Save rebuilds
-> the `book_realignmentitem` + `book_realignmentdetailreduction` rows and stamps
-> `book_realignmententrymode=State`. Added to `ARNGCheckbookExtensions`, dist rebuilt, imported +
-> published (control `book_ARNGCheckbook.RealignmentBuilder`). **Still pending:** place it on the
-> `book_realignments` form (maker portal); automatic role detection + dropdown override; the **OPR /
-> direct (RDF, RF→RF) path**; and per-item (rather than single) credit-RF selection. The server
-> contract it drives is the one validated in `fy27_realign_detailreduction_validate.py`.
+> funded), a single credit-RF picker (from the credit Prio's Requirement RFs), a **debit detail-reduction
+> grid** (when the debit Prio is Itemized) and a **credit detail-increase grid** (when the credit Prio is
+> Itemized), each with a live remaining-to-balance badge; Save is blocked until both balance. Save rebuilds
+> the `book_realignmentitem` + `book_realignmentdetailreduction` + `book_realignmentdetailincrease` rows
+> and stamps `book_realignmententrymode=State`. Added to `ARNGCheckbookExtensions`, dist rebuilt,
+> imported + published (control `book_ARNGCheckbook.RealignmentBuilder`). **Still pending:** place it on
+> the `book_realignments` form (maker portal); automatic role detection + dropdown override; the **OPR /
+> direct (RDF, RF→RF) path**; per-item (rather than single) credit-RF selection; and multi-RF itemized
+> credit (server rejects it today). The server contract it drives is validated in
+> `fy27_realign_detailreduction_validate.py` + `fy27_realign_twosided_validate.py`.
 
 A virtual PCF (React/Fluent, like `ItemizedDetailsGrid` / the FundingGrid family), hosted on
 a custom page or embedded on the realignment form, reading the parent id from
@@ -293,18 +295,20 @@ items share the parent's debit Prio by construction.
 7. **Direct-path credit XOR** — the credit requirement on an RDF item must itself be on the
    direct (RD) path, not the Prio path (`RequirementDetailFundingGuard` enforces Prio-XOR-RD). The
    entry PCF must only offer RF-Y targets whose requirement is RD-funded. *(verify while building)*
-8. **Itemized-debit detail reduction — SERVER MECHANISM BUILT + validated 2026-10-06
-   (stakeholder-decided):** debiting an **Itemized** Prio must keep Σ PF ≡ Σ details, so the NPM
-   **selects which ItemizedDetails give up the funding and reduces them to a sum equal to the
-   realignment amount** — and the realignment can't process until they balance. New child
-   `book_realignmentdetailreduction` (`book_itemizeddetail` lookup + `book_newamount`), no plugin
-   steps. `RealignmentValidator.EnforceItemizedDebitBalance` blocks any approval transition unless
-   Σ(active detail reductions) == Σ(item amounts whose debit PF sits on an Itemized Prio), each
-   reduced detail belonging to a debiting Prio. `RealignmentProcessor.ApplyDetailReductions` reduces
-   the selected details (authorized reducer, so the increase-only `ItemizedDetailFundedAmountLock`
-   allows it) after the PF moves; `PrioritizationItemizedRollup` (no depth guard) recomputes the Prio
-   total down. Schema `realign_detailreduction_schema.py`; validated
-   `fy27_realign_detailreduction_validate.py` (block-then-balance, invariant restored both sides).
-   The **UI** (detail-selection grid + live remaining-to-balance) ships with the still-pending
-   `RealignmentBuilder` entry PCF. See `Prioritization-Funding-Reconciliation.md` §5. Direct-mode
-   debit needs none (PF reduction *is* the Prio-total reduction).
+8. **Itemized detail reconciliation (both sides) — BUILT + validated 2026-10-07 (stakeholder-decided):**
+   a realignment must keep Σ PF ≡ Σ details on each itemized Prio it touches. The NPM reconciles the
+   details and it can't process until both sides balance:
+   - **Debit (Itemized):** reduce selected details to a sum == the amount pulled out. Child
+     `book_realignmentdetailreduction`; `EnforceItemizedDebitBalance`; `ApplyDetailReductions`
+     (authorized-reducer lock bypass; roll-up lowers the debit Prio total).
+   - **Credit (Itemized):** increase selected details to a sum == the amount landing on the credit Prio
+     ("if the details exist"). Child `book_realignmentdetailincrease`; `EnforceItemizedCreditBalance`;
+     `ApplyDetailIncreases` (increases are lock-allowed; also lifts Validated/Requested). The credit
+     junction is **not** upserted directly for an itemized credit Prio — `ProcessItems` skips
+     `UpsertCreditPf`, and after the credit RF.TDP bump the detail increase lifts the Prio total so
+     `PrioritizationSingleRfAutoAllocate` syncs the junction. Multi-RF itemized credit is rejected.
+   - Both tables are lookup + `book_newamount`, no plugin steps. Schemas
+     `realign_detailreduction_schema.py` / `realign_detailincrease_schema.py`. Validated
+     `fy27_realign_detailreduction_validate.py` (debit→direct) and `fy27_realign_twosided_validate.py`
+     (itemized debit → itemized credit). UI grids ship in the `RealignmentBuilder` entry PCF (§5).
+     See `Prioritization-Funding-Reconciliation.md` §5. Direct-mode sides need no detail rows.

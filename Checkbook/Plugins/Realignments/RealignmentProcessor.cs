@@ -162,7 +162,18 @@ namespace Checkbook.Plugins.Realignments
             // are no items.
             if (hasItems)
             {
+                // Order matters (see ProcessItems / MovePfJunction):
+                //  1) ProcessItems — debit side frees RF/LOA TDP, credit RF.TDP is bumped;
+                //     UpsertCreditPf runs only for a Direct credit Prio.
+                //  2) ApplyDetailIncreases — raise the crediting Itemized Prio's details, so
+                //     PrioritizationItemizedRollup lifts its Prio total and SingleRfAutoAllocate
+                //     syncs the credit junction (now within both the raised total and the bumped
+                //     RF.TDP). No-op for a Direct credit Prio.
+                //  3) ApplyDetailReductions — lower the debiting Itemized Prio's details to match
+                //     the junctions the moves already reduced.
                 ProcessItems(service, tracing, context);
+                ApplyDetailIncreases(service, tracing, context.PrimaryEntityId);
+                ApplyDetailReductions(service, tracing, context.PrimaryEntityId);
                 FinalizeRealignment(service, tracing, context.PrimaryEntityId);
                 return;
             }
@@ -290,19 +301,56 @@ namespace Checkbook.Plugins.Realignments
             var creditPrio = realignment.GetAttributeValue<EntityReference>(
                 RealignmentsAttributes.CreditedPrioritization);
 
-            var items = GetActiveItems(service, realignmentId);
-            tracing.Trace($"ProcessItems: processing {items.Count} active realignment item(s).");
-            foreach (var item in items)
-                ProcessItem(service, tracing, item, creditPrio, realignmentId);
+            // When the crediting Prioritization is Itemized, its PF junctions are
+            // owned by the detail roll-up (+ PrioritizationSingleRfAutoAllocate for
+            // the single-RF case), NOT by UpsertCreditPf. Crediting then flows as:
+            // bump the credit RF.TDP here, raise the credit details afterwards
+            // (ApplyDetailIncreases) so the roll-up lifts the Prio total and the
+            // single-RF auto-allocate syncs the junction — so we must SKIP
+            // UpsertCreditPf for those items (it would double the credit, and
+            // raising it before the details are up trips the Σ PF ≤ Prio-total cap).
+            bool creditPrioItemized = false;
+            if (creditPrio != null)
+            {
+                var cp = service.Retrieve(EntityNames.Prioritization, creditPrio.Id,
+                    new ColumnSet(PrioritizationAttributes.FundingMode));
+                creditPrioItemized = cp.GetAttributeValue<OptionSetValue>(
+                    PrioritizationAttributes.FundingMode)?.Value == FundingModeValues.Itemized;
 
-            // FY27 itemized-debit reconciliation (docs §5): the PF moves above dropped
-            // Σ PF on the debiting Itemized Prioritization(s). Apply the NPM-selected
-            // ItemizedDetail reductions (validated to balance to the move by
-            // RealignmentValidator.EnforceItemizedDebitBalance) so Σ details — and thus
-            // the Prio total via PrioritizationItemizedRollup — come down to match.
-            // This processor is the authorized reducer, so the increase-only
-            // FundedAmountLock lets the reduction through.
-            ApplyDetailReductions(service, tracing, realignmentId);
+                // The single-RF auto-allocate is what re-syncs the itemized credit
+                // junction. A multi-RF itemized credit Prio would leave Σ PF short
+                // (auto-allocate no-ops) — not supported on this path yet.
+                if (creditPrioItemized && CountActivePf(service, creditPrio.Id) > 1)
+                    throw new InvalidPluginExecutionException(
+                        "Crediting into an itemized Prioritization that already splits across multiple " +
+                        "Requirement Fundings is not supported by this realignment path. Use a single-RF " +
+                        "credit Prioritization or a direct-funded one.");
+            }
+
+            var items = GetActiveItems(service, realignmentId);
+            tracing.Trace(
+                $"ProcessItems: processing {items.Count} active realignment item(s) " +
+                $"(creditPrioItemized={creditPrioItemized}).");
+            foreach (var item in items)
+                ProcessItem(service, tracing, item, creditPrio, creditPrioItemized, realignmentId);
+        }
+
+        private static int CountActivePf(IOrganizationService service, Guid prioId)
+        {
+            var q = new QueryExpression(EntityNames.PrioritizationFunding)
+            {
+                ColumnSet = new ColumnSet(false),
+                NoLock = true,
+                Criteria = new FilterExpression(LogicalOperator.And)
+                {
+                    Conditions =
+                    {
+                        new ConditionExpression(PrioritizationFundingAttributes.Prioritization, ConditionOperator.Equal, prioId),
+                        new ConditionExpression(PrioritizationFundingAttributes.StateCode, ConditionOperator.Equal, StateCodeValues.Active),
+                    },
+                },
+            };
+            return service.RetrieveMultiple(q).Entities.Count;
         }
 
         /// <summary>
@@ -353,6 +401,62 @@ namespace Checkbook.Plugins.Realignments
         }
 
         /// <summary>
+        /// Credit-side mirror of <see cref="ApplyDetailReductions"/>. Raises each selected
+        /// ItemizedDetail's Funded by its book_realignmentdetailincrease amount so the crediting
+        /// Itemized Prioritization's total (via PrioritizationItemizedRollup) is already up before
+        /// the credit PF upsert. Increases are always allowed by the FundedAmountLock (only
+        /// reductions are gated). Validated to balance by RealignmentValidator.EnforceItemizedCreditBalance.
+        /// </summary>
+        private void ApplyDetailIncreases(
+            IOrganizationService service, ITracingService tracing, Guid realignmentId)
+        {
+            var q = new QueryExpression(RealignmentDetailIncreaseAttributes.EntityLogicalName)
+            {
+                ColumnSet = new ColumnSet(
+                    RealignmentDetailIncreaseAttributes.Amount,
+                    RealignmentDetailIncreaseAttributes.ItemizedDetail),
+                Criteria = new FilterExpression(LogicalOperator.And)
+                {
+                    Conditions =
+                    {
+                        new ConditionExpression(RealignmentDetailIncreaseAttributes.Realignment, ConditionOperator.Equal, realignmentId),
+                        new ConditionExpression(RealignmentDetailIncreaseAttributes.StateCode, ConditionOperator.Equal, StateCodeValues.Active),
+                    },
+                },
+            };
+
+            var rows = service.RetrieveMultiple(q).Entities;
+            if (rows.Count == 0) { tracing.Trace("ApplyDetailIncreases: no detail increases on this realignment."); return; }
+
+            foreach (var row in rows)
+            {
+                var detailRef = row.GetAttributeValue<EntityReference>(RealignmentDetailIncreaseAttributes.ItemizedDetail);
+                decimal raiseBy = row.GetAttributeValue<decimal?>(RealignmentDetailIncreaseAttributes.Amount) ?? 0m;
+                if (detailRef == null || raiseBy <= 0m) continue;
+
+                var detail = service.Retrieve(EntityNames.ItemizedDetails, detailRef.Id,
+                    new ColumnSet(ItemizedDetailsAttributes.FundedAmount,
+                                  ItemizedDetailsAttributes.ValidatedAmount,
+                                  ItemizedDetailsAttributes.RequestedAmount));
+                decimal funded = detail.GetAttributeValue<decimal?>(ItemizedDetailsAttributes.FundedAmount) ?? 0m;
+                decimal validated = detail.GetAttributeValue<decimal?>(ItemizedDetailsAttributes.ValidatedAmount) ?? 0m;
+                decimal requested = detail.GetAttributeValue<decimal?>(ItemizedDetailsAttributes.RequestedAmount) ?? 0m;
+                decimal newFunded = funded + raiseBy;
+
+                var upd = new Entity(EntityNames.ItemizedDetails, detailRef.Id);
+                upd[ItemizedDetailsAttributes.FundedAmount] = newFunded;
+                // Funded <= Validated <= ... and Funded <= Requested are enforced upstream
+                // (PrioritizationItemizedRollup rolls these to the Prio, which blocks
+                // Requested < Funded). Lift Validated and Requested to cover the new Funded
+                // (mirrors ExecutePriorToPrior raising the credit's Requested).
+                if (validated < newFunded) upd[ItemizedDetailsAttributes.ValidatedAmount] = newFunded;
+                if (requested < newFunded) upd[ItemizedDetailsAttributes.RequestedAmount] = newFunded;
+                service.Update(upd);
+                tracing.Trace($"ApplyDetailIncreases: ItemizedDetail {detailRef.Id} funded {funded:N2} -> {newFunded:N2}.");
+            }
+        }
+
+        /// <summary>
         /// Executes one Fund/SAG move. The debit source is exactly one of a
         /// Prioritization Funding (State path), a Requirement Detail Funding
         /// (direct path), or a Requirement Funding (plain RF→RF); the credit always
@@ -363,7 +467,7 @@ namespace Checkbook.Plugins.Realignments
         /// </summary>
         private void ProcessItem(
             IOrganizationService service, ITracingService tracing,
-            Entity item, EntityReference creditPrio, Guid realignmentId)
+            Entity item, EntityReference creditPrio, bool creditPrioItemized, Guid realignmentId)
         {
             decimal amount = item.GetAttributeValue<decimal?>(RealignmentItemAttributes.Amount) ?? 0m;
             if (amount <= 0m) { tracing.Trace("Item amount <= 0; skipping."); return; }
@@ -432,7 +536,7 @@ namespace Checkbook.Plugins.Realignments
             // 2) Junction + RF.TDP movement, per debit-unit shape.
             if (debitPf != null)
             {
-                MovePfJunction(service, tracing, debitPf, debitJunctionFunded, debitRf, creditPrio, creditRf, amount, sameRf);
+                MovePfJunction(service, tracing, debitPf, debitJunctionFunded, debitRf, creditPrio, creditRf, amount, sameRf, creditPrioItemized);
                 if (debitPrio != null)
                     PrioritizationFundingRollupHelper.RecalculatePrioritizationFunded(service, debitPrio.Id, tracing);
                 if (creditPrio != null)
@@ -478,7 +582,8 @@ namespace Checkbook.Plugins.Realignments
         private void MovePfJunction(
             IOrganizationService service, ITracingService tracing,
             EntityReference debitPf, decimal debitPfFunded, EntityReference debitRf,
-            EntityReference creditPrio, EntityReference creditRf, decimal amount, bool sameRf)
+            EntityReference creditPrio, EntityReference creditRf, decimal amount, bool sameRf,
+            bool creditPrioItemized)
         {
             if (creditPrio == null)
                 throw new InvalidPluginExecutionException(
@@ -518,10 +623,20 @@ namespace Checkbook.Plugins.Realignments
                 BumpRfTdp(service, tracing, creditRf.Id, amount);
             }
 
-            // 4. Add/raise the credit junction (RF.TDP cap now satisfied).
-            UpsertCreditPf(service, tracing, creditPrio, creditRf, amount);
+            // 4. Add/raise the credit junction (RF.TDP cap now satisfied) — ONLY for a
+            //    Direct credit Prio. For an Itemized credit Prio the junction is owned by
+            //    the detail roll-up + SingleRfAutoAllocate: ApplyDetailIncreases (run after
+            //    this, once RF.TDP is bumped) raises the details, lifting the Prio total and
+            //    syncing the junction. Upserting here would double the credit and, before the
+            //    details are raised, breach the Σ PF ≤ Prio-total cap.
+            if (!creditPrioItemized)
+                UpsertCreditPf(service, tracing, creditPrio, creditRf, amount);
+            else
+                tracing.Trace("MovePfJunction: itemized credit Prio — deferring credit junction to detail increase + auto-allocate.");
 
             // 5. Refresh the credit RF funded from its junctions (same RF when in-house).
+            //    For the itemized-credit case the authoritative refresh happens when
+            //    auto-allocate syncs the junction; this is a harmless pre-pass.
             PrioritizationRollupHelper.RecalculateRFFunded(service, sameRf ? debitRf.Id : creditRf.Id, tracing);
         }
 

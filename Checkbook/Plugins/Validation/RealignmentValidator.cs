@@ -113,6 +113,12 @@ namespace Checkbook.Plugins.Validation
                 // an unbalanced itemized-debit realignment. Runs before the stamp; the processor
                 // applies the reductions after approval.
                 EnforceItemizedDebitBalance(service, tracing, context.PrimaryEntityId);
+
+                // Mirror on the credit side: crediting into an Itemized Prioritization raises its
+                // PF junctions, which would push Σ PF above the detail-driven total. The NPM must
+                // pick credit details to INCREASE by the same total; the processor raises them
+                // before the credit PF upsert so the Prio total is already up.
+                EnforceItemizedCreditBalance(service, tracing, context.PrimaryEntityId);
             }
 
             int? statePre = preImage?.GetAttributeValue<OptionSetValue>(
@@ -326,6 +332,99 @@ namespace Checkbook.Plugins.Validation
                     $"This realignment pulls {itemizedDebit:N2} out of an itemized Prioritization. Before it can be " +
                     $"approved, select Itemized Details on the debiting Prioritization and reduce them by a total of " +
                     $"{itemizedDebit:N2} (currently {reduced:N2}).");
+        }
+
+        /// <summary>
+        /// Credit-side mirror of <see cref="EnforceItemizedDebitBalance"/>. All items of a
+        /// State-path realignment credit the parent's single crediting Prioritization. When that
+        /// Prioritization is Itemized, the credit PF upsert would push Σ PF above its detail-driven
+        /// total, so the NPM must INCREASE selected ItemizedDetails on it by the realignment total.
+        /// Enforces Σ(active detail increases) == Σ(all active item amounts), and that each increased
+        /// detail belongs to the crediting Prioritization. Direct-mode credit needs none.
+        /// </summary>
+        private static void EnforceItemizedCreditBalance(
+            IOrganizationService service, ITracingService tracing, Guid realignmentId)
+        {
+            var realignment = service.Retrieve(EntityNames.Realignments, realignmentId,
+                new ColumnSet(RealignmentsAttributes.CreditedPrioritization));
+            var creditPrioRef = realignment.GetAttributeValue<EntityReference>(
+                RealignmentsAttributes.CreditedPrioritization);
+            if (creditPrioRef == null)
+            {
+                tracing.Trace("RealignmentValidator: no crediting Prioritization; credit balance not required.");
+                return;
+            }
+
+            var creditPrio = service.Retrieve(EntityNames.Prioritization, creditPrioRef.Id,
+                new ColumnSet(PrioritizationAttributes.FundingMode));
+            if (creditPrio.GetAttributeValue<OptionSetValue>(PrioritizationAttributes.FundingMode)?.Value
+                != FundingModeValues.Itemized)
+            {
+                tracing.Trace("RealignmentValidator: crediting Prioritization is Direct; no detail increases required.");
+                return;
+            }
+
+            // Target = everything landing on the credit Prio = Σ(all active item amounts).
+            var items = new QueryExpression(RealignmentItemAttributes.EntityLogicalName)
+            {
+                ColumnSet = new ColumnSet(RealignmentItemAttributes.Amount),
+                Criteria = new FilterExpression(LogicalOperator.And)
+                {
+                    Conditions =
+                    {
+                        new ConditionExpression(RealignmentItemAttributes.Realignment, ConditionOperator.Equal, realignmentId),
+                        new ConditionExpression(RealignmentItemAttributes.StateCode, ConditionOperator.Equal, StateCodeValues.Active),
+                    },
+                },
+            };
+            decimal creditTotal = 0m;
+            foreach (var item in service.RetrieveMultiple(items).Entities)
+                creditTotal += item.GetAttributeValue<decimal?>(RealignmentItemAttributes.Amount) ?? 0m;
+
+            if (creditTotal <= 0m)
+                return;
+
+            var increases = new QueryExpression(RealignmentDetailIncreaseAttributes.EntityLogicalName)
+            {
+                ColumnSet = new ColumnSet(
+                    RealignmentDetailIncreaseAttributes.Amount,
+                    RealignmentDetailIncreaseAttributes.ItemizedDetail),
+                Criteria = new FilterExpression(LogicalOperator.And)
+                {
+                    Conditions =
+                    {
+                        new ConditionExpression(RealignmentDetailIncreaseAttributes.Realignment, ConditionOperator.Equal, realignmentId),
+                        new ConditionExpression(RealignmentDetailIncreaseAttributes.StateCode, ConditionOperator.Equal, StateCodeValues.Active),
+                    },
+                },
+            };
+
+            decimal raised = 0m;
+            foreach (var r in service.RetrieveMultiple(increases).Entities)
+            {
+                var detailRef = r.GetAttributeValue<EntityReference>(RealignmentDetailIncreaseAttributes.ItemizedDetail);
+                if (detailRef == null)
+                    throw new InvalidPluginExecutionException(
+                        "A Realignment Detail Increase has no Itemized Detail selected.");
+
+                var detail = service.Retrieve(EntityNames.ItemizedDetails, detailRef.Id,
+                    new ColumnSet(ItemizedDetailsAttributes.Prioritization));
+                var detailPrio = detail.GetAttributeValue<EntityReference>(ItemizedDetailsAttributes.Prioritization);
+                if (detailPrio == null || detailPrio.Id != creditPrioRef.Id)
+                    throw new InvalidPluginExecutionException(
+                        "A selected Itemized Detail does not belong to the crediting Prioritization. " +
+                        "Increase only details on the Prioritization receiving the funds.");
+
+                raised += r.GetAttributeValue<decimal?>(RealignmentDetailIncreaseAttributes.Amount) ?? 0m;
+            }
+
+            tracing.Trace($"RealignmentValidator: itemized-credit balance — raised={raised:N2}, required={creditTotal:N2}.");
+
+            if (Math.Abs(raised - creditTotal) >= BalanceEpsilon)
+                throw new InvalidPluginExecutionException(
+                    $"This realignment adds {creditTotal:N2} to an itemized Prioritization. Before it can be " +
+                    $"approved, select Itemized Details on the crediting Prioritization and increase them by a total " +
+                    $"of {creditTotal:N2} (currently {raised:N2}).");
         }
 
         /// <summary>

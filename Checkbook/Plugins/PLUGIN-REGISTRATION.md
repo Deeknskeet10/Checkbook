@@ -727,36 +727,41 @@ active items.
 | 2 | Update  | `book_realignmentitem`  | Post-Operation | Sync | `book_newamount, book_samefundandsag, book_realignment, statecode` | **PreImage** `PreImage` (`book_realignment`). |
 | 3 | Delete  | `book_realignmentitem`  | Post-Operation | Sync | *(none)*             | **PreImage** `PreImage` (`book_realignment`). |
 
-#### FY27 itemized-debit detail reduction — `book_realignmentdetailreduction`
+#### FY27 itemized detail reconciliation — `book_realignmentdetailreduction` / `book_realignmentdetailincrease`
 
 > See [`../docs/Prioritization-Funding-Reconciliation.md`](../docs/Prioritization-Funding-Reconciliation.md) §5.
-> When a realignment pulls funding out of PF junctions on an **Itemized**
-> Prioritization, Σ PF drops below the detail-driven Prio total. The NPM must
-> reduce selected ItemizedDetails by the same total before approval, recorded as
-> child `book_realignmentdetailreduction` rows. **No plugin steps on this table** —
-> it is pure data read by `RealignmentValidator` (balance gate) and
-> `RealignmentProcessor` (applies the reductions). Only used for Itemized-debit
-> realignments; Direct-mode debit carries none.
+> A realignment keeps Σ PF ≡ Σ details on each **Itemized** Prioritization it
+> touches. The NPM records detail adjustments as child rows, enforced before
+> approval. **No plugin steps on either table** — pure data read by
+> `RealignmentValidator` (balance gates) and `RealignmentProcessor` (applies them).
+> Direct-mode sides carry none.
+> - **Debit (Itemized):** reduce details by the amount pulled out —
+>   `book_realignmentdetailreduction`.
+> - **Credit (Itemized):** increase details by the amount landing on the credit Prio —
+>   `book_realignmentdetailincrease`.
 
-**Schema (`devtools/sandbox-import/schema/realign_detailreduction_schema.py`):**
+**Schema (`realign_detailreduction_schema.py` / `realign_detailincrease_schema.py`):**
 
 | Object | Create |
 |--------|--------|
 | `book_realignmentdetailreduction` (new table) | UserOwned; primary name `book_name`. |
-| lookups | `book_realignment`→`book_realignments` (Cascade delete), `book_itemizeddetail`→`book_itemizeddetails`. |
-| columns | `book_newamount` (Decimal) — the amount to reduce the ItemizedDetail by. |
+| `book_realignmentdetailincrease` (new table) | UserOwned; primary name `book_name`. |
+| lookups (each) | `book_realignment`→`book_realignments` (Cascade delete), `book_itemizeddetail`→`book_itemizeddetails`. |
+| columns (each) | `book_newamount` (Decimal) — the amount to adjust the ItemizedDetail by. |
 
 These two existing steps gained item-aware behavior for this feature (no
 registration change — code only):
 
 - **`RealignmentValidator`** (PreOp Update of `book_realignments`, already registered):
-  `EnforceItemizedDebitBalance` now blocks any approval transition of an item-based
-  realignment unless Σ(active detail reductions) == Σ(item amounts whose debit PF is
-  on an Itemized Prio), each reduced detail belonging to a debiting Prio.
-- **`RealignmentProcessor`** (PostOp Update of `book_realignments`, already registered):
-  `ApplyDetailReductions` reduces the selected ItemizedDetails after the PF moves (as
-  the authorized reducer — the increase-only `ItemizedDetailFundedAmountLock` lets it
-  through); `PrioritizationItemizedRollup` recomputes the Prio total down.
+  `EnforceItemizedDebitBalance` blocks an approval unless Σ(active detail reductions)
+  == Σ(item amounts whose debit PF is on an Itemized Prio); `EnforceItemizedCreditBalance`
+  blocks unless Σ(active detail increases) == Σ(all item amounts) when the crediting Prio
+  is Itemized. Each adjusted detail must belong to the matching Prio.
+- **`RealignmentProcessor`** (PostOp Update of `book_realignments`, already registered),
+  ordered: `ProcessItems` (debit frees TDP, bumps credit RF.TDP, skips `UpsertCreditPf`
+  for an Itemized credit Prio and rejects a multi-RF one) → `ApplyDetailIncreases` (raise
+  credit details; the roll-up + `PrioritizationSingleRfAutoAllocate` sync the credit junction)
+  → `ApplyDetailReductions` (lower debit details; authorized-reducer lock bypass).
 
 ---
 

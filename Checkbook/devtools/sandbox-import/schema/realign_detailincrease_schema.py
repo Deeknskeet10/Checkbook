@@ -1,0 +1,107 @@
+#!/usr/bin/env python3
+"""Create the FY27 itemized-CREDIT detail-increase schema in Blipsnchitz via the
+Dataverse metadata API. Mirror of realign_detailreduction_schema.py for the credit
+side. Idempotent; added to the ARNGCheckbook solution.
+See docs/Prioritization-Funding-Reconciliation.md §5 + docs/Realignment-FY27-Redesign.md §9.8.
+
+Creates:
+  - table  book_realignmentdetailincrease (UserOwned)  primary name book_name
+  - col    book_newamount (Decimal)  — the amount to increase the ItemizedDetail by
+  - lookups:
+       book_realignment   -> book_realignments     (parent, Delete=Cascade)
+       book_itemizeddetail -> book_itemizeddetails  (RemoveLink)
+"""
+import sys, os
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "data-seed"))
+import dvapi
+
+SOLUTION = "ARNGCheckbook"
+SOL_HDR = {"MSCRM.SolutionUniqueName": SOLUTION}
+
+def L(text):
+    return {"@odata.type": "Microsoft.Dynamics.CRM.Label",
+            "LocalizedLabels": [{"@odata.type": "Microsoft.Dynamics.CRM.LocalizedLabel",
+                                 "Label": text, "LanguageCode": 1033}]}
+
+def meta_post(path, body, extra=None):
+    h = dict(SOL_HDR); h.update(extra or {})
+    resp, data = dvapi._req("POST", path, body, h)
+    return resp.headers.get("OData-EntityId"), data
+
+def exists_entity(logical):
+    try:
+        dvapi.get(f"EntityDefinitions(LogicalName='{logical}')?$select=LogicalName")
+        return True
+    except Exception:
+        return False
+
+def exists_attr(entity, attr):
+    try:
+        dvapi.get(f"EntityDefinitions(LogicalName='{entity}')/Attributes(LogicalName='{attr}')?$select=LogicalName")
+        return True
+    except Exception:
+        return False
+
+DI = "book_realignmentdetailincrease"
+if not exists_entity(DI):
+    print("creating table", DI)
+    body = {
+        "@odata.type": "Microsoft.Dynamics.CRM.EntityMetadata",
+        "SchemaName": "book_RealignmentDetailIncrease",
+        "DisplayName": L("Realignment Detail Increase"),
+        "DisplayCollectionName": L("Realignment Detail Increases"),
+        "Description": L("One ItemizedDetail increased to balance the credit side of an itemized Realignment (FY27)."),
+        "OwnershipType": "UserOwned",
+        "IsActivity": False, "HasActivities": False, "HasNotes": False,
+        "Attributes": [{
+            "@odata.type": "Microsoft.Dynamics.CRM.StringAttributeMetadata",
+            "SchemaName": "book_name", "AttributeType": "String",
+            "AttributeTypeName": {"Value": "StringType"},
+            "IsPrimaryName": True, "MaxLength": 200,
+            "RequiredLevel": {"Value": "None"},
+            "DisplayName": L("Name"),
+        }],
+    }
+    print("  ->", meta_post("EntityDefinitions", body)[0])
+else:
+    print("table", DI, "exists")
+
+def add_decimal(entity, schema, label, precision=2, lo=-1000000000, hi=1000000000):
+    if exists_attr(entity, schema.lower()):
+        print("  attr", schema, "exists"); return
+    body = {"@odata.type": "Microsoft.Dynamics.CRM.DecimalAttributeMetadata",
+            "SchemaName": schema, "AttributeType": "Decimal",
+            "AttributeTypeName": {"Value": "DecimalType"},
+            "RequiredLevel": {"Value": "None"}, "DisplayName": L(label),
+            "Precision": precision, "MinValue": lo, "MaxValue": hi}
+    meta_post(f"EntityDefinitions(LogicalName='{entity}')/Attributes", body)
+    print("  + decimal", schema)
+
+print("simple attrs:")
+add_decimal(DI, "book_newamount", "Increase Amount")
+
+def add_lookup(lookup_schema, lookup_label, referenced_entity, rel_schema, cascade_delete="RemoveLink"):
+    if exists_attr(DI, lookup_schema.lower()):
+        print("  lookup", lookup_schema, "exists"); return
+    casc = {"Assign": "NoCascade", "Delete": cascade_delete, "Merge": "NoCascade",
+            "Reparent": "NoCascade", "Share": "NoCascade", "Unshare": "NoCascade",
+            "RollupView": "NoCascade"}
+    body = {"@odata.type": "Microsoft.Dynamics.CRM.OneToManyRelationshipMetadata",
+            "SchemaName": rel_schema,
+            "ReferencedEntity": referenced_entity, "ReferencingEntity": DI,
+            "CascadeConfiguration": casc,
+            "Lookup": {"@odata.type": "Microsoft.Dynamics.CRM.LookupAttributeMetadata",
+                       "SchemaName": lookup_schema, "DisplayName": L(lookup_label),
+                       "RequiredLevel": {"Value": "None"}}}
+    meta_post("RelationshipDefinitions", body)
+    print("  + lookup", lookup_schema, "->", referenced_entity)
+
+print("lookups:")
+add_lookup("book_Realignment", "Realignment", "book_realignments",
+           "book_realignments_book_realignmentdetailincrease", cascade_delete="Cascade")
+add_lookup("book_ItemizedDetail", "Itemized Detail", "book_itemizeddetails",
+           "book_itemizeddetails_book_realignmentdetailincrease")
+
+print("publishing...")
+dvapi.action("PublishAllXml", {})
+print("done.")

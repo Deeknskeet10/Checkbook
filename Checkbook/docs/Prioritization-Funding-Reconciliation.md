@@ -111,39 +111,56 @@ reductions blocked; a realignment reduces a PF (450k→400k) fine with the lock 
 > correctly. The data-seed `dvapi.patch` now sends `If-Match: *` to force Update semantics.
 
 ## 5. Realignment ↔ itemized interaction — BUILT + validated 2026-10-06
-A realignment that debits a PF (an authorized reduction) drops Σ PF below the Prio total,
+A realignment moves funding between Prioritizations at the PF-junction grain. When either side is
+**Itemized**, the PF change diverges from that Prio's detail-driven total unless the details move too,
 breaking the invariant — and the NPM can't fix it afterward (reductions are locked). **Resolution:
-the NPM explicitly selects which ItemizedDetails give up the funding, reducing them to a sum equal
-to the realignment amount, as part of the realignment — and it cannot process until those detail
-reductions balance to the move.** Example: a $10,000 realignment across 2 PFs requires the NPM to
-pick N details and reduce them by a total of $10,000 before approval.
+the NPM explicitly adjusts ItemizedDetails on both affected itemized Prios so the details track the
+move, and the realignment cannot process until both sides balance.**
 
-**Server mechanism (shipped to the sandbox; the `RealignmentBuilder` entry PCF — the UI below — is
-still pending):**
-- **Schema:** new child `book_realignmentdetailreduction` on `book_realignments` — lookup
-  `book_itemizeddetail` → `book_itemizeddetails` + a reduction amount `book_newamount`. Parent
-  `book_realignment` cascade-delete. Created via
-  `devtools/sandbox-import/schema/realign_detailreduction_schema.py`. No plugin steps (pure data
-  read by the validator/processor). Only used when the debit Prio is Itemized; Direct-mode debit has
-  no details — the PF reduction *is* the Prio-total reduction.
-- **Validator (`RealignmentValidator.EnforceItemizedDebitBalance`):** on any approval transition of
-  an item-based realignment, sum the item amounts whose debit PF sits on an **Itemized** Prioritization;
-  if that total > 0, block the approval unless Σ(active detail reductions) == that total (±0.005), and
-  each reduced detail must belong to a debiting Prioritization. Funded only. RF/RDF debit and
-  Direct-mode debit contribute nothing.
-- **Processor (`RealignmentProcessor.ApplyDetailReductions`):** after the item PF moves, reduce each
-  selected ItemizedDetail's Funded by its amount — as the authorized reducer, so the increase-only
-  `ItemizedDetailFundedAmountLock` lets it through. `PrioritizationItemizedRollup` (no depth guard)
-  recomputes the Prio total down, keeping Σ PF ≡ Σ details on both sides.
-- **UI (`RealignmentBuilder`, pending):** a detail-selection grid where the NPM picks funded details
-  and enters reductions, with a live remaining-to-balance against the realignment total.
+- **Debit side (Itemized):** select details to **reduce** by a sum equal to the amount pulled out.
+- **Credit side (Itemized):** select details to **increase** by a sum equal to the amount landing on
+  the crediting Prio. (The credit grid exists only "if the details exist" — i.e. the credit Prio is
+  Itemized; a Direct credit Prio needs none, the PF raise *is* the total raise.)
 
-**Validated** (`devtools/.../transactional/fy27_realign_detailreduction_validate.py`): a balanced
-itemized Prio (total 300k = details 200k+100k = PF 300k) realigns 100k out of its PF. Approval with
-no reductions is blocked ("reduce them by a total of 100,000.00 (currently 0.00)"); after a 100k
-reduction on one detail, approval executes — PF 300k→200k, detail 200k→100k, Prio total 300k→200k,
-Σ PF ≡ Σ details ≡ Prio total = 200k; credit PF-C 100k, RF TDP moves settle, LOA remaining unchanged
-(same-LOA), realignment deactivated.
+Example: a $10,000 realignment out of an itemized Prio into another itemized Prio requires the NPM to
+reduce debit details by $10,000 **and** increase credit details by $10,000 before approval.
+
+**Server mechanism (shipped + validated in the sandbox):**
+- **Schema:** two child tables on `book_realignments`, each with a `book_itemizeddetail` →
+  `book_itemizeddetails` lookup + a `book_newamount` and a cascade-delete `book_realignment`, no plugin
+  steps (pure data):
+  - `book_realignmentdetailreduction` (debit side) — `realign_detailreduction_schema.py`.
+  - `book_realignmentdetailincrease` (credit side) — `realign_detailincrease_schema.py`.
+- **Validator (`RealignmentValidator`):** on any approval transition of an item-based realignment —
+  - `EnforceItemizedDebitBalance`: if any item debits a PF on an **Itemized** Prio, block unless
+    Σ(active detail reductions) == Σ(those item amounts) (±0.005), each reduced detail on a debiting Prio.
+  - `EnforceItemizedCreditBalance`: if the crediting Prio is **Itemized**, block unless
+    Σ(active detail increases) == Σ(all item amounts) (±0.005), each increased detail on the credit Prio.
+  - Funded only; RF/RDF debit and Direct-mode sides contribute nothing.
+- **Processor (`RealignmentProcessor`), ordered:**
+  1. `ProcessItems` — debit side frees RF/LOA TDP and bumps the credit RF.TDP. `UpsertCreditPf` runs
+     **only for a Direct credit Prio**; for an Itemized credit Prio it is skipped (the junction is owned
+     by the detail roll-up + `PrioritizationSingleRfAutoAllocate`). A multi-RF itemized credit Prio is
+     rejected — not supported on this path.
+  2. `ApplyDetailIncreases` — raise the selected credit details (increases are always lock-allowed;
+     also lifts Validated/Requested to cover). `PrioritizationItemizedRollup` lifts the credit Prio
+     total and `SingleRfAutoAllocate` syncs the credit junction (now within the bumped RF.TDP and the
+     raised total — order is why this runs *after* the RF.TDP bump, not before).
+  3. `ApplyDetailReductions` — reduce the selected debit details (authorized-reducer lock bypass);
+     the roll-up brings the debit Prio total down to match the already-reduced junction.
+- **UI (`RealignmentBuilder`, State path):** a debit detail-reduction grid (when the debit Prio is
+  Itemized) and a credit detail-increase grid (when the credit Prio is Itemized), each with a live
+  remaining-to-balance against the realignment total; Save is blocked until both balance.
+
+**Validated:**
+- `fy27_realign_detailreduction_validate.py` — itemized **debit** → direct credit: 300k Prio realigns
+  100k; no-reduction approval blocked; after a 100k reduction, PF 300k→200k, detail 200k→100k, Prio
+  total 300k→200k (Σ PF ≡ Σ details), LOA unchanged, deactivated.
+- `fy27_realign_twosided_validate.py` — itemized **debit** → itemized **credit** (both single-RF): move
+  20k; no-adjustment approval blocked (debit), reduction-only blocked (credit), then with both a 20k
+  debit reduction and a 20k credit increase it processes — debit Prio 60k→40k (PF 40k, detail 40k→20k),
+  credit Prio 30k→50k (PF auto-synced 30k→50k, detail 20k→40k, RF.TDP 30k→50k), Σ PF ≡ Σ details ≡ Prio
+  total on both sides, LOA unchanged, deactivated.
 
 See [[realignment-fy27-redesign]] §5.
 

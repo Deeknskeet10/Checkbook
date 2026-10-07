@@ -29,6 +29,7 @@ export interface RealignmentBuilderProps {
 const REALIGNMENT = "book_realignments";
 const REALIGNMENT_ITEM = "book_realignmentitem";
 const DETAIL_REDUCTION = "book_realignmentdetailreduction";
+const DETAIL_INCREASE = "book_realignmentdetailincrease";
 const PRIORITIZATION = "book_prioritization";
 const PRIO_FUNDING = "book_prioritizationfunding";
 const REQ_FUNDING = "book_requirementfunding";
@@ -143,6 +144,7 @@ export const RealignmentBuilderApp: React.FC<RealignmentBuilderProps> = ({ webAP
   const [creditRfs, setCreditRfs] = React.useState<RfOpt[]>([]);
   const [creditRfId, setCreditRfId] = React.useState<string>("");
   const [detailRows, setDetailRows] = React.useState<DetailRow[]>([]);
+  const [creditDetailRows, setCreditDetailRows] = React.useState<DetailRow[]>([]);
 
   const debitPrio = React.useMemo(
     () => prios.find((p) => p.id === debitPrioId) ?? null,
@@ -153,6 +155,7 @@ export const RealignmentBuilderApp: React.FC<RealignmentBuilderProps> = ({ webAP
     [prios, creditPrioId]
   );
   const debitIsItemized = debitPrio?.fundingMode === FUNDING_MODE_ITEMIZED;
+  const creditIsItemized = creditPrio?.fundingMode === FUNDING_MODE_ITEMIZED;
 
   // ---- initial load: realignment header + candidate Prioritizations --------
   React.useEffect(() => {
@@ -302,6 +305,40 @@ export const RealignmentBuilderApp: React.FC<RealignmentBuilderProps> = ({ webAP
     };
   }, [webAPI, creditPrio, reloadKey]);
 
+  // ---- when credit Prio is Itemized: load its details to increase ----------
+  React.useEffect(() => {
+    if (!creditPrioId || !creditIsItemized) {
+      setCreditDetailRows([]);
+      return;
+    }
+    let cancelled = false;
+    void (async () => {
+      try {
+        const res = await webAPI.retrieveMultipleRecords(
+          ITEMIZED_DETAILS,
+          `?$select=book_name,book_fundedamount` +
+            `&$filter=_book_prioritization_value eq ${creditPrioId} and statecode eq ${STATECODE_ACTIVE}` +
+            "&$orderby=book_name asc"
+        );
+        if (cancelled) return;
+        setCreditDetailRows(
+          res.entities.map((e) => ({
+            id: cleanId(e.book_itemizeddetailsid),
+            name: (e.book_name as string) ?? "(detail)",
+            funded: num(e.book_fundedamount),
+            selected: false,
+            reduce: "",
+          }))
+        );
+      } catch {
+        if (!cancelled) setError("Could not load the crediting Prioritization's details.");
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [webAPI, creditPrioId, creditIsItemized, reloadKey]);
+
   // ---- derived totals ------------------------------------------------------
   const selectedPf = pfRows.filter((r) => r.selected);
   const moveTotal = selectedPf.reduce((s, r) => s + num(r.move), 0);
@@ -312,6 +349,13 @@ export const RealignmentBuilderApp: React.FC<RealignmentBuilderProps> = ({ webAP
   const remaining = moveTotal - reduceTotal;
   const balanced = !needReductions || Math.abs(remaining) < EPS;
 
+  // Credit side: everything lands on the one credit Prio, so when it is Itemized the
+  // NPM must INCREASE details by the whole move total.
+  const creditRaiseTotal = creditDetailRows.filter((r) => r.selected).reduce((s, r) => s + num(r.reduce), 0);
+  const needIncreases = !!creditIsItemized && moveTotal > 0;
+  const creditRemaining = moveTotal - creditRaiseTotal;
+  const creditBalanced = !needIncreases || Math.abs(creditRemaining) < EPS;
+
   const canSave =
     isActive &&
     !!debitPrioId &&
@@ -321,7 +365,8 @@ export const RealignmentBuilderApp: React.FC<RealignmentBuilderProps> = ({ webAP
     moveTotal > EPS &&
     !overMove &&
     !overReduce &&
-    balanced;
+    balanced &&
+    creditBalanced;
 
   // ---- save ----------------------------------------------------------------
   const save = async (): Promise<void> => {
@@ -338,8 +383,8 @@ export const RealignmentBuilderApp: React.FC<RealignmentBuilderProps> = ({ webAP
         [`book_CreditedPrioritization@odata.bind`]: `/${SET.prio}(${creditPrioId})`,
       });
 
-      // 2) rebuild: wipe existing active items + reductions on this realignment.
-      const [oldItems, oldReds] = await Promise.all([
+      // 2) rebuild: wipe existing active items + reductions + increases.
+      const [oldItems, oldReds, oldIncs] = await Promise.all([
         webAPI.retrieveMultipleRecords(
           REALIGNMENT_ITEM,
           `?$select=book_realignmentitemid&$filter=_book_realignment_value eq ${recordId} and statecode eq ${STATECODE_ACTIVE}`
@@ -348,11 +393,17 @@ export const RealignmentBuilderApp: React.FC<RealignmentBuilderProps> = ({ webAP
           DETAIL_REDUCTION,
           `?$select=book_realignmentdetailreductionid&$filter=_book_realignment_value eq ${recordId} and statecode eq ${STATECODE_ACTIVE}`
         ),
+        webAPI.retrieveMultipleRecords(
+          DETAIL_INCREASE,
+          `?$select=book_realignmentdetailincreaseid&$filter=_book_realignment_value eq ${recordId} and statecode eq ${STATECODE_ACTIVE}`
+        ),
       ]);
       for (const e of oldItems.entities)
         await webAPI.deleteRecord(REALIGNMENT_ITEM, e.book_realignmentitemid as string);
       for (const e of oldReds.entities)
         await webAPI.deleteRecord(DETAIL_REDUCTION, e.book_realignmentdetailreductionid as string);
+      for (const e of oldIncs.entities)
+        await webAPI.deleteRecord(DETAIL_INCREASE, e.book_realignmentdetailincreaseid as string);
 
       // 3) create one item per selected PF (debit PF -> credit RF, move amount).
       for (const r of selectedPf) {
@@ -368,6 +419,17 @@ export const RealignmentBuilderApp: React.FC<RealignmentBuilderProps> = ({ webAP
       if (needReductions) {
         for (const r of detailRows.filter((d) => d.selected && num(d.reduce) > 0)) {
           await webAPI.createRecord(DETAIL_REDUCTION, {
+            book_newamount: num(r.reduce),
+            [`book_Realignment@odata.bind`]: `/${SET.realignment}(${recordId})`,
+            [`book_ItemizedDetail@odata.bind`]: `/${SET.detail}(${r.id})`,
+          });
+        }
+      }
+
+      // 5) create detail increases (Itemized credit only).
+      if (needIncreases) {
+        for (const r of creditDetailRows.filter((d) => d.selected && num(d.reduce) > 0)) {
+          await webAPI.createRecord(DETAIL_INCREASE, {
             book_newamount: num(r.reduce),
             [`book_Realignment@odata.bind`]: `/${SET.realignment}(${recordId})`,
             [`book_ItemizedDetail@odata.bind`]: `/${SET.detail}(${r.id})`,
@@ -616,6 +678,82 @@ export const RealignmentBuilderApp: React.FC<RealignmentBuilderProps> = ({ webAP
               </>
             )}
 
+            {/* Detail increase grid (Itemized credit only) */}
+            {needIncreases && (
+              <>
+                <Divider />
+                <div className={styles.section}>
+                  <Text className={styles.heading}>Itemized Detail increases (credit side)</Text>
+                  <Text>
+                    The crediting Prioritization is Itemized. Increase Itemized Details on it by a total equal to the
+                    realignment so its per-detail funding matches the junction it receives.
+                  </Text>
+                  {creditDetailRows.length === 0 && <Text>No active Itemized Details found on the crediting Prioritization.</Text>}
+                  {creditDetailRows.length > 0 && (
+                    <table className={styles.table}>
+                      <thead>
+                        <tr>
+                          <th className={styles.th}></th>
+                          <th className={styles.th}>Itemized Detail</th>
+                          <th className={styles.th}>Funded</th>
+                          <th className={styles.th}>Increase by</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {creditDetailRows.map((r) => (
+                          <tr key={r.id}>
+                            <td className={styles.td}>
+                              <Checkbox
+                                checked={r.selected}
+                                onChange={(_, d) =>
+                                  setCreditDetailRows((rows) =>
+                                    rows.map((x) =>
+                                      x.id === r.id
+                                        ? { ...x, selected: !!d.checked, reduce: d.checked ? x.reduce : "" }
+                                        : x
+                                    )
+                                  )
+                                }
+                              />
+                            </td>
+                            <td className={styles.td}>{r.name}</td>
+                            <td className={styles.td}>{money(r.funded)}</td>
+                            <td className={styles.td}>
+                              <Input
+                                className={styles.amtInput}
+                                type="number"
+                                disabled={!r.selected}
+                                value={r.reduce}
+                                onChange={(_, d) =>
+                                  setCreditDetailRows((rows) =>
+                                    rows.map((x) => (x.id === r.id ? { ...x, reduce: d.value } : x))
+                                  )
+                                }
+                              />
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
+                  <div className={styles.balanceRow}>
+                    <Text>
+                      Increased <b>{money(creditRaiseTotal)}</b> of <b>{money(moveTotal)}</b>
+                    </Text>
+                    {creditBalanced ? (
+                      <Badge color="success" appearance="tint">
+                        Balanced
+                      </Badge>
+                    ) : (
+                      <Badge color="warning" appearance="tint">
+                        {creditRemaining > 0 ? `${money(creditRemaining)} left to increase` : `${money(-creditRemaining)} over`}
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+              </>
+            )}
+
             <Divider />
 
             <div className={styles.footer}>
@@ -630,6 +768,9 @@ export const RealignmentBuilderApp: React.FC<RealignmentBuilderProps> = ({ webAP
               )}
               {!balanced && needReductions && !saving && (
                 <Text>Reductions must equal the realignment total before saving.</Text>
+              )}
+              {!creditBalanced && needIncreases && !saving && (
+                <Text>Credit-side increases must equal the realignment total before saving.</Text>
               )}
             </div>
           </>
