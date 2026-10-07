@@ -194,11 +194,30 @@ methods stay; the item path is additive) and needs **no migration** of in-flight
 > Itemized), each with a live remaining-to-balance badge; Save is blocked until both balance. Save rebuilds
 > the `book_realignmentitem` + `book_realignmentdetailreduction` + `book_realignmentdetailincrease` rows
 > and stamps `book_realignmententrymode=State`. Added to `ARNGCheckbookExtensions`, dist rebuilt,
-> imported + published (control `book_ARNGCheckbook.RealignmentBuilder`). **Still pending:** place it on
-> the `book_realignments` form (maker portal); automatic role detection + dropdown override; the **OPR /
-> direct (RDF, RF→RF) path**; per-item (rather than single) credit-RF selection; and multi-RF itemized
-> credit (server rejects it today). The server contract it drives is validated in
-> `fy27_realign_detailreduction_validate.py` + `fy27_realign_twosided_validate.py`.
+> imported + published (control `book_ARNGCheckbook.RealignmentBuilder`).
+>
+> **Bind field:** the control attaches to **`book_newamount`** (Decimal, display "Amount"). It was
+> briefly declared `of-type="FP"` (v0.1.0/0.1.1) which hid it from the form designer — a bound property
+> must match the field type; v0.1.2 is `of-type="Decimal"`.
+>
+> **Form prerequisite — legacy required fields relaxed (2026-10-07):** `book_realignments` had four
+> **ApplicationRequired** legacy-cascade fields (`book_fund`, `book_newamount`, `book_newdebitedloa`,
+> `book_newcreditedloa`) that blocked saving a record before the PCF could assemble it. The FY27 item
+> path carries Fund/SAG/LOA/amount on the child `book_realignmentitem` rows, so these were relaxed to
+> **None** (`devtools/sandbox-import/schema/realign_relax_required.py`) — the legacy FY26 single-row path
+> still *uses* them, they are just no longer mandatory. After this, only **Name** (`book_name`) is
+> app-required to save. **Must be replicated in gov.** Also add the **Fiscal Year** picklist
+> (`book_fiscalyear`) to the entry form so the builder filters Prioritizations to the right FY.
+>
+> **Entry flow:** create the Realignment → set **Name** + **Fiscal Year** → **Save** (the builder shows
+> "Save the Realignment record first" until then) → use the builder to pick debit/credit Prios, PF moves,
+> credit RF, and the itemized detail adjustments → Save realignment items → approve via the chevron. The
+> legacy Fund/LOA/Amount fields can be hidden on the State entry form (now optional).
+>
+> **Still pending:** place it on the `book_realignments` form (maker portal); automatic role detection +
+> dropdown override; the **OPR / direct (RDF, RF→RF) path**; per-item (rather than single) credit-RF
+> selection; and multi-RF itemized credit (server rejects it today). The server contract it drives is
+> validated in `fy27_realign_detailreduction_validate.py` + `fy27_realign_twosided_validate.py`.
 
 A virtual PCF (React/Fluent, like `ItemizedDetailsGrid` / the FundingGrid family), hosted on
 a custom page or embedded on the realignment form, reading the parent id from
