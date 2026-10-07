@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest>
-  <control namespace="ARNGCheckbook" constructor="RealignmentBuilder" version="0.1.1" display-name-key="RealignmentBuilder" description-key="FY27 Realignment entry builder (State path). On a saved Realignment, pick the debiting Prioritization, multi-select its Prioritization Funding junctions with per-line move amounts, pick the crediting Prioritization and credit Requirement Funding, and -- when the debit Prioritization is Itemized -- reduce selected Itemized Details to balance the move. Writes book_realignmentitem and book_realignmentdetailreduction rows. Bind to book_newamount on the Realignment form." control-type="virtual">
-    <property name="amount" display-name-key="Amount" description-key="The bound field (book_newamount). The control reads and writes the rest of the record via Web API." of-type="FP" usage="bound" required="false" />
+  <control namespace="ARNGCheckbook" constructor="RealignmentBuilder" version="0.1.2" display-name-key="RealignmentBuilder" description-key="FY27 Realignment entry builder (State path). On a saved Realignment, pick the debiting Prioritization, multi-select its Prioritization Funding junctions with per-line move amounts, pick the crediting Prioritization and credit Requirement Funding, and -- when the debit Prioritization is Itemized -- reduce selected Itemized Details to balance the move. Writes book_realignmentitem and book_realignmentdetailreduction rows. Bind to book_newamount on the Realignment form." control-type="virtual">
+    <property name="amount" display-name-key="Amount" description-key="The bound field (book_newamount, Decimal). The control reads and writes the rest of the record via Web API." of-type="Decimal" usage="bound" required="false" />
     <resources>
       <code path="index.ts" order="1" />
       <css path="css/RealignmentBuilder.css" order="1" />
