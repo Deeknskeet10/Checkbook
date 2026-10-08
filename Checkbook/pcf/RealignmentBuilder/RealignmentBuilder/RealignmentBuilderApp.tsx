@@ -171,12 +171,15 @@ export const RealignmentBuilderApp: React.FC<RealignmentBuilderProps> = ({ webAP
         const r = await webAPI.retrieveRecord(
           REALIGNMENT,
           recordId,
-          "?$select=statecode,book_realignmententrymode,book_fiscalyear,book_newamount," +
+          "?$select=statecode,book_realignmententrymode,book_newfiscalyear,book_fiscalyear,book_newamount," +
             "_book_debitedprioritization_value,_book_creditedprioritization_value"
         );
         if (cancelled) return;
         const active = num(r.statecode) === STATECODE_ACTIVE;
-        const fy = r.book_fiscalyear == null ? null : num(r.book_fiscalyear);
+        // Prefer the editable book_newfiscalyear (goal_fiscalyear picklist); fall back to
+        // the legacy formula book_fiscalyear. Both are option values == the year.
+        const fyRaw = r.book_newfiscalyear ?? r.book_fiscalyear;
+        const fy = fyRaw == null ? null : num(fyRaw);
         setIsActive(active);
         setFiscalYear(fy);
         setDebitPrioId(cleanId(r._book_debitedprioritization_value));

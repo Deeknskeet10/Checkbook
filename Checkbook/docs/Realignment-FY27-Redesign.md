@@ -206,8 +206,14 @@ methods stay; the item path is additive) and needs **no migration** of in-flight
 > path carries Fund/SAG/LOA/amount on the child `book_realignmentitem` rows, so these were relaxed to
 > **None** (`devtools/sandbox-import/schema/realign_relax_required.py`) — the legacy FY26 single-row path
 > still *uses* them, they are just no longer mandatory. After this, only **Name** (`book_name`) is
-> app-required to save. **Must be replicated in gov.** Also add the **Fiscal Year** picklist
-> (`book_fiscalyear`) to the entry form so the builder filters Prioritizations to the right FY.
+> app-required to save. **Must be replicated in gov.**
+>
+> **Editable Fiscal Year (2026-10-07):** the existing `book_fiscalyear` is a **formula column**
+> (SourceType=3, not valid for create/update) so it cannot be picked. A new editable
+> **`book_newfiscalyear`** picklist (bound to the shared global `goal_fiscalyear` choice set, mirroring
+> `book_prioritization.book_newfiscalyear`) was added — `realign_add_fiscalyear.py`. Put **this** field
+> on the entry form (not the formula one); the builder reads it (falling back to `book_fiscalyear`) to
+> filter Prioritizations by FY.
 >
 > **Entry flow:** create the Realignment → set **Name** + **Fiscal Year** → **Save** (the builder shows
 > "Save the Realignment record first" until then) → use the builder to pick debit/credit Prios, PF moves,
