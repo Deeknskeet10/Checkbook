@@ -135,6 +135,14 @@ export const RealignmentBuilderApp: React.FC<RealignmentBuilderProps> = ({ webAP
 
   const [isActive, setIsActive] = React.useState(true);
   const [fiscalYear, setFiscalYear] = React.useState<number | null>(null);
+  const [mode, setMode] = React.useState<"view" | "edit">("edit");
+
+  // Already-saved rows (for the read-only summary).
+  const [savedItems, setSavedItems] = React.useState<{ rf: string; amount: number }[]>([]);
+  const [savedReductions, setSavedReductions] = React.useState<{ detail: string; amount: number }[]>([]);
+  const [savedIncreases, setSavedIncreases] = React.useState<{ detail: string; amount: number }[]>([]);
+  const [debitPrioName, setDebitPrioName] = React.useState<string>("");
+  const [creditPrioName, setCreditPrioName] = React.useState<string>("");
 
   const [prios, setPrios] = React.useState<PrioOpt[]>([]);
   const [debitPrioId, setDebitPrioId] = React.useState<string>("");
@@ -184,6 +192,8 @@ export const RealignmentBuilderApp: React.FC<RealignmentBuilderProps> = ({ webAP
         setFiscalYear(fy);
         setDebitPrioId(cleanId(r._book_debitedprioritization_value));
         setCreditPrioId(cleanId(r._book_creditedprioritization_value));
+        setDebitPrioName((r[`_book_debitedprioritization_value${FV}`] as string) ?? "");
+        setCreditPrioName((r[`_book_creditedprioritization_value${FV}`] as string) ?? "");
 
         const fyFilter = fy == null ? "" : ` and book_newfiscalyear eq ${fy}`;
         const res = await webAPI.retrieveMultipleRecords(
@@ -342,6 +352,58 @@ export const RealignmentBuilderApp: React.FC<RealignmentBuilderProps> = ({ webAP
     };
   }, [webAPI, creditPrioId, creditIsItemized, reloadKey]);
 
+  // ---- load already-saved rows for the read-only summary -------------------
+  React.useEffect(() => {
+    if (!recordId) return;
+    let cancelled = false;
+    void (async () => {
+      try {
+        const [items, reds, incs] = await Promise.all([
+          webAPI.retrieveMultipleRecords(
+            REALIGNMENT_ITEM,
+            `?$select=book_newamount,_book_creditrequirementfunding_value` +
+              `&$filter=_book_realignment_value eq ${recordId} and statecode eq ${STATECODE_ACTIVE}`
+          ),
+          webAPI.retrieveMultipleRecords(
+            DETAIL_REDUCTION,
+            `?$select=book_newamount,_book_itemizeddetail_value` +
+              `&$filter=_book_realignment_value eq ${recordId} and statecode eq ${STATECODE_ACTIVE}`
+          ),
+          webAPI.retrieveMultipleRecords(
+            DETAIL_INCREASE,
+            `?$select=book_newamount,_book_itemizeddetail_value` +
+              `&$filter=_book_realignment_value eq ${recordId} and statecode eq ${STATECODE_ACTIVE}`
+          ),
+        ]);
+        if (cancelled) return;
+        const its = items.entities.map((e) => ({
+          rf: (e[`_book_creditrequirementfunding_value${FV}`] as string) ?? "(RF)",
+          amount: num(e.book_newamount),
+        }));
+        setSavedItems(its);
+        setSavedReductions(
+          reds.entities.map((e) => ({
+            detail: (e[`_book_itemizeddetail_value${FV}`] as string) ?? "(detail)",
+            amount: num(e.book_newamount),
+          }))
+        );
+        setSavedIncreases(
+          incs.entities.map((e) => ({
+            detail: (e[`_book_itemizeddetail_value${FV}`] as string) ?? "(detail)",
+            amount: num(e.book_newamount),
+          }))
+        );
+        // Default to the summary when something is already saved.
+        if (its.length > 0) setMode("view");
+      } catch {
+        /* non-fatal: summary just stays empty */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [webAPI, recordId, reloadKey]);
+
   // ---- derived totals ------------------------------------------------------
   const selectedPf = pfRows.filter((r) => r.selected);
   const moveTotal = selectedPf.reduce((s, r) => s + num(r.move), 0);
@@ -441,6 +503,7 @@ export const RealignmentBuilderApp: React.FC<RealignmentBuilderProps> = ({ webAP
       }
 
       setSaveMsg("Realignment items saved. Submit for approval from the Approval panel.");
+      setMode("view");
       setReloadKey((k) => k + 1);
     } catch (e) {
       setError((e as { message?: string })?.message ?? "Could not save the realignment items.");
@@ -450,6 +513,90 @@ export const RealignmentBuilderApp: React.FC<RealignmentBuilderProps> = ({ webAP
   };
 
   // ---- render --------------------------------------------------------------
+  const savedItemsTotal = savedItems.reduce((s, r) => s + r.amount, 0);
+
+  const renderSummary = (): React.ReactElement => (
+    <div className={styles.section}>
+      <div className={styles.balanceRow}>
+        <Text className={styles.heading}>Realignment summary</Text>
+        {isActive ? (
+          <Badge color="informative" appearance="tint">Draft — not yet submitted</Badge>
+        ) : (
+          <Badge color="success" appearance="tint">Processed</Badge>
+        )}
+      </div>
+      {savedItems.length === 0 ? (
+        <Text>No funding moves saved on this realignment yet.</Text>
+      ) : (
+        <>
+          <Text>
+            Moving <b>{money(savedItemsTotal)}</b> from <b>{debitPrioName || "(debit Prioritization)"}</b> to{" "}
+            <b>{creditPrioName || "(credit Prioritization)"}</b>.
+          </Text>
+          <table className={styles.table}>
+            <thead>
+              <tr>
+                <th className={styles.th}>Credit Requirement Funding</th>
+                <th className={styles.th}>Amount</th>
+              </tr>
+            </thead>
+            <tbody>
+              {savedItems.map((r, i) => (
+                <tr key={i}>
+                  <td className={styles.td}>{r.rf}</td>
+                  <td className={styles.td}>{money(r.amount)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {savedReductions.length > 0 && (
+            <>
+              <Text className={styles.heading}>Debit detail reductions</Text>
+              <table className={styles.table}>
+                <tbody>
+                  {savedReductions.map((r, i) => (
+                    <tr key={i}>
+                      <td className={styles.td}>{r.detail}</td>
+                      <td className={styles.td}>−{money(r.amount)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </>
+          )}
+          {savedIncreases.length > 0 && (
+            <>
+              <Text className={styles.heading}>Credit detail increases</Text>
+              <table className={styles.table}>
+                <tbody>
+                  {savedIncreases.map((r, i) => (
+                    <tr key={i}>
+                      <td className={styles.td}>{r.detail}</td>
+                      <td className={styles.td}>+{money(r.amount)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </>
+          )}
+        </>
+      )}
+      {saveMsg && (
+        <MessageBar intent="success">
+          <MessageBarBody>{saveMsg}</MessageBarBody>
+        </MessageBar>
+      )}
+      {isActive && (
+        <div className={styles.footer}>
+          <Button appearance="secondary" onClick={() => { setSaveMsg(null); setMode("edit"); }}>
+            Edit items
+          </Button>
+          <Text>Submit for approval from the Approval panel above.</Text>
+        </div>
+      )}
+    </div>
+  );
+
   if (!recordId) {
     return (
       <FluentProvider theme={webLightTheme}>
@@ -477,7 +624,9 @@ export const RealignmentBuilderApp: React.FC<RealignmentBuilderProps> = ({ webAP
           </MessageBar>
         )}
 
-        {!loading && isActive && (
+        {!loading && (mode === "view" || !isActive) && renderSummary()}
+
+        {!loading && isActive && mode === "edit" && (
           <>
             {/* Prioritization pickers */}
             <div className={styles.pickers}>
