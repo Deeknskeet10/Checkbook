@@ -64,6 +64,22 @@ namespace Checkbook.Plugins.Realignments
             var effDebitPrior = GetEffectiveEntityReference(target, preImg, RealignmentsAttributes.DebitedPrioritization);
             var effCreditPrior = GetEffectiveEntityReference(target, preImg, RealignmentsAttributes.CreditedPrioritization);
 
+            // FY27 PCF-first entry: a new realignment is saved as an empty shell (just
+            // Name + Fiscal Year) so the RealignmentBuilder can attach items to it; the
+            // entry mode is stamped later, on the builder's save. With no LOAs, amount,
+            // Prioritizations or Requirement Fundings yet, there is nothing for this
+            // legacy LOA-centric validation to check — defer it. A legacy single-row
+            // realignment always carries this content at save time, so it still validates.
+            bool emptyShell =
+                debitLoaRef == null && creditLoaRef == null && amount <= 0m &&
+                effDebitPrior == null && effCreditPrior == null &&
+                effDebitReq == null && effCreditReq == null;
+            if (emptyShell)
+            {
+                tracing.Trace("Empty new realignment shell (PCF-first entry) — deferring legacy SetSameFundSag validation.");
+                return;
+            }
+
             if (debitLoaRef == null || creditLoaRef == null)
                 throw new InvalidPluginExecutionException("Both Debited LOA and Credited LOA are required.");
 
