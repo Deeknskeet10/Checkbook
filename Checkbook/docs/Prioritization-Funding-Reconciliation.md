@@ -52,7 +52,7 @@ breakdowns of the same total.
    surfaces; reductions happen only via authorized tools (Realignment / Turn-In, which already
    bypass the lock via their orchestrator ancestor). This is the existing **FundedAmountLock**
    mechanism (`book_LockManualFundedEdits` toggle + `PrioritizationFundedAmountLock`,
-   `PrioritizationFundingFundedAmountLock`, `RequirementFundingTDPLock`).
+   `PrioritizationFundingFundedAmountLock`, `RequirementFundingFundedAmountLock`).
 4. **Flag + block until balanced.** An unbalanced Prio (Σ PF ≠ Prio total) is flagged and
    **cannot be saved/finalized** until balanced. A mismatch is never committable.
 5. **Keep the "Allocate to RFs" popup** for now — strengthen its existing "sum ≠ target" warning
@@ -94,7 +94,8 @@ breakdowns of the same total.
 `book_LockManualFundedEdits` is **ON in gov**; the sandbox was set ON to match. Funded is now
 increase-only across all levels via `FundedAmountLockBase` subclasses:
 - `PrioritizationFundedAmountLock` (`book_prioritization`) — existing.
-- `RequirementFundingTDPLock` (`book_requirementfunding`) — existing.
+- `RequirementFundingFundedAmountLock` (`book_requirementfunding`, `book_newfundedamount`) — replaced `RequirementFundingTDPLock` 2026-10-14; RF TDP is no longer locked (it may drop as far as Withholding allows).
+- `RequirementDetailFundingFundedAmountLock` (`book_requirementdetailfunding`) — added 2026-10-14; closes the RD-direct path into RF Funded.
 - `PrioritizationFundingFundedAmountLock` (`book_prioritizationfunding`) — **registered** (was in repo,
   not registered in the sandbox).
 - `ItemizedDetailFundedAmountLock` (`book_itemizeddetails.book_fundedamount`) — **new**, closes the

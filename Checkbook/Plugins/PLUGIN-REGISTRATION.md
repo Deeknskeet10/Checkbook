@@ -166,7 +166,7 @@ Register the mode plugins only after these `book_spendplan` /
 |---------------------------------------|------|----------------------------------------------------------|-------|
 | `book_DistributionHoldingFundCenter`  | Text | `GenerateDistributionsPlugin` | See [`Distributions/REGISTRATION.md`](Distributions/REGISTRATION.md). The A18 record's GUID. |
 | `book_TurnInCreditOPR`                | Text | `TurnInApprovalPlugin` (via `TurnInLOAResolver`)         | See [`TurnIns/REGISTRATION.md`](TurnIns/REGISTRATION.md). Required for FY27+ Turn-Ins. |
-| `book_LockManualFundedEdits`          | Yes/No | `RequirementFundingTDPLock` + `PrioritizationFundingFundedAmountLock` + `PrioritizationFundedAmountLock`; written by `ToggleFundedAmountLockPlugin` | See [`../docs/FundedAmountLock-Setup.md`](../docs/FundedAmountLock-Setup.md). Ships default `false`; toggled via the Admin Center button. Blocks manual **reductions** only (RF TDP, FY27 junction amount, Prio rolled-up funded) — increases stay allowed. |
+| `book_LockManualFundedEdits`          | Yes/No | `RequirementFundingFundedAmountLock` + `RequirementDetailFundingFundedAmountLock` + `PrioritizationFundingFundedAmountLock` + `PrioritizationFundedAmountLock` + `ItemizedDetailFundedAmountLock`; written by `ToggleFundedAmountLockPlugin` | See [`../docs/FundedAmountLock-Setup.md`](../docs/FundedAmountLock-Setup.md). Ships default `false`; toggled via the Admin Center button. Blocks manual **reductions** only (RF Funded, RD funding, FY27 junction amount, Prio rolled-up funded, itemized detail funded) — increases stay allowed; RF TDP stays editable down to Funded. |
 | `book_LockSpendPlanEdits`             | Yes/No | `SpendPlanEditLockGuard`; written by `ToggleSpendPlanLockPlugin` | See [`../docs/SpendPlanLock-Setup.md`](../docs/SpendPlanLock-Setup.md). Ships default `false`; toggled via the Admin Center button. Blocks **all** direct user create/update/delete of `book_spendplan`; system writes (roll-ups, cascades) pass. |
 | `book_activeplanningfy`               | Text (integer) | `RequirementSpendPlanModeCascade`, `RequirementFundingLoaCascade`, `SpendPlanImmutabilityGuard`, `FiscalYearHelper` | The open planning FY (calendar year, e.g. `2027`). FYs below it are frozen. **Optional** — when unset, `FiscalYearHelper` falls back to the computed federal FY (Oct-start). |
 
@@ -269,7 +269,7 @@ the update comes from an authorized parent operation (Turn-In / Realignment /
 State Swap approval, `book_GenerateDistributions`, or a roll-up recompute
 triggered from `book_prioritizationfunding` / `book_itemizeddetails` — all
 detected by walking `context.ParentContext`). Shares its logic with
-`RequirementFundingTDPLock` and `PrioritizationFundingFundedAmountLock` via
+`RequirementFundingFundedAmountLock` and `PrioritizationFundingFundedAmountLock` via
 `FundedAmountLockBase`. This guard covers **FY26 direct Prio-form edits and
 single-RF FY27 Prio-form edits**; the FY27 junction path is covered by
 `PrioritizationFundingFundedAmountLock` (the junction is an authorized
@@ -484,21 +484,42 @@ reductions are always allowed even when the RF is over cap. See the
 | 2 | Update  | `book_requirementdetailfunding`   | Pre-Operation  | Sync | `book_requirementdetail, book_requirementfunding, book_fundedamount, book_validatedamount`        | Re-validates on amount or parent change. **Requires PreImage** (same four attrs). |
 | 3 | Create  | `book_prioritization`             | Pre-Operation  | Sync | *(none)*                                                                                          | Rank **20** (after `PrioritizationFundCenterBackfill` at 10, before `PrioritizationNameSetter` at 30). Rejects new Prio if its Requirement already has active RD-direct funding. |
 
-### `Checkbook.Plugins.Validation.RequirementFundingTDPLock`
+### `Checkbook.Plugins.Validation.RequirementDetailFundingFundedAmountLock`
+
+RD-direct-funding sibling of the funded locks (`FundedAmountLockBase`). When
+`book_LockManualFundedEdits` is `true`, blocks direct **reductions** of
+`book_requirementdetailfunding.book_fundedamount` — increases and no-op writes
+are always allowed. `RequirementFundingFundedAmountLock` authorizes this entity
+as a roll-up ancestor, so a manual RD funding reduction can only be blocked here.
+Leaf field, so only the base authorized ancestors apply: Turn-Ins / Realignments /
+State Swaps / the Distribution generator. **Added 2026-10-14.**
+
+| # | Message | Primary entity                  | Stage          | Mode | Filtering attributes | Notes |
+|---|---------|---------------------------------|----------------|------|----------------------|-------|
+| 1 | Update  | `book_requirementdetailfunding` | Pre-Operation  | Sync | `book_fundedamount`  | Rank **10** (before `RequirementDetailFundingGuard`). **PreImage** `PreImage` (`book_fundedamount`). |
+
+### `Checkbook.Plugins.Validation.RequirementFundingFundedAmountLock`
 
 Requirement Funding sibling of `PrioritizationFundedAmountLock` (both inherit
 `FundedAmountLockBase`). When the `book_LockManualFundedEdits` env var is
-`true`, blocks direct **reductions** of `book_newtdp` (TDP) on
-`book_requirementfunding` — increases and no-op writes are always allowed.
-RF TDP is top-down (allocated from the LOA, never rolled up from child Prios),
-so the only authorized ancestors are the four funding tools + the Distribution
-generator — Turn-Ins and Realignments move TDP between RFs/LOAs and run with
-their orchestrator Update in the parent chain. Full setup:
+`true`, blocks direct **reductions** of `book_newfundedamount` (Funded Amount)
+on `book_requirementfunding` — increases and no-op writes are always allowed.
+**RF TDP is not locked**: it can move up or down, and `RequirementFundingTDPValidator`
+(Funded ≤ TDP) keeps a TDP reduction within the available Withholding
+(TDP − Funded). Authorized ancestors: the four funding tools + the Distribution
+generator, plus the roll-up sources that recompute RF Funded via
+`PrioritizationRollupHelper.RecalculateRFFunded` — `book_prioritization`,
+`book_prioritizationfunding`, `book_requirementdetailfunding` (Create / Update /
+Delete). Full setup:
 [`../docs/FundedAmountLock-Setup.md`](../docs/FundedAmountLock-Setup.md).
 
-> **Migration:** this replaces the retired `RequirementFundingFundedAmountLock`
-> (which guarded `book_newfundedamount`). Un-register that step before
-> registering this one — its plugin type no longer exists in the DLL.
+> **Migration (2026-10-14):** this replaces `RequirementFundingTDPLock` (which
+> guarded `book_newtdp`). Un-register that step before registering this one —
+> its plugin type no longer exists in the DLL.
+
+| # | Message | Primary entity            | Stage          | Mode | Filtering attributes   | Notes |
+|---|---------|---------------------------|----------------|------|------------------------|-------|
+| 1 | Update  | `book_requirementfunding` | Pre-Operation  | Sync | `book_newfundedamount` | Rank **10** (runs before `RequirementFundingTDPValidator`). **Requires PreImage** (`book_newfundedamount`) — falls back to a Retrieve if the image is missing. |
 
 ### `Checkbook.Plugins.Validation.ItemizedDetailFundedAmountLock`
 
@@ -514,10 +535,6 @@ to close the gap where detail funded could be reduced directly even with the tog
 | # | Message | Primary entity          | Stage          | Mode | Filtering attributes | Notes |
 |---|---------|-------------------------|----------------|------|----------------------|-------|
 | 1 | Update  | `book_itemizeddetails`  | Pre-Operation  | Sync | `book_fundedamount`  | Rank 10 (before PrioritizationItemizedRollup). **PreImage** `PreImage` (`book_fundedamount`). |
-
-| # | Message | Primary entity            | Stage          | Mode | Filtering attributes | Notes |
-|---|---------|---------------------------|----------------|------|----------------------|-------|
-| 1 | Update  | `book_requirementfunding` | Pre-Operation  | Sync | `book_newtdp`        | Rank **10** (runs before `RequirementFundingTDPValidator` so users get the lock message, not a cap error). **Requires PreImage** (`book_newtdp`) — falls back to a Retrieve if the image is missing. |
 
 ### `Checkbook.Plugins.Validation.PrioritizationFundingFundedAmountLock`
 
@@ -1673,6 +1690,8 @@ to sort the right pane by **Message** then by **Primary Entity**.
 - [ ] `Checkbook.Plugins.Validation.RequirementDetailFundingGuard`
   - [ ] Create + Update of `book_requirementdetailfunding` — Pre-Op Sync, Update has PreImage
   - [ ] Create of `book_prioritization` — Pre-Op Sync, **Rank 20** (after `PrioritizationFundCenterBackfill` at 10, before `PrioritizationNameSetter` at 30)
+- [ ] `Checkbook.Plugins.Validation.RequirementDetailFundingFundedAmountLock`
+  - [ ] Update of `book_requirementdetailfunding` — Pre-Op Sync, **Rank 10**, PreImage, filter `book_fundedamount`
 - [ ] `Checkbook.Plugins.Validation.RequirementFundingFundedAmountLock`
   - [ ] Update of `book_requirementfunding` — Pre-Op Sync, **Rank 10**, PreImage, filter `book_newfundedamount`
 - [ ] `Checkbook.Plugins.Validation.RequirementFundingTDPValidator`

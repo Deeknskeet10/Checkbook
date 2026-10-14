@@ -1,16 +1,18 @@
-# Funded Amount / TDP Lock — Maker Portal Setup
+# Funded Amount Lock — Maker Portal Setup
 
-When the lock is on, NPMs and RIs cannot manually **reduce** a protected amount —
+When the lock is on, NPMs and RIs cannot manually **reduce** a funded amount —
 increases and unchanged saves always go through. Reductions must come from the
 authorized tools (Turn-Ins, Realignments, State Swaps, the Distribution
-generator) or the roll-up plugins that recompute funded totals. Three fields are
+generator) or the roll-up plugins that recompute funded totals. Five fields are
 guarded, all under the single admin toggle `book_LockManualFundedEdits`:
 
 | Field | Table | What it protects |
 |---|---|---|
-| `book_newtdp` | `book_requirementfunding` | **RF TDP** — the top-line allocation on a Requirement Funding. |
+| `book_newfundedamount` | `book_requirementfunding` | **RF Funded Amount** — direct-funded RFs, plus the roll-up of child Prio / RD funding. |
 | `book_fundedamount` | `book_prioritizationfunding` | **FY27 Prioritization funding** — the junction allocation edited in the PrioritizationFundingGrid. |
 | `book_newfundedamounttdp` | `book_prioritization` | **Prio rolled-up Funded Amount (TDP)** — covers FY26 direct Prio-form edits and single-RF FY27 Prio-form edits. |
+| `book_fundedamount` | `book_itemizeddetails` | **Itemized Detail funded** — the per-detail funded on an Itemized Prioritization. |
+| `book_fundedamount` | `book_requirementdetailfunding` | **RD direct funding** — the RD↔RF junction allocation on a non-prioritized Requirement. |
 
 > **Why two Prioritization guards?** For FY27+, a Prio's funding physically
 > lives on the `book_prioritizationfunding` junction and rolls **up** to
@@ -24,7 +26,9 @@ Backend for this feature is in the Checkbook plugin project:
 
 - `Plugins/Helpers/EnvironmentVariableHelper.cs` — `GetBool(...)` overload
 - `Plugins/Validation/FundedAmountLockBase.cs` — shared reduction-lock logic
-- `Plugins/Validation/RequirementFundingTDPLock.cs` — RF TDP guard
+- `Plugins/Validation/RequirementFundingFundedAmountLock.cs` — RF Funded Amount guard
+- `Plugins/Validation/ItemizedDetailFundedAmountLock.cs` — Itemized Detail funded guard
+- `Plugins/Validation/RequirementDetailFundingFundedAmountLock.cs` — RD funding junction guard
 - `Plugins/Validation/PrioritizationFundingFundedAmountLock.cs` — FY27 junction guard
 - `Plugins/Validation/PrioritizationFundedAmountLock.cs` — Prio rolled-up guard
 - `Plugins/Admin/ToggleFundedAmountLockPlugin.cs` — the toggle Custom API
@@ -34,18 +38,29 @@ This doc lists **every name you need** and the maker-portal steps that are not
 doable from the repo — the environment variable, the Custom API metadata, the
 guard plugin step registrations, and the command bar button.
 
-> ### ⚠ Migrating from the first rollout
-> The original rollout guarded RF **Funded Amount** (`book_newfundedamount`) via
-> a class named `RequirementFundingFundedAmountLock`. That class has been
-> **removed** — the RF guard now targets **TDP** (`book_newtdp`) via
-> `RequirementFundingTDPLock`. When you update the assembly:
-> 1. **Un-register** the old step on `RequirementFundingFundedAmountLock`
->    (Update / `book_requirementfunding` / filter `book_newfundedamount`). Its
->    plugin type no longer exists in the DLL.
-> 2. **Register** the new `RequirementFundingTDPLock` step (§5) and the new
->    `PrioritizationFundingFundedAmountLock` step (§5).
+> ### ⚠ RF TDP is not locked
+> TDP on a Requirement Funding can be raised **or lowered** while the lock is
+> on. A reduction is allowed as long as the Withholding covers it
+> (Withholding = TDP − Funded Amount): `RequirementFundingTDPValidator` rejects
+> any save where Funded Amount would exceed TDP. Funded Amount itself can only
+> go up.
+
+> ### ⚠ Migrating from the TDP-lock rollout (2026-10-14)
+> The previous rollout guarded RF **TDP** (`book_newtdp`) via
+> `RequirementFundingTDPLock`. That was too strict: the intent is that TDP may
+> move up **or down** freely as long as Funded is untouched. That class has been
+> **removed** — the RF guard is back on **Funded Amount**
+> (`book_newfundedamount`) via `RequirementFundingFundedAmountLock`. TDP
+> reductions are now bounded only by `RequirementFundingTDPValidator`
+> (Funded ≤ TDP, i.e. Withholding = TDP − Funded cannot go negative).
+> When you update the assembly:
+> 1. **Un-register** the step on `RequirementFundingTDPLock`
+>    (Update / `book_requirementfunding` / filter `book_newtdp`). Its plugin
+>    type no longer exists in the DLL.
+> 2. **Register** the `RequirementFundingFundedAmountLock` and
+>    `RequirementDetailFundingFundedAmountLock` steps (§5).
 >
-> The `PrioritizationFundedAmountLock` step is unchanged — leave it as-is.
+> The Prioritization, junction, and Itemized Detail guards are unchanged.
 
 ---
 
@@ -66,8 +81,8 @@ guard plugin step registrations, and the command bar button.
 | Custom API AllowedCustomProcessingStepType | **None** (server enforces role internally) |
 | Custom API plugin type | `Checkbook.Plugins.Admin.ToggleFundedAmountLockPlugin` |
 | Custom API output param | `IsLocked` (Boolean) |
-| Guard plugin type (RF TDP) | `Checkbook.Plugins.Validation.RequirementFundingTDPLock` |
-| Locked field (RF TDP) | `book_newtdp` on `book_requirementfunding` |
+| Guard plugin type (RF Funded) | `Checkbook.Plugins.Validation.RequirementFundingFundedAmountLock` |
+| Locked field (RF Funded) | `book_newfundedamount` on `book_requirementfunding` (TDP is **not** locked) |
 | Guard plugin type (FY27 junction) | `Checkbook.Plugins.Validation.PrioritizationFundingFundedAmountLock` |
 | Locked field (FY27 junction) | `book_fundedamount` on `book_prioritizationfunding` |
 | Guard plugin type (Prio rolled-up) | `Checkbook.Plugins.Validation.PrioritizationFundedAmountLock` |
@@ -93,7 +108,8 @@ with) → New → More → **Environment variable**.
 
 Description (paste verbatim — no apostrophes per the `no-apostrophes-in-solution-xml` memory):
 
-> When Yes, blocks direct manual reductions of Requirement Funding TDP,
+> When Yes, blocks direct manual reductions of Requirement Funding Funded Amount,
+> the Requirement Detail Funding junction amount, the Itemized Detail funded amount,
 > the FY27 Prioritization Funding junction amount, and the Prioritization
 > rolled-up Funded Amount (TDP). Increases are always allowed; reductions must
 > come through Turn-Ins, Realignments, State Swaps, or the Distribution
@@ -112,13 +128,15 @@ usual workflow) with the Plugin Registration Tool if this is a fresh assembly.
 If the assembly is already registered, just update it — the new types will
 appear once you re-select the assembly:
 
-- `Checkbook.Plugins.Validation.RequirementFundingTDPLock`
-- `Checkbook.Plugins.Validation.PrioritizationFundingFundedAmountLock`
+- `Checkbook.Plugins.Validation.RequirementFundingFundedAmountLock`
+- `Checkbook.Plugins.Validation.RequirementDetailFundingFundedAmountLock`
+- `Checkbook.Plugins.Validation.PrioritizationFundingFundedAmountLock` (unchanged)
 - `Checkbook.Plugins.Validation.PrioritizationFundedAmountLock` (unchanged)
+- `Checkbook.Plugins.Validation.ItemizedDetailFundedAmountLock` (unchanged)
 - `Checkbook.Plugins.Admin.ToggleFundedAmountLockPlugin` (unchanged)
 
 (`FundedAmountLockBase` is abstract and never appears as a registrable type.
-`RequirementFundingFundedAmountLock` is **gone** — un-register its step per the
+`RequirementFundingTDPLock` is **gone** — un-register its step per the
 migration box above.)
 
 ---
@@ -163,7 +181,7 @@ values as above.
 
 ## 5. Plugin steps — register the guards
 
-### `RequirementFundingTDPLock`
+### `RequirementFundingFundedAmountLock`
 
 Right-click the type → **Register New Step**:
 
@@ -171,7 +189,7 @@ Right-click the type → **Register New Step**:
 |---|---|
 | Message | `Update` |
 | Primary Entity | `book_requirementfunding` |
-| Filtering Attributes | `book_newtdp` |
+| Filtering Attributes | `book_newfundedamount` |
 | Event Pipeline Stage | **Pre-Operation** |
 | Execution Mode | Synchronous |
 | Execution Order (Rank) | `10` (run before `RequirementFundingTDPValidator`) |
@@ -184,7 +202,30 @@ Then on the new step → **Register New Image**:
 | Image Type | Pre-Image |
 | Name | `PreImage` |
 | Entity Alias | `PreImage` |
-| Attributes | `book_newtdp` |
+| Attributes | `book_newfundedamount` |
+
+### `RequirementDetailFundingFundedAmountLock`
+
+Right-click the type → **Register New Step**:
+
+| Field | Value |
+|---|---|
+| Message | `Update` |
+| Primary Entity | `book_requirementdetailfunding` |
+| Filtering Attributes | `book_fundedamount` |
+| Event Pipeline Stage | **Pre-Operation** |
+| Execution Mode | Synchronous |
+| Execution Order (Rank) | `10` (run before `RequirementDetailFundingGuard`) |
+| Deployment | Server |
+
+Then on the new step → **Register New Image**:
+
+| Field | Value |
+|---|---|
+| Image Type | Pre-Image |
+| Name | `PreImage` |
+| Entity Alias | `PreImage` |
+| Attributes | `book_fundedamount` |
 
 ### `PrioritizationFundingFundedAmountLock`
 
@@ -257,7 +298,7 @@ bar** on the **Prioritization** table → **Main grid** → **New command**:
 |---|---|
 | Label | `Funding Lock` |
 | Icon | `LockSolid` (static — pick from the icon library) |
-| Tooltip | `Lock or unlock direct reductions of Funded Amount / TDP` |
+| Tooltip | `Lock or unlock direct reductions of Funded Amounts` |
 | Action | **Run JavaScript** |
 | Library | `book_fundedAmountLock` |
 | Function name | `FundedAmountLock.run` |
@@ -275,28 +316,35 @@ API's `IsLocked` response and refreshes the grid.
 
 ## 7. Smoke test
 
-1. Toggle is OFF by default → open a Requirement Funding, lower TDP directly,
-   save. Should succeed.
+1. Toggle is OFF by default → open a direct-funded Requirement Funding (no
+   child Prios), lower Funded Amount, save. Should succeed.
 2. In the Admin Center, press **Funding Lock**. Confirm dialog should read
    "currently UNLOCKED" → confirm → alert: "…now LOCKED…".
 3. Repeat step 1 → save should fail with the guard's message
-   ("TDP cannot be reduced directly…").
-4. Still locked: **raise** RF TDP and save. Should succeed — only reductions
-   are blocked. Saving the form without touching TDP should also succeed.
+   ("Funded Amount cannot be reduced directly…"). **Raising** RF Funded
+   Amount should succeed.
+4. Still locked: on an RF with Withholding (TDP > Funded), **lower** TDP by
+   no more than the Withholding and save. Should succeed. Lower it below
+   Funded Amount → should fail with the `RequirementFundingTDPValidator`
+   Funded-exceeds-TDP message. Raising TDP should always succeed.
 5. Still locked: in the PrioritizationFundingGrid, lower a FY27 junction
    Funded Amount, save. Should fail ("Funded Amount cannot be reduced
    directly…"). Raising it should succeed.
 6. Still locked: FY26 Prio (or single-RF FY27 Prio) — lower Funded Amount (TDP)
    on the Prio form, save. Should fail. Raising it should succeed.
-7. Run a Turn-In / Realignment / State Swap approval that lowers RF TDP or a
-   junction amount. Should succeed (ancestor-walk detects the authorized
+6b. Still locked: on a non-prioritized Requirement, lower an RD funding row
+    Funded Amount, save. Should fail ("Requirement Detail Funded Amount cannot
+    be reduced directly…"). Raising it should succeed.
+7. Run a Turn-In / Realignment / State Swap approval that lowers RF Funded or
+   a junction amount. Should succeed (ancestor-walk detects the authorized
    parent).
 8. Run `book_GenerateDistributions` (or trigger a distribution). Should
    succeed.
 9. Still locked: pull a funded NPM-Review Prio back below NPM Review. Its
    junction rows deactivate (statecode change, not a `book_fundedamount`
    write), so the junction guard does not fire and the pull-back cleanup
-   completes.
+   completes. The parent RF Funded Amount drops via the roll-up (Prio /
+   junction ancestor → authorized).
 10. Press **Funding Lock** again — confirm dialog should now read "currently
     LOCKED" → confirm → back to step 1 behavior.
 11. As a non-admin, try to press the button. Custom API rejects with
@@ -315,11 +363,18 @@ API's `IsLocked` response and refreshes the grid.
   checked. Clearing the field counts as reducing it to 0.
 - **Create is not guarded** — a brand-new record has no stored value to
   reduce, so Create passes. The guards register on Update only.
-- **RF TDP is top-down** — TDP is allocated to an RF from its LOA and is never
-  rolled up from child Prioritizations, so the RF TDP guard needs no roll-up
-  source ancestors: only the four funding tools (which move TDP between
-  RFs/LOAs and run with their orchestrator Update in the parent chain) are
-  authorized, all via the base class.
+- **RF TDP is free; RF Funded is locked** — TDP can move up or down under
+  the lock. Lowering TDP only shrinks Withholding (TDP − Funded), and
+  `RequirementFundingTDPValidator` already rejects Funded > TDP, so TDP can
+  never drop below what is funded. An RF with child Prios can only give up
+  Withholding through Realignments / Turn-Ins anyway.
+- **RF Funded roll-up ancestors** — RF Funded is recomputed by
+  `PrioritizationRollupHelper.RecalculateRFFunded` from Prio, junction, and
+  RD-funding writes, so the RF guard authorizes Create / Update / Delete on
+  `book_prioritization`, `book_prioritizationfunding`, and
+  `book_requirementdetailfunding` in the parent chain. Manual reductions at
+  those sources are caught by their own guards (Prio, PF junction, RD
+  funding junction).
 - **Junction amount is a leaf** — nothing rolls up into
   `book_prioritizationfunding.book_fundedamount`, so its guard likewise needs
   no extra ancestors. Realignment / Turn-In / State Swap / Distribution writes
@@ -334,7 +389,7 @@ API's `IsLocked` response and refreshes the grid.
 - **`book_GenerateDistributions` message name** — the ancestor walk checks for
   that exact string. If you ever rename the Custom API, update
   `FundedAmountLockBase.IsAuthorizedAncestor`.
-- **RF Funded Amount is no longer guarded** — the first rollout locked
-  `book_newfundedamount`; that guard was retired in favor of the TDP guard.
-  RF Funded Amount is a roll-up of child Prio funding, so it is protected
-  indirectly by the two Prioritization guards.
+- **History** — first rollout locked RF `book_newfundedamount`; 2026-09-27
+  switched it to RF `book_newtdp` (too strict — blocked legitimate TDP
+  trims out of Withholding); 2026-10-14 switched back to Funded Amount with
+  TDP unlocked.

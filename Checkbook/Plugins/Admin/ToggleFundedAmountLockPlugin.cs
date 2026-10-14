@@ -9,11 +9,15 @@ namespace Checkbook.Plugins.Admin
     /// Custom API handler for <c>book_ToggleFundedAmountLock</c>.
     ///
     /// Flips the <c>book_LockManualFundedEdits</c> environment variable value
-    /// record. When it's on, <see cref="Validation.RequirementFundingTDPLock"/>,
-    /// <see cref="Validation.PrioritizationFundingFundedAmountLock"/>, and
-    /// <see cref="Validation.PrioritizationFundedAmountLock"/> block direct
-    /// reductions of RF TDP, the FY27 junction amount, and the Prio rolled-up
-    /// funded amount respectively (increases stay allowed); when it's off,
+    /// record. When it's on, <see cref="Validation.RequirementFundingFundedAmountLock"/>,
+    /// <see cref="Validation.RequirementDetailFundingFundedAmountLock"/>,
+    /// <see cref="Validation.PrioritizationFundingFundedAmountLock"/>,
+    /// <see cref="Validation.PrioritizationFundedAmountLock"/>, and
+    /// <see cref="Validation.ItemizedDetailFundedAmountLock"/> block direct
+    /// reductions of RF Funded Amount, the RD funding junction amount, the FY27
+    /// junction amount, the Prio rolled-up funded amount, and itemized detail
+    /// funded respectively
+    /// (increases stay allowed; RF TDP stays editable down to Funded); when it's off,
     /// direct edits are unrestricted. Backs the "Lock Funding" / "Unlock
     /// Funding" command bar button in the Admin Center MDA.
     ///

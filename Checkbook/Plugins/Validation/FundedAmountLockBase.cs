@@ -8,7 +8,7 @@ namespace Checkbook.Plugins.Validation
 {
     /// <summary>
     /// Shared Pre-Operation guard that blocks direct REDUCTIONS of a protected
-    /// amount field (a funded amount or a TDP) when the admin toggle
+    /// funded amount field when the admin toggle
     /// <c>book_LockManualFundedEdits</c> is on. Increases (and no-op writes) are
     /// always allowed — the lock only protects against money being manually
     /// taken away outside the authorized tools: Turn-Ins, Realignments, State
@@ -26,8 +26,11 @@ namespace Checkbook.Plugins.Validation
     /// authorized ancestors (the entities whose roll-up plugins write the
     /// field). See <see cref="PrioritizationFundedAmountLock"/> (Prio rolled-up
     /// funded amount), <see cref="PrioritizationFundingFundedAmountLock"/> (FY27
-    /// junction funded amount), and <see cref="RequirementFundingTDPLock"/>
-    /// (RF TDP) for registration intent.
+    /// junction funded amount), <see cref="ItemizedDetailFundedAmountLock"/>
+    /// (itemized detail funded amount), and
+    /// <see cref="RequirementFundingFundedAmountLock"/> (RF funded amount) for
+    /// registration intent. TDP is never locked — it may move up or down as
+    /// long as Withholding (TDP − Funded) covers it.
     /// </summary>
     public abstract class FundedAmountLockBase : PluginBase
     {
