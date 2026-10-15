@@ -56,6 +56,8 @@ export interface RealignmentApprovalProcessProps {
   webAPI: WebApi;
   userSettings: UserSettings;
   entityId: string;
+  /** Live record id from the form; used when entityId was empty at first render. */
+  resolveEntityId: () => string;
   entityName: string;
   isDisabled: boolean;
   width: number;
@@ -66,6 +68,16 @@ const STATE_APPROVED = "book_newstateapproved";
 const BE_DECISION = "book_bedecision";
 const DENIAL_REASON = "book_denialreason";
 const SAME_FUND_SAG = "book_samefundandsag";
+// FY27 item-based realignments take their shape from the item rollup, not the
+// legacy parent flag: book_allsamefundsag + the entry-mode choice (State/OPR).
+const ALL_SAME_FUND_SAG = "book_allsamefundsag";
+const ENTRY_MODE = "book_realignmententrymode";
+const ENTRY_MODE_STATE = 0;
+const DEBIT_LOA_VALUE = "_book_newdebitedloa_value";
+const CREDIT_LOA_VALUE = "_book_newcreditedloa_value";
+// RealignmentBuilder fires this on window after it saves items; the shape
+// (entry mode + all-same-Fund/SAG rollup) only exists from that point on.
+const ITEMS_SAVED_EVENT = "book:realignment-items-saved";
 const DEBIT_PRIO_VALUE = "_book_debitedprioritization_value";
 const CREDIT_PRIO_VALUE = "_book_creditedprioritization_value";
 const PAYER_CONCURRENCE = "book_payerconcurrence";
@@ -105,6 +117,9 @@ interface RealignmentRecord {
   beDenied: boolean;
   sameFundSag: boolean;
   hasPriors: boolean;
+  // Saved shell with nothing entered yet (no items, no legacy lookups): there is
+  // no approval path to show, and guessing one reads as RF-to-RF (NPM then BE).
+  isEmptyShell: boolean;
   denialReason: string | null;
   payerConcurrence: string | null;
   payeeConcurrence: string | null;
@@ -117,6 +132,9 @@ interface RealignmentRecord {
 
 const useStyles = makeStyles({
   root: {
+    // Fill the form cell: the host sizes a virtual control to its content otherwise.
+    width: "100%",
+    boxSizing: "border-box",
     ...shorthands.padding("12px", "16px"),
     backgroundColor: tokens.colorNeutralBackground2,
     ...shorthands.borderRadius(tokens.borderRadiusMedium),
@@ -257,7 +275,7 @@ function shapeOf(rec: RealignmentRecord): Shape {
 
 export const RealignmentApprovalProcessApp: React.FC<
   RealignmentApprovalProcessProps
-> = ({ webAPI, userSettings, entityId, entityName, isDisabled }) => {
+> = ({ webAPI, userSettings, entityId, resolveEntityId, entityName, isDisabled }) => {
   const styles = useStyles();
   const [record, setRecord] = React.useState<RealignmentRecord | null>(null);
   const [userRoles, setUserRoles] = React.useState<Set<string>>(new Set());
@@ -267,9 +285,21 @@ export const RealignmentApprovalProcessApp: React.FC<
   const [error, setError] = React.useState<string | null>(null);
   const [denyReason, setDenyReason] = React.useState("");
   const [denyOpen, setDenyOpen] = React.useState(false);
+  // A record created on this form has no id at first render, and the framework
+  // does not reliably re-render the control with one after the first save. Poll
+  // the form for the id until it exists so the bar appears without a refresh.
+  const [liveId, setLiveId] = React.useState("");
+  React.useEffect(() => {
+    if (entityId || liveId) return;
+    const timer = window.setInterval(() => {
+      const id = resolveEntityId();
+      if (id) setLiveId(id);
+    }, 1000);
+    return () => window.clearInterval(timer);
+  }, [entityId, liveId, resolveEntityId]);
   const cleanId = React.useMemo(
-    () => (entityId || "").replace(/[{}]/g, ""),
-    [entityId]
+    () => (entityId || liveId || "").replace(/[{}]/g, ""),
+    [entityId, liveId]
   );
 
   const reload = React.useCallback(async () => {
@@ -281,14 +311,23 @@ export const RealignmentApprovalProcessApp: React.FC<
       const rec = await webAPI.retrieveRecord(
         entityName || REALIGNMENT_ENTITY,
         cleanId,
-        `?$select=${STATE_APPROVED},${BE_DECISION},${DENIAL_REASON},${SAME_FUND_SAG},${PAYER_CONCURRENCE},${PAYEE_CONCURRENCE},${DEBIT_PRIO_VALUE},${CREDIT_PRIO_VALUE}`
+        `?$select=${STATE_APPROVED},${BE_DECISION},${DENIAL_REASON},${SAME_FUND_SAG},${ALL_SAME_FUND_SAG},${ENTRY_MODE},${PAYER_CONCURRENCE},${PAYEE_CONCURRENCE},${DEBIT_PRIO_VALUE},${CREDIT_PRIO_VALUE},${DEBIT_LOA_VALUE},${CREDIT_LOA_VALUE}`
       );
 
       const stateVal = rec[STATE_APPROVED] as number | null;
       const beVal = rec[BE_DECISION] as number | null;
       const debitPrioId = rec[DEBIT_PRIO_VALUE] as string | null;
       const creditPrioId = rec[CREDIT_PRIO_VALUE] as string | null;
-      const hasPriors = !!debitPrioId && !!creditPrioId;
+      const entryMode = rec[ENTRY_MODE] as number | null;
+
+      // Shape: item-based realignments (entry mode set) come from the item rollup
+      // (book_allsamefundsag + State/OPR entry mode), mirroring RealignmentValidator;
+      // legacy single-row realignments use the parent Prio lookups + book_samefundandsag.
+      const isItemBased = entryMode !== null && entryMode !== undefined;
+      const hasPriors = isItemBased
+        ? entryMode === ENTRY_MODE_STATE
+        : !!debitPrioId && !!creditPrioId;
+      const sameFundSag = isItemBased ? !!rec[ALL_SAME_FUND_SAG] : !!rec[SAME_FUND_SAG];
 
       const debitStateBU = await resolveDebitStateBU(webAPI, debitPrioId);
 
@@ -297,8 +336,14 @@ export const RealignmentApprovalProcessApp: React.FC<
         stateDenied: stateVal === DENIED_VALUE,
         beApproved: beVal === APPROVED_VALUE,
         beDenied: beVal === DENIED_VALUE,
-        sameFundSag: !!rec[SAME_FUND_SAG],
+        sameFundSag,
         hasPriors,
+        isEmptyShell:
+          !isItemBased &&
+          !debitPrioId &&
+          !creditPrioId &&
+          !rec[DEBIT_LOA_VALUE] &&
+          !rec[CREDIT_LOA_VALUE],
         denialReason: (rec[DENIAL_REASON] as string | null) ?? null,
         payerConcurrence: (rec[`${PAYER_CONCURRENCE}${FORMATTED}`] as string | null) ?? null,
         payeeConcurrence: (rec[`${PAYEE_CONCURRENCE}${FORMATTED}`] as string | null) ?? null,
@@ -346,6 +391,13 @@ export const RealignmentApprovalProcessApp: React.FC<
     void loadRoles();
   }, [reload, loadRoles]);
 
+  // Re-read the shape when the builder saves its items on this form.
+  React.useEffect(() => {
+    const onItemsSaved = (): void => void reload();
+    window.addEventListener(ITEMS_SAVED_EVENT, onItemsSaved);
+    return () => window.removeEventListener(ITEMS_SAVED_EVENT, onItemsSaved);
+  }, [reload]);
+
   const isCheckbookAdmin = React.useMemo(
     () => userRoles.has(CHECKBOOK_ADMIN),
     [userRoles]
@@ -387,7 +439,7 @@ export const RealignmentApprovalProcessApp: React.FC<
 
   if (loading) {
     return (
-      <FluentProvider theme={webLightTheme}>
+      <FluentProvider theme={webLightTheme} style={{ width: "100%" }}>
         <div className={styles.root}>
           <Spinner size="tiny" label="Loading Realignment status..." />
         </div>
@@ -397,9 +449,19 @@ export const RealignmentApprovalProcessApp: React.FC<
 
   if (!record) {
     return (
-      <FluentProvider theme={webLightTheme}>
+      <FluentProvider theme={webLightTheme} style={{ width: "100%" }}>
         <div className={styles.root}>
           <Text>Save the Realignment first to see the approval process.</Text>
+        </div>
+      </FluentProvider>
+    );
+  }
+
+  if (record.isEmptyShell) {
+    return (
+      <FluentProvider theme={webLightTheme} style={{ width: "100%" }}>
+        <div className={styles.root}>
+          <Text>Add and save the realignment items below to see the approval path.</Text>
         </div>
       </FluentProvider>
     );
@@ -465,7 +527,7 @@ export const RealignmentApprovalProcessApp: React.FC<
   };
 
   return (
-    <FluentProvider theme={webLightTheme}>
+    <FluentProvider theme={webLightTheme} style={{ width: "100%" }}>
       <div className={styles.root}>
         <div className={styles.chevronRow}>
           {shape.stages.map((s, i) => (

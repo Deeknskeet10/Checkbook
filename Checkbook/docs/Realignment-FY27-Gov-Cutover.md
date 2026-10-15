@@ -39,7 +39,7 @@ changes in this effort: `RealignmentProcessor`, `RealignmentValidator`,
 
 ## 3. PCF controls — via `ARNGCheckbookExtensions` delivery zip
 Import `dist/ARNGCheckbookExtensions.zip` (as usual). Includes `RealignmentBuilder`
-(v0.1.4) and `RealignmentApprovalProcess`.
+(v0.1.5) and `RealignmentApprovalProcess` (v0.1.3).
 
 ## 4. Process state (portal / admin)
 - **Deactivate the BPF `Realignments - Review/Approve`** (category 4 on
@@ -52,7 +52,10 @@ On the realignment entry form(s) State users use:
 - Add the **Fiscal Year** field = **`book_newfiscalyear`** (NOT the formula `book_fiscalyear`).
 - Add the **RealignmentBuilder** component, bound to the **Amount** field
   (`book_newamount`, Decimal). Full-width section.
-- Add the **RealignmentApprovalProcess** component (bound to `book_name`) if not already present.
+- Add the **RealignmentApprovalProcess** component (bound to `book_name`) in the form **body** —
+  a one-column section at the top of the main tab, as on State Swap / Turn-In. **Do not bind it
+  to the header Name field:** the high-density header does not render custom controls, so the
+  approval bar never appears. Sandbox script: `devtools/sandbox-import/schema/realign_place_approval.py`.
 - Hide the now-optional legacy fields: Fund, Debited LOA, Credited LOA (and Amount if desired —
   the builder writes it).
 - Realignment **Name** is auto-populated by a process, so it need not be on the form.

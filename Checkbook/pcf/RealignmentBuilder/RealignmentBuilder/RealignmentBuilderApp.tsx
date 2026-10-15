@@ -47,6 +47,15 @@ const SET = {
 };
 
 const FV = "@OData.Community.Display.V1.FormattedValue";
+
+// Fired on window after the builder saves, so the approval chevron (a separate
+// control on the same form) re-reads the realignment shape without a refresh.
+const ITEMS_SAVED_EVENT = "book:realignment-items-saved";
+
+// Itemized Detail query: the autonumber name plus the Requirement Item's Item / TDC / MDEP.
+const DETAIL_SELECT =
+  "?$select=book_name,book_fundedamount" +
+  "&$expand=book_RequirementItem($select=_book_item_value,_book_tdc_value,_book_mdep_value)";
 const ENTRY_MODE_STATE = 0;
 const FUNDING_MODE_ITEMIZED = 1;
 const STATECODE_ACTIVE = 0;
@@ -88,7 +97,12 @@ interface RfOpt {
 }
 interface DetailRow {
   id: string;
+  /** book_name is an autonumber (Itemized-0001) -- an identifier, not a description. */
   name: string;
+  // What the detail actually is: Requirement Item -> Item, plus its TDC and MDEP.
+  item: string;
+  tdc: string;
+  mdep: string;
   funded: number;
   selected: boolean;
   reduce: string;
@@ -100,7 +114,9 @@ const useStyles = makeStyles({
     display: "flex",
     flexDirection: "column",
     rowGap: "14px",
-    maxWidth: "920px",
+    // Fill the form cell: the host sizes a virtual control to its content otherwise.
+    width: "100%",
+    boxSizing: "border-box",
   },
   section: { display: "flex", flexDirection: "column", rowGap: "6px" },
   heading: { fontWeight: tokens.fontWeightSemibold },
@@ -124,6 +140,21 @@ const useStyles = makeStyles({
   footer: { display: "flex", alignItems: "center", columnGap: "12px" },
 });
 
+const toDetailRow = (e: Record<string, unknown>): DetailRow => {
+  const ri = (e.book_RequirementItem as Record<string, unknown> | null | undefined) ?? {};
+  const label = (attr: string): string => (ri[`_${attr}_value${FV}`] as string) ?? "";
+  return {
+    id: cleanId(e.book_itemizeddetailsid),
+    name: (e.book_name as string) ?? "(detail)",
+    item: label("book_item"),
+    tdc: label("book_tdc"),
+    mdep: label("book_mdep"),
+    funded: num(e.book_fundedamount),
+    selected: false,
+    reduce: "",
+  };
+};
+
 export const RealignmentBuilderApp: React.FC<RealignmentBuilderProps> = ({ webAPI, recordId }) => {
   const styles = useStyles();
 
@@ -138,9 +169,9 @@ export const RealignmentBuilderApp: React.FC<RealignmentBuilderProps> = ({ webAP
   const [mode, setMode] = React.useState<"view" | "edit">("edit");
 
   // Already-saved rows (for the read-only summary).
-  const [savedItems, setSavedItems] = React.useState<{ rf: string; amount: number }[]>([]);
-  const [savedReductions, setSavedReductions] = React.useState<{ detail: string; amount: number }[]>([]);
-  const [savedIncreases, setSavedIncreases] = React.useState<{ detail: string; amount: number }[]>([]);
+  const [savedItems, setSavedItems] = React.useState<{ pfId: string; rfId: string; rf: string; amount: number }[]>([]);
+  const [savedReductions, setSavedReductions] = React.useState<{ detailId: string; detail: string; amount: number }[]>([]);
+  const [savedIncreases, setSavedIncreases] = React.useState<{ detailId: string; detail: string; amount: number }[]>([]);
   const [debitPrioName, setDebitPrioName] = React.useState<string>("");
   const [creditPrioName, setCreditPrioName] = React.useState<string>("");
 
@@ -261,20 +292,14 @@ export const RealignmentBuilderApp: React.FC<RealignmentBuilderProps> = ({ webAP
 
         const idRes = await webAPI.retrieveMultipleRecords(
           ITEMIZED_DETAILS,
-          `?$select=book_name,book_fundedamount` +
+          DETAIL_SELECT +
             `&$filter=_book_prioritization_value eq ${debitPrioId} and statecode eq ${STATECODE_ACTIVE}` +
             "&$orderby=book_name asc"
         );
         if (cancelled) return;
         setDetailRows(
           idRes.entities
-            .map((e) => ({
-              id: cleanId(e.book_itemizeddetailsid),
-              name: (e.book_name as string) ?? "(detail)",
-              funded: num(e.book_fundedamount),
-              selected: false,
-              reduce: "",
-            }))
+            .map(toDetailRow)
             .filter((r) => r.funded > 0)
         );
       } catch {
@@ -329,19 +354,13 @@ export const RealignmentBuilderApp: React.FC<RealignmentBuilderProps> = ({ webAP
       try {
         const res = await webAPI.retrieveMultipleRecords(
           ITEMIZED_DETAILS,
-          `?$select=book_name,book_fundedamount` +
+          DETAIL_SELECT +
             `&$filter=_book_prioritization_value eq ${creditPrioId} and statecode eq ${STATECODE_ACTIVE}` +
             "&$orderby=book_name asc"
         );
         if (cancelled) return;
         setCreditDetailRows(
-          res.entities.map((e) => ({
-            id: cleanId(e.book_itemizeddetailsid),
-            name: (e.book_name as string) ?? "(detail)",
-            funded: num(e.book_fundedamount),
-            selected: false,
-            reduce: "",
-          }))
+          res.entities.map(toDetailRow)
         );
       } catch {
         if (!cancelled) setError("Could not load the crediting Prioritization's details.");
@@ -361,7 +380,7 @@ export const RealignmentBuilderApp: React.FC<RealignmentBuilderProps> = ({ webAP
         const [items, reds, incs] = await Promise.all([
           webAPI.retrieveMultipleRecords(
             REALIGNMENT_ITEM,
-            `?$select=book_newamount,_book_creditrequirementfunding_value` +
+            `?$select=book_newamount,_book_creditrequirementfunding_value,_book_debitprioritizationfunding_value` +
               `&$filter=_book_realignment_value eq ${recordId} and statecode eq ${STATECODE_ACTIVE}`
           ),
           webAPI.retrieveMultipleRecords(
@@ -377,18 +396,22 @@ export const RealignmentBuilderApp: React.FC<RealignmentBuilderProps> = ({ webAP
         ]);
         if (cancelled) return;
         const its = items.entities.map((e) => ({
+          pfId: e._book_debitprioritizationfunding_value ? cleanId(e._book_debitprioritizationfunding_value) : "",
+          rfId: e._book_creditrequirementfunding_value ? cleanId(e._book_creditrequirementfunding_value) : "",
           rf: (e[`_book_creditrequirementfunding_value${FV}`] as string) ?? "(RF)",
           amount: num(e.book_newamount),
         }));
         setSavedItems(its);
         setSavedReductions(
           reds.entities.map((e) => ({
+            detailId: e._book_itemizeddetail_value ? cleanId(e._book_itemizeddetail_value) : "",
             detail: (e[`_book_itemizeddetail_value${FV}`] as string) ?? "(detail)",
             amount: num(e.book_newamount),
           }))
         );
         setSavedIncreases(
           incs.entities.map((e) => ({
+            detailId: e._book_itemizeddetail_value ? cleanId(e._book_itemizeddetail_value) : "",
             detail: (e[`_book_itemizeddetail_value${FV}`] as string) ?? "(detail)",
             amount: num(e.book_newamount),
           }))
@@ -505,12 +528,65 @@ export const RealignmentBuilderApp: React.FC<RealignmentBuilderProps> = ({ webAP
       setSaveMsg("Realignment items saved. Submit for approval from the Approval panel.");
       setMode("view");
       setReloadKey((k) => k + 1);
+      window.dispatchEvent(new CustomEvent(ITEMS_SAVED_EVENT, { detail: { id: recordId } }));
     } catch (e) {
       setError((e as { message?: string })?.message ?? "Could not save the realignment items.");
     } finally {
       setSaving(false);
     }
   };
+
+  // ---- edit: reopen the builder pre-filled with what is already saved --------
+  // Save rebuilds the rows from the grids, so the grids must start from the saved
+  // values or an edit silently drops every line the user does not re-enter. The
+  // saved amounts are re-checked against live funded balances (overMove/overReduce).
+  const beginEdit = (): void => {
+    setSaveMsg(null);
+    const moveByPf = new Map(savedItems.map((i) => [i.pfId, i.amount]));
+    setPfRows((rows) =>
+      rows.map((r) => (moveByPf.has(r.id) ? { ...r, selected: true, move: String(moveByPf.get(r.id)) } : r))
+    );
+    const prefill = (saved: { detailId: string; amount: number }[]) => {
+      const byDetail = new Map(saved.map((d) => [d.detailId, d.amount]));
+      return (rows: DetailRow[]): DetailRow[] =>
+        rows.map((r) => (byDetail.has(r.id) ? { ...r, selected: true, reduce: String(byDetail.get(r.id)) } : r));
+    };
+    setDetailRows(prefill(savedReductions));
+    setCreditDetailRows(prefill(savedIncreases));
+    const savedRf = savedItems.find((i) => i.rfId)?.rfId;
+    if (savedRf) setCreditRfId(savedRf);
+    setMode("edit");
+  };
+
+  // Saved reductions/increases only carry the detail autonumber; describe them from
+  // the loaded detail rows (Item / TDC / MDEP) so the summary reads the same as entry.
+  const describeDetail = (detailId: string, fallback: string): React.ReactElement => {
+    const row = detailRows.find((d) => d.id === detailId) ?? creditDetailRows.find((d) => d.id === detailId);
+    return (
+      <>
+        <td className={styles.td}>{row && row.item !== "" ? row.item : fallback}</td>
+        <td className={styles.td}>{row?.tdc ?? ""}</td>
+        <td className={styles.td}>{row?.mdep ?? ""}</td>
+        <td className={styles.td}>{row?.item ? fallback : ""}</td>
+      </>
+    );
+  };
+  const detailHead = (
+    <>
+      <th className={styles.th}>Item</th>
+      <th className={styles.th}>TDC</th>
+      <th className={styles.th}>MDEP</th>
+      <th className={styles.th}>Detail #</th>
+    </>
+  );
+  const detailCells = (r: DetailRow): React.ReactElement => (
+    <>
+      <td className={styles.td}>{r.item || "(no item)"}</td>
+      <td className={styles.td}>{r.tdc}</td>
+      <td className={styles.td}>{r.mdep}</td>
+      <td className={styles.td}>{r.name}</td>
+    </>
+  );
 
   // ---- render --------------------------------------------------------------
   const savedItemsTotal = savedItems.reduce((s, r) => s + r.amount, 0);
@@ -553,10 +629,16 @@ export const RealignmentBuilderApp: React.FC<RealignmentBuilderProps> = ({ webAP
             <>
               <Text className={styles.heading}>Debit detail reductions</Text>
               <table className={styles.table}>
+                <thead>
+                  <tr>
+                    {detailHead}
+                    <th className={styles.th}>Reduce by</th>
+                  </tr>
+                </thead>
                 <tbody>
                   {savedReductions.map((r, i) => (
                     <tr key={i}>
-                      <td className={styles.td}>{r.detail}</td>
+                      {describeDetail(r.detailId, r.detail)}
                       <td className={styles.td}>−{money(r.amount)}</td>
                     </tr>
                   ))}
@@ -568,10 +650,16 @@ export const RealignmentBuilderApp: React.FC<RealignmentBuilderProps> = ({ webAP
             <>
               <Text className={styles.heading}>Credit detail increases</Text>
               <table className={styles.table}>
+                <thead>
+                  <tr>
+                    {detailHead}
+                    <th className={styles.th}>Increase by</th>
+                  </tr>
+                </thead>
                 <tbody>
                   {savedIncreases.map((r, i) => (
                     <tr key={i}>
-                      <td className={styles.td}>{r.detail}</td>
+                      {describeDetail(r.detailId, r.detail)}
                       <td className={styles.td}>+{money(r.amount)}</td>
                     </tr>
                   ))}
@@ -588,7 +676,7 @@ export const RealignmentBuilderApp: React.FC<RealignmentBuilderProps> = ({ webAP
       )}
       {isActive && (
         <div className={styles.footer}>
-          <Button appearance="secondary" onClick={() => { setSaveMsg(null); setMode("edit"); }}>
+          <Button appearance="secondary" onClick={beginEdit}>
             Edit items
           </Button>
           <Text>Submit for approval from the Approval panel above.</Text>
@@ -599,7 +687,7 @@ export const RealignmentBuilderApp: React.FC<RealignmentBuilderProps> = ({ webAP
 
   if (!recordId) {
     return (
-      <FluentProvider theme={webLightTheme}>
+      <FluentProvider theme={webLightTheme} style={{ width: "100%" }}>
         <div className={styles.root}>
           <MessageBar intent="info">
             <MessageBarBody>Save the Realignment record first, then build its items here.</MessageBarBody>
@@ -610,7 +698,7 @@ export const RealignmentBuilderApp: React.FC<RealignmentBuilderProps> = ({ webAP
   }
 
   return (
-    <FluentProvider theme={webLightTheme}>
+    <FluentProvider theme={webLightTheme} style={{ width: "100%" }}>
       <div className={styles.root}>
         {loading && <Spinner label="Loading..." />}
         {error && (
@@ -765,7 +853,7 @@ export const RealignmentBuilderApp: React.FC<RealignmentBuilderProps> = ({ webAP
                       <thead>
                         <tr>
                           <th className={styles.th}></th>
-                          <th className={styles.th}>Itemized Detail</th>
+                          {detailHead}
                           <th className={styles.th}>Funded</th>
                           <th className={styles.th}>Reduce by</th>
                         </tr>
@@ -787,7 +875,7 @@ export const RealignmentBuilderApp: React.FC<RealignmentBuilderProps> = ({ webAP
                                 }
                               />
                             </td>
-                            <td className={styles.td}>{r.name}</td>
+                            {detailCells(r)}
                             <td className={styles.td}>{money(r.funded)}</td>
                             <td className={styles.td}>
                               <Input
@@ -846,7 +934,7 @@ export const RealignmentBuilderApp: React.FC<RealignmentBuilderProps> = ({ webAP
                       <thead>
                         <tr>
                           <th className={styles.th}></th>
-                          <th className={styles.th}>Itemized Detail</th>
+                          {detailHead}
                           <th className={styles.th}>Funded</th>
                           <th className={styles.th}>Increase by</th>
                         </tr>
@@ -868,7 +956,7 @@ export const RealignmentBuilderApp: React.FC<RealignmentBuilderProps> = ({ webAP
                                 }
                               />
                             </td>
-                            <td className={styles.td}>{r.name}</td>
+                            {detailCells(r)}
                             <td className={styles.td}>{money(r.funded)}</td>
                             <td className={styles.td}>
                               <Input
