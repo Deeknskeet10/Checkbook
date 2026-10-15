@@ -171,9 +171,14 @@ namespace Checkbook.Plugins.Realignments
                 //     RF.TDP). No-op for a Direct credit Prio.
                 //  3) ApplyDetailReductions — lower the debiting Itemized Prio's details to match
                 //     the junctions the moves already reduced.
+                //  4) ApplyRdfIncreases / ApplyRdfReductions — OPR (RF→RF) items on direct-funded
+                //     Requirements: fund the credit RF's Requirement Details (after its TDP bump),
+                //     then lower the debit RF's RDF junctions to the Funded it already gave up.
                 ProcessItems(service, tracing, context);
                 ApplyDetailIncreases(service, tracing, context.PrimaryEntityId);
                 ApplyDetailReductions(service, tracing, context.PrimaryEntityId);
+                ApplyRdfIncreases(service, tracing, context.PrimaryEntityId);
+                ApplyRdfReductions(service, tracing, context.PrimaryEntityId);
                 FinalizeRealignment(service, tracing, context.PrimaryEntityId);
                 return;
             }
@@ -454,6 +459,111 @@ namespace Checkbook.Plugins.Realignments
                 service.Update(upd);
                 tracing.Trace($"ApplyDetailIncreases: ItemizedDetail {detailRef.Id} funded {funded:N2} -> {newFunded:N2}.");
             }
+        }
+
+        /// <summary>
+        /// OPR credit side (FY27 §9.9): for each book_realignmentrdfincrease, get-or-create the
+        /// RD ↔ credit RF junction and raise it. Runs after ProcessItems so the credit RF.TDP
+        /// already carries the landing amount (the RDF guard caps Σ RDF at RF.TDP). The RDF
+        /// rollup is depth-guarded off here, so RF and RD totals are recalculated explicitly.
+        /// </summary>
+        private void ApplyRdfIncreases(
+            IOrganizationService service, ITracingService tracing, Guid realignmentId)
+        {
+            var q = new QueryExpression(RealignmentRdfIncreaseAttributes.EntityLogicalName)
+            {
+                ColumnSet = new ColumnSet(
+                    RealignmentRdfIncreaseAttributes.Amount,
+                    RealignmentRdfIncreaseAttributes.RequirementDetail,
+                    RealignmentRdfIncreaseAttributes.RequirementFunding),
+                Criteria = new FilterExpression(LogicalOperator.And)
+                {
+                    Conditions =
+                    {
+                        new ConditionExpression(RealignmentRdfIncreaseAttributes.Realignment, ConditionOperator.Equal, realignmentId),
+                        new ConditionExpression(RealignmentRdfIncreaseAttributes.StateCode, ConditionOperator.Equal, StateCodeValues.Active),
+                    },
+                },
+            };
+
+            var rows = service.RetrieveMultiple(q).Entities;
+            if (rows.Count == 0) { tracing.Trace("ApplyRdfIncreases: no RD funding increases on this realignment."); return; }
+
+            var rfs = new System.Collections.Generic.HashSet<Guid>();
+            foreach (var row in rows)
+            {
+                var rd = row.GetAttributeValue<EntityReference>(RealignmentRdfIncreaseAttributes.RequirementDetail);
+                var rf = row.GetAttributeValue<EntityReference>(RealignmentRdfIncreaseAttributes.RequirementFunding);
+                decimal raiseBy = row.GetAttributeValue<decimal?>(RealignmentRdfIncreaseAttributes.Amount) ?? 0m;
+                if (rd == null || rf == null || raiseBy <= 0m) continue;
+
+                UpsertCreditRdf(service, tracing, rd, rf, raiseBy);
+                RequirementDetailFundingRollupHelper.RecalculateRequirementDetail(service, rd.Id, tracing);
+                rfs.Add(rf.Id);
+                tracing.Trace($"ApplyRdfIncreases: RD {rd.Id} on RF {rf.Id} +{raiseBy:N2}.");
+            }
+            foreach (var rfId in rfs)
+                PrioritizationRollupHelper.RecalculateRFFunded(service, rfId, tracing);
+        }
+
+        /// <summary>
+        /// OPR debit side (FY27 §9.9): lower each selected Requirement Detail Funding junction
+        /// on the debit RF by its book_realignmentrdfreduction amount. ApplyDebitToRF already took
+        /// the same total out of the RF's Funded (validated by EnforceRdfDebitBalance), so this
+        /// brings Σ RDF back in line; the RF is then re-summed from its junctions. Realignments
+        /// are an authorized ancestor for the RDF FundedAmountLock.
+        /// </summary>
+        private void ApplyRdfReductions(
+            IOrganizationService service, ITracingService tracing, Guid realignmentId)
+        {
+            var q = new QueryExpression(RealignmentRdfReductionAttributes.EntityLogicalName)
+            {
+                ColumnSet = new ColumnSet(
+                    RealignmentRdfReductionAttributes.Amount,
+                    RealignmentRdfReductionAttributes.RequirementDetailFunding),
+                Criteria = new FilterExpression(LogicalOperator.And)
+                {
+                    Conditions =
+                    {
+                        new ConditionExpression(RealignmentRdfReductionAttributes.Realignment, ConditionOperator.Equal, realignmentId),
+                        new ConditionExpression(RealignmentRdfReductionAttributes.StateCode, ConditionOperator.Equal, StateCodeValues.Active),
+                    },
+                },
+            };
+
+            var rows = service.RetrieveMultiple(q).Entities;
+            if (rows.Count == 0) { tracing.Trace("ApplyRdfReductions: no RD funding reductions on this realignment."); return; }
+
+            var rfs = new System.Collections.Generic.HashSet<Guid>();
+            foreach (var row in rows)
+            {
+                var rdfRef = row.GetAttributeValue<EntityReference>(RealignmentRdfReductionAttributes.RequirementDetailFunding);
+                decimal reduceBy = row.GetAttributeValue<decimal?>(RealignmentRdfReductionAttributes.Amount) ?? 0m;
+                if (rdfRef == null || reduceBy <= 0m) continue;
+
+                var rdf = service.Retrieve(EntityNames.RequirementDetailFunding, rdfRef.Id,
+                    new ColumnSet(RequirementDetailFundingAttributes.FundedAmount,
+                                  RequirementDetailFundingAttributes.RequirementDetail,
+                                  RequirementDetailFundingAttributes.RequirementFunding));
+                decimal funded = rdf.GetAttributeValue<decimal?>(RequirementDetailFundingAttributes.FundedAmount) ?? 0m;
+                if (reduceBy > funded)
+                    throw new InvalidPluginExecutionException(
+                        $"Realignment cannot execute: a Requirement Detail Funding holds {funded:N2} funded but a " +
+                        $"reduction of {reduceBy:N2} was entered. Re-balance the Requirement Detail reductions.");
+
+                var upd = new Entity(EntityNames.RequirementDetailFunding, rdfRef.Id);
+                upd[RequirementDetailFundingAttributes.FundedAmount] = funded - reduceBy;
+                service.Update(upd);
+
+                var rd = rdf.GetAttributeValue<EntityReference>(RequirementDetailFundingAttributes.RequirementDetail);
+                if (rd != null)
+                    RequirementDetailFundingRollupHelper.RecalculateRequirementDetail(service, rd.Id, tracing);
+                var rf = rdf.GetAttributeValue<EntityReference>(RequirementDetailFundingAttributes.RequirementFunding);
+                if (rf != null) rfs.Add(rf.Id);
+                tracing.Trace($"ApplyRdfReductions: RDF {rdfRef.Id} funded {funded:N2} -> {(funded - reduceBy):N2}.");
+            }
+            foreach (var rfId in rfs)
+                PrioritizationRollupHelper.RecalculateRFFunded(service, rfId, tracing);
         }
 
         /// <summary>

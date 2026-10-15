@@ -119,6 +119,12 @@ namespace Checkbook.Plugins.Validation
                 // pick credit details to INCREASE by the same total; the processor raises them
                 // before the credit PF upsert so the Prio total is already up.
                 EnforceItemizedCreditBalance(service, tracing, context.PrimaryEntityId);
+
+                // OPR (RF→RF) mirror for direct-funded Requirements: the debit RF's
+                // Requirement Detail Funding junctions must drop by whatever Withholding
+                // cannot cover, and credit-side RD increases may not exceed the landing amount.
+                EnforceRdfDebitBalance(service, tracing, context.PrimaryEntityId);
+                EnforceRdfCreditBalance(service, tracing, context.PrimaryEntityId);
             }
 
             int? statePre = preImage?.GetAttributeValue<OptionSetValue>(
@@ -425,6 +431,205 @@ namespace Checkbook.Plugins.Validation
                     $"This realignment adds {creditTotal:N2} to an itemized Prioritization. Before it can be " +
                     $"approved, select Itemized Details on the crediting Prioritization and increase them by a total " +
                     $"of {creditTotal:N2} (currently {raised:N2}).");
+        }
+
+        /// <summary>
+        /// OPR debit balance gate (FY27 §9.9). An RF→RF item lowers its debit RF the way
+        /// ApplyDebitToRF does: Withholding first, then Funded + TDP together. On a
+        /// direct-funded RF, Funded == Σ active Requirement Detail Funding, so the part of the
+        /// move Withholding cannot cover must come out of those junctions. Per debit RF:
+        ///   Σ(active RDF reductions on that RF) == max(0, Σ item amount − RF.Withholding)
+        /// when the RF has active RDF junctions, and no reductions otherwise. Each reduction
+        /// must target an RDF of an RF this realignment debits and not exceed its funded.
+        /// A Prioritization-funded debit RF may only give up Withholding.
+        /// </summary>
+        private static void EnforceRdfDebitBalance(
+            IOrganizationService service, ITracingService tracing, Guid realignmentId)
+        {
+            var items = new QueryExpression(RealignmentItemAttributes.EntityLogicalName)
+            {
+                ColumnSet = new ColumnSet(
+                    RealignmentItemAttributes.Amount,
+                    RealignmentItemAttributes.DebitRequirementFunding),
+                Criteria = new FilterExpression(LogicalOperator.And)
+                {
+                    Conditions =
+                    {
+                        new ConditionExpression(RealignmentItemAttributes.Realignment, ConditionOperator.Equal, realignmentId),
+                        new ConditionExpression(RealignmentItemAttributes.StateCode, ConditionOperator.Equal, StateCodeValues.Active),
+                        new ConditionExpression(RealignmentItemAttributes.DebitRequirementFunding, ConditionOperator.NotNull),
+                    },
+                },
+            };
+
+            var moved = new System.Collections.Generic.Dictionary<Guid, decimal>();
+            foreach (var item in service.RetrieveMultiple(items).Entities)
+            {
+                var rfRef = item.GetAttributeValue<EntityReference>(RealignmentItemAttributes.DebitRequirementFunding);
+                decimal amt = item.GetAttributeValue<decimal?>(RealignmentItemAttributes.Amount) ?? 0m;
+                moved[rfRef.Id] = (moved.TryGetValue(rfRef.Id, out var m) ? m : 0m) + amt;
+            }
+
+            var reductions = new QueryExpression(RealignmentRdfReductionAttributes.EntityLogicalName)
+            {
+                ColumnSet = new ColumnSet(
+                    RealignmentRdfReductionAttributes.Amount,
+                    RealignmentRdfReductionAttributes.RequirementDetailFunding),
+                Criteria = new FilterExpression(LogicalOperator.And)
+                {
+                    Conditions =
+                    {
+                        new ConditionExpression(RealignmentRdfReductionAttributes.Realignment, ConditionOperator.Equal, realignmentId),
+                        new ConditionExpression(RealignmentRdfReductionAttributes.StateCode, ConditionOperator.Equal, StateCodeValues.Active),
+                    },
+                },
+            };
+
+            var reduced = new System.Collections.Generic.Dictionary<Guid, decimal>();
+            foreach (var r in service.RetrieveMultiple(reductions).Entities)
+            {
+                var rdfRef = r.GetAttributeValue<EntityReference>(RealignmentRdfReductionAttributes.RequirementDetailFunding);
+                if (rdfRef == null)
+                    throw new InvalidPluginExecutionException(
+                        "A Realignment RD Funding Reduction has no Requirement Detail Funding selected.");
+
+                decimal amt = r.GetAttributeValue<decimal?>(RealignmentRdfReductionAttributes.Amount) ?? 0m;
+                var rdf = service.Retrieve(EntityNames.RequirementDetailFunding, rdfRef.Id,
+                    new ColumnSet(RequirementDetailFundingAttributes.RequirementFunding,
+                                  RequirementDetailFundingAttributes.FundedAmount));
+                var rfRef = rdf.GetAttributeValue<EntityReference>(RequirementDetailFundingAttributes.RequirementFunding);
+                if (rfRef == null || !moved.ContainsKey(rfRef.Id))
+                    throw new InvalidPluginExecutionException(
+                        "A selected Requirement Detail Funding is not on a Requirement Funding this realignment debits. " +
+                        "Reduce only Requirement Details funded by the debiting Requirement Funding.");
+
+                decimal funded = rdf.GetAttributeValue<decimal?>(RequirementDetailFundingAttributes.FundedAmount) ?? 0m;
+                if (amt > funded + BalanceEpsilon)
+                    throw new InvalidPluginExecutionException(
+                        $"A Requirement Detail Funding holds {funded:N2} funded but a reduction of {amt:N2} was entered.");
+
+                reduced[rfRef.Id] = (reduced.TryGetValue(rfRef.Id, out var x) ? x : 0m) + amt;
+            }
+
+            foreach (var kv in moved)
+            {
+                var rf = service.Retrieve(EntityNames.RequirementFunding, kv.Key,
+                    new ColumnSet(RequirementFundingAttributes.Withholding, RequirementFundingAttributes.Name));
+                decimal withholding = rf.GetAttributeValue<decimal?>(RequirementFundingAttributes.Withholding) ?? 0m;
+                bool hasRdf = RequirementDetailFundingRollupHelper.SumForRequirementFunding(service, kv.Key).funded > 0m;
+
+                // An RF funded through Prioritizations (FY27 PF junctions or FY26 direct
+                // links) can only give up Withholding on the OPR path — its Funded belongs to
+                // the Prioritizations and moves with a State realignment instead.
+                bool prioFunded =
+                    PrioritizationFundingRollupHelper.SumForRequirementFunding(service, kv.Key).funded > 0m ||
+                    RequirementFundingHelpers.HasActiveChildren(service, kv.Key);
+                if (prioFunded && kv.Value > withholding + BalanceEpsilon)
+                    throw new InvalidPluginExecutionException(
+                        $"{rf.GetAttributeValue<string>(RequirementFundingAttributes.Name)} is funded through Prioritizations, " +
+                        $"so this realignment can move at most its Withholding ({withholding:N2}), not {kv.Value:N2}. " +
+                        "Use a State realignment to move Prioritization funding.");
+                decimal required = hasRdf ? Math.Max(0m, kv.Value - withholding) : 0m;
+                decimal got = reduced.TryGetValue(kv.Key, out var g) ? g : 0m;
+
+                tracing.Trace(
+                    $"RealignmentValidator: RDF debit balance on RF {kv.Key} — moved={kv.Value:N2}, " +
+                    $"withholding={withholding:N2}, required={required:N2}, reduced={got:N2}.");
+
+                if (Math.Abs(got - required) >= BalanceEpsilon)
+                    throw new InvalidPluginExecutionException(
+                        $"This realignment moves {kv.Value:N2} out of {rf.GetAttributeValue<string>(RequirementFundingAttributes.Name)}, " +
+                        $"which has {withholding:N2} in Withholding. Before it can be approved, reduce its Requirement Detail " +
+                        $"funding by a total of {required:N2} (currently {got:N2}).");
+            }
+        }
+
+        /// <summary>
+        /// OPR credit gate (FY27 §9.9). Optional Requirement Detail increases on the credit
+        /// side fund RD ↔ credit RF junctions from the landing amount. Each row's RD must
+        /// belong to its credit RF's Requirement, the RF must be credited by this realignment,
+        /// and Σ increases per credit RF may not exceed the amount landing on it (the rest
+        /// stays on the RF as Withholding).
+        /// </summary>
+        private static void EnforceRdfCreditBalance(
+            IOrganizationService service, ITracingService tracing, Guid realignmentId)
+        {
+            var increases = new QueryExpression(RealignmentRdfIncreaseAttributes.EntityLogicalName)
+            {
+                ColumnSet = new ColumnSet(
+                    RealignmentRdfIncreaseAttributes.Amount,
+                    RealignmentRdfIncreaseAttributes.RequirementDetail,
+                    RealignmentRdfIncreaseAttributes.RequirementFunding),
+                Criteria = new FilterExpression(LogicalOperator.And)
+                {
+                    Conditions =
+                    {
+                        new ConditionExpression(RealignmentRdfIncreaseAttributes.Realignment, ConditionOperator.Equal, realignmentId),
+                        new ConditionExpression(RealignmentRdfIncreaseAttributes.StateCode, ConditionOperator.Equal, StateCodeValues.Active),
+                    },
+                },
+            };
+            var rows = service.RetrieveMultiple(increases).Entities;
+            if (rows.Count == 0) return;
+
+            var items = new QueryExpression(RealignmentItemAttributes.EntityLogicalName)
+            {
+                ColumnSet = new ColumnSet(
+                    RealignmentItemAttributes.Amount,
+                    RealignmentItemAttributes.CreditRequirementFunding),
+                Criteria = new FilterExpression(LogicalOperator.And)
+                {
+                    Conditions =
+                    {
+                        new ConditionExpression(RealignmentItemAttributes.Realignment, ConditionOperator.Equal, realignmentId),
+                        new ConditionExpression(RealignmentItemAttributes.StateCode, ConditionOperator.Equal, StateCodeValues.Active),
+                        new ConditionExpression(RealignmentItemAttributes.DebitRequirementFunding, ConditionOperator.NotNull),
+                    },
+                },
+            };
+            var landing = new System.Collections.Generic.Dictionary<Guid, decimal>();
+            foreach (var item in service.RetrieveMultiple(items).Entities)
+            {
+                var rfRef = item.GetAttributeValue<EntityReference>(RealignmentItemAttributes.CreditRequirementFunding);
+                if (rfRef == null) continue;
+                decimal amt = item.GetAttributeValue<decimal?>(RealignmentItemAttributes.Amount) ?? 0m;
+                landing[rfRef.Id] = (landing.TryGetValue(rfRef.Id, out var m) ? m : 0m) + amt;
+            }
+
+            var raised = new System.Collections.Generic.Dictionary<Guid, decimal>();
+            foreach (var r in rows)
+            {
+                var rdRef = r.GetAttributeValue<EntityReference>(RealignmentRdfIncreaseAttributes.RequirementDetail);
+                var rfRef = r.GetAttributeValue<EntityReference>(RealignmentRdfIncreaseAttributes.RequirementFunding);
+                if (rdRef == null || rfRef == null)
+                    throw new InvalidPluginExecutionException(
+                        "A Realignment RD Funding Increase needs both a Requirement Detail and a credit Requirement Funding.");
+                if (!landing.ContainsKey(rfRef.Id))
+                    throw new InvalidPluginExecutionException(
+                        "A Requirement Detail increase targets a Requirement Funding this realignment does not credit.");
+
+                var rd = service.Retrieve(EntityNames.RequirementDetails, rdRef.Id,
+                    new ColumnSet(RequirementDetailsAttributes.Requirement));
+                var rf = service.Retrieve(EntityNames.RequirementFunding, rfRef.Id,
+                    new ColumnSet(RequirementFundingAttributes.Requirement));
+                var rdReq = rd.GetAttributeValue<EntityReference>(RequirementDetailsAttributes.Requirement);
+                var rfReq = rf.GetAttributeValue<EntityReference>(RequirementFundingAttributes.Requirement);
+                if (rdReq == null || rfReq == null || rdReq.Id != rfReq.Id)
+                    throw new InvalidPluginExecutionException(
+                        "A Requirement Detail selected for increase does not belong to the credit Requirement Funding's Requirement.");
+
+                decimal amt = r.GetAttributeValue<decimal?>(RealignmentRdfIncreaseAttributes.Amount) ?? 0m;
+                raised[rfRef.Id] = (raised.TryGetValue(rfRef.Id, out var x) ? x : 0m) + amt;
+            }
+
+            foreach (var kv in raised)
+            {
+                tracing.Trace($"RealignmentValidator: RDF credit on RF {kv.Key} — raised={kv.Value:N2}, landing={landing[kv.Key]:N2}.");
+                if (kv.Value > landing[kv.Key] + BalanceEpsilon)
+                    throw new InvalidPluginExecutionException(
+                        $"Requirement Detail increases total {kv.Value:N2} but only {landing[kv.Key]:N2} lands on that " +
+                        "Requirement Funding. Lower the increases.");
+            }
         }
 
         /// <summary>

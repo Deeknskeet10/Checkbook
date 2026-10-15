@@ -2,9 +2,6 @@ import * as React from "react";
 import {
   FluentProvider,
   webLightTheme,
-  makeStyles,
-  shorthands,
-  tokens,
   Badge,
   Button,
   Checkbox,
@@ -18,63 +15,39 @@ import {
   Text,
 } from "@fluentui/react-components";
 
-type WebApi = ComponentFramework.WebApi;
+import {
+  WebApi,
+  REALIGNMENT,
+  REALIGNMENT_ITEM,
+  DETAIL_REDUCTION,
+  DETAIL_INCREASE,
+  PRIORITIZATION,
+  PRIO_FUNDING,
+  REQ_FUNDING,
+  ITEMIZED_DETAILS,
+  SET,
+  FV,
+  ITEMS_SAVED_EVENT,
+  ENTRY_MODE_STATE,
+  STATECODE_ACTIVE,
+  EPS,
+  num,
+  money,
+  cleanId,
+  useStyles,
+  wipeRealignmentChildren,
+} from "./shared";
 
-export interface RealignmentBuilderProps {
+export interface StateBuilderProps {
   webAPI: WebApi;
-  recordId?: string;
+  recordId: string;
 }
-
-// ---- entities / fields ----------------------------------------------------
-const REALIGNMENT = "book_realignments";
-const REALIGNMENT_ITEM = "book_realignmentitem";
-const DETAIL_REDUCTION = "book_realignmentdetailreduction";
-const DETAIL_INCREASE = "book_realignmentdetailincrease";
-const PRIORITIZATION = "book_prioritization";
-const PRIO_FUNDING = "book_prioritizationfunding";
-const REQ_FUNDING = "book_requirementfunding";
-const ITEMIZED_DETAILS = "book_itemizeddetails";
-
-// Entity-SET (collection) names for @odata.bind paths. These are NOT uniformly
-// logical-name + "s" (book_realignments -> book_realignmentses,
-// book_itemizeddetails -> book_itemizeddetailses), so keep them explicit.
-const SET = {
-  realignment: "book_realignmentses",
-  prio: "book_prioritizations",
-  pf: "book_prioritizationfundings",
-  rf: "book_requirementfundings",
-  detail: "book_itemizeddetailses",
-};
-
-const FV = "@OData.Community.Display.V1.FormattedValue";
-
-// Fired on window after the builder saves, so the approval chevron (a separate
-// control on the same form) re-reads the realignment shape without a refresh.
-const ITEMS_SAVED_EVENT = "book:realignment-items-saved";
 
 // Itemized Detail query: the autonumber name plus the Requirement Item's Item / TDC / MDEP.
 const DETAIL_SELECT =
   "?$select=book_name,book_fundedamount" +
   "&$expand=book_RequirementItem($select=_book_item_value,_book_tdc_value,_book_mdep_value)";
-const ENTRY_MODE_STATE = 0;
 const FUNDING_MODE_ITEMIZED = 1;
-const STATECODE_ACTIVE = 0;
-const EPS = 0.005;
-
-function num(v: unknown): number {
-  if (typeof v === "number") return isFinite(v) ? v : 0;
-  if (typeof v === "string") {
-    const n = parseFloat(v);
-    return isFinite(n) ? n : 0;
-  }
-  return 0;
-}
-function money(n: number): string {
-  return n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-}
-function cleanId(v: unknown): string {
-  return typeof v === "string" ? v.replace(/[{}]/g, "").toLowerCase() : "";
-}
 
 interface PrioOpt {
   id: string;
@@ -108,38 +81,6 @@ interface DetailRow {
   reduce: string;
 }
 
-const useStyles = makeStyles({
-  root: {
-    ...shorthands.padding("12px"),
-    display: "flex",
-    flexDirection: "column",
-    rowGap: "14px",
-    // Fill the form cell: the host sizes a virtual control to its content otherwise.
-    width: "100%",
-    boxSizing: "border-box",
-  },
-  section: { display: "flex", flexDirection: "column", rowGap: "6px" },
-  heading: { fontWeight: tokens.fontWeightSemibold },
-  pickers: { display: "flex", flexWrap: "wrap", columnGap: "24px", rowGap: "10px" },
-  pickerField: { display: "flex", flexDirection: "column", rowGap: "4px", minWidth: "260px" },
-  table: { width: "100%", borderCollapse: "collapse" },
-  th: {
-    textAlign: "left",
-    ...shorthands.borderBottom("1px", "solid", tokens.colorNeutralStroke2),
-    ...shorthands.padding("4px", "8px"),
-    fontWeight: tokens.fontWeightSemibold,
-    fontSize: tokens.fontSizeBase200,
-  },
-  td: {
-    ...shorthands.borderBottom("1px", "solid", tokens.colorNeutralStroke3),
-    ...shorthands.padding("4px", "8px"),
-    verticalAlign: "middle",
-  },
-  amtInput: { width: "130px" },
-  balanceRow: { display: "flex", alignItems: "center", columnGap: "10px" },
-  footer: { display: "flex", alignItems: "center", columnGap: "12px" },
-});
-
 const toDetailRow = (e: Record<string, unknown>): DetailRow => {
   const ri = (e.book_RequirementItem as Record<string, unknown> | null | undefined) ?? {};
   const label = (attr: string): string => (ri[`_${attr}_value${FV}`] as string) ?? "";
@@ -155,7 +96,8 @@ const toDetailRow = (e: Record<string, unknown>): DetailRow => {
   };
 };
 
-export const RealignmentBuilderApp: React.FC<RealignmentBuilderProps> = ({ webAPI, recordId }) => {
+/** State entry path: debit Prioritization's PF junctions -> credit Prioritization + RF. */
+export const StateBuilder: React.FC<StateBuilderProps> = ({ webAPI, recordId }) => {
   const styles = useStyles();
 
   const [loading, setLoading] = React.useState(true);
@@ -381,7 +323,8 @@ export const RealignmentBuilderApp: React.FC<RealignmentBuilderProps> = ({ webAP
           webAPI.retrieveMultipleRecords(
             REALIGNMENT_ITEM,
             `?$select=book_newamount,_book_creditrequirementfunding_value,_book_debitprioritizationfunding_value` +
-              `&$filter=_book_realignment_value eq ${recordId} and statecode eq ${STATECODE_ACTIVE}`
+              `&$filter=_book_realignment_value eq ${recordId} and statecode eq ${STATECODE_ACTIVE}` +
+              " and _book_debitprioritizationfunding_value ne null"
           ),
           webAPI.retrieveMultipleRecords(
             DETAIL_REDUCTION,
@@ -471,27 +414,8 @@ export const RealignmentBuilderApp: React.FC<RealignmentBuilderProps> = ({ webAP
         [`book_CreditedPrioritization@odata.bind`]: `/${SET.prio}(${creditPrioId})`,
       });
 
-      // 2) rebuild: wipe existing active items + reductions + increases.
-      const [oldItems, oldReds, oldIncs] = await Promise.all([
-        webAPI.retrieveMultipleRecords(
-          REALIGNMENT_ITEM,
-          `?$select=book_realignmentitemid&$filter=_book_realignment_value eq ${recordId} and statecode eq ${STATECODE_ACTIVE}`
-        ),
-        webAPI.retrieveMultipleRecords(
-          DETAIL_REDUCTION,
-          `?$select=book_realignmentdetailreductionid&$filter=_book_realignment_value eq ${recordId} and statecode eq ${STATECODE_ACTIVE}`
-        ),
-        webAPI.retrieveMultipleRecords(
-          DETAIL_INCREASE,
-          `?$select=book_realignmentdetailincreaseid&$filter=_book_realignment_value eq ${recordId} and statecode eq ${STATECODE_ACTIVE}`
-        ),
-      ]);
-      for (const e of oldItems.entities)
-        await webAPI.deleteRecord(REALIGNMENT_ITEM, e.book_realignmentitemid as string);
-      for (const e of oldReds.entities)
-        await webAPI.deleteRecord(DETAIL_REDUCTION, e.book_realignmentdetailreductionid as string);
-      for (const e of oldIncs.entities)
-        await webAPI.deleteRecord(DETAIL_INCREASE, e.book_realignmentdetailincreaseid as string);
+      // 2) rebuild: wipe every child row (both entry modes) before re-creating.
+      await wipeRealignmentChildren(webAPI, recordId);
 
       // 3) create one item per selected PF (debit PF -> credit RF, move amount).
       for (const r of selectedPf) {

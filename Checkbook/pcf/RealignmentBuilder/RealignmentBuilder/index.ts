@@ -1,6 +1,6 @@
 import * as React from "react";
 import { IInputs, IOutputs } from "./generated/ManifestTypes";
-import { RealignmentBuilderApp, RealignmentBuilderProps } from "./RealignmentBuilderApp";
+import { RealignmentBuilderApp, RealignmentBuilderProps } from "./RealignmentBuilderShell";
 
 export class RealignmentBuilder implements ComponentFramework.ReactControl<IInputs, IOutputs> {
   private context!: ComponentFramework.Context<IInputs>;
@@ -20,6 +20,7 @@ export class RealignmentBuilder implements ComponentFramework.ReactControl<IInpu
     const props: RealignmentBuilderProps = {
       webAPI: context.webAPI,
       recordId: ctxAny.contextInfo?.entityId,
+      userId: context.userSettings.userId,
     };
     return React.createElement(RealignmentBuilderApp, props);
   }

@@ -253,6 +253,14 @@ The JS section-cascade (`book_realignmentFormProgression.js`, `book_hidePriReali
 
 ---
 
+> **OPR path — BUILT + deployed + validated 2026-10-15 (builder v0.2.0).** Scope decided by Eric
+> (2026-10-15): an OPR realignment is a **plain RF→RF** move — not the RDF re-source shape above —
+> but when the debit RF's funding is split across Requirement Details the user reduces those
+> junctions, and may fund the credit Requirement's details. See §9.9. A shell component
+> (`RealignmentBuilderShell`) picks the mode: saved mode wins, else State roles → State and
+> Budget Executor / NPM / Resource Integrator → OPR, with a toggle for dual-role, no-role and
+> Checkbook Administrator users. Server validation: `fy27_realign_opr_validate.py`.
+
 ## 6. Approval (mostly unchanged)
 
 Approvals stay at the **parent** and keep the State-Swap-style role/BU gate in
@@ -337,3 +345,17 @@ items share the parent's debit Prio by construction.
      `fy27_realign_detailreduction_validate.py` (debit→direct) and `fy27_realign_twosided_validate.py`
      (itemized debit → itemized credit). UI grids ship in the `RealignmentBuilder` entry PCF (§5).
      See `Prioritization-Funding-Reconciliation.md` §5. Direct-mode sides need no detail rows.
+9. **OPR Requirement Detail funding — BUILT + validated 2026-10-15 (user-decided):** OPR = one
+   RF→RF item (`book_debitrequirementfunding`). The debit RF gives up Withholding first
+   (`ApplyDebitToRF`); on a direct-funded RF (Funded = Σ RDF) the remainder must come out of its
+   RDF junctions so Funded and Σ RDF stay equal:
+   - **Debit:** `book_realignmentrdfreduction` (RDF + amount); `EnforceRdfDebitBalance` requires
+     Σ == max(0, amount − Withholding) per debit RF; `ApplyRdfReductions` lowers the RDFs.
+     A Prioritization-funded debit RF may give up only its Withholding (State realignments move
+     Prioritization funding).
+   - **Credit (optional):** `book_realignmentrdfincrease` (RD + credit RF + amount);
+     `EnforceRdfCreditBalance` requires the RD on the credit RF's Requirement and Σ ≤ landing
+     amount; `ApplyRdfIncreases` get-or-creates RD ↔ credit RF junctions after the TDP bump. The
+     rest stays as Withholding. A credit Requirement on the Prioritization path takes none.
+   - Schema `realign_rdfadjust_schema.py`; validated `fy27_realign_opr_validate.py` (500k/350k/150k
+     debit RF moves 200k: 50k RDF reduction, 150k of 200k into two credit details, LOA unchanged).

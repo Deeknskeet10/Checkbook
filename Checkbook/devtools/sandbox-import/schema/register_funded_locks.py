@@ -27,13 +27,13 @@ def filter_id(message, entity):
                     "$filter": "primaryobjecttypecode eq '%s' and _sdkmessageid_value eq %s" % (entity, msg_id(message))})
     return r[0]["sdkmessagefilterid"] if r else None
 
-def register_lock(tn, entity):
+def register_lock(tn, entity, attr="book_fundedamount"):
     name = "%s: Update of %s" % (tn, entity)
     if dvapi.query("sdkmessageprocessingsteps", **{"$select": "sdkmessageprocessingstepid", "$filter": "name eq '%s'" % name}):
         print("  exists:", name); return
     pid = type_id(tn)
     body = {"name": name, "stage": 20, "mode": 0, "rank": 10, "supporteddeployment": 0,
-            "filteringattributes": "book_fundedamount",
+            "filteringattributes": attr,
             "sdkmessageid@odata.bind": "/sdkmessages(%s)" % msg_id("Update"),
             "eventhandler_plugintype@odata.bind": "/plugintypes(%s)" % pid}
     fid = filter_id("Update", entity)
@@ -41,13 +41,34 @@ def register_lock(tn, entity):
     sid = dvapi.post("sdkmessageprocessingsteps", body)
     dvapi.post("sdkmessageprocessingstepimages", {
         "name": "PreImage", "entityalias": "PreImage", "imagetype": 0,
-        "messagepropertyname": "Target", "attributes": "book_fundedamount",
+        "messagepropertyname": "Target", "attributes": attr,
         "sdkmessageprocessingstepid@odata.bind": "/sdkmessageprocessingsteps(%s)" % sid})
     print("  + step + PreImage:", name)
+
+def unregister_type(tn):
+    """Delete every step of a plugin type that no longer exists in the DLL, then the type
+    itself (pac plugin push refuses to orphan a registered type)."""
+    t = dvapi.query("plugintypes", **{"$select": "plugintypeid", "$filter": "typename eq '%s'" % tn})
+    if not t:
+        print("  gone:", tn); return
+    tid = t[0]["plugintypeid"]
+    for st in dvapi.query("sdkmessageprocessingsteps", **{"$select": "sdkmessageprocessingstepid,name",
+                          "$filter": "_eventhandler_value eq %s" % tid}):
+        dvapi.delete("sdkmessageprocessingsteps", st["sdkmessageprocessingstepid"])
+        print("  - step:", st["name"])
+    dvapi.delete("plugintypes", tid)
+    print("  - plugintype:", tn)
+
+# Migration 2026-10-14 (PLUGIN-REGISTRATION.md): the RF lock moved from TDP back to Funded.
+print("Retire RequirementFundingTDPLock:")
+unregister_type("Checkbook.Plugins.Validation.RequirementFundingTDPLock")
 
 print("Funded-amount locks:")
 register_lock("Checkbook.Plugins.Validation.ItemizedDetailFundedAmountLock", "book_itemizeddetails")
 register_lock("Checkbook.Plugins.Validation.PrioritizationFundingFundedAmountLock", "book_prioritizationfunding")
+register_lock("Checkbook.Plugins.Validation.RequirementFundingFundedAmountLock", "book_requirementfunding",
+              attr="book_newfundedamount")
+register_lock("Checkbook.Plugins.Validation.RequirementDetailFundingFundedAmountLock", "book_requirementdetailfunding")
 
 print("Toggle book_LockManualFundedEdits = yes (match gov):")
 d = dvapi.query("environmentvariabledefinitions", **{"$select": "environmentvariabledefinitionid",

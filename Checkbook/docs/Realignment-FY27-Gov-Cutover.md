@@ -1,6 +1,6 @@
 # Realignment FY27 — Gov Cutover Checklist
 
-Status: **living checklist** · Last updated 2026-10-08
+Status: **living checklist** · Last updated 2026-10-15
 
 Everything the FY27 realignment redesign needs in **gov** that is NOT carried by
 simply re-importing `src/ARNGCheckbook`. Most of this was applied in the
@@ -17,6 +17,7 @@ Do **not** pack `src/ARNGCheckbook` (stale + overwrites gov roles). Import a foc
     `book_realignmententrymode`, `book_totalamount`, `book_allsamefundsag`, `book_itemcount`)
   - `book_realignmentdetailreduction`
   - `book_realignmentdetailincrease`
+  - `book_realignmentrdfreduction`, `book_realignmentrdfincrease` (OPR path, 2026-10-15)
 - **`book_realignments` column:** `book_newfiscalyear` (Picklist bound to global
   `goal_fiscalyear`) — the editable FY; the existing `book_fiscalyear` is a formula column.
 - **Relaxed required levels** on `book_realignments` (ApplicationRequired → None):
@@ -27,19 +28,24 @@ Do **not** pack `src/ARNGCheckbook` (stale + overwrites gov roles). Import a foc
 > Sandbox scripts that built the above (Python, cannot run against gov — they are the
 > source of truth for what the solution must contain):
 > `schema/realign_item_schema.py`, `schema/realign_detailreduction_schema.py`,
-> `schema/realign_detailincrease_schema.py`, `schema/realign_add_fiscalyear.py`,
+> `schema/realign_detailincrease_schema.py`, `schema/realign_rdfadjust_schema.py`,
+> `schema/realign_add_fiscalyear.py`,
 > `schema/realign_relax_required.py`.
 
 ## 2. Plugin assembly — via PRT / plugin push
 Update `Checkbook_Plugins.dll` in gov (same process as any plugin change). Code
 changes in this effort: `RealignmentProcessor`, `RealignmentValidator`,
 `SetSameFundSagFlagPlugin` (empty-shell guard), plus the new constants.
-**No new SDK steps** — the detail tables are data-only; the item steps
+**No new SDK steps** — the detail and RDF-adjustment tables are data-only; the item steps
 (`RealignmentItemDerivedFields`, `RealignmentRollup`) were already registered.
+The assembly also carries the 2026-10-14 Funding Lock change: **un-register
+`RequirementFundingTDPLock` first** (the push refuses while its type is registered),
+then register `RequirementFundingFundedAmountLock` + `RequirementDetailFundingFundedAmountLock`
+(PLUGIN-REGISTRATION.md; sandbox script `schema/register_funded_locks.py`).
 
 ## 3. PCF controls — via `ARNGCheckbookExtensions` delivery zip
 Import `dist/ARNGCheckbookExtensions.zip` (as usual). Includes `RealignmentBuilder`
-(v0.1.5) and `RealignmentApprovalProcess` (v0.1.3).
+(v0.2.0, State + OPR paths) and `RealignmentApprovalProcess` (v0.1.5).
 
 ## 4. Process state (portal / admin)
 - **Deactivate the BPF `Realignments - Review/Approve`** (category 4 on
@@ -67,7 +73,13 @@ detail reduction/increase grids → **Save realignment items** → a State appro
 the **RealignmentApprovalProcess** chevron → the processor moves the funds and deactivates
 the realignment.
 
-## Still not built (not blockers for State-path cutover)
-- OPR / direct path (RDF, RF→RF) entry in the builder.
-- Automatic role detection + entry-mode override in the builder.
+## 6b. Flow of use (OPR path)
+Same shell → the builder opens in **OPR** mode for Budget Executor / NPM / Resource
+Integrator users (a State/OPR toggle shows for dual-role and Checkbook Administrator users) →
+pick debit RF, amount, credit RF → if the debit RF funds Requirement Details, reduce them by
+whatever its Withholding cannot cover → optionally fund the credit Requirement's details →
+**Save realignment** → NPM Concurrence → **BE Approval** on the chevron.
+
+## Still not built
 - Per-item credit-RF selection; multi-RF itemized credit (server rejects today).
+- OPR: one RF→RF move per realignment in the builder (the server accepts several items).

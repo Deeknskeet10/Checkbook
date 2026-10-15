@@ -780,6 +780,36 @@ registration change — code only):
   credit details; the roll-up + `PrioritizationSingleRfAutoAllocate` sync the credit junction)
   → `ApplyDetailReductions` (lower debit details; authorized-reducer lock bypass).
 
+#### FY27 OPR (RF→RF) Requirement Detail funding — `book_realignmentrdfreduction` / `book_realignmentrdfincrease`
+
+> See [`../docs/Realignment-FY27-Redesign.md`](../docs/Realignment-FY27-Redesign.md) §9.9.
+> An OPR realignment is one RF→RF item (`book_debitrequirementfunding` →
+> `book_creditrequirementfunding`). The debit RF gives up Withholding first; on a
+> **direct-funded** RF (Funded = Σ Requirement Detail Funding) the rest must come out of
+> its RDF junctions, recorded as reduction rows. On the credit side the user may fund
+> the credit Requirement's details from the landing amount (increase rows); the rest
+> stays as Withholding. **No plugin steps on either table.**
+
+**Schema (`realign_rdfadjust_schema.py`):**
+
+| Object | Create |
+|--------|--------|
+| `book_realignmentrdfreduction` (new table) | UserOwned; `book_name`; `book_newamount` (Decimal); `book_realignment`→`book_realignments` (Cascade delete); `book_requirementdetailfunding`→`book_requirementdetailfunding`. |
+| `book_realignmentrdfincrease` (new table) | UserOwned; `book_name`; `book_newamount` (Decimal); `book_realignment`→`book_realignments` (Cascade delete); `book_requirementdetail`→`book_requirementdetails`; `book_requirementfunding`→`book_requirementfunding` (the credit RF). |
+
+Code-only behavior on the existing steps:
+
+- **`RealignmentValidator`**: `EnforceRdfDebitBalance` — per debit RF,
+  Σ(RDF reductions) must equal max(0, Σ item amount − RF.Withholding) when the RF has
+  active RDFs (none otherwise), each reduction ≤ its RDF funded; a **Prioritization-funded**
+  debit RF (PF junctions or FY26 child Prios) may give up at most its Withholding.
+  `EnforceRdfCreditBalance` — each increase's RD must belong to its credit RF's
+  Requirement, the RF must be credited by an item, and Σ increases ≤ the landing amount.
+- **`RealignmentProcessor`**: after the detail steps, `ApplyRdfIncreases` (get-or-create
+  RD ↔ credit RF junctions after the credit TDP bump) → `ApplyRdfReductions` (lower the
+  debit RDFs; realignment is an authorized ancestor for the RDF funded lock), each
+  re-summing the RF and RD totals.
+
 ---
 
 ## Items
