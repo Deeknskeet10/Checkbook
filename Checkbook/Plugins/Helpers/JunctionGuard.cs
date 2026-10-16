@@ -56,13 +56,16 @@ namespace Checkbook.Plugins.Helpers
         }
 
         /// <summary>
-        /// True when the Update target deactivates the row. Deactivation can only
-        /// lower totals and must never be blocked by uniqueness/cap checks (it is
-        /// how duplicates and over-cap rows get cleaned up).
+        /// True when the row is inactive after this Update — it is being deactivated,
+        /// or it was already inactive and stays so. Such a row contributes nothing
+        /// to any total and must never be blocked by uniqueness/cap/approval checks
+        /// (deactivation is how duplicate, mismatched and over-cap rows get cleaned
+        /// up). A pre-image without statecode counts as active.
         /// </summary>
-        public static bool IsDeactivation(Entity target, string stateCodeAttribute)
+        public static bool IsInactiveAfterSave(Entity target, Entity preImage, string stateCodeAttribute)
         {
-            var sc = target.GetAttributeValue<OptionSetValue>(stateCodeAttribute);
+            var sc = target.GetAttributeValue<OptionSetValue>(stateCodeAttribute)
+                     ?? preImage?.GetAttributeValue<OptionSetValue>(stateCodeAttribute);
             return sc != null && sc.Value != StateCodeValues.Active;
         }
 

@@ -46,6 +46,16 @@ namespace Checkbook.Plugins.Validation
             var target = GetTarget(context);
             var preImage = context.MessageName == "Update" ? TryGetPreImage(context) : null;
 
+            // An inactive-after-save row only lowers totals — never block it, not even
+            // on parent mismatches (deactivation is how bad rows get cleaned up).
+            // PrioritizationPullbackFundingCleanup relies on this.
+            if (context.MessageName == "Update" &&
+                JunctionGuard.IsInactiveAfterSave(target, preImage, PrioritizationFundingAttributes.StateCode))
+            {
+                tracing.Trace("Junction inactive after save — skipping guard checks.");
+                return;
+            }
+
             var prioRef = GetEffectiveEntityReference(
                 target, preImage, PrioritizationFundingAttributes.Prioritization);
             var rfRef = GetEffectiveEntityReference(
@@ -106,16 +116,6 @@ namespace Checkbook.Plugins.Validation
                 throw new InvalidPluginExecutionException(
                     $"Prioritization (FY {prioFY?.ToString() ?? "?"}) and " +
                     $"Requirement Funding (FY {rfFY?.ToString() ?? "?"}) must share the same Fiscal Year.");
-            }
-
-            // Deactivation only lowers totals — never block it (it is how duplicate
-            // or over-cap rows get cleaned up). PrioritizationPullbackFundingCleanup
-            // relies on this.
-            if (context.MessageName == "Update" &&
-                JunctionGuard.IsDeactivation(target, PrioritizationFundingAttributes.StateCode))
-            {
-                tracing.Trace("Junction deactivation — skipping uniqueness/cap/approval checks.");
-                return;
             }
 
             // ---- 3. Uniqueness of (Prio, RF) ----

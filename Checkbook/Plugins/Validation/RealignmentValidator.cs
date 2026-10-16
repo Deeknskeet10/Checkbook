@@ -64,9 +64,22 @@ namespace Checkbook.Plugins.Validation
             // condition, or a re-save carrying an already-stored Approved would move
             // money without passing role/shape/balance checks. Stamps below stay
             // transition-based so a re-drive keeps the original approver.
-            bool recordActive =
-                (preImage?.GetAttributeValue<OptionSetValue>(CommonAttributes.StateCode)?.Value
-                 ?? StateCodeValues.Active) == StateCodeValues.Active;
+            // The validator's pre-image may not carry statecode; read it only when a
+            // value-only (non-transition) payload actually needs the answer, so an
+            // inactive (processed) record re-saved by Excel / a flow is not gated.
+            bool anyDecisionValue =
+                target.Contains(RealignmentsAttributes.StateApproved) ||
+                target.Contains(RealignmentsAttributes.BEDecision);
+            bool recordActive = false;
+            if (anyDecisionValue)
+            {
+                var stateCode = preImage?.GetAttributeValue<OptionSetValue>(CommonAttributes.StateCode)?.Value
+                    ?? service.Retrieve(EntityNames.Realignments, context.PrimaryEntityId,
+                            new ColumnSet(CommonAttributes.StateCode))
+                        .GetAttributeValue<OptionSetValue>(CommonAttributes.StateCode)?.Value
+                    ?? StateCodeValues.Active;
+                recordActive = stateCode == StateCodeValues.Active;
+            }
             bool stateApproved = stateApprovedTx || (recordActive &&
                 ApprovalTransitionDetector.PayloadHasOptionSetValue(
                     target, RealignmentsAttributes.StateApproved, RealignmentBEDecisionValues.Approved));

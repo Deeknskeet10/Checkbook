@@ -75,11 +75,11 @@ namespace Checkbook.Plugins.Validation
             var target = GetTarget(context);
             var preImage = context.MessageName == "Update" ? TryGetPreImage(context) : null;
 
-            // Deactivation only lowers totals — never block it.
+            // An inactive-after-save row only lowers totals — never block it.
             if (context.MessageName == "Update" &&
-                JunctionGuard.IsDeactivation(target, RequirementDetailFundingAttributes.StateCode))
+                JunctionGuard.IsInactiveAfterSave(target, preImage, RequirementDetailFundingAttributes.StateCode))
             {
-                tracing.Trace("Junction deactivation — skipping guard checks.");
+                tracing.Trace("Junction inactive after save — skipping guard checks.");
                 return;
             }
 

@@ -42,7 +42,9 @@ namespace Checkbook.Plugins.Validation
             return base.IsAuthorizedAncestor(message, entityName) ||
                    IsRollupSourceWrite(message, entityName, EntityNames.Prioritization) ||
                    IsRollupSourceWrite(message, entityName, EntityNames.PrioritizationFunding) ||
-                   IsRollupSourceWrite(message, entityName, EntityNames.RequirementDetailFunding);
+                   IsRollupSourceWrite(message, entityName, EntityNames.RequirementDetailFunding) ||
+                   // PrioritizationItemizedRollup re-rolls a legacy Prio's direct RF.
+                   IsRollupSourceWrite(message, entityName, EntityNames.ItemizedDetails);
         }
     }
 }

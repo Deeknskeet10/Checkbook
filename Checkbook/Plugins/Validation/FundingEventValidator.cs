@@ -426,8 +426,11 @@ namespace Checkbook.Plugins.Validation
 
         private static string ResolveName(IOrganizationService service, string entityName, Guid id, string nameAttr)
         {
-            var e = service.Retrieve(entityName, id, new ColumnSet(nameAttr));
-            return e.GetAttributeValue<string>(nameAttr);
+            // Query, not Retrieve: the PG/SAG lookup may point at a SAG, and a
+            // missing row must fall back to the id in the message rather than fault.
+            var q = new QueryExpression(entityName) { ColumnSet = new ColumnSet(nameAttr), TopCount = 1 };
+            q.Criteria.AddCondition(entityName + "id", ConditionOperator.Equal, id);
+            return service.RetrieveMultiple(q).Entities.FirstOrDefault()?.GetAttributeValue<string>(nameAttr);
         }
 
         // -----------------------------------------------------------------
