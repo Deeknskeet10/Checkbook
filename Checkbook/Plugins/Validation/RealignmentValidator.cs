@@ -536,14 +536,14 @@ namespace Checkbook.Plugins.Validation
                 var rf = service.Retrieve(EntityNames.RequirementFunding, kv.Key,
                     new ColumnSet(RequirementFundingAttributes.Withholding, RequirementFundingAttributes.Name));
                 decimal withholding = rf.GetAttributeValue<decimal?>(RequirementFundingAttributes.Withholding) ?? 0m;
-                bool hasRdf = RequirementDetailFundingRollupHelper.SumForRequirementFunding(service, kv.Key).funded > 0m;
+                bool hasRdf = FundingRollupHelper.SumRequirementDetailFundingForRF(service, kv.Key).funded > 0m;
 
                 // An RF funded through Prioritizations (FY27 PF junctions or FY26 direct
                 // links) can only give up Withholding on the OPR path — its Funded belongs to
                 // the Prioritizations and moves with a State realignment instead.
                 bool prioFunded =
-                    PrioritizationFundingRollupHelper.SumForRequirementFunding(service, kv.Key).funded > 0m ||
-                    RequirementFundingHelpers.HasActiveChildren(service, kv.Key);
+                    FundingRollupHelper.SumPrioritizationFundingForRF(service, kv.Key).funded > 0m ||
+                    RequirementFundingHelper.HasActiveChildren(service, kv.Key);
                 if (prioFunded && kv.Value > withholding + BalanceEpsilon)
                     throw new InvalidPluginExecutionException(
                         $"{rf.GetAttributeValue<string>(RequirementFundingAttributes.Name)} is funded through Prioritizations, " +
@@ -686,7 +686,7 @@ namespace Checkbook.Plugins.Validation
                 {
                     var debitState = ResolveDebitingState(service, tracing, realignmentId);
                     if (debitState != null &&
-                        !StateScopeHelper.IsUserInStateBU(service, tracing, userId, debitState))
+                        !StateMembershipHelper.IsUserInStateBU(service, tracing, userId, debitState))
                     {
                         throw new InvalidPluginExecutionException(
                             "You cannot act on the State Approval of this Realignment — your account " +

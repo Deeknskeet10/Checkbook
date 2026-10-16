@@ -83,7 +83,7 @@ Runs once ready (Prio lines: State approval; RF lines: the RI / CSOR approval al
 3. **PF lines** — PF funded −amount; per RF: Funded re-summed from junctions and TDP −amount
    in one update; Direct Prio re-summed from its junctions, Requested −amount.
 4. **Detail reductions** — detail Funded and Requested −amount (itemized roll-up re-sums the Prio).
-5. **RF lines** — `RequirementFundingDebitHelper.ApplyDebit` (Withholding first, then Funded +
+5. **RF lines** — `RequirementFundingHelper.ApplyDebit` (Withholding first, then Funded +
    TDP; shared with the RF→RF realignment leg), then RDF reductions and RD/RF re-sums.
 6. Recalculate every touched LOA's TDP; deactivate the Turn-In.
 
@@ -100,7 +100,7 @@ Per LOA: source TDP and its RFs' TDP drop together (remaining unchanged); the AR
 | `TurnInItemRollup` (**new**) | Post-Op item Create/Update/Delete: header Amount / AFP / Allotment = Σ active items. |
 | `TurnInLOAResolver` | Loads PF + per-item AFP/Allotment + LOA SAG; active items only; `ResolveLOAsFy27`. |
 | `TurnInLineLock` (**new**, all FYs) | Pre-Op Create/Update/Delete of items + both reduction tables: blocked once the Turn-In is approved, processed, denied or has ledgers (only a whole-Turn-In delete cascades through). Stops users "undoing" a completed Turn-In by editing or deleting its lines. |
-| `RequirementFundingDebitHelper` (**new**) | Withholding-first RF debit, extracted from `RealignmentProcessor.ApplyDebitToRF`. |
+| `RequirementFundingHelper` (**new**) | Withholding-first RF debit, extracted from `RealignmentProcessor.ApplyDebitToRF`. |
 
 Registration: `devtools/sandbox-import/schema/register_turnin_fy27_steps.py`; details in
 `Plugins/PLUGIN-REGISTRATION.md`.

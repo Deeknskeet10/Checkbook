@@ -24,7 +24,7 @@ namespace Checkbook.Plugins.Validation
     ///      pull-back arrives via bulk edit / Web API / any path that skips it.
     ///
     /// Why funded ⟹ status 4 matters: RF.FundedAmount rolls up only
-    /// FinalApproved (status 4) child Prios (PrioritizationRollupHelper), while
+    /// FinalApproved (status 4) child Prios (FundingRollupHelper), while
     /// RF.TDP is not approval-filtered. A Prio holding funding below status 4 is
     /// therefore invisible to the roll-up and surfaces as a phantom TDP−Funded
     /// gap on the parent RF (see the realignment-rollup-approval-filter-gap

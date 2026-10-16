@@ -51,7 +51,7 @@ namespace Checkbook.Plugins.TurnIns
             // NOTE: Do NOT skip when nested inside another book_turnin Update.
             // Real-time Business Rules / server-side field setters on this
             // table would nest the user's approval save under another
-            // book_turnin Update, and an IsNestedUpdateOf(...) guard here
+            // book_turnin Update, and an same-table-nesting guard here
             // silently dropped every approval on book_realignments and
             // book_stateswap when exactly that happened (removed here
             // preemptively, Aug 2026 — same fix as commit 23aef51).
@@ -75,7 +75,7 @@ namespace Checkbook.Plugins.TurnIns
             // lets a re-save of the flag re-drive them. The ledger-existence
             // guard below stays as the durable double-processing barrier.
             bool recordActive =
-                (preImage?.GetAttributeValue<OptionSetValue>("statecode")?.Value
+                (preImage?.GetAttributeValue<OptionSetValue>(CommonAttributes.StateCode)?.Value
                  ?? StateCodeValues.Active) == StateCodeValues.Active;
 
             if (!recordActive)
@@ -228,7 +228,7 @@ namespace Checkbook.Plugins.TurnIns
                 var pulled = pair.Value;
 
                 tracing.Trace($"Rolling up parent RF {rfId} Funded after Prio reduction.");
-                PrioritizationRollupHelper.RecalculateRFFunded(service, rfId, tracing);
+                FundingRollupHelper.RecalculateRFFunded(service, rfId, tracing);
 
                 var rf = service.Retrieve(
                     EntityNames.RequirementFunding,
@@ -289,8 +289,8 @@ namespace Checkbook.Plugins.TurnIns
             tracing.Trace($"Deactivating completed Turn-In {turnInId}.");
             service.Update(new Entity(EntityNames.Turnin, turnInId)
             {
-                ["statecode"] = new OptionSetValue(StateCodeValues.Inactive),
-                ["statuscode"] = new OptionSetValue(StatusCodeValues.InactiveDefault),
+                [CommonAttributes.StateCode] = new OptionSetValue(StateCodeValues.Inactive),
+                [CommonAttributes.StatusCode] = new OptionSetValue(StatusCodeValues.InactiveDefault),
             });
         }
     }

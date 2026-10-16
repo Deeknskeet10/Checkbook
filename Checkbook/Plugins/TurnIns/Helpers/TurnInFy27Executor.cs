@@ -96,7 +96,7 @@ namespace Checkbook.Plugins.TurnIns.Helpers
                     throw new InvalidPluginExecutionException(
                         $"Turn-In cannot execute: Requirement Funding TDP {tdp:N2} is less than the {pulled:N2} turned in from it.");
 
-                var upd = PrioritizationRollupHelper.BuildRFFundedUpdate(service, g.Key, tracing);
+                var upd = FundingRollupHelper.BuildRFFundedUpdate(service, g.Key, tracing);
                 upd[RequirementFundingAttributes.TDP] = tdp - pulled;
                 service.Update(upd);
                 tracing.Trace($"FY27: RF {g.Key} TDP {tdp:N2} -> {tdp - pulled:N2}.");
@@ -114,7 +114,7 @@ namespace Checkbook.Plugins.TurnIns.Helpers
                     continue;
                 }
 
-                PrioritizationFundingRollupHelper.RecalculatePrioritizationFunded(service, g.Key, tracing);
+                FundingRollupHelper.RecalculatePrioritizationFunded(service, g.Key, tracing);
 
                 // The state is saying it does not need these funds — the request shrinks too.
                 var after = service.Retrieve(EntityNames.Prioritization, g.Key,
@@ -186,7 +186,7 @@ namespace Checkbook.Plugins.TurnIns.Helpers
 
             foreach (var g in rfItems.GroupBy(i => i.RequirementFunding.Id))
             {
-                RequirementFundingDebitHelper.ApplyDebit(
+                RequirementFundingHelper.ApplyDebit(
                     service, tracing, new EntityReference(EntityNames.RequirementFunding, g.Key),
                     g.Sum(i => i.Amount), allowChildFunded: false, operationLabel: "Turn-In");
             }
@@ -224,14 +224,14 @@ namespace Checkbook.Plugins.TurnIns.Helpers
 
                 var rd = rdf.GetAttributeValue<EntityReference>(RequirementDetailFundingAttributes.RequirementDetail);
                 if (rd != null)
-                    RequirementDetailFundingRollupHelper.RecalculateRequirementDetail(service, rd.Id, tracing);
+                    FundingRollupHelper.RecalculateRequirementDetail(service, rd.Id, tracing);
                 var rf = rdf.GetAttributeValue<EntityReference>(RequirementDetailFundingAttributes.RequirementFunding);
                 if (rf != null) rfs.Add(rf.Id);
                 tracing.Trace($"FY27: RDF {rdfRef.Id} funded {funded:N2} -> {funded - reduceBy:N2}.");
             }
 
             foreach (var rfId in rfs)
-                PrioritizationRollupHelper.RecalculateRFFunded(service, rfId, tracing);
+                FundingRollupHelper.RecalculateRFFunded(service, rfId, tracing);
         }
     }
 }

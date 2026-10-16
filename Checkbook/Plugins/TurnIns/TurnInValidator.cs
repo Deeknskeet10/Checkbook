@@ -238,7 +238,7 @@ namespace Checkbook.Plugins.TurnIns
             // would silently no-op (fail open) — the exact reason RF-only state turn-ins
             // were slipping through. The initiating user is the state approver.
             if (items.Any(i => i.IsRFOnly) &&
-                StateTeamHelper.IsRestrictedStateUser(
+                StateMembershipHelper.IsRestrictedStateUser(
                     service, tracing, context.InitiatingUserId, RfOnlyExemptAbbreviations))
             {
                 throw new InvalidPluginExecutionException(
@@ -283,7 +283,7 @@ namespace Checkbook.Plugins.TurnIns
         /// turn in through a Prioritization" rule — PEC and WTC may turn in items
         /// sourced directly from a Requirement Funding. Matched against the leading
         /// abbreviation of the user's "{ABBR} - State Approver/Administrator" owner
-        /// team (see <see cref="StateTeamHelper"/>).
+        /// team (see <see cref="StateMembershipHelper"/>).
         /// </summary>
         private static readonly string[] RfOnlyExemptAbbreviations = { "PEC", "WTC" };
 
@@ -483,7 +483,7 @@ namespace Checkbook.Plugins.TurnIns
                 // Mirrors the RF→RF realignment rule in SetSameFundSagFlagPlugin: RF with
                 // children → available = Withholding; leaf RF → available = FundedAmount.
                 // Applies to FY26 and FY27+ alike (no fiscal-year branch).
-                bool hasChildren = RequirementFundingHelpers.HasActiveChildren(service, rfId);
+                bool hasChildren = RequirementFundingHelper.HasActiveChildren(service, rfId);
 
                 if (hasChildren)
                 {

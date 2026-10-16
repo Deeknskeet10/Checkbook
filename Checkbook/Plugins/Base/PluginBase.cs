@@ -105,32 +105,12 @@ namespace Checkbook.Plugins.Base
             return null;
         }
 
-        /// <summary>
-        /// True when an ancestor pipeline is an Update on <paramref name="entityName"/>.
-        /// ⚠ Do NOT use this to guard approval orchestrators: real-time Business
-        /// Rules and other server-side field setters nest the user's
-        /// decision-bearing save under a same-table Update, so this guard
-        /// silently dropped every approval on book_realignments and
-        /// book_stateswap (all such guards were removed Aug 2026 — see
-        /// RealignmentProcessor / SwapApprovalPlugin / TurnInApprovalPlugin).
-        /// Prefer step filters that the plugin's own nested writes cannot
-        /// match (e.g. deactivate via statecode only), plus value+active and
-        /// ledger-existence idempotency checks. Currently unused; retained
-        /// for diagnostic use.
-        /// </summary>
-        protected static bool IsNestedUpdateOf(IPluginExecutionContext context, string entityName)
-        {
-            var ancestor = context.ParentContext;
-            while (ancestor != null)
-            {
-                if (ancestor.MessageName == "Update" &&
-                    ancestor.PrimaryEntityName == entityName)
-                    return true;
-
-                ancestor = ancestor.ParentContext;
-            }
-            return false;
-        }
+        // NOTE: there is deliberately no "is this nested under an Update of the
+        // same table?" helper. Such guards silently dropped every approval on
+        // book_realignments / book_stateswap / book_turnin (real-time Business
+        // Rules nest the user's decision save under a same-table Update) and were
+        // removed Aug 2026. Use step filters the plugin's own writes cannot match,
+        // plus value+active and ledger-existence idempotency checks.
 
         /// <summary>
         /// True when, after walking past platform wrapper messages (SetState,
@@ -138,7 +118,7 @@ namespace Checkbook.Plugins.Base
         /// i.e. the operation was issued by server-side automation (another
         /// plugin, a workflow, a Custom API) rather than directly by a user or
         /// a bulk wrapper. Use for "user-initiated only" lifecycle plugins.
-        /// Same pattern as DeactivationRoleGuard.
+        /// Used by DeactivationRoleGuard and SpendPlanEditLockGuard.
         /// </summary>
         protected static bool HasNonWrapperAncestor(IPluginExecutionContext context)
         {

@@ -223,8 +223,8 @@ namespace Checkbook.Plugins.TurnIns.Helpers
                 decimal funded = rf.GetAttributeValue<decimal?>(RequirementFundingAttributes.FundedAmount) ?? 0m;
 
                 bool prioFunded =
-                    PrioritizationFundingRollupHelper.SumForRequirementFunding(service, kv.Key).funded > 0m ||
-                    RequirementFundingHelpers.HasActiveChildren(service, kv.Key);
+                    FundingRollupHelper.SumPrioritizationFundingForRF(service, kv.Key).funded > 0m ||
+                    RequirementFundingHelper.HasActiveChildren(service, kv.Key);
                 if (prioFunded && kv.Value > withholding + Epsilon)
                     throw new InvalidPluginExecutionException(
                         $"{name} is funded through Prioritizations, so an RF-level Turn-In can take at most its " +
@@ -235,7 +235,7 @@ namespace Checkbook.Plugins.TurnIns.Helpers
                         $"The Turn-In takes {kv.Value:N2} from {name}, which holds only {withholding + funded:N2} " +
                         $"(Withholding {withholding:N2} + Funded {funded:N2}).");
 
-                bool hasRdf = RequirementDetailFundingRollupHelper.SumForRequirementFunding(service, kv.Key).funded > 0m;
+                bool hasRdf = FundingRollupHelper.SumRequirementDetailFundingForRF(service, kv.Key).funded > 0m;
                 decimal required = hasRdf ? Math.Max(0m, kv.Value - withholding) : 0m;
                 decimal got = reduced.TryGetValue(kv.Key, out var g) ? g : 0m;
                 tracing.Trace(

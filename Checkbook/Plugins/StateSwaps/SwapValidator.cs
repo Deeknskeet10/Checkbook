@@ -231,13 +231,13 @@ namespace Checkbook.Plugins.StateSwaps
 
                 if (!isCheckbookAdmin)
                 {
-                    if (stateATx && !StateScopeHelper.IsUserInStateBU(service, tracing, userId, stateA))
+                    if (stateATx && !StateMembershipHelper.IsUserInStateBU(service, tracing, userId, stateA))
                     {
                         throw new InvalidPluginExecutionException(
                             "You cannot approve the State A side of this Swap — your account " +
                             "does not belong to State A's business unit.");
                     }
-                    if (stateBTx && !StateScopeHelper.IsUserInStateBU(service, tracing, userId, stateB))
+                    if (stateBTx && !StateMembershipHelper.IsUserInStateBU(service, tracing, userId, stateB))
                     {
                         throw new InvalidPluginExecutionException(
                             "You cannot approve the State B side of this Swap — your account " +
@@ -293,14 +293,16 @@ namespace Checkbook.Plugins.StateSwaps
                 </fetch>";
             var rows = service.RetrieveMultiple(new FetchExpression(fetch)).Entities;
             if (rows.Count == 0) return 0;
-            var raw = rows[0].GetAttributeValue<AliasedValue>("n")?.Value;
-            if (raw is int i) return i;
-            return 0;
+            return AliasedValueHelper.GetInt(rows[0], "n");
         }
 
-        private struct DebitBucket { public Guid DebitStateId; public decimal Amount; }
-
-        private static Dictionary<Guid, DebitBucket> SumActiveItemsByDebitPrio(
+        /// <summary>
+        /// Σ active item Amount per debit Prioritization. (Keyed by Prio only —
+        /// the old per-debit-state grouping was a leftover of the retired
+        /// both-sides rule, and it silently dropped items with no debit state
+        /// from the overdraw check.)
+        /// </summary>
+        private static Dictionary<Guid, decimal> SumActiveItemsByDebitPrio(
             IOrganizationService service,
             Guid swapId)
         {
@@ -308,7 +310,6 @@ namespace Checkbook.Plugins.StateSwaps
                 <fetch aggregate='true'>
                     <entity name='{EntityNames.SwapItem}'>
                         <attribute name='{SwapItemAttributes.DebitPrioritization}' alias='debitprio' groupby='true'/>
-                        <attribute name='{SwapItemAttributes.DebitState}' alias='debitstate' groupby='true'/>
                         <attribute name='{SwapItemAttributes.Amount}' alias='total' aggregate='sum'/>
                         <filter type='and'>
                             <condition attribute='{SwapItemAttributes.StateSwap}' operator='eq' value='{swapId}'/>
@@ -317,32 +318,12 @@ namespace Checkbook.Plugins.StateSwaps
                     </entity>
                 </fetch>";
 
-            var rows = service.RetrieveMultiple(new FetchExpression(fetch)).Entities;
-            var result = new Dictionary<Guid, DebitBucket>();
-            foreach (var row in rows)
+            var result = new Dictionary<Guid, decimal>();
+            foreach (var row in service.RetrieveMultiple(new FetchExpression(fetch)).Entities)
             {
-                var prioRef = row.GetAttributeValue<AliasedValue>("debitprio")?.Value as EntityReference;
-                var stateRef = row.GetAttributeValue<AliasedValue>("debitstate")?.Value as EntityReference;
-                var total = NumericHelper.ToDecimal(
-                    row.GetAttributeValue<AliasedValue>("total")?.Value, 0m);
-                if (prioRef == null || stateRef == null) continue;
-
-                if (result.TryGetValue(prioRef.Id, out var existing))
-                {
-                    result[prioRef.Id] = new DebitBucket
-                    {
-                        DebitStateId = existing.DebitStateId,
-                        Amount = existing.Amount + total,
-                    };
-                }
-                else
-                {
-                    result[prioRef.Id] = new DebitBucket
-                    {
-                        DebitStateId = stateRef.Id,
-                        Amount = total,
-                    };
-                }
+                var prioRef = AliasedValueHelper.GetReference(row, "debitprio");
+                if (prioRef == null) continue;
+                result[prioRef.Id] = AliasedValueHelper.GetDecimal(row, "total");
             }
             return result;
         }
@@ -350,12 +331,12 @@ namespace Checkbook.Plugins.StateSwaps
         private static void ValidateAggregatedOverdraw(
             IOrganizationService service,
             ITracingService tracing,
-            Dictionary<Guid, DebitBucket> perDebitPrio)
+            Dictionary<Guid, decimal> perDebitPrio)
         {
             foreach (var pair in perDebitPrio)
             {
                 var prioId = pair.Key;
-                var requested = pair.Value.Amount;
+                var requested = pair.Value;
 
                 var prio = service.Retrieve(
                     EntityNames.Prioritization,

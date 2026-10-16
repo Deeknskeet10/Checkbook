@@ -56,8 +56,8 @@ New code (build with `cd Plugins && dotnet build -c Release`):
 | `Constants/RequirementDetailFundingAttributes.cs`             | Junction schema constants.                                   |
 | `Constants/EntityNames.cs` *(extended)*                       | Adds `RequirementDetailFunding`.                             |
 | `Constants/RequirementDetailsAttributes.cs` *(extended)*      | Adds `ValidatedAmount`, `FundedAmount`.                      |
-| `Helpers/RequirementDetailFundingRollupHelper.cs`             | Junction → RD totals, plus `SumForRequirementFunding`.       |
-| `Helpers/PrioritizationRollupHelper.cs` *(extended)*          | `RecalculateRFFunded` now UNIONs Prio + RD direct funding.   |
+| `Helpers/FundingRollupHelper.cs`             | Junction → RD totals, plus `SumForRequirementFunding`.       |
+| `Helpers/FundingRollupHelper.cs` *(extended)*          | `RecalculateRFFunded` now UNIONs Prio + RD direct funding.   |
 | `Recalculations/RequirementDetailFundingRollup.cs`            | Junction events → recalc parent RD + parent RF.              |
 | `Validation/RequirementDetailFundingGuard.cs`                 | Pre-Op guard: lookups, same Requirement, XOR, uniqueness, TDP cap. Also blocks Prio Create on a direct-funded Requirement. |
 

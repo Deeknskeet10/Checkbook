@@ -131,12 +131,9 @@ namespace Checkbook.Plugins.Items
             var rows = service.RetrieveMultiple(new FetchExpression(fetch)).Entities;
             if (rows.Count > 0)
             {
-                requested = NumericHelper.ToDecimal(
-                    rows[0].GetAttributeValue<AliasedValue>("requested")?.Value, 0m);
-                validated = NumericHelper.ToDecimal(
-                    rows[0].GetAttributeValue<AliasedValue>("validated")?.Value, 0m);
-                funded = NumericHelper.ToDecimal(
-                    rows[0].GetAttributeValue<AliasedValue>("funded")?.Value, 0m);
+                requested = AliasedValueHelper.GetDecimal(rows[0], "requested");
+                validated = AliasedValueHelper.GetDecimal(rows[0], "validated");
+                funded = AliasedValueHelper.GetDecimal(rows[0], "funded");
             }
 
             tracingService.Trace(
@@ -159,7 +156,7 @@ namespace Checkbook.Plugins.Items
             var rf = prioritization.GetAttributeValue<EntityReference>(
                 PrioritizationAttributes.RequirementFunding);
             if (rf != null)
-                PrioritizationRollupHelper.RecalculateRFFunded(service, rf.Id, tracingService);
+                FundingRollupHelper.RecalculateRFFunded(service, rf.Id, tracingService);
         }
     }
 }

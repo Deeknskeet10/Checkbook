@@ -6,16 +6,47 @@ using Checkbook.Plugins.Constants;
 namespace Checkbook.Plugins.Helpers
 {
     /// <summary>
-    /// Takes an amount out of a Requirement Funding at the RF level (no Prioritization):
-    /// Withholding (TDP − Funded) first, then Funded and TDP together. Shared by the
-    /// RF→RF realignment leg and FY27 RF-level Turn-Ins so both honor the same order.
-    ///
-    /// On a direct-funded RF (Funded = Σ Requirement Detail Funding) the Funded part must
-    /// also come out of its RDF junctions — callers apply those reductions afterwards and
-    /// re-sum the RF; their validators require Σ RDF reductions == max(0, amount − Withholding).
+    /// Shared Requirement Funding queries and the RF-level debit.
     /// </summary>
-    public static class RequirementFundingDebitHelper
+    public static class RequirementFundingHelper
     {
+        /// <summary>
+        /// True if the RF has at least one active child Prioritization (legacy
+        /// direct lookup) — i.e. it is a "parent" whose Funded is driven by the
+        /// roll-up, not a "leaf" whose Funded may be touched directly.
+        /// </summary>
+        public static bool HasActiveChildren(IOrganizationService service, Guid rfId)
+        {
+            var query = new QueryExpression(EntityNames.Prioritization)
+            {
+                ColumnSet = new ColumnSet(false),
+                TopCount = 1,
+                Criteria = new FilterExpression(LogicalOperator.And)
+                {
+                    Conditions =
+                    {
+                        new ConditionExpression(
+                            PrioritizationAttributes.RequirementFunding,
+                            ConditionOperator.Equal, rfId),
+                        new ConditionExpression(
+                            PrioritizationAttributes.StateCode,
+                            ConditionOperator.Equal, StateCodeValues.Active),
+                    },
+                },
+            };
+
+            return service.RetrieveMultiple(query).Entities.Count > 0;
+        }
+
+        /// <summary>
+        /// Takes an amount out of a Requirement Funding at the RF level (no Prioritization):
+        /// Withholding (TDP − Funded) first, then Funded and TDP together. Shared by the
+        /// RF→RF realignment leg and FY27 RF-level Turn-Ins so both honor the same order.
+        ///
+        /// On a direct-funded RF (Funded = Σ Requirement Detail Funding) the Funded part must
+        /// also come out of its RDF junctions — callers apply those reductions afterwards and
+        /// re-sum the RF; their validators require Σ RDF reductions == max(0, amount − Withholding).
+        /// </summary>
         /// <param name="allowChildFunded">
         /// True only for the legacy Prio→Prio realignment, which moves the child
         /// Prioritization's funding itself. Otherwise an RF with child Prioritizations
@@ -41,7 +72,7 @@ namespace Checkbook.Plugins.Helpers
             decimal tdp = rf.GetAttributeValue<decimal?>(RequirementFundingAttributes.TDP) ?? 0m;
             decimal withhold = rf.GetAttributeValue<decimal?>(RequirementFundingAttributes.Withholding) ?? 0m;
 
-            bool hasChildren = RequirementFundingHelpers.HasActiveChildren(service, debitRFRef.Id);
+            bool hasChildren = RequirementFundingHelper.HasActiveChildren(service, debitRFRef.Id);
 
             decimal remaining = amount;
 

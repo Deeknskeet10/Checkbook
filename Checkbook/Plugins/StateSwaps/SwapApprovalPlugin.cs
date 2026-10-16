@@ -55,7 +55,7 @@ namespace Checkbook.Plugins.StateSwaps
             // Update. Real-time Business Rules / server-side field setters on
             // this table issue a nested book_stateswap Update, so the user's
             // BE-approval save can run *inside* that nesting — an
-            // IsNestedUpdateOf(...) guard here silently dropped every approval
+            // same-table-nesting guard here silently dropped every approval
             // (symptom: trace showed only "self re-entry — skipping"; no
             // ledgers, no distributions, swap never deactivated). Same failure
             // and same fix as RealignmentProcessor (commit 23aef51).
@@ -78,7 +78,7 @@ namespace Checkbook.Plugins.StateSwaps
             // skip it). The ledger-existence guard below is the durable
             // double-processing barrier.
             bool recordActive =
-                (preImage?.GetAttributeValue<OptionSetValue>("statecode")?.Value
+                (preImage?.GetAttributeValue<OptionSetValue>(CommonAttributes.StateCode)?.Value
                  ?? StateCodeValues.Active) == StateCodeValues.Active;
 
             if (!recordActive)
@@ -164,8 +164,8 @@ namespace Checkbook.Plugins.StateSwaps
             tracing.Trace($"SwapApprovalPlugin: deactivating swap {swapId}.");
             service.Update(new Entity(EntityNames.StateSwap, swapId)
             {
-                ["statecode"] = new OptionSetValue(StateCodeValues.Inactive),
-                ["statuscode"] = new OptionSetValue(StatusCodeValues.InactiveDefault),
+                [CommonAttributes.StateCode] = new OptionSetValue(StateCodeValues.Inactive),
+                [CommonAttributes.StatusCode] = new OptionSetValue(StatusCodeValues.InactiveDefault),
             });
 
             tracing.Trace("SwapApprovalPlugin: completed successfully.");

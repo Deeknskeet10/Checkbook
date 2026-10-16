@@ -211,7 +211,7 @@ Mode is **Synchronous** unless explicitly noted Async.
 > - `context.UserId` is the *service account* — it holds admin roles and sits
 >   in no state owner team / state BU. Authorizing against it silently
 >   rubber-stamps every role gate and, worse, makes cross-state BU-scope checks
->   (`StateScopeHelper.IsUserInStateBU`) pass as "admin" and skip entirely.
+>   (`StateMembershipHelper.IsUserInStateBU`) pass as "admin" and skip entirely.
 > - `context.InitiatingUserId` is the **actual approver** — this is what every
 >   role/team/BU authorization check must use.
 >
@@ -304,7 +304,7 @@ Review). Two concerns in one Pre-Op step:
    this step is the guaranteed enforcement for bulk-edit / Web API paths.
 
 Why it matters: `RF.FundedAmount` rolls up only FinalApproved (status 4) child
-Prios (`PrioritizationRollupHelper`) while `RF.TDP` is not approval-filtered, so
+Prios (`FundingRollupHelper`) while `RF.TDP` is not approval-filtered, so
 a Prio holding funding below status 4 is invisible to the roll-up and surfaces
 as a phantom `TDP − Funded` gap on the parent RF.
 
@@ -447,7 +447,7 @@ it also **role-gates and stamps** every approval/denial transition — the
 - A **State stage** action (approve or deny `book_newstateapproved`) requires
   `Book - State Approver` / `Book - State Administrator` /
   `Book - Checkbook Administrator`, scoped (non-admins) to the **debiting
-  state's** BU via `StateScopeHelper.IsUserInStateBU`. The debiting state is
+  state's** BU via `StateMembershipHelper.IsUserInStateBU`. The debiting state is
   read live: realignment → `book_debitedprioritization` → `book_state`.
 - A **BE stage** action (approve or deny `book_bedecision`) requires
   `Book - Budget Executor` / `Book - Checkbook Administrator`.
@@ -508,7 +508,7 @@ on `book_requirementfunding` — increases and no-op writes are always allowed.
 (Funded ≤ TDP) keeps a TDP reduction within the available Withholding
 (TDP − Funded). Authorized ancestors: the four funding tools + the Distribution
 generator, plus the roll-up sources that recompute RF Funded via
-`PrioritizationRollupHelper.RecalculateRFFunded` — `book_prioritization`,
+`FundingRollupHelper.RecalculateRFFunded` — `book_prioritization`,
 `book_prioritizationfunding`, `book_requirementdetailfunding` (Create / Update /
 Delete). Full setup:
 [`../docs/FundedAmountLock-Setup.md`](../docs/FundedAmountLock-Setup.md).
@@ -963,8 +963,8 @@ Rolls `book_prioritizationfunding` junction amounts up onto **both** the parent
 Prioritization's `book_newfundedamounttdp` + `book_validatedamount` **and** the
 parent Requirement Funding's `book_fundedamount` + `book_validatedamount`. The
 Prio aggregate + update lives in
-`Helpers/PrioritizationFundingRollupHelper.RecalculatePrioritizationFunded`; the
-RF leg calls `Helpers/PrioritizationRollupHelper.RecalculateRFFunded` directly
+`Helpers/FundingRollupHelper.RecalculatePrioritizationFunded`; the
+RF leg calls `Helpers/FundingRollupHelper.RecalculateRFFunded` directly
 (the Prio update this plugin issues runs at depth+1, where the depth-guarded
 `PrioritizationRollupToRequirementFunding` early-returns, so it never fires to
 refresh the RF). On re-parent it recalcs both the old and new RF.
@@ -995,7 +995,7 @@ Only buckets that already have spend-plan rows are touched. Never creates rows.
 Rolls child Prioritization funded/validated totals up onto the parent
 Requirement Funding. Depth-guarded; depth-1 actors (e.g.
 `RealignmentProcessor`, `TurnInApprovalPlugin`) that need the result after
-their own nested Prio updates must call `PrioritizationRollupHelper.RecalculateRFFunded`
+their own nested Prio updates must call `FundingRollupHelper.RecalculateRFFunded`
 directly.
 
 | # | Message | Primary entity        | Stage           | Mode | Filtering attributes                                                                                          | Notes |
@@ -1014,14 +1014,14 @@ junction whenever the NPM sets the Prio total. Covers **both** funding modes —
 Direct (NPM types `book_newfundedamounttdp` / `book_validatedamount` in the V&F
 editor) and Itemized (`PrioritizationItemizedRollup` sums the details onto the
 same two fields) — because both fire this step's filter. It recalculates the
-parent RF directly via `PrioritizationRollupHelper.RecalculateRFFunded` (the
+parent RF directly via `FundingRollupHelper.RecalculateRFFunded` (the
 junction write lands at depth ≥ 2, where `PrioritizationFundingRollup`
 self-guards and won't refresh the RF). No pre-image needed — the post-operation
 `Retrieve` reads the committed totals + parents.
 
 **FY26 guard.** A Prio that already funds an RF through the legacy direct
 `book_requirementfunding` lookup is skipped outright — that is the FY26 shape,
-and the RF roll-up (`PrioritizationRollupHelper.BuildRFFundedUpdate`) UNIONs the
+and the RF roll-up (`FundingRollupHelper.BuildRFFundedUpdate`) UNIONs the
 direct-lookup path with the junction path on the assumption they are mutually
 exclusive per RF. Materializing a junction for a Prio that also carries the
 direct lookup lands it in **both** sums and the RF double-counts it → a spurious
@@ -1252,10 +1252,10 @@ source, and approval ordering.
 > Turn-In Item must carry a Prioritization. PEC and WTC are non-geographic
 > entities and stay **exempt** (they may turn in RF-only). Checkbook
 > Administrators and Budget Executors hold no such state team and pass. The
-> check runs via `StateTeamHelper.IsRestrictedStateUser` (a name-pattern query
+> check runs via `StateMembershipHelper.IsRestrictedStateUser` (a name-pattern query
 > over the user's team memberships) on the State's approval save. Exempt
 > abbreviations live in `TurnInValidator.RfOnlyExemptAbbreviations`; the state
-> owner-team suffixes live in `StateTeamHelper.StateTeamSuffixes`.
+> owner-team suffixes live in `StateMembershipHelper.StateTeamSuffixes`.
 
 Also enforces **role gating** via `UserRoleHelper`: State approval requires
 `Book - State Approver`, `Book - State Administrator`, or
@@ -1424,7 +1424,7 @@ only on false → true) so a re-save that re-drives a stuck approval is
 validated and role-gated like the original; denial detection stays
 transition-based. Enforces
 idempotency (no re-processing if ledgers exist), role gating with
-**per-state BU scoping** via `StateScopeHelper` (a State A Approver in the
+**per-state BU scoping** via `StateMembershipHelper` (a State A Approver in the
 wrong BU cannot approve the State A side), at-least-one-active-item
 (recomputed live from active items — the stored totals are not trusted;
 **one-sided swaps are allowed**, there is no both-sides-contribute check
@@ -1533,7 +1533,7 @@ any RF write where `FundedAmount` > `TDP`, and the RF's rollup
 `FundedAmount` stays stale-high until `SwapPrioritizationUpdater` recomputes
 it (the rollup plugins skip at depth > 1). So the updater writes each debit
 RF's reduced `TDP` **and** its rolled-down `FundedAmount`/`ValidatedAmount`
-in the same Update (via `PrioritizationRollupHelper.BuildRFFundedUpdate`),
+in the same Update (via `FundingRollupHelper.BuildRFFundedUpdate`),
 mirroring `RealignmentProcessor.ApplyDebitToRF`. A TDP-only debit write
 would be rejected by the business rule.
 

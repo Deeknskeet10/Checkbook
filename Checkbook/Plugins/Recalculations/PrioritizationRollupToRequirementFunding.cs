@@ -12,7 +12,7 @@ namespace Checkbook.Plugins.Recalculations
     /// is created, updated (on funded/validated/parent-RF), or deleted.
     ///
     /// The actual aggregate fetch + update lives in
-    /// PrioritizationRollupHelper.RecalculateRFFunded. This plugin is
+    /// FundingRollupHelper.RecalculateRFFunded. This plugin is
     /// intentionally a thin shell that determines which parent RF needs the
     /// recalc and delegates. Depth-1 actors (e.g. RealignmentProcessor) that
     /// need the rollup result after their own nested Prioritization updates
@@ -68,7 +68,7 @@ namespace Checkbook.Plugins.Recalculations
             if (previousRF != null && (parentRF == null || previousRF.Id != parentRF.Id))
             {
                 tracing.Trace($"Prio moved off RF {previousRF.Id}; recalculating it.");
-                PrioritizationRollupHelper.RecalculateRFFunded(service, previousRF.Id, tracing);
+                FundingRollupHelper.RecalculateRFFunded(service, previousRF.Id, tracing);
             }
 
             // Defensive fallback: if neither Target nor PreImage carried the RF
@@ -93,7 +93,7 @@ namespace Checkbook.Plugins.Recalculations
 
             tracing.Trace($"Rolling up Prioritizations for RF {parentRF.Id}");
 
-            PrioritizationRollupHelper.RecalculateRFFunded(service, parentRF.Id, tracing);
+            FundingRollupHelper.RecalculateRFFunded(service, parentRF.Id, tracing);
 
             tracing.Trace("Requirement Funding roll-up updated successfully.");
         }

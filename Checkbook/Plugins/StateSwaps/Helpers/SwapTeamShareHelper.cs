@@ -18,12 +18,6 @@ namespace Checkbook.Plugins.StateSwaps.Helpers
     /// </summary>
     public static class SwapTeamShareHelper
     {
-        // Suffixes match what appears in the team name after the abbreviation
-        // and separator. Kept in sync with <see cref="RoleNames"/> but *without*
-        // the "Book - " prefix since teams follow the schema doc's convention.
-        public const string ApproverSuffix = "State Approver";
-        public const string AdministratorSuffix = "State Administrator";
-
         private static readonly AccessRights SwapAccessRights =
             AccessRights.ReadAccess | AccessRights.WriteAccess | AccessRights.AppendToAccess;
 
@@ -43,9 +37,9 @@ namespace Checkbook.Plugins.StateSwaps.Helpers
             var abbr = ResolveStateAbbreviation(service, tracing, stateRef.Id);
             if (string.IsNullOrWhiteSpace(abbr)) return;
 
-            foreach (var suffix in TeamSuffixes())
+            foreach (var suffix in TeamNames.StateTeamSuffixes)
             {
-                var teamRef = FindTeamByName(service, tracing, $"{abbr} - {suffix}");
+                var teamRef = FindTeamByName(service, tracing, TeamNames.StateTeam(abbr, suffix));
                 if (teamRef == null) continue;
 
                 var grant = new GrantAccessRequest
@@ -80,9 +74,9 @@ namespace Checkbook.Plugins.StateSwaps.Helpers
             var abbr = ResolveStateAbbreviation(service, tracing, stateRef.Id);
             if (string.IsNullOrWhiteSpace(abbr)) return;
 
-            foreach (var suffix in TeamSuffixes())
+            foreach (var suffix in TeamNames.StateTeamSuffixes)
             {
-                var teamRef = FindTeamByName(service, tracing, $"{abbr} - {suffix}");
+                var teamRef = FindTeamByName(service, tracing, TeamNames.StateTeam(abbr, suffix));
                 if (teamRef == null) continue;
 
                 var revoke = new RevokeAccessRequest
@@ -138,12 +132,6 @@ namespace Checkbook.Plugins.StateSwaps.Helpers
                 GrantAccessForState(service, tracing, itemRef, stateA);
                 GrantAccessForState(service, tracing, itemRef, stateB);
             }
-        }
-
-        private static IEnumerable<string> TeamSuffixes()
-        {
-            yield return ApproverSuffix;
-            yield return AdministratorSuffix;
         }
 
         private static string ResolveStateAbbreviation(

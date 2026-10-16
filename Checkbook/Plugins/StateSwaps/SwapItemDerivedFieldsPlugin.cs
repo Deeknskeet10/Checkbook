@@ -4,6 +4,7 @@ using Microsoft.Xrm.Sdk;
 using Microsoft.Xrm.Sdk.Query;
 using Checkbook.Plugins.Base;
 using Checkbook.Plugins.Constants;
+using Checkbook.Plugins.Helpers;
 
 namespace Checkbook.Plugins.StateSwaps
 {
@@ -200,8 +201,8 @@ namespace Checkbook.Plugins.StateSwaps
                 {
                     PrioId = row.Id,
                     State  = row.GetAttributeValue<EntityReference>(PrioritizationAttributes.State),
-                    Fund   = (row.GetAttributeValue<AliasedValue>("loa." + FundingLineAttributes.Fund))?.Value as EntityReference,
-                    PG     = (row.GetAttributeValue<AliasedValue>("loa." + FundingLineAttributes.PG))?.Value as EntityReference,
+                    Fund   = AliasedValueHelper.GetReference(row, "loa." + FundingLineAttributes.Fund),
+                    PG     = AliasedValueHelper.GetReference(row, "loa." + FundingLineAttributes.PG),
                 });
             }
             return list;

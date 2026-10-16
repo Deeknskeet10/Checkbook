@@ -68,7 +68,7 @@ namespace Checkbook.Plugins.Validation
                     PrioritizationAttributes.FundingMode,
                     PrioritizationAttributes.FundedAmountTDP,
                     PrioritizationAttributes.Name,
-                    "ownerid"
+                    CommonAttributes.OwnerId
                 )
             );
 
@@ -212,12 +212,12 @@ namespace Checkbook.Plugins.Validation
             // is needed. Only applied when the caller didn't set an explicit
             // owner, so callers can still override.
             if (context.MessageName == "Create" &&
-                target.GetAttributeValue<EntityReference>("ownerid") == null)
+                target.GetAttributeValue<EntityReference>(CommonAttributes.OwnerId) == null)
             {
-                var prioOwner = prio.GetAttributeValue<EntityReference>("ownerid");
+                var prioOwner = prio.GetAttributeValue<EntityReference>(CommonAttributes.OwnerId);
                 if (prioOwner != null)
                 {
-                    target["ownerid"] = prioOwner;
+                    target[CommonAttributes.OwnerId] = prioOwner;
                 }
             }
 

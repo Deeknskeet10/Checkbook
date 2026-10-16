@@ -45,7 +45,7 @@ namespace Checkbook.Plugins.Realignments
             // SetStateApproval, Realignments - LockSameSAGFundField, Mode=1) set
             // fields server-side, which issues a nested book_realignments
             // Update; the user's decision-bearing save runs *inside* that
-            // nesting. An IsNestedUpdateOf(...) guard here silently dropped every
+            // nesting. An same-table-nesting guard here silently dropped every
             // approval (symptom: "self re-entry — skipping" with nothing else
             // logged and the record never deactivating).
             //
@@ -110,7 +110,7 @@ namespace Checkbook.Plugins.Realignments
             // the stuck record.
 
             bool recordActive =
-                (preImage?.GetAttributeValue<OptionSetValue>("statecode")?.Value
+                (preImage?.GetAttributeValue<OptionSetValue>(CommonAttributes.StateCode)?.Value
                  ?? StateCodeValues.Active) == StateCodeValues.Active;
 
             if (!recordActive)
@@ -508,12 +508,12 @@ namespace Checkbook.Plugins.Realignments
                 if (rd == null || rf == null || raiseBy <= 0m) continue;
 
                 UpsertCreditRdf(service, tracing, rd, rf, raiseBy);
-                RequirementDetailFundingRollupHelper.RecalculateRequirementDetail(service, rd.Id, tracing);
+                FundingRollupHelper.RecalculateRequirementDetail(service, rd.Id, tracing);
                 rfs.Add(rf.Id);
                 tracing.Trace($"ApplyRdfIncreases: RD {rd.Id} on RF {rf.Id} +{raiseBy:N2}.");
             }
             foreach (var rfId in rfs)
-                PrioritizationRollupHelper.RecalculateRFFunded(service, rfId, tracing);
+                FundingRollupHelper.RecalculateRFFunded(service, rfId, tracing);
         }
 
         /// <summary>
@@ -567,13 +567,13 @@ namespace Checkbook.Plugins.Realignments
 
                 var rd = rdf.GetAttributeValue<EntityReference>(RequirementDetailFundingAttributes.RequirementDetail);
                 if (rd != null)
-                    RequirementDetailFundingRollupHelper.RecalculateRequirementDetail(service, rd.Id, tracing);
+                    FundingRollupHelper.RecalculateRequirementDetail(service, rd.Id, tracing);
                 var rf = rdf.GetAttributeValue<EntityReference>(RequirementDetailFundingAttributes.RequirementFunding);
                 if (rf != null) rfs.Add(rf.Id);
                 tracing.Trace($"ApplyRdfReductions: RDF {rdfRef.Id} funded {funded:N2} -> {(funded - reduceBy):N2}.");
             }
             foreach (var rfId in rfs)
-                PrioritizationRollupHelper.RecalculateRFFunded(service, rfId, tracing);
+                FundingRollupHelper.RecalculateRFFunded(service, rfId, tracing);
         }
 
         /// <summary>
@@ -658,9 +658,9 @@ namespace Checkbook.Plugins.Realignments
             {
                 MovePfJunction(service, tracing, debitPf, debitJunctionFunded, debitRf, creditPrio, creditRf, amount, sameRf, creditPrioItemized);
                 if (debitPrio != null)
-                    PrioritizationFundingRollupHelper.RecalculatePrioritizationFunded(service, debitPrio.Id, tracing);
+                    FundingRollupHelper.RecalculatePrioritizationFunded(service, debitPrio.Id, tracing);
                 if (creditPrio != null)
-                    PrioritizationFundingRollupHelper.RecalculatePrioritizationFunded(service, creditPrio.Id, tracing);
+                    FundingRollupHelper.RecalculatePrioritizationFunded(service, creditPrio.Id, tracing);
             }
             else if (debitRdf != null)
             {
@@ -735,7 +735,7 @@ namespace Checkbook.Plugins.Realignments
                     throw new InvalidPluginExecutionException(
                         $"Realignment cannot execute: the debit Requirement Funding TDP {debitTdp:N2} " +
                         $"is less than the move amount {amount:N2}.");
-                var debitUpd = PrioritizationRollupHelper.BuildRFFundedUpdate(service, debitRf.Id, tracing);
+                var debitUpd = FundingRollupHelper.BuildRFFundedUpdate(service, debitRf.Id, tracing);
                 debitUpd[RequirementFundingAttributes.TDP] = debitTdp - amount;
                 service.Update(debitUpd);
 
@@ -757,7 +757,7 @@ namespace Checkbook.Plugins.Realignments
             // 5. Refresh the credit RF funded from its junctions (same RF when in-house).
             //    For the itemized-credit case the authoritative refresh happens when
             //    auto-allocate syncs the junction; this is a harmless pre-pass.
-            PrioritizationRollupHelper.RecalculateRFFunded(service, sameRf ? debitRf.Id : creditRf.Id, tracing);
+            FundingRollupHelper.RecalculateRFFunded(service, sameRf ? debitRf.Id : creditRf.Id, tracing);
         }
 
         /// <summary>Direct-path move: debit RDF −amount; same RD ↔ creditRF RDF +amount.</summary>
@@ -789,7 +789,7 @@ namespace Checkbook.Plugins.Realignments
                     throw new InvalidPluginExecutionException(
                         $"Realignment cannot execute: the debit Requirement Funding TDP {debitTdp:N2} " +
                         $"is less than the move amount {amount:N2}.");
-                var debitUpd = PrioritizationRollupHelper.BuildRFFundedUpdate(service, debitRf.Id, tracing);
+                var debitUpd = FundingRollupHelper.BuildRFFundedUpdate(service, debitRf.Id, tracing);
                 debitUpd[RequirementFundingAttributes.TDP] = debitTdp - amount;
                 service.Update(debitUpd);
 
@@ -801,10 +801,10 @@ namespace Checkbook.Plugins.Realignments
             UpsertCreditRdf(service, tracing, debitRd, creditRf, amount);
 
             // 5. Refresh the credit RF funded from its junctions.
-            PrioritizationRollupHelper.RecalculateRFFunded(service, sameRf ? debitRf.Id : creditRf.Id, tracing);
+            FundingRollupHelper.RecalculateRFFunded(service, sameRf ? debitRf.Id : creditRf.Id, tracing);
 
             // Refresh the RD display totals (both junctions hang off the same RD).
-            RequirementDetailFundingRollupHelper.RecalculateRequirementDetail(service, debitRd.Id, tracing);
+            FundingRollupHelper.RecalculateRequirementDetail(service, debitRd.Id, tracing);
         }
 
         private void UpsertCreditPf(
@@ -1020,8 +1020,8 @@ namespace Checkbook.Plugins.Realignments
             // withhold on the form. ApplyDebitToRF currently also adjusts the
             // debit RF.FundedAmount manually; calling the helper here makes
             // the children-sum the source of truth for both RFs.
-            PrioritizationRollupHelper.RecalculateRFFunded(service, debitRF.Id, tracing);
-            PrioritizationRollupHelper.RecalculateRFFunded(service, creditRF.Id, tracing);
+            FundingRollupHelper.RecalculateRFFunded(service, debitRF.Id, tracing);
+            FundingRollupHelper.RecalculateRFFunded(service, creditRF.Id, tracing);
 
             tracing.Trace("Prior→Prior funding movement completed.");
         }
@@ -1048,7 +1048,7 @@ namespace Checkbook.Plugins.Realignments
             bool priToPri)
         {
             // Withholding first, then Funded + TDP — shared with FY27 RF-level Turn-Ins.
-            RequirementFundingDebitHelper.ApplyDebit(service, tracing, debitRFRef, amount, priToPri, "Realignment");
+            RequirementFundingHelper.ApplyDebit(service, tracing, debitRFRef, amount, priToPri, "Realignment");
         }
 
         private void ApplyCreditToRF(
@@ -1121,8 +1121,8 @@ namespace Checkbook.Plugins.Realignments
             tracing.Trace("Deactivating realignment.");
 
             var update = new Entity(EntityNames.Realignments, id);
-            update["statecode"] = new OptionSetValue(StateCodeValues.Inactive);
-            update["statuscode"] = new OptionSetValue(StatusCodeValues.InactiveDefault);
+            update[CommonAttributes.StateCode] = new OptionSetValue(StateCodeValues.Inactive);
+            update[CommonAttributes.StatusCode] = new OptionSetValue(StatusCodeValues.InactiveDefault);
 
             service.Update(update);
 

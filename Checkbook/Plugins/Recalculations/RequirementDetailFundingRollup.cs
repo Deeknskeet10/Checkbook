@@ -84,14 +84,14 @@ namespace Checkbook.Plugins.Recalculations
             foreach (var rdId in rds)
             {
                 tracing.Trace($"Rolling up junctions for RD {rdId}");
-                RequirementDetailFundingRollupHelper.RecalculateRequirementDetail(
+                FundingRollupHelper.RecalculateRequirementDetail(
                     service, rdId, tracing);
             }
 
             foreach (var rfId in rfs)
             {
                 tracing.Trace($"Rolling up junctions + Prios for RF {rfId}");
-                PrioritizationRollupHelper.RecalculateRFFunded(service, rfId, tracing);
+                FundingRollupHelper.RecalculateRFFunded(service, rfId, tracing);
             }
 
             tracing.Trace("Requirement Detail Funding rollup complete.");

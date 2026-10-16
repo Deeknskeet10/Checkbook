@@ -192,9 +192,7 @@ namespace Checkbook.Plugins.LOAs
             var result = service.RetrieveMultiple(new FetchExpression(fetch));
             if (result.Entities.Count == 0) return 0;
 
-            var aliased = result.Entities[0].GetAttributeValue<AliasedValue>("cnt");
-            if (aliased?.Value is int i) return i;
-            return 0;
+            return AliasedValueHelper.GetInt(result.Entities[0], "cnt");
         }
 
         /// <summary>

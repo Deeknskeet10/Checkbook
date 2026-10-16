@@ -73,7 +73,7 @@ namespace Checkbook.Plugins.StateSwaps.Helpers
             // is skipped there.
             foreach (var pair in rfDeltas.Where(p => p.Value < 0m))
             {
-                var update = PrioritizationRollupHelper.BuildRFFundedUpdate(
+                var update = FundingRollupHelper.BuildRFFundedUpdate(
                     service, pair.Key, tracing);
                 update[RequirementFundingAttributes.TDP] =
                     ComputeAdjustedTdp(service, tracing, pair.Key, pair.Value);
@@ -95,7 +95,7 @@ namespace Checkbook.Plugins.StateSwaps.Helpers
             // and idempotent. TDP is already final everywhere.
             foreach (var pair in rfDeltas)
             {
-                service.Update(PrioritizationRollupHelper.BuildRFFundedUpdate(
+                service.Update(FundingRollupHelper.BuildRFFundedUpdate(
                     service, pair.Key, tracing));
             }
         }
