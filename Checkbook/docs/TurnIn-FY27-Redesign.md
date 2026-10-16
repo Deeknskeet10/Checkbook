@@ -56,7 +56,7 @@ Schema script: `devtools/sandbox-import/schema/turnin_fy27_schema.py` (idempoten
 
 ## 4. Rules (TurnInValidator → `TurnInRules`, at approval)
 
-FY27 branch = `book_turnin.book_fiscalyear` ≥ 2027 (`TurnInLOAResolver.IsFy27Plus`). Header
+FY27 branch = `book_turnin.book_fiscalyear` ≥ 2027 (`TurnInRules.IsLegacy`, inverted). Header
 checks (amount > 0, Σ items == header), role gate, idempotency, the State-only RF rule and the
 BE ordering rule are unchanged.
 
