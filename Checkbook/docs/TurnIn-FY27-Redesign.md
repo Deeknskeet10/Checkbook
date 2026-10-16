@@ -54,7 +54,7 @@ The FY26 Turn-In:
 
 Schema script: `devtools/sandbox-import/schema/turnin_fy27_schema.py` (idempotent).
 
-## 4. Rules (TurnInValidator → `TurnInFy27Rules`, at approval)
+## 4. Rules (TurnInValidator → `TurnInRules`, at approval)
 
 FY27 branch = `book_turnin.book_fiscalyear` ≥ 2027 (`TurnInLOAResolver.IsFy27Plus`). Header
 checks (amount > 0, Σ items == header), role gate, idempotency, the State-only RF rule and the
@@ -72,7 +72,7 @@ BE ordering rule are unchanged.
   `book_beapproved` save must come from a Resource Integrator, CSOR or Checkbook Administrator,
   and needs no prior State approval.
 
-## 5. Execution (TurnInApprovalPlugin → `TurnInFy27Executor`)
+## 5. Execution (TurnInApprovalPlugin → `TurnInExecutor`)
 
 Runs once ready (Prio lines: State approval; RF lines: the RI / CSOR approval alone).
 
@@ -93,12 +93,12 @@ Per LOA: source TDP and its RFs' TDP drop together (remaining unchanged); the AR
 
 | Plugin | Change |
 |---|---|
-| `TurnInValidator` | FY27 → `TurnInFy27Rules`; FY backfilled from the record when the pre-image lacks it; FY27 RF-level role gate = Resource Integrator / CSOR / Checkbook Admin on `book_beapproved`, State flag refused, no State-first ordering. |
-| `TurnInApprovalPlugin` | FY27 with items → `TurnInFy27Executor`; FY27 RF-level ready on `book_beapproved` alone; FY26 / Sweep unchanged. |
+| `TurnInValidator` | FY27 → `TurnInRules`; FY backfilled from the record when the pre-image lacks it; FY27 RF-level role gate = Resource Integrator / CSOR / Checkbook Admin on `book_beapproved`, State flag refused, no State-first ordering. |
+| `TurnInApprovalPlugin` | FY27 with items → `TurnInExecutor`; FY27 RF-level ready on `book_beapproved` alone; FY26 / Sweep unchanged. |
 | `TurnInAmountCalculator` | Skips FY27 (items own AFP/Allotment). |
 | `TurnInItemAmountCalculator` (**new**) | Pre-Op item Create/Update: per-item AFP/Allotment = amount × pct of the item LOA's (Fund, PG). |
 | `TurnInItemRollup` (**new**) | Post-Op item Create/Update/Delete: header Amount / AFP / Allotment = Σ active items. |
-| `TurnInLOAResolver` | Loads PF + per-item AFP/Allotment + LOA SAG; active items only; `ResolveLOAsFy27`. |
+| `TurnInLOAResolver` | Loads PF + per-item AFP/Allotment + LOA SAG; active items only; `ResolveLOAsForItems`. |
 | `TurnInLineLock` (**new**, all FYs) | Pre-Op Create/Update/Delete of items + both reduction tables: blocked once the Turn-In is approved, processed, denied or has ledgers (only a whole-Turn-In delete cascades through). Stops users "undoing" a completed Turn-In by editing or deleting its lines. |
 | `RequirementFundingHelper` (**new**) | Withholding-first RF debit, extracted from `RealignmentProcessor.ApplyDebitToRF`. |
 

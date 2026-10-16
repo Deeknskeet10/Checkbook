@@ -38,7 +38,7 @@ namespace Checkbook.Plugins.StateSwaps.Helpers
         ///   2. Debit RFs: rolled-down FundedAmount + TDP cut in the SAME Update
         ///      (a TDP-only cut while Funded is stale-high would trip the
         ///      Funded &lt;= TDP business rule — mirrors
-        ///      RealignmentProcessor.ApplyDebitToRF). This frees LOA headroom.
+        ///      RequirementFundingHelper.ApplyDebit). This frees LOA headroom.
         ///   3. Credit RFs: TDP up (fits in the headroom step 2 released).
         ///   4. Credit Prios' Funded up (fits under the raised credit RF TDP).
         ///   5. Re-roll FundedAmount on every touched RF (an RF debited in one

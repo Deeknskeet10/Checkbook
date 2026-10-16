@@ -710,7 +710,7 @@ decision check ensures only the actual decision write processes.
 > (direct/OPR), or plain **RequirementFunding** granularity. `RealignmentProcessor`
 > and `RealignmentValidator` branch on "has active items?" — with items they take
 > their shape from the rollup (`book_allsamefundsag` + `book_realignmententrymode`)
-> and the processor iterates items (`ProcessItems`); without items the legacy
+> and the processor hands off to `RealignmentExecutor` (`ProcessItems`); without items the legacy
 > FY26 single-row path runs unchanged (coexistence, no migration).
 
 **Schema (maker portal / `devtools/sandbox-import/schema/realign_item_schema.py`):**
@@ -1195,8 +1195,8 @@ LOA's TDP Remaining so the form view doesn't go stale.
 > Turn-In can span several Fund/SAGs. AFP/Allotment are sized **per item**
 > (`TurnInItemAmountCalculator`) and rolled up to the header (`TurnInItemRollup`);
 > the header `TurnInAmountCalculator` skips FY27. `TurnInValidator` runs
-> `TurnInFy27Rules` (per-PF funded, itemized detail reductions, RF Withholding first
-> + RDF reductions) and `TurnInApprovalPlugin` runs `TurnInFy27Executor` (junction
+> `TurnInRules` (per-PF funded, itemized detail reductions, RF Withholding first
+> + RDF reductions) and `TurnInApprovalPlugin` runs `TurnInExecutor` (junction
 > reductions, Requested lowered, per-debit-LOA ARNG credit, per-Fund/PG
 > distributions). FY26 and zero-item Sweep Turn-Ins keep the existing path.
 > Branch key: `book_turnin.book_fiscalyear` (`TurnInLOAResolver.IsFy27Plus`).
@@ -1534,7 +1534,7 @@ any RF write where `FundedAmount` > `TDP`, and the RF's rollup
 it (the rollup plugins skip at depth > 1). So the updater writes each debit
 RF's reduced `TDP` **and** its rolled-down `FundedAmount`/`ValidatedAmount`
 in the same Update (via `FundingRollupHelper.BuildRFFundedUpdate`),
-mirroring `RealignmentProcessor.ApplyDebitToRF`. A TDP-only debit write
+mirroring `RequirementFundingHelper.ApplyDebit`. A TDP-only debit write
 would be rejected by the business rule.
 
 Piggybacks on the `IsTriggeredByStateSwap` bypass added to

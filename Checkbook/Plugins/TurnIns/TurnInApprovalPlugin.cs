@@ -29,7 +29,7 @@ namespace Checkbook.Plugins.TurnIns
     ///   6. Update Prioritizations (items with a Prio)
     ///   7. Update Requirement Fundings directly (items without a Prio — RF-only)
     ///
-    /// FY27+ Turn-Ins with items take TurnInFy27Executor instead (junction reductions,
+    /// FY27+ Turn-Ins with items take TurnInExecutor instead (junction reductions,
     /// per-debit-LOA ARNG credit, per-Fund/PG distributions) — docs/TurnIn-FY27-Redesign.md.
     ///
     /// Validation (header/items math, approval routing) is owned by TurnInValidator
@@ -131,8 +131,8 @@ namespace Checkbook.Plugins.TurnIns
             // FY27 RF-level Turn-Ins are approved in one step by a Resource Integrator / CSOR
             // (carried on book_beapproved) — no State step.
             EnsureFiscalYear(service, merged, turnInId);
-            bool fy27RfLevel = items.Count > 0 && items.All(i => i.IsRFOnly) && TurnInLOAResolver.IsFy27Plus(merged);
-            bool readyToExecute = fy27RfLevel
+            bool rfLevel = items.Count > 0 && items.All(i => i.IsRFOnly) && !TurnInRules.IsLegacy(merged);
+            bool readyToExecute = rfLevel
                 ? newBeApproved
                 : anyRfOnly ? (newStateApproved && newBeApproved) : newStateApproved;
 
@@ -145,123 +145,23 @@ namespace Checkbook.Plugins.TurnIns
                 return;
             }
 
-            // ---- FY27+ item-based path (docs/TurnIn-FY27-Redesign.md) ----
-            // FY27 money lives on Prioritization Funding / Requirement Detail Funding
-            // junctions and the header carries no Fund/PG, so the FY26 steps below
-            // (raw Prio total, header-keyed credit LOA + distributions) don't apply.
-            // Zero-item Sweep Turn-Ins keep the header path in every FY.
-            if (items.Count > 0)
+            // ---- Execute ----
+            // Item-based (FY27+) Turn-Ins: money lives on Prioritization Funding /
+            // Requirement Detail Funding junctions and the header carries no Fund/PG
+            // (docs/TurnIn-FY27-Redesign.md). Legacy (FY26) Turn-Ins and zero-item
+            // Sweep Turn-Ins in every FY take the header-based path.
+            if (items.Count > 0 && !TurnInRules.IsLegacy(merged))
             {
-                if (TurnInLOAResolver.IsFy27Plus(merged))
-                {
-                    tracing.Trace("FY27+ Turn-In — executing the junction-based path.");
-                    TurnInFy27Executor.Execute(service, tracing, merged, items);
-                    Deactivate(service, tracing, turnInId);
-                    tracing.Trace("TurnInApprovalPlugin completed successfully (FY27).");
-                    return;
-                }
+                tracing.Trace("Item-based Turn-In — executing the junction-based path.");
+                TurnInExecutor.Execute(service, tracing, merged, items);
+            }
+            else
+            {
+                tracing.Trace("Header-based Turn-In (legacy FY26 or Sweep) — executing the legacy path.");
+                TurnInExecutorLegacy.Execute(service, tracing, merged, items, headerAmount);
             }
 
-            // ---- Resolve LOAs for ledger creation ----
-            var loaResolution = TurnInLOAResolver.ResolveLOAs(service, tracing, merged, items);
-
-            // Sanity-check: items sum should match header amount (validator already enforces).
-            if (Math.Round(loaResolution.TotalAmount, 2) != Math.Round(headerAmount, 2))
-            {
-                tracing.Trace(
-                    $"WARNING: loaResolution.TotalAmount ({loaResolution.TotalAmount:C}) does not match " +
-                    $"header amount ({headerAmount:C}). Proceeding with header amount as source of truth.");
-            }
-
-            // ---- 1. Ledger entries ----
-            tracing.Trace("Creating ledger entries...");
-            LedgerCreator.CreateTurnInEntries(
-                service, tracing, turnInId,
-                loaResolution.DebitLOAs, loaResolution.CreditLOAs);
-
-            // ---- 2. Distributions — AFP + Allotment (debit at state FC, credit at A18) ----
-            // Sized from book_afpamount / book_allotmentamount on the Turn-In header
-            // (populated by TurnInAmountCalculator for Kind A, by GenerateDistributions
-            // for Kind B). No TDP-side distribution; TDP moves via the Ledger + RF/Prio
-            // updates below.
-            tracing.Trace("Creating distribution entries...");
-            TurnInDistributionCreator.CreateDistributions(service, tracing, merged);
-
-            // ---- 3. Update child Prioritizations (items with a Prio) ----
-            tracing.Trace("Updating Prioritizations...");
-            TurnInPrioritizationUpdater.ApplyPrioritizationUpdates(service, tracing, items);
-
-            // ---- 4. Update Requirement Fundings directly (RF-only items) ----
-            tracing.Trace("Updating Requirement Fundings (RF-only items)...");
-            TurnInRequirementFundingUpdater.ApplyRequirementFundingUpdates(service, tracing, items);
-
-            // ---- 5. Roll up affected parent RFs from the Prio changes ----
-            // PrioritizationRollupToRequirementFunding is guarded on context.Depth > 1,
-            // so the nested Prio updates above do not trigger it. Invoke the shared
-            // helper directly for each unique parent RF — same pattern RealignmentProcessor
-            // uses (see Plugins/Realignments/RealignmentProcessor.cs).
-            //
-            // Order matters: roll up RF.FundedAmount FIRST, then reduce RF.TDP.
-            // RequirementFundingTDPValidator (pre-op on RF Update) compares effective
-            // FundedAmount against effective TDP using target ∪ preImage. If we
-            // shrank TDP first, the preImage Funded would still be the pre-Turn-In
-            // total — the rollup hadn't fanned up from the depth-2 Prio update — and
-            // the validator would reject the TDP reduction with "Funded Amount
-            // cannot exceed TDP". Rolling up first lowers RF.Funded so the TDP
-            // reduction's pre-image already reflects the post-Turn-In value.
-            //
-            // The roll-up only recomputes RF.FundedAmount/ValidatedAmount from child
-            // Prios; it does NOT touch RF.TDP (TDP is the RF's allocation from the
-            // LOA, not a Prio roll-up). So after the roll-up we still need to shrink
-            // RF.TDP by the amount pulled — mirroring the RF-only path in
-            // TurnInRequirementFundingUpdater. Without that step, RF.TDP stays high,
-            // the difference surfaces as Withhold (TDP − Funded), and LOA TDP
-            // Remaining (LOA.TDP − Σ RF.TDP) goes negative.
-            var rfPulledTotals = items
-                .Where(i => i.Prioritization != null && i.RequirementFunding != null)
-                .GroupBy(i => i.RequirementFunding.Id)
-                .ToDictionary(g => g.Key, g => g.Sum(i => i.Amount));
-
-            foreach (var pair in rfPulledTotals)
-            {
-                var rfId = pair.Key;
-                var pulled = pair.Value;
-
-                tracing.Trace($"Rolling up parent RF {rfId} Funded after Prio reduction.");
-                FundingRollupHelper.RecalculateRFFunded(service, rfId, tracing);
-
-                var rf = service.Retrieve(
-                    EntityNames.RequirementFunding,
-                    rfId,
-                    new ColumnSet(RequirementFundingAttributes.TDP));
-                decimal oldTdp = NumericHelper.ToDecimal(rf, RequirementFundingAttributes.TDP) ?? 0m;
-                decimal newTdp = oldTdp - pulled;
-                if (newTdp < 0m) newTdp = 0m;
-
-                tracing.Trace($"Reducing parent RF {rfId} TDP: {oldTdp} -> {newTdp} (pulled {pulled}).");
-                service.Update(new Entity(EntityNames.RequirementFunding, rfId)
-                {
-                    [RequirementFundingAttributes.TDP] = newTdp,
-                });
-            }
-
-            // ---- 6. Recalculate LOA TDP / TDP Remaining for every LOA touched ----
-            // LedgerCreateFundingLineUpdater and RequirementFundingTDPRemainingUpdater
-            // both guard on Depth > 1, so the nested Ledger.Create and RF.Update calls
-            // above do not trigger them. Drive the recalc directly here so the LOA's
-            // TDP (ledger net) and TDP Remaining (RF allocations) reflect the Turn-In.
-            var affectedLoaIds = loaResolution.DebitLOAs.Keys
-                .Select(r => r.Id)
-                .Concat(loaResolution.CreditLOAs.Keys.Select(r => r.Id))
-                .Distinct()
-                .ToList();
-            foreach (var loaId in affectedLoaIds)
-            {
-                tracing.Trace($"Recalculating LOA {loaId} TDP after Turn-In ledger.");
-                TDPCalculationHelper.RecalculateLOATDP(service, loaId, tracing);
-            }
-
-            // ---- 7. Deactivate the Turn-In to keep the work queue clean ----
+            // ---- Deactivate the Turn-In to keep the work queue clean ----
             // Mirrors TurnInDeactivator's statecode/statuscode for the denial path so
             // both completion outcomes (approved or denied) land in the same inactive
             // state. This nested Update carries statecode/statuscode only, so it

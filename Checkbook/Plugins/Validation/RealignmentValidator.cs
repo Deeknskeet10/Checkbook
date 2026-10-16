@@ -455,7 +455,7 @@ namespace Checkbook.Plugins.Validation
 
         /// <summary>
         /// OPR debit balance gate (FY27 §9.9). An RF→RF item lowers its debit RF the way
-        /// ApplyDebitToRF does: Withholding first, then Funded + TDP together. On a
+        /// RequirementFundingHelper.ApplyDebit does: Withholding first, then Funded + TDP together. On a
         /// direct-funded RF, Funded == Σ active Requirement Detail Funding, so the part of the
         /// move Withholding cannot cover must come out of those junctions. Per debit RF:
         ///   Σ(active RDF reductions on that RF) == max(0, Σ item amount − RF.Withholding)

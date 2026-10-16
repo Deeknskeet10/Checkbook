@@ -52,6 +52,38 @@ namespace Checkbook.Plugins.Helpers
         }
 
         /// <summary>
+        /// The Fund Center stamped on an anchor record (e.g. a Prioritization's
+        /// book_fundcenter). Null when <paramref name="anchorRef"/> is null.
+        /// </summary>
+        public static EntityReference GetAnchorFundCenter(
+            IOrganizationService service, string entityName, EntityReference anchorRef, string fundCenterAttribute)
+        {
+            if (anchorRef == null) return null;
+            var anchor = service.Retrieve(entityName, anchorRef.Id, new ColumnSet(fundCenterAttribute));
+            return anchor.GetAttributeValue<EntityReference>(fundCenterAttribute);
+        }
+
+        /// <summary>
+        /// A Requirement Funding's Fund Center. book_requirementfunding has no
+        /// book_fundcenter of its own (unlike Prioritization, which carries a
+        /// backfilled copy), so hop RF → Requirement → FundCenter.
+        /// </summary>
+        public static EntityReference GetRequirementFundingFundCenter(
+            IOrganizationService service, EntityReference rfRef)
+        {
+            if (rfRef == null) return null;
+
+            var rf = service.Retrieve(EntityNames.RequirementFunding, rfRef.Id,
+                new ColumnSet(RequirementFundingAttributes.Requirement));
+            var reqRef = rf.GetAttributeValue<EntityReference>(RequirementFundingAttributes.Requirement);
+            if (reqRef == null) return null;
+
+            var req = service.Retrieve(EntityNames.Requirements, reqRef.Id,
+                new ColumnSet(RequirementsAttributes.FundCenter));
+            return req.GetAttributeValue<EntityReference>(RequirementsAttributes.FundCenter);
+        }
+
+        /// <summary>
         /// Walk the FundCenter parent chain until we reach the FC whose parent
         /// is the holding FC (state level). Fallbacks match the legacy one-hop
         /// rule: an FC that is itself the holding FC or has no parent

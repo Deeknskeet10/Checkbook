@@ -38,6 +38,36 @@ namespace Checkbook.Plugins.Helpers
             return service.RetrieveMultiple(query).Entities.Count > 0;
         }
 
+        /// <summary>The RF's Line of Accounting.</summary>
+        public static EntityReference GetLoa(IOrganizationService service, Guid rfId)
+        {
+            var rf = service.Retrieve(EntityNames.RequirementFunding, rfId,
+                new ColumnSet(RequirementFundingAttributes.LineOfAccounting));
+            return rf.GetAttributeValue<EntityReference>(RequirementFundingAttributes.LineOfAccounting);
+        }
+
+        /// <summary>The RF's TDP.</summary>
+        public static decimal GetTdp(IOrganizationService service, Guid rfId)
+        {
+            var rf = service.Retrieve(EntityNames.RequirementFunding, rfId,
+                new ColumnSet(RequirementFundingAttributes.TDP));
+            return rf.GetAttributeValue<decimal?>(RequirementFundingAttributes.TDP) ?? 0m;
+        }
+
+        /// <summary>
+        /// Adds <paramref name="delta"/> to the RF's TDP (TDP only — the credit side of
+        /// an RF-level move; RF Funded is owned by the roll-up).
+        /// </summary>
+        public static void BumpTdp(IOrganizationService service, ITracingService tracing, Guid rfId, decimal delta)
+        {
+            var tdp = GetTdp(service, rfId);
+            service.Update(new Entity(EntityNames.RequirementFunding, rfId)
+            {
+                [RequirementFundingAttributes.TDP] = tdp + delta,
+            });
+            tracing.Trace($"RF {rfId} TDP {tdp:N2} -> {(tdp + delta):N2}.");
+        }
+
         /// <summary>
         /// Takes an amount out of a Requirement Funding at the RF level (no Prioritization):
         /// Withholding (TDP − Funded) first, then Funded and TDP together. Shared by the

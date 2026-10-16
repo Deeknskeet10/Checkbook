@@ -26,7 +26,7 @@ namespace Checkbook.Plugins.TurnIns.Helpers
     ///   6. Recalculate every touched LOA's TDP.
     /// Funded reductions are authorized by FundedAmountLockBase (book_turnin ancestor).
     /// </summary>
-    public static class TurnInFy27Executor
+    public static class TurnInExecutor
     {
         public static void Execute(
             IOrganizationService service,
@@ -36,7 +36,7 @@ namespace Checkbook.Plugins.TurnIns.Helpers
         {
             var turnInId = turnIn.Id;
 
-            var loas = TurnInLOAResolver.ResolveLOAsFy27(service, tracing, items);
+            var loas = TurnInLOAResolver.ResolveLOAsForItems(service, tracing, items);
 
             tracing.Trace("FY27: creating ledger entries...");
             LedgerCreator.CreateTurnInEntries(service, tracing, turnInId, loas.DebitLOAs, loas.CreditLOAs);
