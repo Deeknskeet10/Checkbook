@@ -423,9 +423,7 @@ namespace Checkbook.Plugins.Distributions.Helpers
                 var amendable =
                     !IsEntered(row)
                     && !(row.GetAttributeValue<bool?>(DistributionsAttributes.ManualEntry) ?? false)
-                    && row.GetAttributeValue<EntityReference>(DistributionsAttributes.TurnIn) == null
-                    && row.GetAttributeValue<EntityReference>(DistributionsAttributes.StateSwap) == null
-                    && row.GetAttributeValue<EntityReference>(DistributionsAttributes.Realignment) == null
+                    && DistributionsAttributes.PipelineParentLinks.All(a => row.GetAttributeValue<EntityReference>(a) == null)
                     && !(direction == DisbursementDirectionValues.Credit
                          && debitedRef != null && enteredDebitIds.Contains(debitedRef.Id))
                     // A pending sweep debit only ever lives at the holding FC;

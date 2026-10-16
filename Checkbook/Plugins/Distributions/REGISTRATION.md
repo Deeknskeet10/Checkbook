@@ -59,8 +59,8 @@ Replaces (deactivate, don't delete):
 The Custom API's "Plugin Type" field auto-wires the handler — no separate
 `SdkMessageProcessingStep` registration is required beyond setting that field.
 
-**Run Sync.** The plugin self-budgets to ~105s of the 120s sandbox ceiling and
-returns a `ContinuationToken` when more work remains. The caller (the
+**Run Sync.** The plugin self-budgets to ~90s of the 120s sandbox ceiling and
+returns a `NextToken` when more work remains. The caller (the
 `book_generateDistributions` JS web resource) loops, passing each token back as
 input, until the token comes back empty. Async execution would suppress the
 output parameters and break the loop.
@@ -134,7 +134,9 @@ Phases:
    re-parented, FY filtered out) are deactivated, and every pending
    holding-FC debit is re-synced to the sum of its surviving credits
    (deactivated when none remain). A pending credit paired to an already
-   GFEBS-entered debit is left alone. Honors the `FundingType` and
+   GFEBS-entered debit is left alone, and rows linked to a Turn-In, State
+   Swap or Realignment (`DistributionsAttributes.PipelineParentLinks`) are
+   never touched — same rule the bucket processor applies. Honors the `FundingType` and
    `FiscalYear` input filters so an AFP-only run never touches Allotment rows.
    Its snapshot queries read **committed** (no `NoLock`) — every row becomes a
    blind `Update` target at flush, so a dirty read of an uncommitted/rolled-back
@@ -146,9 +148,9 @@ Phases:
 
 ## Continuation & time budget
 
-The plugin tracks a `Stopwatch` with a 105-second wall-clock budget (below the
+The plugin tracks a `Stopwatch` with a 90-second wall-clock budget (below the
 120 s sandbox kill). Between buckets it checks the budget; if exceeded it
-returns a `NextToken` of the form `phase=<2|3>;fe=<guid>;idx=<n>` (or `phase=4`
+returns a `NextToken` of the form `phase=<2|3>;fe=<guid>;idx=<n>[;boff=<b>]` (or `phase=4`
 for the cleanup phase) and stops. The caller pumps the API in a loop, passing
 the previous token in until the response token is empty. Legacy `phase=1`
 tokens (from the retired deactivation sweep) parse as a fresh start.
@@ -213,7 +215,7 @@ exists, the plugin skips Turn-In creation for that bucket (avoids duplicates).
    pending rows alone.
 11. Invoke with `FiscalYear = <FY26 option value>` → confirm only FY26 buckets
    are touched; bucket counts in the trace drop accordingly.
-12. With a workload large enough to exceed ~105 s in one pass, invoke from the
+12. With a workload large enough to exceed ~90 s in one pass, invoke from the
    command-bar button → the JS loop should pump 2+ passes, the progress
    indicator should tick `pass 1, 2, …`, and the completion dialog should
    report the summed counters across passes.
