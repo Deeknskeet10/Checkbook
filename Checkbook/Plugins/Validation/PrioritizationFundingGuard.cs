@@ -26,8 +26,9 @@ namespace Checkbook.Plugins.Validation
     ///   • Message: Create   | Stage: PreOperation | Mode: Sync
     ///   • Message: Update   | Stage: PreOperation | Mode: Sync
     ///         Filtering attributes: book_prioritization, book_requirementfunding,
-    ///                               book_fundedamount, book_validatedamount
-    ///         PreImage:  "PreImage" — all four filtered attrs
+    ///                               book_fundedamount, book_validatedamount, statecode
+    ///         PreImage:  "PreImage" — all five filtered attrs (statecode makes a
+    ///                    reactivation re-check uniqueness + caps)
     /// </summary>
     public class PrioritizationFundingGuard : PluginBase
     {
@@ -107,6 +108,16 @@ namespace Checkbook.Plugins.Validation
                     $"Requirement Funding (FY {rfFY?.ToString() ?? "?"}) must share the same Fiscal Year.");
             }
 
+            // Deactivation only lowers totals — never block it (it is how duplicate
+            // or over-cap rows get cleaned up). PrioritizationPullbackFundingCleanup
+            // relies on this.
+            if (context.MessageName == "Update" &&
+                JunctionGuard.IsDeactivation(target, PrioritizationFundingAttributes.StateCode))
+            {
+                tracing.Trace("Junction deactivation — skipping uniqueness/cap/approval checks.");
+                return;
+            }
+
             // ---- 3. Uniqueness of (Prio, RF) ----
             JunctionGuard.EnsureUniquePair(
                 service, tracing,
@@ -118,21 +129,28 @@ namespace Checkbook.Plugins.Validation
                 context,
                 "An active Prioritization Funding already exists for this Prioritization / Requirement Funding pair.");
 
-            // ---- 4. RF.TDP cap + LOA remaining ----
+            // ---- 4. RF.TDP cap (LOA-level is enforced when TDP moves to the RF) ----
             var rfTDP = rf.GetAttributeValue<decimal?>(RequirementFundingAttributes.TDP) ?? 0m;
             var newFunded = GetEffectiveDecimal(
                 target, preImage, PrioritizationFundingAttributes.FundedAmount);
-            var oldFunded = preImage?.GetAttributeValue<decimal?>(
-                PrioritizationFundingAttributes.FundedAmount) ?? 0m;
             JunctionGuard.EnforceTDPCap(
                 service, tracing,
                 EntityNames.PrioritizationFunding,
+                PrioritizationFundingAttributes.Id,
                 PrioritizationFundingAttributes.StateCode,
                 PrioritizationFundingAttributes.RequirementFunding,
                 PrioritizationFundingAttributes.FundedAmount,
                 rfRef.Id, rfTDP,
-                newFunded, oldFunded,
+                newFunded,
+                JunctionGuard.PriorContribution(preImage,
+                    PrioritizationFundingAttributes.RequirementFunding, rfRef.Id,
+                    PrioritizationFundingAttributes.FundedAmount,
+                    PrioritizationFundingAttributes.StateCode),
                 context);
+
+            // What this row contributed to the Prio before the change (0 when it
+            // was inactive — a reactivation is a full increase).
+            var oldFunded = PriorPrioContribution(preImage);
 
             // ---- 4b. Aggregate cap: Σ active PF ≤ the Prioritization total (Itemized) ----
             // Per-RF allocations may not exceed the Prioritization's funded total. For Itemized
@@ -204,6 +222,17 @@ namespace Checkbook.Plugins.Validation
             }
 
             tracing.Trace("Prioritization Funding guard passed.");
+        }
+
+        private static decimal PriorPrioContribution(Entity preImage)
+        {
+            if (preImage == null) return 0m;
+            var wasActive = (preImage.GetAttributeValue<OptionSetValue>(
+                                 PrioritizationFundingAttributes.StateCode)?.Value
+                             ?? StateCodeValues.Active) == StateCodeValues.Active;
+            return wasActive
+                ? NumericHelper.ToDecimal(preImage, PrioritizationFundingAttributes.FundedAmount) ?? 0m
+                : 0m;
         }
 
         /// <summary>

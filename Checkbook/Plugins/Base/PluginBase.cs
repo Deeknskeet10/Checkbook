@@ -1,5 +1,4 @@
 using System;
-using System.Globalization;
 using Microsoft.Xrm.Sdk;
 using Checkbook.Plugins.Helpers;
 
@@ -23,7 +22,9 @@ namespace Checkbook.Plugins.Base
             var tracingService = (ITracingService)
                 serviceProvider.GetService(typeof(ITracingService));
 
-            // Run as the calling user (pass null for system context)
+            // Runs as the step's configured execution identity (context.UserId).
+            // In this project steps run as an elevated service account, so role /
+            // BU checks must use context.InitiatingUserId — the actual user.
             var service = serviceFactory.CreateOrganizationService(context.UserId);
 
             try
@@ -189,7 +190,7 @@ namespace Checkbook.Plugins.Base
             return merged;
         }
 
-        protected bool GetEffectiveBool(Entity target, Entity preImage, string attribute)
+        protected static bool GetEffectiveBool(Entity target, Entity preImage, string attribute)
         {
             if (target != null && target.Contains(attribute))
                 return target.GetAttributeValue<bool>(attribute);
@@ -200,12 +201,12 @@ namespace Checkbook.Plugins.Base
             return false;
         }
 
-        // <summary>
-        // Returns the effective decimal for an attribute:
-        // - Prefers Target value when present; otherwise uses Pre-Image.
-        // - Safely converts AliasedValue, Money, decimal, double/float, integral, and string.
-        // - Returns defaultValue when both are missing or null.
-        // </summary>
+        /// <summary>
+        /// Returns the effective decimal for an attribute:
+        /// - Prefers Target value when present; otherwise uses Pre-Image.
+        /// - Safely converts AliasedValue, Money, decimal, double/float, integral, and string.
+        /// - Returns defaultValue when both are missing or null.
+        /// </summary>
         protected static decimal GetEffectiveDecimal(Entity target, Entity preImage, string attrName, decimal defaultValue = 0m)
         {
             object raw = null;
@@ -224,7 +225,7 @@ namespace Checkbook.Plugins.Base
         /// </summary>
         protected static int? GetEffectiveInt(Entity target, Entity preImage, string attributeName)
         {
-            if (target.Contains(attributeName))
+            if (target != null && target.Contains(attributeName))
                 return target.GetAttributeValue<int?>(attributeName);
 
             if (preImage != null && preImage.Contains(attributeName))
@@ -239,7 +240,7 @@ namespace Checkbook.Plugins.Base
         /// </summary>
         protected static EntityReference GetEffectiveEntityReference(Entity target, Entity preImage, string attributeName)
         {
-            if (target.Contains(attributeName))
+            if (target != null && target.Contains(attributeName))
                 return target.GetAttributeValue<EntityReference>(attributeName);
 
             if (preImage != null && preImage.Contains(attributeName))
@@ -254,7 +255,7 @@ namespace Checkbook.Plugins.Base
         /// </summary>
         protected static string GetEffectiveString(Entity target, Entity preImage, string attributeName)
         {
-            if (target.Contains(attributeName))
+            if (target != null && target.Contains(attributeName))
                 return target.GetAttributeValue<string>(attributeName);
 
             if (preImage != null && preImage.Contains(attributeName))
@@ -269,7 +270,7 @@ namespace Checkbook.Plugins.Base
         /// </summary>
         protected static OptionSetValue GetEffectiveOptionSetValue(Entity target, Entity preImage, string attributeName)
         {
-            if (target.Contains(attributeName))
+            if (target != null && target.Contains(attributeName))
                 return target.GetAttributeValue<OptionSetValue>(attributeName);
 
             if (preImage != null && preImage.Contains(attributeName))
@@ -279,8 +280,10 @@ namespace Checkbook.Plugins.Base
         }
 
         /// <summary>
-        /// Checks if an attribute has changed between target and pre-image.
-        /// Returns true if the attribute is in target (meaning it was modified).
+        /// True when the attribute is in the Target payload. Does NOT compare
+        /// against the pre-image: Excel, the Web API and flows can re-send an
+        /// unchanged value, so use a pre-image comparison when that matters.
+        /// (Name kept for its many callers.)
         /// </summary>
         protected static bool HasAttributeChanged(Entity target, string attributeName)
         {

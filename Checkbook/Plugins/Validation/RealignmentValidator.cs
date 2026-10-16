@@ -729,25 +729,19 @@ namespace Checkbook.Plugins.Validation
             ITracingService tracing,
             Guid realignmentId)
         {
-            try
-            {
-                var realignment = service.Retrieve(
-                    EntityNames.Realignments, realignmentId,
-                    new ColumnSet(RealignmentsAttributes.DebitedPrioritization));
-                var debitPrior = realignment.GetAttributeValue<EntityReference>(
-                    RealignmentsAttributes.DebitedPrioritization);
-                if (debitPrior == null) return null;
+            // No try/catch: a lookup failure must not fail open (null skips the
+            // cross-state BU scope check).
+            var realignment = service.Retrieve(
+                EntityNames.Realignments, realignmentId,
+                new ColumnSet(RealignmentsAttributes.DebitedPrioritization));
+            var debitPrior = realignment.GetAttributeValue<EntityReference>(
+                RealignmentsAttributes.DebitedPrioritization);
+            if (debitPrior == null) return null;
 
-                var prio = service.Retrieve(
-                    EntityNames.Prioritization, debitPrior.Id,
-                    new ColumnSet(PrioritizationAttributes.State));
-                return prio.GetAttributeValue<EntityReference>(PrioritizationAttributes.State);
-            }
-            catch (Exception ex)
-            {
-                tracing.Trace($"RealignmentValidator: could not resolve debiting state: {ex.Message}");
-                return null;
-            }
+            var prio = service.Retrieve(
+                EntityNames.Prioritization, debitPrior.Id,
+                new ColumnSet(PrioritizationAttributes.State));
+            return prio.GetAttributeValue<EntityReference>(PrioritizationAttributes.State);
         }
     }
 }

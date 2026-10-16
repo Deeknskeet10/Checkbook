@@ -39,7 +39,7 @@ Replaces (deactivate, don't delete):
      | Name | Type | Optional | Notes |
      |---|---|---|---|
      | `FiscalYear` | Integer | Yes | Fund FY option-set value. `0` or omitted = all FYs. |
-     | `BatchSize`  | Integer | Yes | Max Funding Tracks to attempt this invocation. `0` or omitted = unlimited. Use with `Remaining` to pump large backlogs in slices. |
+     | `BatchSize`  | Integer | Yes | Max Funding Tracks to link (create or match an LOA) this invocation; skipped/failed FTs do not count toward it. `0` or omitted = unlimited. Use with `Remaining` to pump large backlogs in slices. |
    - Response properties:
      | Name | Type | Notes |
      |---|---|---|
@@ -47,7 +47,7 @@ Replaces (deactivate, don't delete):
      | `Linked`  | Integer | |
      | `Skipped` | Integer | |
      | `Failed`  | Integer | FTs that threw during processing (per-FT failures do not abort the run). |
-     | `Remaining` | Integer | FTs left unprocessed when `BatchSize` capped the run; re-invoke until 0. |
+     | `Remaining` | Integer | Active FTs in scope still unlinked after this run — includes skipped and failed FTs, so it may never reach 0; re-invoke until a batch links nothing. |
      | `FailedDetails` | String | Semicolon-joined `FT id: error` list for the `Failed` count. |
 
 ## Step-ordering contract

@@ -33,7 +33,6 @@ namespace Checkbook.Plugins.Validation
     public class DeactivationRoleGuard : PluginBase
     {
         private const string BookPrefix = "book_";
-        private const int InactiveStateCode = 1;
 
         private const string BlockedMessage =
             "Only State Administrators and Checkbook Administrators can " +
@@ -58,8 +57,8 @@ namespace Checkbook.Plugins.Validation
                   raw is Entity target))
                 return;
 
-            var stateCode = target.GetAttributeValue<OptionSetValue>("statecode");
-            if (stateCode == null || stateCode.Value != InactiveStateCode) return;
+            var stateCode = target.GetAttributeValue<OptionSetValue>(CommonAttributes.StateCode);
+            if (stateCode == null || stateCode.Value != StateCodeValues.Inactive) return;
 
             if (context.Depth > 1)
             {
@@ -68,14 +67,9 @@ namespace Checkbook.Plugins.Validation
                 return;
             }
 
-            var ancestor = context.ParentContext;
-            while (ancestor != null && IsPlatformWrapper(ancestor.MessageName))
-                ancestor = ancestor.ParentContext;
-
-            if (ancestor != null)
+            if (HasNonWrapperAncestor(context))
             {
-                tracing.Trace(
-                    $"DeactivationRoleGuard: parent operation '{ancestor.MessageName}' — automated, allow.");
+                tracing.Trace("DeactivationRoleGuard: automated parent operation — allow.");
                 return;
             }
 

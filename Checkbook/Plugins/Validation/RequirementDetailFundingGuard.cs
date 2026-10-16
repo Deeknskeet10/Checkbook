@@ -34,8 +34,8 @@ namespace Checkbook.Plugins.Validation
     ///   • Message: Update   | Stage: PreOperation | Mode: Sync
     ///         Primary entity: book_requirementdetailfunding
     ///         Filtering attributes: book_requirementdetail, book_requirementfunding,
-    ///                               book_fundedamount, book_validatedamount
-    ///         PreImage: "PreImage" — all four filtered attrs
+    ///                               book_fundedamount, book_validatedamount, statecode
+    ///         PreImage: "PreImage" — all five filtered attrs
     ///   • Message: Create   | Stage: PreOperation | Mode: Sync
     ///         Primary entity: book_prioritization
     /// </summary>
@@ -74,6 +74,14 @@ namespace Checkbook.Plugins.Validation
 
             var target = GetTarget(context);
             var preImage = context.MessageName == "Update" ? TryGetPreImage(context) : null;
+
+            // Deactivation only lowers totals — never block it.
+            if (context.MessageName == "Update" &&
+                JunctionGuard.IsDeactivation(target, RequirementDetailFundingAttributes.StateCode))
+            {
+                tracing.Trace("Junction deactivation — skipping guard checks.");
+                return;
+            }
 
             var rdRef = GetEffectiveEntityReference(
                 target, preImage, RequirementDetailFundingAttributes.RequirementDetail);
@@ -137,16 +145,19 @@ namespace Checkbook.Plugins.Validation
             var rfTDP = rf.GetAttributeValue<decimal?>(RequirementFundingAttributes.TDP) ?? 0m;
             var newFunded = GetEffectiveDecimal(
                 target, preImage, RequirementDetailFundingAttributes.FundedAmount);
-            var oldFunded = preImage?.GetAttributeValue<decimal?>(
-                RequirementDetailFundingAttributes.FundedAmount) ?? 0m;
             JunctionGuard.EnforceTDPCap(
                 service, tracing,
                 EntityNames.RequirementDetailFunding,
+                RequirementDetailFundingAttributes.Id,
                 RequirementDetailFundingAttributes.StateCode,
                 RequirementDetailFundingAttributes.RequirementFunding,
                 RequirementDetailFundingAttributes.FundedAmount,
                 rfRef.Id, rfTDP,
-                newFunded, oldFunded,
+                newFunded,
+                JunctionGuard.PriorContribution(preImage,
+                    RequirementDetailFundingAttributes.RequirementFunding, rfRef.Id,
+                    RequirementDetailFundingAttributes.FundedAmount,
+                    RequirementDetailFundingAttributes.StateCode),
                 context);
 
             // ---- Name autopop (Create only, when caller didn't set one) ----

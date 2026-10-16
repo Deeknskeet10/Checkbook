@@ -149,18 +149,12 @@ namespace Checkbook.Plugins.StateSwaps.Helpers
         private static string ResolveStateAbbreviation(
             IOrganizationService service, ITracingService tracing, Guid stateId)
         {
-            try
-            {
-                var state = service.Retrieve(
-                    EntityNames.State, stateId,
-                    new ColumnSet(StateAttributes.Abbreviation));
-                return state.GetAttributeValue<string>(StateAttributes.Abbreviation);
-            }
-            catch (Exception ex)
-            {
-                tracing.Trace($"SwapTeamShareHelper: could not resolve State {stateId}: {ex.Message}");
-                return null;
-            }
+            // No try/catch: a swallowed fault silently skipped the share (and a
+            // failed call has already doomed the sync transaction anyway).
+            var state = service.Retrieve(
+                EntityNames.State, stateId,
+                new ColumnSet(StateAttributes.Abbreviation));
+            return state.GetAttributeValue<string>(StateAttributes.Abbreviation);
         }
 
         private static EntityReference FindTeamByName(
