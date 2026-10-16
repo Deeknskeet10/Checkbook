@@ -50,6 +50,19 @@ namespace Checkbook.Plugins.TurnIns
                 return;
             }
 
+            // FY27+ item-based Turn-Ins size AFP/Allotment per item (TurnInItemAmountCalculator)
+            // and TurnInItemRollup writes the header totals — don't overwrite them here.
+            var fy = GetEffectiveOptionSetValue(target, preImage, TurninAttributes.FiscalYear);
+            if (fy == null && context.MessageName == "Update")
+                fy = service.Retrieve(EntityNames.Turnin, context.PrimaryEntityId,
+                        new Microsoft.Xrm.Sdk.Query.ColumnSet(TurninAttributes.FiscalYear))
+                    .GetAttributeValue<OptionSetValue>(TurninAttributes.FiscalYear);
+            if (fy != null && fy.Value % 100 > LOAs.Helpers.LOANameBuilder.LegacyGrainLastFy)
+            {
+                tracing.Trace("FY27+ Turn-In — AFP/Allotment are sized per item; header calculator skips.");
+                return;
+            }
+
             // Sticky manual overrides — a set flag freezes that amount at its
             // human-entered value. Read as effective (target ∪ pre-image) so an
             // unrelated update (e.g. a TDP bump) still honors a prior override.

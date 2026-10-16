@@ -1027,61 +1027,8 @@ namespace Checkbook.Plugins.Realignments
             decimal amount,
             bool priToPri)
         {
-            var rf = service.Retrieve(
-                EntityNames.RequirementFunding,
-                debitRFRef.Id,
-                new ColumnSet(RequirementFundingAttributes.FundedAmount,
-                              RequirementFundingAttributes.TDP,
-                              RequirementFundingAttributes.Withholding));
-
-            decimal funded = rf.GetAttributeValue<decimal?>(RequirementFundingAttributes.FundedAmount) ?? 0m;
-            decimal tdp = rf.GetAttributeValue<decimal?>(RequirementFundingAttributes.TDP) ?? 0m;
-            decimal withhold = rf.GetAttributeValue<decimal?>(RequirementFundingAttributes.Withholding) ?? 0m;
-
-            bool hasChildren = RequirementFundingHelpers.HasActiveChildren(service, debitRFRef.Id);
-
-            decimal remaining = amount;
-
-            if (withhold > 0)
-            {
-                decimal used = Math.Min(withhold, remaining);
-                withhold -= used;
-                tdp -= used;
-                remaining -= used;
-                tracing.Trace($"RF Debit: Reduced withholding by {used}. Remaining debit: {remaining}");
-            }
-
-            if (remaining > 0)
-            {
-                if (hasChildren && !priToPri)
-                {
-                    throw new InvalidPluginExecutionException(
-                        "Debited RF has no remaining withholding and has child Prioritizations. Realignment would affect child-funded amounts.");
-                }
-
-                // Same conservation rule as the Prio debit above: never clamp a
-                // short RF debit to zero. If this leaf RF cannot cover the move,
-                // the credit RF still receives its full TDP increase and we would
-                // be fabricating funds that do not exist. Abort instead.
-                if (remaining > funded || remaining > tdp)
-                    throw new InvalidPluginExecutionException(
-                        $"Realignment cannot be executed: the debited Requirement Funding holds only " +
-                        $"{Math.Min(funded, tdp):N2} available (Funded {funded:N2}, TDP {tdp:N2}) but this " +
-                        $"realignment moves {remaining:N2}. The source funding was likely reduced by another " +
-                        $"realignment after this one was submitted. Re-source the realignment or lower the amount.");
-
-                tdp -= remaining;
-                funded -= remaining;
-
-                remaining = 0;
-                tracing.Trace("RF Debit: Reduced leaf-RF TDP and Funded.");
-            }
-
-            var upd = new Entity(EntityNames.RequirementFunding, debitRFRef.Id);
-            upd[RequirementFundingAttributes.TDP] = tdp;
-            upd[RequirementFundingAttributes.FundedAmount] = funded;
-            service.Update(upd);
-
+            // Withholding first, then Funded + TDP — shared with FY27 RF-level Turn-Ins.
+            RequirementFundingDebitHelper.ApplyDebit(service, tracing, debitRFRef, amount, priToPri, "Realignment");
         }
 
         private void ApplyCreditToRF(

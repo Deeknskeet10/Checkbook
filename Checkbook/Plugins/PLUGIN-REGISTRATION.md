@@ -1189,6 +1189,23 @@ LOA's TDP Remaining so the form view doesn't go stale.
 
 ## TurnIns
 
+> **FY27 Turn-Ins (2026-10-15)** — see [`../docs/TurnIn-FY27-Redesign.md`](../docs/TurnIn-FY27-Redesign.md).
+> FY27+ State-origin Turn-Ins carry **no header Fund/PG**: each line is a
+> Prioritization Funding junction (State) or a Requirement Funding (BE), so one
+> Turn-In can span several Fund/SAGs. AFP/Allotment are sized **per item**
+> (`TurnInItemAmountCalculator`) and rolled up to the header (`TurnInItemRollup`);
+> the header `TurnInAmountCalculator` skips FY27. `TurnInValidator` runs
+> `TurnInFy27Rules` (per-PF funded, itemized detail reductions, RF Withholding first
+> + RDF reductions) and `TurnInApprovalPlugin` runs `TurnInFy27Executor` (junction
+> reductions, Requested lowered, per-debit-LOA ARNG credit, per-Fund/PG
+> distributions). FY26 and zero-item Sweep Turn-Ins keep the existing path.
+> Branch key: `book_turnin.book_fiscalyear` (`TurnInLOAResolver.IsFy27Plus`).
+> **FY27 RF-level route (2026-10-16):** a Turn-In whose lines are all RF-level is
+> created by an NPM and approved in one step by a Resource Integrator / CSOR /
+> Checkbook Administrator on `book_beapproved`; `TurnInValidator` refuses a State
+> approval on it and skips the State-first ordering, and `TurnInApprovalPlugin`
+> executes on `book_beapproved` alone. The two-step text below is FY26.
+
 ### `Checkbook.Plugins.TurnIns.TurnInAmountCalculator`
 
 Pre-op writer that keeps `book_afpamount` and `book_allotmentamount` in sync
@@ -1249,7 +1266,7 @@ renamed. The PCF process-bar control mirrors these lists on the UI side.
 
 | # | Message | Primary entity | Stage         | Mode | Filtering attributes                  | Notes |
 |---|---------|----------------|---------------|------|---------------------------------------|-------|
-| 1 | Update  | `book_turnin`  | Pre-Operation | Sync | `book_stateapproved, book_beapproved` | Fires when the payload carries an approval flag = true (value-based, not transition-based — so a re-save that re-drives a stuck approval is validated + role-gated like the original). **Requires PreImage** (`book_stateapproved, book_beapproved, book_newamount, book_origin, book_afpamount, book_allotmentamount`) — origin + AFP/Allotment amounts are needed to evaluate the sweep-origin AFP-only path. If the deployed image is missing `book_newamount`/`book_origin`/`book_afpamount`/`book_allotmentamount`, the plugin falls back to a single Retrieve for the absent columns (guards against pre-image drift that otherwise made the sweep AFP-only guard misfire — reading 0 and rejecting a Turn-In that carried a positive AFP amount). Registering the full image above avoids the extra Retrieve. |
+| 1 | Update  | `book_turnin`  | Pre-Operation | Sync | `book_stateapproved, book_beapproved` | Fires when the payload carries an approval flag = true (value-based, not transition-based — so a re-save that re-drives a stuck approval is validated + role-gated like the original). **Requires PreImage** (`book_stateapproved, book_beapproved, book_newamount, book_origin, book_afpamount, book_allotmentamount, book_fiscalyear`) — `book_fiscalyear` picks the FY27 rules (falls back to a Retrieve when missing from the image); origin + AFP/Allotment amounts are needed to evaluate the sweep-origin AFP-only path. If the deployed image is missing `book_newamount`/`book_origin`/`book_afpamount`/`book_allotmentamount`, the plugin falls back to a single Retrieve for the absent columns (guards against pre-image drift that otherwise made the sweep AFP-only guard misfire — reading 0 and rejecting a Turn-In that carried a positive AFP amount). Registering the full image above avoids the extra Retrieve. |
 
 ### `Checkbook.Plugins.TurnIns.TurnInApprovalPlugin`
 
@@ -1321,6 +1338,50 @@ when the flag already matches to avoid noise on the Turn-In sync stack.
 | 1 | Create  | `book_turninitems`  | Post-Operation  | Sync | *(none)*                                      | Recalc parent Turn-In. |
 | 2 | Update  | `book_turninitems`  | Post-Operation  | Sync | `book_turnin, book_prioritization, statecode` | Recalc parent(s) — also the old parent on reparent. **Requires PreImage** (`book_turnin, book_prioritization, statecode`). |
 | 3 | Delete  | `book_turninitems`  | Post-Operation  | Sync | *(none)*                                      | Recalc parent Turn-In. **Requires PreImage** (`book_turnin`). |
+
+### `Checkbook.Plugins.TurnIns.TurnInItemAmountCalculator` *(FY27, new 2026-10-15)*
+
+Sizes `book_turninitems.book_afpamount` / `book_allotmentamount` = item amount ×
+current AFP / Allotment percentage for the item LOA's (Fund, PG) — the LOA comes from
+the item's PF junction RF, or its own RF for RF-level items. Per-item sticky overrides
+`book_afpoverridden` / `book_allotmentoverridden` freeze an amount. No-ops when the
+parent Turn-In is FY26.
+
+| # | Message | Primary entity      | Stage         | Mode | Filtering attributes | Notes |
+|---|---------|---------------------|---------------|------|----------------------|-------|
+| 1 | Create  | `book_turninitems`  | Pre-Operation | Sync | *(none)*             | Rank 1. |
+| 2 | Update  | `book_turninitems`  | Pre-Operation | Sync | `book_newturninamount, book_prioritizationfunding, book_requirementfunding, book_turnin, book_afpoverridden, book_allotmentoverridden` | Rank 1. **Requires PreImage** (same columns). |
+
+### `Checkbook.Plugins.TurnIns.TurnInItemRollup` *(FY27, new 2026-10-15)*
+
+Keeps the FY27 header `book_newamount`, `book_afpamount`, `book_allotmentamount` equal
+to Σ over the Turn-In's active items (skips FY26, Sweep-origin and inactive Turn-Ins;
+no-ops when unchanged). Header writes re-fire `TurnInAmountCalculator`, which skips FY27.
+
+| # | Message | Primary entity      | Stage          | Mode | Filtering attributes | Notes |
+|---|---------|---------------------|----------------|------|----------------------|-------|
+| 1 | Create  | `book_turninitems`  | Post-Operation | Sync | *(none)*             | Rank 2. |
+| 2 | Update  | `book_turninitems`  | Post-Operation | Sync | `book_newturninamount, book_afpamount, book_allotmentamount, book_turnin, statecode` | Rank 2. **Requires PreImage** (`book_turnin`). |
+| 3 | Delete  | `book_turninitems`  | Post-Operation | Sync | *(none)*             | Rank 2. **Requires PreImage** (`book_turnin`). |
+
+### `Checkbook.Plugins.TurnIns.TurnInLineLock` *(new 2026-10-16, all FYs)*
+
+Freezes a Turn-In's lines once it is past draft: blocks Create / Update / Delete of
+`book_turninitems`, `book_turnindetailreduction` and `book_turninrdfreduction` — including
+re-parenting a line onto or off such a Turn-In — when the parent Turn-In is **inactive**
+(processed or denied), **carries an approval** (`book_stateapproved` or `book_beapproved`),
+or **has ledger rows**. Editing or deleting a completed Turn-In's lines does not reverse the
+funds already moved, so users must not be able to "undo" one that way. Only exception: the
+cascade from deleting the whole Turn-In (ParentContext = Delete of `book_turnin`, e.g. Generate
+Distributions removing a spent Sweep tracker). No role bypass.
+
+| # | Message | Primary entity | Stage | Mode | Filtering attributes | Notes |
+|---|---------|----------------|-------|------|----------------------|-------|
+| 1–3 | Create / Update / Delete | `book_turninitems` | Pre-Operation | Sync | *(none)* | Rank 1. Update + Delete **PreImage** (`book_turnin`). |
+| 4–6 | Create / Update / Delete | `book_turnindetailreduction` | Pre-Operation | Sync | *(none)* | Rank 1. Update + Delete **PreImage** (`book_turnin`). |
+| 7–9 | Create / Update / Delete | `book_turninrdfreduction` | Pre-Operation | Sync | *(none)* | Rank 1. Update + Delete **PreImage** (`book_turnin`). |
+
+Sandbox registration script: `devtools/sandbox-import/schema/register_turnin_fy27_steps.py`.
 
 ---
 
@@ -1780,6 +1841,12 @@ to sort the right pane by **Message** then by **Primary Entity**.
   - [ ] Create of `book_turninitems` — Post-Op Sync
   - [ ] Update of `book_turninitems` — Post-Op Sync, PreImage, filter `book_turnin, book_prioritization, statecode`
   - [ ] Delete of `book_turninitems` — Post-Op Sync, PreImage
+- [ ] `Checkbook.Plugins.TurnIns.TurnInItemAmountCalculator` (FY27)
+  - [ ] Create + Update of `book_turninitems` — Pre-Op Sync, Update has PreImage
+- [ ] `Checkbook.Plugins.TurnIns.TurnInItemRollup` (FY27)
+  - [ ] Create / Update / Delete of `book_turninitems` — Post-Op Sync rank 2, Update + Delete PreImage `book_turnin`
+- [ ] `Checkbook.Plugins.TurnIns.TurnInLineLock`
+  - [ ] Create / Update / Delete of `book_turninitems`, `book_turnindetailreduction`, `book_turninrdfreduction` — Pre-Op Sync rank 1, Update + Delete PreImage `book_turnin`
 
 ### State Swaps
 - [ ] `Checkbook.Plugins.StateSwaps.SwapItemDerivedFieldsPlugin`

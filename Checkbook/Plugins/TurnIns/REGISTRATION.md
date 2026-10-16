@@ -38,6 +38,21 @@ Read by `TurnInLOAResolver.ResolveCreditLOA_FY27Plus` (via
 The cutoff lives in `LOAs.Helpers.LOANameBuilder.LegacyGrainLastFy` (currently
 26). Bump that constant if the legacy-grain rule ever extends another year.
 
+### FY27 item-based Turn-Ins (2026-10-15)
+
+FY27 State/BE Turn-Ins built with the TurnInBuilder have **no header Fund/PG** —
+one Turn-In can span several Fund/SAGs (docs/TurnIn-FY27-Redesign.md). For these
+(`book_fiscalyear` ≥ 2027 and at least one item) the credit LOA is resolved **per
+debit LOA** by `TurnInLOAResolver.ResolveLOAsFy27`:
+`Fund (debit LOA's) + DisbursingOfficial(<env var GUID>) + (PG | SAG of the debit LOA)`,
+PG vs SAG by the Fund's appropriation as above. Each source LOA's money returns to
+the ARNG holding LOA with the same Fund + PG/SAG, so the env var must point at the
+**ARNG** OPR. Zero-item Sweep Turn-Ins keep the header Fund/PG rule above.
+
+Sandbox value set by `devtools/sandbox-import/data-seed/transactional/fy27_turnin_validate.py`
+(ARNG OPR `9b6d7541-02c1-f111-aaaf-70a8a5af378b`). **Gov: confirm the env var value is
+the ARNG OPR before FY27 Turn-Ins are approved.**
+
 ### Failure modes (all surface as `InvalidPluginExecutionException`)
 
 - Env var not defined → `Environment variable 'book_TurnInCreditOPR' is not defined in this environment.`

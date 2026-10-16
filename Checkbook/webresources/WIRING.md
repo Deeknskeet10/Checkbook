@@ -283,6 +283,13 @@ Also swap the form library `book_turnInFormBehavior` → `Turn-Ins`, and **remov
 the `book_hidePriTurnIns` library** from this form (it was handler-less — see
 cross-reference below).
 
+**FY27 (2026-10-15):** when `book_fiscalyear` ≥ 2027 on a State-origin Turn-In the
+script hides `book_fund` / `book_pg` and the legacy items section, locks
+`book_newamount` / `book_afpamount` / `book_allotmentamount` (item roll-ups), and
+shows the **TurnInBuilder** cell (control id `book_newamount_builder`, hidden on
+FY26 and Sweep). It re-applies on Fiscal Year change via `addOnChange` in onLoad —
+no extra handler to wire. Builder placement: `devtools/sandbox-import/schema/turnin_place_builder.py`.
+
 **Form prerequisites:**
 - Field controls present: `book_origin`, `book_newamount`,
   `book_identifiedturninamount`, `book_afpamount`, `book_allotmentamount`,

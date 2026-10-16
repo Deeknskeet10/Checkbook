@@ -29,6 +29,9 @@ namespace Checkbook.Plugins.TurnIns
     ///   6. Update Prioritizations (items with a Prio)
     ///   7. Update Requirement Fundings directly (items without a Prio — RF-only)
     ///
+    /// FY27+ Turn-Ins with items take TurnInFy27Executor instead (junction reductions,
+    /// per-debit-LOA ARNG credit, per-Fund/PG distributions) — docs/TurnIn-FY27-Redesign.md.
+    ///
     /// Validation (header/items math, approval routing) is owned by TurnInValidator
     /// running pre-op on the same Update. By the time this orchestrator runs we trust
     /// the input is valid; the idempotency guard here is the only defensive check.
@@ -125,7 +128,13 @@ namespace Checkbook.Plugins.TurnIns
             bool anyRfOnly = items.Any(i => i.IsRFOnly);
             bool newStateApproved = GetEffectiveBool(target, preImage, TurninAttributes.StateApproved);
             bool newBeApproved = GetEffectiveBool(target, preImage, TurninAttributes.BEApproved);
-            bool readyToExecute = anyRfOnly ? (newStateApproved && newBeApproved) : newStateApproved;
+            // FY27 RF-level Turn-Ins are approved in one step by a Resource Integrator / CSOR
+            // (carried on book_beapproved) — no State step.
+            EnsureFiscalYear(service, merged, turnInId);
+            bool fy27RfLevel = items.Count > 0 && items.All(i => i.IsRFOnly) && TurnInLOAResolver.IsFy27Plus(merged);
+            bool readyToExecute = fy27RfLevel
+                ? newBeApproved
+                : anyRfOnly ? (newStateApproved && newBeApproved) : newStateApproved;
 
             if (!readyToExecute)
             {
@@ -134,6 +143,23 @@ namespace Checkbook.Plugins.TurnIns
                     $"(anyRfOnly={anyRfOnly}, state={newStateApproved}, be={newBeApproved}). " +
                     "Awaiting the remaining approval — no financial side effects yet.");
                 return;
+            }
+
+            // ---- FY27+ item-based path (docs/TurnIn-FY27-Redesign.md) ----
+            // FY27 money lives on Prioritization Funding / Requirement Detail Funding
+            // junctions and the header carries no Fund/PG, so the FY26 steps below
+            // (raw Prio total, header-keyed credit LOA + distributions) don't apply.
+            // Zero-item Sweep Turn-Ins keep the header path in every FY.
+            if (items.Count > 0)
+            {
+                if (TurnInLOAResolver.IsFy27Plus(merged))
+                {
+                    tracing.Trace("FY27+ Turn-In — executing the junction-based path.");
+                    TurnInFy27Executor.Execute(service, tracing, merged, items);
+                    Deactivate(service, tracing, turnInId);
+                    tracing.Trace("TurnInApprovalPlugin completed successfully (FY27).");
+                    return;
+                }
             }
 
             // ---- Resolve LOAs for ledger creation ----
@@ -241,14 +267,31 @@ namespace Checkbook.Plugins.TurnIns
             // state. This nested Update carries statecode/statuscode only, so it
             // matches neither this step's filter (book_stateapproved/book_beapproved)
             // nor TurnInDeactivator's (book_stateapproved) — no re-entry.
+            Deactivate(service, tracing, turnInId);
+
+            tracing.Trace("TurnInApprovalPlugin completed successfully.");
+        }
+
+        /// <summary>Backfills book_fiscalyear / book_fundcenter when the pre-image lacks them.</summary>
+        private static void EnsureFiscalYear(IOrganizationService service, Entity merged, Guid turnInId)
+        {
+            if (merged.Contains(TurninAttributes.FiscalYear) && merged.Contains(TurninAttributes.FundCenter)) return;
+            var stored = service.Retrieve(EntityNames.Turnin, turnInId,
+                new ColumnSet(TurninAttributes.FiscalYear, TurninAttributes.FundCenter));
+            if (!merged.Contains(TurninAttributes.FiscalYear))
+                merged[TurninAttributes.FiscalYear] = stored.GetAttributeValue<OptionSetValue>(TurninAttributes.FiscalYear);
+            if (!merged.Contains(TurninAttributes.FundCenter))
+                merged[TurninAttributes.FundCenter] = stored.GetAttributeValue<EntityReference>(TurninAttributes.FundCenter);
+        }
+
+        private static void Deactivate(IOrganizationService service, ITracingService tracing, Guid turnInId)
+        {
             tracing.Trace($"Deactivating completed Turn-In {turnInId}.");
             service.Update(new Entity(EntityNames.Turnin, turnInId)
             {
                 ["statecode"] = new OptionSetValue(StateCodeValues.Inactive),
                 ["statuscode"] = new OptionSetValue(StatusCodeValues.InactiveDefault),
             });
-
-            tracing.Trace("TurnInApprovalPlugin completed successfully.");
         }
     }
 }

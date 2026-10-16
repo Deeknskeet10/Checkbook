@@ -57,6 +57,8 @@ const TURNIN_ENTITY = "book_turnin";
 const STATE_APPROVED = "book_stateapproved";
 const BE_APPROVED = "book_beapproved";
 const REQUIRES_BE = "book_requiresbeapproval";
+// Fired on window by the TurnInBuilder control after it saves the Turn-In Items.
+const ITEMS_SAVED_EVENT = "book:turnin-items-saved";
 
 // Role gate — mirrors TurnInValidator.EnforceApprovalRoles. This is UX
 // only; the plugin remains the authoritative check.
@@ -66,6 +68,11 @@ const STATE_ROLES = [
   "Book - Checkbook Administrator",
 ];
 const BE_ROLES = ["Book - Budget Executor", "Book - Checkbook Administrator"];
+// FY27 Requirement Funding Turn-Ins: NPM creates, Resource Integrator / CSOR approves in
+// one step (carried on book_beapproved) — no State or Budget Execution step.
+const RF_ROLES = ["Book - Resource Integrator", "Book - CSOR", "Book - Checkbook Administrator"];
+const FISCAL_YEAR = "book_fiscalyear";
+const FIRST_RF_ROUTE_FY = 2027;
 
 type Stage = "state" | "be" | "done";
 
@@ -73,6 +80,8 @@ interface TurnInRecord {
   stateApproved: boolean;
   beApproved: boolean;
   requiresBEApproval: boolean;
+  /** FY27+ Requirement Funding Turn-In: single RI / CSOR approval. */
+  rfRoute: boolean;
 }
 
 const useStyles = makeStyles({
@@ -136,6 +145,7 @@ const useStyles = makeStyles({
 });
 
 function stageOf(rec: TurnInRecord): Stage {
+  if (rec.rfRoute) return rec.beApproved ? "done" : "be";
   if (!rec.stateApproved) return "state";
   if (rec.requiresBEApproval && !rec.beApproved) return "be";
   return "done";
@@ -168,12 +178,15 @@ export const TurnInApprovalProcessApp: React.FC<TurnInApprovalProcessProps> = ({
       const rec = await webAPI.retrieveRecord(
         entityName || TURNIN_ENTITY,
         cleanId,
-        `?$select=${STATE_APPROVED},${BE_APPROVED},${REQUIRES_BE}`
+        `?$select=${STATE_APPROVED},${BE_APPROVED},${REQUIRES_BE},${FISCAL_YEAR}`
       );
+      const fyRaw: unknown = rec[FISCAL_YEAR];
+      const fy = typeof fyRaw === "number" ? fyRaw : 0;
       setRecord({
         stateApproved: !!rec[STATE_APPROVED],
         beApproved: !!rec[BE_APPROVED],
         requiresBEApproval: !!rec[REQUIRES_BE],
+        rfRoute: !!rec[REQUIRES_BE] && fy >= FIRST_RF_ROUTE_FY,
       });
     } catch (e: any) {
       setError(e?.message ?? "Failed to load Turn-In record.");
@@ -214,12 +227,24 @@ export const TurnInApprovalProcessApp: React.FC<TurnInApprovalProcessProps> = ({
     void loadRoles();
   }, [reload, loadRoles]);
 
+  // The TurnInBuilder (a separate control on the same form) fires this after saving
+  // items — whether BE Approval is needed depends on them, so re-read the record.
+  React.useEffect(() => {
+    const onSaved = (): void => void reload();
+    window.addEventListener(ITEMS_SAVED_EVENT, onSaved);
+    return () => window.removeEventListener(ITEMS_SAVED_EVENT, onSaved);
+  }, [reload]);
+
   const canApproveState = React.useMemo(
     () => STATE_ROLES.some((r) => userRoles.has(r)),
     [userRoles]
   );
   const canApproveBE = React.useMemo(
     () => BE_ROLES.some((r) => userRoles.has(r)),
+    [userRoles]
+  );
+  const canApproveRf = React.useMemo(
+    () => RF_ROLES.some((r) => userRoles.has(r)),
     [userRoles]
   );
 
@@ -265,11 +290,16 @@ export const TurnInApprovalProcessApp: React.FC<TurnInApprovalProcessProps> = ({
   const showBE = record.requiresBEApproval;
 
   // Stage list — index used to decide past/current/future styling.
-  const stages: { key: Stage; label: string }[] = [
-    { key: "state", label: "State Approval" },
-    ...(showBE ? [{ key: "be" as Stage, label: "BE Approval" }] : []),
-    { key: "done", label: "Approved" },
-  ];
+  const stages: { key: Stage; label: string }[] = record.rfRoute
+    ? [
+        { key: "be", label: "RI / CSOR Approval" },
+        { key: "done", label: "Approved" },
+      ]
+    : [
+        { key: "state", label: "State Approval" },
+        ...(showBE ? [{ key: "be" as Stage, label: "BE Approval" }] : []),
+        { key: "done", label: "Approved" },
+      ];
   const currentIdx = stages.findIndex((s) => s.key === current);
 
   const iconFor = (idx: number) => {
@@ -320,7 +350,25 @@ export const TurnInApprovalProcessApp: React.FC<TurnInApprovalProcessProps> = ({
             </>
           )}
 
-          {current === "be" && (
+          {current === "be" && record.rfRoute && (
+            <>
+              <Button
+                appearance="primary"
+                disabled={busy || isDisabled || !canApproveRf}
+                onClick={() => void setFlag(BE_APPROVED, true)}
+              >
+                Approve — RI / CSOR
+              </Button>
+              {!canApproveRf && (
+                <Text className={styles.helper}>
+                  Only Resource Integrators, CSORs, or Checkbook Administrators can
+                  approve a Requirement Funding Turn-In.
+                </Text>
+              )}
+            </>
+          )}
+
+          {current === "be" && !record.rfRoute && (
             <>
               <Button
                 appearance="primary"

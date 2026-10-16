@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest>
+  <control namespace="ARNGCheckbook" constructor="TurnInBuilder" version="0.2.2" display-name-key="TurnInBuilder" description-key="FY27 Turn-In entry builder. State path: one or more Prioritizations in the Turn-In state; per Prioritization Funding line (one per Fund/SAG) enter the TDP to turn in and optionally the AFP and Allotment (blank means sized automatically), reducing Itemized Details by each Prioritization total. RF path (NPM): turn in from one Requirement Funding, Withholding first, reducing its Requirement Detail funding by whatever Withholding cannot cover; approved by a Resource Integrator or CSOR. The entry type defaults from the user roles; State users cannot submit an RF-level Turn-In. Bind to book_newamount on the Turn-In form." control-type="virtual">
+    <property name="amount" display-name-key="Amount" description-key="The bound field (book_newamount, Decimal). The control reads and writes the rest of the record via Web API." of-type="Decimal" usage="bound" required="false" />
+    <resources>
+      <code path="index.ts" order="1" />
+      <css path="css/TurnInBuilder.css" order="1" />
+      <platform-library name="React" version="16.14.0" />
+      <platform-library name="Fluent" version="9.46.2" />
+    </resources>
+    <feature-usage>
+      <uses-feature name="WebAPI" required="true" />
+    </feature-usage>
+  </control>
+</manifest>

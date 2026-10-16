@@ -169,6 +169,101 @@ namespace Checkbook.Plugins.TurnIns.Helpers
         }
 
         /// <summary>
+        /// True when the Turn-In's Fiscal Year (book_fiscalyear, goal_fiscalyear picklist —
+        /// value is the year, e.g. 2027) is past the legacy grain, i.e. FY27+.
+        /// </summary>
+        public static bool IsFy27Plus(Entity turnIn)
+        {
+            var fy = turnIn.GetAttributeValue<OptionSetValue>(TurninAttributes.FiscalYear)?.Value;
+            return fy.HasValue && fy.Value % 100 > LOANameBuilder.LegacyGrainLastFy;
+        }
+
+        /// <summary>
+        /// FY27+ item-based Turn-In: the header carries no Fund/PG (a Turn-In may span
+        /// several Fund/SAGs), so the credit LOA is resolved PER DEBIT LOA — the BE OPR
+        /// holding LOA (env var <see cref="CreditOprEnvVar"/>, the ARNG OPR) with the same
+        /// Fund and the same PG or SAG (by the Fund's appropriation). Funds go back to the
+        /// ARNG LOA they came from.
+        /// </summary>
+        public static TurnInLOAResolution ResolveLOAsFy27(
+            IOrganizationService service,
+            ITracingService tracing,
+            List<TurnInItemRecord> items)
+        {
+            var result = new TurnInLOAResolution();
+            var creditOprId = EnvironmentVariableHelper.GetGuid(service, CreditOprEnvVar);
+            var creditByDebit = new Dictionary<Guid, EntityReference>();
+
+            foreach (var item in items)
+            {
+                if (item.LOA == null)
+                    throw new InvalidPluginExecutionException("A Turn-In Item has no LOA.");
+
+                if (!result.DebitLOAs.ContainsKey(item.LOA)) result.DebitLOAs[item.LOA] = 0m;
+                result.DebitLOAs[item.LOA] += item.Amount;
+
+                if (!creditByDebit.TryGetValue(item.LOA.Id, out var credit))
+                {
+                    credit = ResolveCreditLOAForDebit(service, tracing, item, creditOprId);
+                    creditByDebit[item.LOA.Id] = credit;
+                }
+
+                if (!result.CreditLOAs.ContainsKey(credit)) result.CreditLOAs[credit] = 0m;
+                result.CreditLOAs[credit] += item.Amount;
+            }
+
+            return result;
+        }
+
+        private static EntityReference ResolveCreditLOAForDebit(
+            IOrganizationService service,
+            ITracingService tracing,
+            TurnInItemRecord item,
+            Guid creditOprId)
+        {
+            if (item.LOAFund == null)
+                throw new InvalidPluginExecutionException(
+                    $"LOA {item.LOA.Id} has no Fund; cannot resolve the ARNG LOA to return funds to.");
+
+            var fundRecord = service.Retrieve(
+                EntityNames.Fund, item.LOAFund.Id, new ColumnSet(FundAttributes.Appropriation));
+            var appn = fundRecord.GetAttributeValue<OptionSetValue>(FundAttributes.Appropriation);
+            if (appn == null)
+                throw new InvalidPluginExecutionException(
+                    $"Fund {item.LOAFund.Id} has no appropriation; cannot resolve the ARNG LOA to return funds to.");
+
+            bool byPg = AppropriationValues.RequiresPg(appn.Value);
+            var key = byPg ? item.LOAPG : item.LOASAG;
+            if (key == null)
+                throw new InvalidPluginExecutionException(
+                    $"LOA {item.LOA.Id} has no {(byPg ? "PG" : "SAG")}; cannot resolve the ARNG LOA to return funds to.");
+
+            var q = new QueryExpression(EntityNames.FundingLine)
+            {
+                ColumnSet = new ColumnSet(FundingLineAttributes.Name),
+                NoLock = true,
+            };
+            q.Criteria.AddCondition(FundingLineAttributes.Fund, ConditionOperator.Equal, item.LOAFund.Id);
+            q.Criteria.AddCondition(FundingLineAttributes.DisbursingOfficial, ConditionOperator.Equal, creditOprId);
+            q.Criteria.AddCondition(byPg ? FundingLineAttributes.PG : FundingLineAttributes.SAG, ConditionOperator.Equal, key.Id);
+            q.Criteria.AddCondition(FundingLineAttributes.StateCode, ConditionOperator.Equal, StateCodeValues.Active);
+
+            var matches = service.RetrieveMultiple(q).Entities;
+            if (matches.Count == 0)
+                throw new InvalidPluginExecutionException(
+                    $"No ARNG LOA found to return funds to for LOA {item.LOA.Id} " +
+                    $"(Fund={item.LOAFund.Id}, OPR={creditOprId}, {(byPg ? "PG" : "SAG")}={key.Id}). " +
+                    $"Verify the ARNG holding LOA exists and env var '{CreditOprEnvVar}' points to the ARNG OPR.");
+            if (matches.Count > 1)
+                throw new InvalidPluginExecutionException(
+                    $"Multiple ({matches.Count}) ARNG LOAs match Fund={item.LOAFund.Id}, " +
+                    $"{(byPg ? "PG" : "SAG")}={key.Id} — the holding LOA should be unique per (Fund, PG/SAG).");
+
+            tracing.Trace($"FY27 credit LOA for debit LOA {item.LOA.Id}: {matches[0].Id}.");
+            return matches[0].ToEntityReference();
+        }
+
+        /// <summary>
         /// FY26 credit LOA: Fund + PG + BOC(BASE) + DollarType(BASE) + MDEP(RISK).
         /// Returns null when no such LOA exists so the caller can fall back to
         /// crediting each item's source LOA in place.
@@ -355,6 +450,20 @@ namespace Checkbook.Plugins.TurnIns.Helpers
         /// <summary>LOA's PG. Used to group debit distributions by (Fund, PG).</summary>
         public EntityReference LOAPG { get; set; }
 
+        /// <summary>LOA's SAG. FY27 credit-LOA matching for SAG-keyed appropriations.</summary>
+        public EntityReference LOASAG { get; set; }
+
+        /// <summary>
+        /// FY27: the Prioritization Funding junction the item turns in from. Null on FY26
+        /// items and RF-level items. When set, Prioritization / RequirementFunding are the
+        /// junction's own Prio / RF and LOA is the junction RF's LOA.
+        /// </summary>
+        public EntityReference PrioritizationFunding { get; set; }
+
+        /// <summary>FY27 per-item AFP / Allotment (header Fund/PG is dropped in FY27).</summary>
+        public decimal AFPAmount { get; set; }
+        public decimal AllotmentAmount { get; set; }
+
         /// <summary>True when this item turns in funds directly from RF (no Prio).</summary>
         public bool IsRFOnly => Prioritization == null && RequirementFunding != null;
     }
@@ -385,10 +494,14 @@ namespace Checkbook.Plugins.TurnIns.Helpers
                     TurnInItemsAttributes.Amount,
                     TurnInItemsAttributes.Turnin,
                     TurnInItemsAttributes.Prioritization,
-                    TurnInItemsAttributes.RequirementFunding)
+                    TurnInItemsAttributes.RequirementFunding,
+                    TurnInItemsAttributes.PrioritizationFunding,
+                    TurnInItemsAttributes.AFPAmount,
+                    TurnInItemsAttributes.AllotmentAmount)
             };
 
             q.Criteria.AddCondition(TurnInItemsAttributes.Turnin, ConditionOperator.Equal, turnInId);
+            q.Criteria.AddCondition(TurnInItemsAttributes.StateCode, ConditionOperator.Equal, StateCodeValues.Active);
 
             var results = service.RetrieveMultiple(q).Entities;
 
@@ -401,9 +514,23 @@ namespace Checkbook.Plugins.TurnIns.Helpers
             {
                 var pri = e.GetAttributeValue<EntityReference>(TurnInItemsAttributes.Prioritization);
                 var rf = e.GetAttributeValue<EntityReference>(TurnInItemsAttributes.RequirementFunding);
+                var pf = e.GetAttributeValue<EntityReference>(TurnInItemsAttributes.PrioritizationFunding);
 
                 // Decimal column. NumericHelper covers Money/Double/Decimal sources.
                 decimal amount = NumericHelper.ToDecimal(e, TurnInItemsAttributes.Amount) ?? 0m;
+
+                // FY27: the PF junction is authoritative for the item's Prio and RF.
+                if (pf != null)
+                {
+                    var pfEnt = service.Retrieve(
+                        EntityNames.PrioritizationFunding,
+                        pf.Id,
+                        new ColumnSet(
+                            PrioritizationFundingAttributes.Prioritization,
+                            PrioritizationFundingAttributes.RequirementFunding));
+                    pri = pfEnt.GetAttributeValue<EntityReference>(PrioritizationFundingAttributes.Prioritization) ?? pri;
+                    rf = pfEnt.GetAttributeValue<EntityReference>(PrioritizationFundingAttributes.RequirementFunding) ?? rf;
+                }
 
                 // At least one of Prio / RF must be present so we know the source.
                 if (pri == null && rf == null)
@@ -411,9 +538,11 @@ namespace Checkbook.Plugins.TurnIns.Helpers
                         "Turn-In Item is missing both Prioritization and Requirement Funding — " +
                         "at least one source must be specified.");
 
-                // Derive LOA from the source: Prio when present, otherwise RF.
+                // Derive LOA from the source: Prio when present, otherwise RF. FY27
+                // Prioritizations carry no LOA (their money lives on PF junctions), so a
+                // Prio-backed FY27 item reads the LOA from its RF instead.
                 EntityReference loa;
-                if (pri != null)
+                if (pri != null && pf == null)
                 {
                     if (!prioLoaCache.TryGetValue(pri.Id, out loa))
                     {
@@ -426,6 +555,9 @@ namespace Checkbook.Plugins.TurnIns.Helpers
                         prioLoaCache[pri.Id] = loa;
                     }
 
+                    if (loa == null && rf != null)
+                        loa = GetRfLoa(service, rfLoaCache, rf.Id);
+
                     if (loa == null)
                         throw new InvalidPluginExecutionException(
                             $"Prioritization {pri.Id} has no LOA (book_lineofaccounting). " +
@@ -433,16 +565,7 @@ namespace Checkbook.Plugins.TurnIns.Helpers
                 }
                 else
                 {
-                    if (!rfLoaCache.TryGetValue(rf.Id, out loa))
-                    {
-                        var rfEnt = service.Retrieve(
-                            EntityNames.RequirementFunding,
-                            rf.Id,
-                            new ColumnSet(RequirementFundingAttributes.LineOfAccounting));
-                        loa = rfEnt.GetAttributeValue<EntityReference>(
-                            RequirementFundingAttributes.LineOfAccounting);
-                        rfLoaCache[rf.Id] = loa;
-                    }
+                    loa = GetRfLoa(service, rfLoaCache, rf.Id);
 
                     if (loa == null)
                         throw new InvalidPluginExecutionException(
@@ -456,7 +579,7 @@ namespace Checkbook.Plugins.TurnIns.Helpers
                     loaEntity = service.Retrieve(
                         EntityNames.FundingLine,
                         loa.Id,
-                        new ColumnSet(FundingLineAttributes.Fund, FundingLineAttributes.PG));
+                        new ColumnSet(FundingLineAttributes.Fund, FundingLineAttributes.PG, FundingLineAttributes.SAG));
                     loaCache[loa.Id] = loaEntity;
                 }
 
@@ -467,10 +590,14 @@ namespace Checkbook.Plugins.TurnIns.Helpers
                 {
                     Prioritization = pri,
                     RequirementFunding = rf,
+                    PrioritizationFunding = pf,
                     LOA = loa,
                     Amount = amount,
                     LOAFund = loaFund,
                     LOAPG = loaPg,
+                    LOASAG = loaEntity.GetAttributeValue<EntityReference>(FundingLineAttributes.SAG),
+                    AFPAmount = NumericHelper.ToDecimal(e, TurnInItemsAttributes.AFPAmount) ?? 0m,
+                    AllotmentAmount = NumericHelper.ToDecimal(e, TurnInItemsAttributes.AllotmentAmount) ?? 0m,
                 });
 
                 tracing.Trace(
@@ -481,6 +608,19 @@ namespace Checkbook.Plugins.TurnIns.Helpers
             }
 
             return list;
+        }
+
+        private static EntityReference GetRfLoa(
+            IOrganizationService service, Dictionary<Guid, EntityReference> cache, Guid rfId)
+        {
+            if (cache.TryGetValue(rfId, out var loa)) return loa;
+            var rfEnt = service.Retrieve(
+                EntityNames.RequirementFunding,
+                rfId,
+                new ColumnSet(RequirementFundingAttributes.LineOfAccounting));
+            loa = rfEnt.GetAttributeValue<EntityReference>(RequirementFundingAttributes.LineOfAccounting);
+            cache[rfId] = loa;
+            return loa;
         }
     }
 }

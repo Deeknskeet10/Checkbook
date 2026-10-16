@@ -71,6 +71,63 @@ namespace Checkbook.Plugins.TurnIns.Helpers
             tracing.Trace($"TurnInDistributionCreator: {created} distribution row(s) created.");
         }
 
+        /// <summary>
+        /// FY27 item-based Turn-In: the header has no Fund/PG, and one Turn-In may span several
+        /// Fund/SAGs. Items are grouped by their LOA's (Fund, PG); each group emits one AFP and
+        /// one Allotment pair sized from the items' own book_afpamount / book_allotmentamount
+        /// (TurnInItemAmountCalculator). Debit FC = the Turn-In's FundCenter (state), credit FC
+        /// = the A18 root — same anchors as the FY26 path.
+        /// </summary>
+        public static void CreateDistributionsByItems(
+            IOrganizationService service,
+            ITracingService tracing,
+            Entity turnIn,
+            System.Collections.Generic.List<TurnInItemRecord> items)
+        {
+            var turnInFundCenter = turnIn.GetAttributeValue<EntityReference>(TurninAttributes.FundCenter);
+            if (turnInFundCenter == null)
+                throw new InvalidPluginExecutionException(
+                    "Turn-In is missing its Fund Center — cannot create distributions.");
+
+            var groups = items
+                .Where(i => i.LOAFund != null && i.LOAPG != null)
+                .GroupBy(i => new { Fund = i.LOAFund.Id, Pg = i.LOAPG.Id })
+                .Select(g => new
+                {
+                    Fund = g.First().LOAFund,
+                    Pg = g.First().LOAPG,
+                    Afp = g.Sum(i => i.AFPAmount),
+                    Allot = g.Sum(i => i.AllotmentAmount),
+                })
+                .Where(g => g.Afp > 0m || g.Allot > 0m)
+                .ToList();
+
+            if (groups.Count == 0)
+            {
+                tracing.Trace("FY27: no item carries AFP/Allotment — no Distributions to create.");
+                return;
+            }
+
+            var turnInRef = turnIn.ToEntityReference();
+            var creditFundCenter = ResolveRootFundCenter(service, tracing);
+            var asOf = DateTime.UtcNow.Date;
+
+            int created = 0;
+            foreach (var g in groups)
+            {
+                if (g.Afp > 0m)
+                    created += EmitPair(service, tracing, turnInRef, g.Fund, g.Pg,
+                                        turnInFundCenter, creditFundCenter,
+                                        FundingTypeValues.AFP, "AFP", g.Afp, asOf);
+                if (g.Allot > 0m)
+                    created += EmitPair(service, tracing, turnInRef, g.Fund, g.Pg,
+                                        turnInFundCenter, creditFundCenter,
+                                        FundingTypeValues.Allotment, "Allotment", g.Allot, asOf);
+            }
+
+            tracing.Trace($"TurnInDistributionCreator (FY27): {created} distribution row(s) across {groups.Count} Fund/PG group(s).");
+        }
+
         private static int EmitPair(
             IOrganizationService service,
             ITracingService tracing,

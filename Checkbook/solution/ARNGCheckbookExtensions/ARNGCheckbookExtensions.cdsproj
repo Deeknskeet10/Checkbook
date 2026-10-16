@@ -63,6 +63,7 @@
     <ProjectReference Include="../../pcf/StateSwapApprovalProcess/StateSwapApprovalProcess.pcfproj" />
     <ProjectReference Include="../../pcf/RealignmentApprovalProcess/RealignmentApprovalProcess.pcfproj" />
     <ProjectReference Include="../../pcf/RealignmentBuilder/RealignmentBuilder.pcfproj" />
+    <ProjectReference Include="../../pcf/TurnInBuilder/TurnInBuilder.pcfproj" />
   </ItemGroup>
 
   <Import Project="$(MSBuildToolsPath)\Microsoft.Common.targets" />

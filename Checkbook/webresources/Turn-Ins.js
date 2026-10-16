@@ -78,10 +78,26 @@ Book.TurnIn = (function () {
     "book_allotmentamount": "book_allotmentoverridden"
   };
 
+  // FY27+ State-origin Turn-Ins are built by the TurnInBuilder PCF
+  // (docs/TurnIn-FY27-Redesign.md): no header Fund/PG (one Turn-In can span several
+  // Fund/SAGs), and Amount / AFP / Allotment are roll-ups of the lines
+  // (TurnInItemRollup), so they are read-only here.
+  var FIRST_ITEM_BASED_FY = 2027;
+  var FY27_HIDDEN_CONTROLS = ["book_fund", "book_pg"];
+  var FY27_LOCKED_CONTROLS = ["book_newamount", "book_afpamount", "book_allotmentamount"];
+  var BUILDER_CONTROL = "book_newamount_builder";
+
   function onLoad(executionContext) {
     var formContext = executionContext.getFormContext();
     // lockOrigin only touches controls (no getValue) so it's masking-safe now.
     lockOrigin(formContext);
+    // Fiscal Year decides FY26 header layout vs the FY27 builder.
+    var fyAttr = formContext.getAttribute("book_fiscalyear");
+    if (fyAttr) {
+      fyAttr.addOnChange(function () {
+        applyForOriginWhenReady(formContext, 0);
+      });
+    }
     // applyForOrigin reads book_origin.getValue(), which can throw while CLS
     // masking is still initializing — apply it once masking is ready.
     applyForOriginWhenReady(formContext, 0);
@@ -148,6 +164,18 @@ Book.TurnIn = (function () {
     // AFP/Allotment on a Sweep are authoritative outputs of GenerateDistributions —
     // user must not edit them. On Kind A they are editable so a state can override.
     setControlsDisabled(formContext, AMOUNT_CONTROLS, isSweep);
+
+    // FY27+ Kind A: lines come from the builder; header Fund/PG and the legacy
+    // items section don't apply and the amounts are item roll-ups.
+    var fyAttr = formContext.getAttribute("book_fiscalyear");
+    var fy = fyAttr ? fyAttr.getValue() : null;
+    var itemBased = !isSweep && fy !== null && fy !== undefined && fy >= FIRST_ITEM_BASED_FY;
+    setControlsVisible(formContext, FY27_HIDDEN_CONTROLS, !itemBased);
+    setControlsVisible(formContext, [BUILDER_CONTROL], itemBased);
+    if (itemBased) {
+      setItemsSectionVisible(formContext, false);
+      setControlsDisabled(formContext, FY27_LOCKED_CONTROLS, true);
+    }
   }
 
   function getOrigin(formContext) {
