@@ -36,31 +36,26 @@ namespace Checkbook.Plugins.Helpers
             if (cache.TryGetValue(fundCenterId, out var cached))
                 return cached;
 
-            try
-            {
-                var fc = service.Retrieve(EntityNames.FundCenter, fundCenterId,
-                    new ColumnSet(FundCenterAttributes.ParentFundCenter, "owningbusinessunit"));
+            // No try/catch: a swallowed fault would silently resolve the FC to
+            // itself and route Distributions to a sub-state FC — and a failed
+            // call inside a sync plugin has already doomed the transaction anyway.
+            var fc = service.Retrieve(EntityNames.FundCenter, fundCenterId,
+                new ColumnSet(FundCenterAttributes.ParentFundCenter, CommonAttributes.OwningBusinessUnit));
 
-                var meta = new FundCenterMeta
-                {
-                    ParentFundCenterId = fc.GetAttributeValue<EntityReference>(FundCenterAttributes.ParentFundCenter)?.Id,
-                    OwningBusinessUnit = fc.GetAttributeValue<EntityReference>("owningbusinessunit"),
-                };
-                cache[fundCenterId] = meta;
-                return meta;
-            }
-            catch
+            var meta = new FundCenterMeta
             {
-                cache[fundCenterId] = null;
-                return null;
-            }
+                ParentFundCenterId = fc.GetAttributeValue<EntityReference>(FundCenterAttributes.ParentFundCenter)?.Id,
+                OwningBusinessUnit = fc.GetAttributeValue<EntityReference>(CommonAttributes.OwningBusinessUnit),
+            };
+            cache[fundCenterId] = meta;
+            return meta;
         }
 
         /// <summary>
         /// Walk the FundCenter parent chain until we reach the FC whose parent
         /// is the holding FC (state level). Fallbacks match the legacy one-hop
-        /// rule: an FC that is itself the holding FC, has no parent, or lacks
-        /// metadata resolves to itself; an FC already at state (parent = holding)
+        /// rule: an FC that is itself the holding FC or has no parent
+        /// resolves to itself; an FC already at state (parent = holding)
         /// resolves to itself in the first loop turn.
         /// </summary>
         public static Guid ResolveStateFundCenter(
@@ -86,7 +81,7 @@ namespace Checkbook.Plugins.Helpers
                 current = parent.Value;
             }
 
-            tracing.Trace(
+            tracing?.Trace(
                 $"  ResolveStateFundCenter: hop cap ({MaxFundCenterWalkHops}) reached starting at " +
                 $"FC {fcId}; returning {current}. Check for a cyclic parent-of chain.");
             return current;

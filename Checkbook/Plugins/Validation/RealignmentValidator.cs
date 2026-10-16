@@ -59,11 +59,31 @@ namespace Checkbook.Plugins.Validation
             bool beDeniedTx = ApprovalTransitionDetector.DetectOptionSetTransition(
                 target, preImage, RealignmentsAttributes.BEDecision, RealignmentBEDecisionValues.Denied);
 
-            // If no approval/denial transition is in the payload, this is an
-            // ordinary edit/save — nothing for the gate to do.
-            if (!stateApprovedTx && !stateDeniedTx && !beApprovedTx && !beDeniedTx)
+            // RealignmentProcessor executes on value-in-payload + record-active (so a
+            // re-save re-drives a stuck approval). The gate must fire on the same
+            // condition, or a re-save carrying an already-stored Approved would move
+            // money without passing role/shape/balance checks. Stamps below stay
+            // transition-based so a re-drive keeps the original approver.
+            bool recordActive =
+                (preImage?.GetAttributeValue<OptionSetValue>(CommonAttributes.StateCode)?.Value
+                 ?? StateCodeValues.Active) == StateCodeValues.Active;
+            bool stateApproved = stateApprovedTx || (recordActive &&
+                ApprovalTransitionDetector.PayloadHasOptionSetValue(
+                    target, RealignmentsAttributes.StateApproved, RealignmentBEDecisionValues.Approved));
+            bool stateDenied = stateDeniedTx || (recordActive &&
+                ApprovalTransitionDetector.PayloadHasOptionSetValue(
+                    target, RealignmentsAttributes.StateApproved, RealignmentBEDecisionValues.Denied));
+            bool beApproved = beApprovedTx || (recordActive &&
+                ApprovalTransitionDetector.PayloadHasOptionSetValue(
+                    target, RealignmentsAttributes.BEDecision, RealignmentBEDecisionValues.Approved));
+            bool beDenied = beDeniedTx || (recordActive &&
+                ApprovalTransitionDetector.PayloadHasOptionSetValue(
+                    target, RealignmentsAttributes.BEDecision, RealignmentBEDecisionValues.Denied));
+
+            // No approval/denial value in the payload — an ordinary edit/save.
+            if (!stateApproved && !stateDenied && !beApproved && !beDenied)
             {
-                tracing.Trace("No approval/denial transition detected — skipping RealignmentValidator.");
+                tracing.Trace("No approval/denial value in payload — skipping RealignmentValidator.");
                 return;
             }
 
@@ -77,15 +97,15 @@ namespace Checkbook.Plugins.Validation
             // initiating user, never the execution identity.)
             EnforceApprovalRoles(
                 service, tracing, context.InitiatingUserId,
-                stateApprovedTx || stateDeniedTx,
-                beApprovedTx || beDeniedTx,
+                stateApproved || stateDenied,
+                beApproved || beDenied,
                 context.PrimaryEntityId);
 
             // Denials are allowed regardless of shape prerequisites — a denied
             // realignment can be in any state. RealignmentProcessor deactivates it.
-            if (stateDeniedTx || beDeniedTx)
+            if (stateDenied || beDenied)
             {
-                tracing.Trace("Denial transition — role gate passed; skipping shape prerequisite checks.");
+                tracing.Trace("Denial — role gate passed; skipping shape prerequisite checks.");
                 return;
             }
 
@@ -147,7 +167,7 @@ namespace Checkbook.Plugins.Validation
 
             // If State approves a non-Same SAG/Fund realignment; continue forward
             // until BE Decision (State approval alone cannot finalize it).
-            if (stateApprovedTx && !beApprovedTx && !sameFundSAG)
+            if (stateApproved && !beApproved && !sameFundSAG)
             {
                 tracing.Trace("State Approved - Not same SAG or Fund - requires BE Approval.");
                 // fall through to the stamp; no prerequisite is violated.

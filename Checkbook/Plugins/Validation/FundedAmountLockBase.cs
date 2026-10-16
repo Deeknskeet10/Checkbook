@@ -34,7 +34,7 @@ namespace Checkbook.Plugins.Validation
     /// </summary>
     public abstract class FundedAmountLockBase : PluginBase
     {
-        private const string LockEnvVar = "book_LockManualFundedEdits";
+        private const string LockEnvVar = EnvironmentVariableKeys.LockManualFundedEdits;
 
         /// <summary>Logical name of the entity this guard protects.</summary>
         protected abstract string EntityName { get; }

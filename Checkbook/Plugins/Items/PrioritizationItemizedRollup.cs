@@ -100,7 +100,9 @@ namespace Checkbook.Plugins.Items
             var prioritization = service.Retrieve(
                 EntityNames.Prioritization,
                 prioritizationId,
-                new ColumnSet(PrioritizationAttributes.FundingMode));
+                new ColumnSet(
+                    PrioritizationAttributes.FundingMode,
+                    PrioritizationAttributes.RequirementFunding));
             var fundingMode = prioritization
                 .GetAttributeValue<OptionSetValue>(PrioritizationAttributes.FundingMode);
             if (fundingMode == null || fundingMode.Value != FundingModeValues.Itemized)
@@ -149,6 +151,15 @@ namespace Checkbook.Plugins.Items
             };
 
             service.Update(update);
+
+            // The Prio update above runs at depth 2, where
+            // PrioritizationRollupToRequirementFunding early-returns — so a
+            // legacy (direct-lookup) Prio's RF must be re-rolled here. FY27 Prios
+            // have no direct RF; their junction roll-up owns the RF totals.
+            var rf = prioritization.GetAttributeValue<EntityReference>(
+                PrioritizationAttributes.RequirementFunding);
+            if (rf != null)
+                PrioritizationRollupHelper.RecalculateRFFunded(service, rf.Id, tracingService);
         }
     }
 }

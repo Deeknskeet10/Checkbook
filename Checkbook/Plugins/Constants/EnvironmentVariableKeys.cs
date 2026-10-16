@@ -24,5 +24,25 @@ namespace Checkbook.Plugins.Constants
         /// a Checkbook Administrator flips it from the Admin Center.
         /// </summary>
         public const string LockSpendPlanEdits = "book_LockSpendPlanEdits";
+
+        /// <summary>
+        /// GUID of the A18 holding book_fundcenter. Every system-generated
+        /// Distribution routes through it (see <see cref="Helpers.DistributionWriter"/>)
+        /// and the GenerateDistributions reconcile nets against it.
+        /// </summary>
+        public const string DistributionHoldingFundCenter = "book_DistributionHoldingFundCenter";
+
+        /// <summary>
+        /// Boolean — when Yes, manual edits that LOWER a Funded amount are blocked
+        /// on the five funding tables (see <see cref="Validation.FundedAmountLockBase"/>).
+        /// Flipped by the book_ToggleFundedAmountLock Custom API.
+        /// </summary>
+        public const string LockManualFundedEdits = "book_LockManualFundedEdits";
+
+        /// <summary>
+        /// GUID of the ARNG (BE) OPR whose holding LOAs receive turned-in funds
+        /// (FY27+ Turn-In credit side).
+        /// </summary>
+        public const string TurnInCreditOpr = "book_TurnInCreditOPR";
     }
 }

@@ -155,6 +155,16 @@ namespace Checkbook.Plugins.Realignments
                 return;
             }
 
+            // Durable double-processing barrier (parity with Turn-Ins / Swaps): a
+            // reactivated-and-re-approved realignment must not post a second
+            // ledger pair. Same-LOA realignments write no ledgers and rely on
+            // deactivation alone.
+            if (LedgerIdempotency.HasExistingLedger(service, LedgerAttributes.Realignment, context.PrimaryEntityId))
+            {
+                tracing.Trace("Ledger entries already exist for this Realignment — declining to re-process.");
+                return;
+            }
+
             tracing.Trace("RealignmentProcessor: Approved and beginning execution.");
 
             // FY27 item path: iterate the child items (each a Fund/SAG move) and
@@ -824,6 +834,16 @@ namespace Checkbook.Plugins.Realignments
                 create[PrioritizationFundingAttributes.RequirementFunding] = creditRf;
                 create[PrioritizationFundingAttributes.FundedAmount] = amount;
                 create[PrioritizationFundingAttributes.ValidatedAmount] = amount;
+
+                // Scope the junction to the state that owns the credit Prio (same
+                // rule as PrioritizationSingleRfAutoAllocate) so states can read it
+                // at Business-Unit depth.
+                var prioBu = service.Retrieve(EntityNames.Prioritization, creditPrio.Id,
+                        new ColumnSet(CommonAttributes.OwningBusinessUnit))
+                    .GetAttributeValue<EntityReference>(CommonAttributes.OwningBusinessUnit);
+                if (prioBu != null)
+                    create[CommonAttributes.OwningBusinessUnit] = prioBu;
+
                 service.Create(create);
             }
         }

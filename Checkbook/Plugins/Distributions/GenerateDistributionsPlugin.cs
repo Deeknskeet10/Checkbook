@@ -67,7 +67,7 @@ namespace Checkbook.Plugins.Distributions
     public class GenerateDistributionsPlugin : PluginBase
     {
         private const string MessageName = "book_GenerateDistributions";
-        private const string HoldingFundCenterEnvVar = "book_DistributionHoldingFundCenter";
+        private const string HoldingFundCenterEnvVar = EnvironmentVariableKeys.DistributionHoldingFundCenter;
 
         // Plugin sandbox hard kill is 120s. Bail at ~90s to leave ~30s of tail
         // headroom: after the budget trips, one more bucket may finish, then
@@ -456,6 +456,7 @@ namespace Checkbook.Plugins.Distributions
                         new ConditionExpression(DistributionsAttributes.EntryDocumentNumber, ConditionOperator.Null),
                         new ConditionExpression(DistributionsAttributes.TurnIn,              ConditionOperator.Null),
                         new ConditionExpression(DistributionsAttributes.StateSwap,           ConditionOperator.Null),
+                        new ConditionExpression(DistributionsAttributes.Realignment,         ConditionOperator.Null),
                     },
                 },
                 PageInfo = new PagingInfo { Count = 5000, PageNumber = 1, ReturnTotalRecordCount = false },

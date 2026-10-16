@@ -66,7 +66,7 @@ namespace Checkbook.Plugins.TurnIns.Helpers
     public static class TurnInLOAResolver
     {
         /// <summary>Env-var schema name holding the credit-side OPR GUID for FY27+ turn-ins.</summary>
-        public const string CreditOprEnvVar = "book_TurnInCreditOPR";
+        public const string CreditOprEnvVar = EnvironmentVariableKeys.TurnInCreditOpr;
 
         public static TurnInLOAResolution ResolveLOAs(
             IOrganizationService service,
@@ -160,7 +160,8 @@ namespace Checkbook.Plugins.TurnIns.Helpers
             }
             else
             {
-                var creditLoa = ResolveCreditLOA_FY27Plus(service, tracing, fund, pg, appnOs.Value);
+                var creditLoa = ResolveCreditLOA_FY27Plus(
+                    service, tracing, fund, pg, appnOs.Value, SingleCategoryOrNull(items));
                 result.CreditLOAs[creditLoa] = result.TotalAmount;
                 tracing.Trace($"Resolved credit LOA: {creditLoa.Id} (FY{fy} BE OPR branch).");
             }
@@ -247,6 +248,9 @@ namespace Checkbook.Plugins.TurnIns.Helpers
             q.Criteria.AddCondition(FundingLineAttributes.DisbursingOfficial, ConditionOperator.Equal, creditOprId);
             q.Criteria.AddCondition(byPg ? FundingLineAttributes.PG : FundingLineAttributes.SAG, ConditionOperator.Equal, key.Id);
             q.Criteria.AddCondition(FundingLineAttributes.StateCode, ConditionOperator.Equal, StateCodeValues.Active);
+            // Category is part of the FY27 LOA grain (DO-Fund-PG-FP-Category); without it two
+            // ARNG LOAs differing only by Category are ambiguous. Funded Program rides on Fund.
+            AddCategoryCondition(q, item.LOACategory);
 
             var matches = service.RetrieveMultiple(q).Entities;
             if (matches.Count == 0)
@@ -257,7 +261,8 @@ namespace Checkbook.Plugins.TurnIns.Helpers
             if (matches.Count > 1)
                 throw new InvalidPluginExecutionException(
                     $"Multiple ({matches.Count}) ARNG LOAs match Fund={item.LOAFund.Id}, " +
-                    $"{(byPg ? "PG" : "SAG")}={key.Id} — the holding LOA should be unique per (Fund, PG/SAG).");
+                    $"{(byPg ? "PG" : "SAG")}={key.Id}, Category={item.LOACategory?.ToString() ?? "(none)"} — " +
+                    "the holding LOA should be unique per (Fund, PG/SAG, Category).");
 
             tracing.Trace($"FY27 credit LOA for debit LOA {item.LOA.Id}: {matches[0].Id}.");
             return matches[0].ToEntityReference();
@@ -306,7 +311,8 @@ namespace Checkbook.Plugins.TurnIns.Helpers
             ITracingService tracing,
             EntityReference fund,
             EntityReference pg,
-            int appropriation)
+            int appropriation,
+            int? category)
         {
             var creditOprId = EnvironmentVariableHelper.GetGuid(service, CreditOprEnvVar);
             tracing.Trace($"FY27+ credit LOA: OPR={creditOprId} (from env var {CreditOprEnvVar}).");
@@ -342,6 +348,11 @@ namespace Checkbook.Plugins.TurnIns.Helpers
                 tracing.Trace($"APPN {appropriation} uses SAG; derived SAG {sagRef.Id} from PG {pg.Id}.");
             }
 
+            // Header path (Sweep Turn-Ins carry no items): Category is only known when every
+            // item's debit LOA agrees on it; otherwise rely on (Fund, OPR, PG/SAG) uniqueness.
+            if (category.HasValue)
+                flQuery.Criteria.AddCondition(FundingLineAttributes.Category, ConditionOperator.Equal, category.Value);
+
             var matches = service.RetrieveMultiple(flQuery).Entities;
             if (matches.Count == 0)
                 throw new InvalidPluginExecutionException(
@@ -358,6 +369,20 @@ namespace Checkbook.Plugins.TurnIns.Helpers
                     "the BE OPR's holding LOA should be unique per (Fund, PG/SAG).");
 
             return matches[0].ToEntityReference();
+        }
+
+        private static void AddCategoryCondition(QueryExpression q, int? category)
+        {
+            if (category.HasValue)
+                q.Criteria.AddCondition(FundingLineAttributes.Category, ConditionOperator.Equal, category.Value);
+            else
+                q.Criteria.AddCondition(FundingLineAttributes.Category, ConditionOperator.Null);
+        }
+
+        private static int? SingleCategoryOrNull(List<TurnInItemRecord> items)
+        {
+            var categories = items.Select(i => i.LOACategory).Where(c => c.HasValue).Distinct().ToList();
+            return categories.Count == 1 ? categories[0] : null;
         }
 
         /// <summary>
@@ -452,6 +477,9 @@ namespace Checkbook.Plugins.TurnIns.Helpers
 
         /// <summary>LOA's SAG. FY27 credit-LOA matching for SAG-keyed appropriations.</summary>
         public EntityReference LOASAG { get; set; }
+
+        /// <summary>LOA's Category (FY27 grain). FY27 credit-LOA matching.</summary>
+        public int? LOACategory { get; set; }
 
         /// <summary>
         /// FY27: the Prioritization Funding junction the item turns in from. Null on FY26
@@ -579,7 +607,9 @@ namespace Checkbook.Plugins.TurnIns.Helpers
                     loaEntity = service.Retrieve(
                         EntityNames.FundingLine,
                         loa.Id,
-                        new ColumnSet(FundingLineAttributes.Fund, FundingLineAttributes.PG, FundingLineAttributes.SAG));
+                        new ColumnSet(
+                            FundingLineAttributes.Fund, FundingLineAttributes.PG,
+                            FundingLineAttributes.SAG, FundingLineAttributes.Category));
                     loaCache[loa.Id] = loaEntity;
                 }
 
@@ -596,6 +626,7 @@ namespace Checkbook.Plugins.TurnIns.Helpers
                     LOAFund = loaFund,
                     LOAPG = loaPg,
                     LOASAG = loaEntity.GetAttributeValue<EntityReference>(FundingLineAttributes.SAG),
+                    LOACategory = loaEntity.GetAttributeValue<OptionSetValue>(FundingLineAttributes.Category)?.Value,
                     AFPAmount = NumericHelper.ToDecimal(e, TurnInItemsAttributes.AFPAmount) ?? 0m,
                     AllotmentAmount = NumericHelper.ToDecimal(e, TurnInItemsAttributes.AllotmentAmount) ?? 0m,
                 });

@@ -43,6 +43,11 @@ namespace Checkbook.Plugins.Recalculations
             if (context.MessageName == "Delete")
             {
                 preImage = TryGetPreImage(context);
+                if (preImage == null)
+                {
+                    tracing.Trace("Delete without a pre-image — cannot resolve the parent RF.");
+                    return;
+                }
                 target = preImage;
             }
             else
@@ -53,9 +58,18 @@ namespace Checkbook.Plugins.Recalculations
                     preImage = TryGetPreImage(context);
             }
 
-            var parentRF = target.GetAttributeValue<EntityReference>(
-                PrioritizationAttributes.RequirementFunding
-            ) ?? preImage?.GetAttributeValue<EntityReference>(PrioritizationAttributes.RequirementFunding);
+            var parentRF = GetEffectiveEntityReference(
+                target, preImage, PrioritizationAttributes.RequirementFunding);
+
+            // Re-parented Prio: the old RF loses this Prio's funded amount and
+            // must be recalculated too, or it stays overstated.
+            var previousRF = preImage?.GetAttributeValue<EntityReference>(
+                PrioritizationAttributes.RequirementFunding);
+            if (previousRF != null && (parentRF == null || previousRF.Id != parentRF.Id))
+            {
+                tracing.Trace($"Prio moved off RF {previousRF.Id}; recalculating it.");
+                PrioritizationRollupHelper.RecalculateRFFunded(service, previousRF.Id, tracing);
+            }
 
             // Defensive fallback: if neither Target nor PreImage carried the RF
             // (e.g. PreImage registration dropped), retrieve it from the row.
