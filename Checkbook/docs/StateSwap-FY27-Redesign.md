@@ -1,6 +1,6 @@
 # State Swap FY27 Redesign — Prioritization Funding lines + Itemized Details
 
-Status: **plan — decisions made 2026-10-21 (§3), nothing built** · 2026-10-20
+Status: **in build — shared helper (§5.1) + sandbox schema / security (§4) done 2026-10-21; plugins next** · 2026-10-20
 
 Related: [Realignment FY27 redesign](Realignment-FY27-Redesign.md),
 [Turn-In FY27 redesign](TurnIn-FY27-Redesign.md),
@@ -82,10 +82,20 @@ as Turn-In). FY26 swaps keep today's code path unchanged.
 | `book_swapdetailincrease` (**new**) | Same shape. Credit Itemized Prios. |
 | `book_stateswap` | No new columns. Relationships to both new tables: **Share cascade = Cascade All**. |
 
-Schema script: `devtools/sandbox-import/schema/swap_fy27_schema.py` (idempotent, Web API, as for
-`turnin_fy27_schema.py`). Security: State Approver / State Administrator get **User-level** CRUD +
-Append/AppendTo/Share on both new tables (same as `book_swapitem`); BE + Read Only Org Read;
-Checkbook Admin Org all.
+**Built in Blipsnchitz 2026-10-21.** Schema: `devtools/sandbox-import/schema/swap_fy27_schema.py`
+(idempotent, Web API, as for `turnin_fy27_schema.py`). Both PF lookups and both child-table
+`book_itemizeddetail` lookups are **RemoveLink**; both child tables' `book_stateswap` relationship
+cascades **Delete / Assign / Reparent / Share / Unshare** (same as `book_stateswap` → `book_swapitem`),
+so reductions / increases follow the swap's sharing to both states. Full field list:
+`dist/SCHEMA-StateSwap.md` §10. Constants: `SwapItemAttributes` (+2 PF lookups) and new
+`SwapDetailAdjustmentAttributes.cs` (`SwapDetailReductionAttributes`, `SwapDetailIncreaseAttributes`).
+
+Security: `swap_fy27_security.py` gives every root `Book -` role on both new tables **exactly the
+privileges it holds on `book_swapitem`** (verb + depth, incl. Share / Assign). Sandbox result:
+State Approver / State Administrator = Create / Read / Write / Share / Assign **Deep**, Delete
+**Basic**, Append / AppendTo **Global**; Budget Executor, NPM, Resource Integrator, Read Only =
+Read **Global**; Checkbook Administrator = all **Global**. ⚠ The FY26 schema doc (§5.1) specifies
+**User-level** State depths — confirm which gov actually has before replicating.
 
 ## 5. Plugins
 
