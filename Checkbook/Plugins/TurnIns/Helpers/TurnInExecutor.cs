@@ -28,6 +28,8 @@ namespace Checkbook.Plugins.TurnIns.Helpers
     /// </summary>
     public static class TurnInExecutor
     {
+        private const string Label = "Turn-In";
+
         public static void Execute(
             IOrganizationService service,
             ITracingService tracing,
@@ -70,37 +72,16 @@ namespace Checkbook.Plugins.TurnIns.Helpers
 
             foreach (var g in pfItems.GroupBy(i => i.PrioritizationFunding.Id))
             {
-                decimal amount = g.Sum(i => i.Amount);
                 var pf = service.Retrieve(EntityNames.PrioritizationFunding, g.Key,
                     new ColumnSet(PrioritizationFundingAttributes.FundedAmount));
-                decimal funded = pf.GetAttributeValue<decimal?>(PrioritizationFundingAttributes.FundedAmount) ?? 0m;
-                if (amount > funded)
-                    throw new InvalidPluginExecutionException(
-                        $"Turn-In cannot execute: a Prioritization Funding holds only {funded:N2} funded but the " +
-                        $"Turn-In takes {amount:N2} from it. It was likely reduced after the Turn-In was submitted.");
-
-                service.Update(new Entity(EntityNames.PrioritizationFunding, g.Key)
-                {
-                    [PrioritizationFundingAttributes.FundedAmount] = funded - amount,
-                });
-                tracing.Trace($"FY27: PF {g.Key} funded {funded:N2} -> {funded - amount:N2}.");
+                JunctionFundingHelper.ReduceJunction(service, tracing,
+                    EntityNames.PrioritizationFunding, PrioritizationFundingAttributes.FundedAmount, g.Key,
+                    pf.GetAttributeValue<decimal?>(PrioritizationFundingAttributes.FundedAmount) ?? 0m,
+                    g.Sum(i => i.Amount), Label, "Prioritization Funding");
             }
 
             foreach (var g in pfItems.GroupBy(i => i.RequirementFunding.Id))
-            {
-                decimal pulled = g.Sum(i => i.Amount);
-                var rf = service.Retrieve(EntityNames.RequirementFunding, g.Key,
-                    new ColumnSet(RequirementFundingAttributes.TDP));
-                decimal tdp = rf.GetAttributeValue<decimal?>(RequirementFundingAttributes.TDP) ?? 0m;
-                if (pulled > tdp)
-                    throw new InvalidPluginExecutionException(
-                        $"Turn-In cannot execute: Requirement Funding TDP {tdp:N2} is less than the {pulled:N2} turned in from it.");
-
-                var upd = FundingRollupHelper.BuildRFFundedUpdate(service, g.Key, tracing);
-                upd[RequirementFundingAttributes.TDP] = tdp - pulled;
-                service.Update(upd);
-                tracing.Trace($"FY27: RF {g.Key} TDP {tdp:N2} -> {tdp - pulled:N2}.");
-            }
+                JunctionFundingHelper.LowerRfTdp(service, tracing, g.Key, g.Sum(i => i.Amount), Label);
 
             foreach (var g in pfItems.GroupBy(i => i.Prioritization.Id))
             {
@@ -137,40 +118,14 @@ namespace Checkbook.Plugins.TurnIns.Helpers
         private static void ApplyDetailReductions(
             IOrganizationService service, ITracingService tracing, Guid turnInId)
         {
-            var q = new QueryExpression(TurnInDetailReductionAttributes.EntityLogicalName)
-            {
-                ColumnSet = new ColumnSet(
-                    TurnInDetailReductionAttributes.Amount,
-                    TurnInDetailReductionAttributes.ItemizedDetail),
-            };
-            q.Criteria.AddCondition(TurnInDetailReductionAttributes.TurnIn, ConditionOperator.Equal, turnInId);
-            q.Criteria.AddCondition(TurnInDetailReductionAttributes.StateCode, ConditionOperator.Equal, StateCodeValues.Active);
-
-            var rows = service.RetrieveMultiple(q).Entities;
+            var rows = JunctionFundingHelper.LoadAdjustments(service,
+                TurnInDetailReductionAttributes.EntityLogicalName,
+                TurnInDetailReductionAttributes.TurnIn, turnInId,
+                TurnInDetailReductionAttributes.ItemizedDetail,
+                TurnInDetailReductionAttributes.Amount);
             if (rows.Count == 0) { tracing.Trace("FY27: no itemized detail reductions."); return; }
 
-            foreach (var row in rows)
-            {
-                var detailRef = row.GetAttributeValue<EntityReference>(TurnInDetailReductionAttributes.ItemizedDetail);
-                decimal reduceBy = row.GetAttributeValue<decimal?>(TurnInDetailReductionAttributes.Amount) ?? 0m;
-                if (detailRef == null || reduceBy <= 0m) continue;
-
-                var detail = service.Retrieve(EntityNames.ItemizedDetails, detailRef.Id,
-                    new ColumnSet(ItemizedDetailsAttributes.FundedAmount, ItemizedDetailsAttributes.RequestedAmount));
-                decimal funded = detail.GetAttributeValue<decimal?>(ItemizedDetailsAttributes.FundedAmount) ?? 0m;
-                decimal requested = detail.GetAttributeValue<decimal?>(ItemizedDetailsAttributes.RequestedAmount) ?? 0m;
-                if (reduceBy > funded)
-                    throw new InvalidPluginExecutionException(
-                        $"Turn-In cannot execute: an Itemized Detail holds {funded:N2} funded but a reduction of " +
-                        $"{reduceBy:N2} was entered. Re-balance the detail reductions.");
-
-                service.Update(new Entity(EntityNames.ItemizedDetails, detailRef.Id)
-                {
-                    [ItemizedDetailsAttributes.FundedAmount] = funded - reduceBy,
-                    [ItemizedDetailsAttributes.RequestedAmount] = Math.Max(0m, requested - reduceBy),
-                });
-                tracing.Trace($"FY27: ItemizedDetail {detailRef.Id} funded {funded:N2} -> {funded - reduceBy:N2}.");
-            }
+            JunctionFundingHelper.ReduceItemizedDetails(service, tracing, rows, lowerRequested: true, operationLabel: Label);
         }
 
         /// <summary>
@@ -188,50 +143,15 @@ namespace Checkbook.Plugins.TurnIns.Helpers
             {
                 RequirementFundingHelper.ApplyDebit(
                     service, tracing, new EntityReference(EntityNames.RequirementFunding, g.Key),
-                    g.Sum(i => i.Amount), allowChildFunded: false, operationLabel: "Turn-In");
+                    g.Sum(i => i.Amount), allowChildFunded: false, operationLabel: Label);
             }
 
-            var q = new QueryExpression(TurnInRdfReductionAttributes.EntityLogicalName)
-            {
-                ColumnSet = new ColumnSet(
-                    TurnInRdfReductionAttributes.Amount,
-                    TurnInRdfReductionAttributes.RequirementDetailFunding),
-            };
-            q.Criteria.AddCondition(TurnInRdfReductionAttributes.TurnIn, ConditionOperator.Equal, turnInId);
-            q.Criteria.AddCondition(TurnInRdfReductionAttributes.StateCode, ConditionOperator.Equal, StateCodeValues.Active);
-
-            var rfs = new HashSet<Guid>();
-            foreach (var row in service.RetrieveMultiple(q).Entities)
-            {
-                var rdfRef = row.GetAttributeValue<EntityReference>(TurnInRdfReductionAttributes.RequirementDetailFunding);
-                decimal reduceBy = row.GetAttributeValue<decimal?>(TurnInRdfReductionAttributes.Amount) ?? 0m;
-                if (rdfRef == null || reduceBy <= 0m) continue;
-
-                var rdf = service.Retrieve(EntityNames.RequirementDetailFunding, rdfRef.Id,
-                    new ColumnSet(RequirementDetailFundingAttributes.FundedAmount,
-                                  RequirementDetailFundingAttributes.RequirementDetail,
-                                  RequirementDetailFundingAttributes.RequirementFunding));
-                decimal funded = rdf.GetAttributeValue<decimal?>(RequirementDetailFundingAttributes.FundedAmount) ?? 0m;
-                if (reduceBy > funded)
-                    throw new InvalidPluginExecutionException(
-                        $"Turn-In cannot execute: a Requirement Detail Funding holds {funded:N2} funded but a " +
-                        $"reduction of {reduceBy:N2} was entered. Re-balance the Requirement Detail reductions.");
-
-                service.Update(new Entity(EntityNames.RequirementDetailFunding, rdfRef.Id)
-                {
-                    [RequirementDetailFundingAttributes.FundedAmount] = funded - reduceBy,
-                });
-
-                var rd = rdf.GetAttributeValue<EntityReference>(RequirementDetailFundingAttributes.RequirementDetail);
-                if (rd != null)
-                    FundingRollupHelper.RecalculateRequirementDetail(service, rd.Id, tracing);
-                var rf = rdf.GetAttributeValue<EntityReference>(RequirementDetailFundingAttributes.RequirementFunding);
-                if (rf != null) rfs.Add(rf.Id);
-                tracing.Trace($"FY27: RDF {rdfRef.Id} funded {funded:N2} -> {funded - reduceBy:N2}.");
-            }
-
-            foreach (var rfId in rfs)
-                FundingRollupHelper.RecalculateRFFunded(service, rfId, tracing);
+            var rows = JunctionFundingHelper.LoadAdjustments(service,
+                TurnInRdfReductionAttributes.EntityLogicalName,
+                TurnInRdfReductionAttributes.TurnIn, turnInId,
+                TurnInRdfReductionAttributes.RequirementDetailFunding,
+                TurnInRdfReductionAttributes.Amount);
+            JunctionFundingHelper.ReduceRequirementDetailFundings(service, tracing, rows, Label);
         }
     }
 }
