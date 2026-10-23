@@ -1398,6 +1398,15 @@ Prioritizations. Six plugin classes cover derived-fields, roll-up, validation,
 auto-sharing, BE-approval orchestration, and denial reset. Design and data-model
 detail is in [`../dist/SCHEMA-StateSwap.md`](../dist/SCHEMA-StateSwap.md).
 
+**FY27+ (2026-10-21):** swaps whose `book_newfiscalyear` is FY27 or later are **PF → PF legs**
+(`book_debitprioritizationfunding` → `book_creditprioritizationfunding`) with Prio-level itemized
+detail adjustments (`book_swapdetailreduction` / `book_swapdetailincrease`). Every plugin below
+branches on the FY; FY26 swaps keep the Prio-level path unchanged. A seventh class,
+`SwapLineLock`, locks FY27 lines once either state approves. Design:
+[`../docs/StateSwap-FY27-Redesign.md`](../docs/StateSwap-FY27-Redesign.md); sandbox registration:
+`devtools/sandbox-import/schema/register_swap_fy27_steps.py`; end-to-end check:
+`devtools/sandbox-import/data-seed/transactional/fy27_swap_validate.py`.
+
 ### `Checkbook.Plugins.StateSwaps.SwapItemDerivedFieldsPlugin`
 
 Pre-op writer on `book_swapitem`. Denormalizes `book_fund`, `book_pg`, and
@@ -1405,10 +1414,15 @@ Pre-op writer on `book_swapitem`. Denormalizes `book_fund`, `book_pg`, and
 enforces the per-row invariants (both Prios share a Fund + PG; the two Prios
 belong to distinct states matching the parent's StateA + StateB; amount > 0).
 
+**FY27+:** the item names PFs instead of Prios. The plugin requires the debit PF, derives
+`book_debitprioritization` / `book_creditprioritization` + Fund / PG / Debit State from the PFs
+(PF → RF → LOA), and requires each PF to be active, funded and on an NPM Review Prio, the credit
+PF to share the debit PF's Fund + PG, and the two states to be the parent's, one each.
+
 | # | Message | Primary entity   | Stage         | Mode | Filtering attributes                                                                                          | Notes |
 |---|---------|------------------|---------------|------|---------------------------------------------------------------------------------------------------------------|-------|
 | 1 | Create  | `book_swapitem`  | Pre-Operation | Sync | *(none)*                                                                                                      | Initial derived-field write + invariant enforcement. |
-| 2 | Update  | `book_swapitem`  | Pre-Operation | Sync | `book_debitprioritization, book_creditprioritization, book_stateswap, book_newamount`                          | Re-derive on any input change. **Requires PreImage** (`book_debitprioritization, book_creditprioritization, book_stateswap, book_newamount`). |
+| 2 | Update  | `book_swapitem`  | Pre-Operation | Sync | `book_debitprioritization, book_creditprioritization, book_stateswap, book_newamount, book_debitprioritizationfunding, book_creditprioritizationfunding` | Re-derive on any input change. **Requires PreImage** (same six attributes). The two PF lookups were added for FY27 (2026-10-21). |
 
 ### `Checkbook.Plugins.StateSwaps.SwapRollupPlugin`
 
@@ -1437,6 +1451,11 @@ wrong BU cannot approve the State A side), at-least-one-active-item
 since Aug 2026), overdraw per debit Prio, and the "BE requires both state
 approvals" prereq. Denial transitions skip completeness / overdraw /
 BE-prereq checks so an incomplete swap can still be denied.
+
+**FY27+:** completeness / at-least-one-item / overdraw are replaced by `Helpers/SwapRules`:
+both PFs set on every item; both PFs active, funded and on an NPM Review Prio; per-item Fund + PG
+match; per debit PF Σ legs ≤ Funded; per itemized Prio Σ detail reductions == Σ legs out of it
+and Σ detail increases == Σ legs into it (rows on any other Prio rejected).
 
 After validation passes, the validator **stamps the audit fields** for each
 approval flag transitioning false → true in the Update:
@@ -1491,6 +1510,22 @@ User-level **Share** on `book_swapitem`.
 | # | Message | Primary entity  | Stage           | Mode | Filtering attributes | Notes |
 |---|---------|-----------------|-----------------|------|----------------------|-------|
 | 1 | Create  | `book_swapitem` | Post-Operation  | Sync | *(none)*             | Share the new item with StateA + StateB teams. |
+| 2 | Create  | `book_swapdetailreduction` | Post-Operation | Sync | *(none)* | FY27 (2026-10-21): share the new detail reduction the same way. |
+| 3 | Create  | `book_swapdetailincrease`  | Post-Operation | Sync | *(none)* | FY27 (2026-10-21): share the new detail increase the same way. |
+
+### `Checkbook.Plugins.StateSwaps.SwapLineLock`
+
+Pre-op guard (FY27+ swaps only; mirrors `TurnInLineLock`). Blocks Create / Update / Delete of
+`book_swapitem`, `book_swapdetailreduction` and `book_swapdetailincrease` (and re-parenting onto /
+off such a swap) once the parent swap is inactive, carries any approval (State A, State B or BE),
+or has ledgers. A denial clears the approvals and re-opens editing. The cascade from a whole-swap
+Delete is allowed. Reads the parent FY itself; no role bypass.
+
+| # | Message | Primary entity | Stage | Mode | Filtering attributes | Notes |
+|---|---------|----------------|-------|------|----------------------|-------|
+| 1–3 | Create / Update / Delete | `book_swapitem` | Pre-Operation | Sync | *(none)* | Update + Delete **PreImage** `book_stateswap` (falls back to a Retrieve). |
+| 4–6 | Create / Update / Delete | `book_swapdetailreduction` | Pre-Operation | Sync | *(none)* | Same. |
+| 7–9 | Create / Update / Delete | `book_swapdetailincrease` | Pre-Operation | Sync | *(none)* | Same. |
 
 ### `Checkbook.Plugins.StateSwaps.SwapApprovalPlugin`
 
@@ -1509,10 +1544,19 @@ self-deactivate (statecode/statuscode only) nor `SwapRollupPlugin`'s
 parent writes (totals + isbalanced) can re-trigger it. Resolves each item's debit/credit
 LOA + parent RF via `SwapLOAResolver`, writes ledger pairs (skipping
 same-LOA net-zero items), recalcs touched LOA TDPs, applies net Prio
-`FundedAmount` and parent RF `TDP` deltas via `SwapPrioritizationUpdater`,
+`FundedAmount` and parent RF `TDP` deltas via `SwapExecutorLegacy`,
 recalcs LOA TDPs again as a catch-all, creates AFP/Allotment Distributions
 via `SwapDistributionCreator`, and deactivates the swap (statecode
 Inactive, statuscode 2 = BE Approved).
+
+**FY27+** swaps resolve via `SwapLOAResolver.ResolveLegs` (each side's RF / LOA / Prio / Fund
+Center from its PF) and run `Helpers/SwapExecutor` instead of the ledger + delta steps: per leg
+debit-first (ledger pair when cross-LOA, debit PF down, debit RF TDP down then credit RF TDP up
+via `JunctionFundingHelper`), then credit detail increases, then each credit PF set to
+*pre-swap Funded − Σ out + Σ in* (absolute — safe with `PrioritizationSingleRfAutoAllocate` and
+with a PF on both sides), Direct credit Prio Requested lifted first when the new Funded exceeds
+it, then debit detail reductions, re-sums and an enforcing LOA recalc. Distributions and
+deactivation are shared with FY26. No registration change.
 
 **Swap Distributions** (added Jul 2026): a swap is modeled as both states
 performing a turn-in to A18, with A18 then distributing the agreed amounts
@@ -1528,7 +1572,7 @@ immutable by the `book_GenerateDistributions` reconcile. Prerequisites: the
 `book_DistributionHoldingFundCenter` env var.
 
 When a credit pushes a Prio's `FundedAmount` above its `RequestedAmount`,
-`SwapPrioritizationUpdater` raises `RequestedAmount` to match **in the same
+`SwapExecutorLegacy` raises `RequestedAmount` to match **in the same
 Update** — the entity-scoped "Requested vs Funded" business rule on
 Prioritization has no ancestor-context bypass and would otherwise block the
 swap (same pattern as `RealignmentProcessor`).
@@ -1536,7 +1580,7 @@ swap (same pattern as `RealignmentProcessor`).
 The debit side has the mirror-image trap on RF: the "Req Funding - Funded
 vs TDP" real-time business rule (entity-scoped, no bypass possible) rejects
 any RF write where `FundedAmount` > `TDP`, and the RF's rollup
-`FundedAmount` stays stale-high until `SwapPrioritizationUpdater` recomputes
+`FundedAmount` stays stale-high until `SwapExecutorLegacy` recomputes
 it (the rollup plugins skip at depth > 1). So the updater writes each debit
 RF's reduced `TDP` **and** its rolled-down `FundedAmount`/`ValidatedAmount`
 in the same Update (via `FundingRollupHelper.BuildRFFundedUpdate`),
@@ -1549,7 +1593,7 @@ RF delta application would otherwise trip that plugin's TDP-vs-Funded
 check (the bypass covers the plugin only, hence the same-Update fold above
 for the business rule).
 
-> **⚠ Delta ordering is debit-first (2026-08-06).** `SwapPrioritizationUpdater`
+> **⚠ Delta ordering is debit-first (2026-08-06).** `SwapExecutorLegacy`
 > applies: (1) debit Prios' Funded down, (2) debit RFs' Funded rolldown +
 > TDP cut in one Update, (3) credit RFs' TDP up, (4) credit Prios' Funded
 > up, (5) final Funded rollup on every touched RF. Funds are *released

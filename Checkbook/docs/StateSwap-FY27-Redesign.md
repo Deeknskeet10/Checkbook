@@ -1,6 +1,6 @@
 # State Swap FY27 Redesign — Prioritization Funding lines + Itemized Details
 
-Status: **in build — shared helper (§5.1) + sandbox schema / security (§4) done 2026-10-21; plugins next** · 2026-10-20
+Status: **in build — helper (§5.1), sandbox schema / security (§4), plugins (§5.2) built + server-validated in Blipsnchitz 2026-10-21; SwapBuilder PCF next** · 2026-10-20
 
 Related: [Realignment FY27 redesign](Realignment-FY27-Redesign.md),
 [Turn-In FY27 redesign](TurnIn-FY27-Redesign.md),
@@ -179,17 +179,28 @@ description/display keys, Fluent pinned in package.json **and** `<platform-libra
 ## 8. Build sequence
 
 1. ~~Decisions §3~~ — done 2026-10-21.
-2. Schema + security in Blipsnchitz (`swap_fy27_schema.py`, `swap_fy27_security.py`); constants
+2. ~~Schema + security~~ — done 2026-10-21. In Blipsnchitz (`swap_fy27_schema.py`, `swap_fy27_security.py`); constants
    (`SwapItemAttributes` + 2 new attribute classes).
-3. §5.1 helper extraction + realignment / turn-in regression.
-4. Plugins §5.2; push DLL; register `SwapLineLock` + new share steps; update Derived-Fields
+3. ~~§5.1 helper extraction + realignment / turn-in regression~~ — done 2026-10-21 (`JunctionFundingHelper`).
+4. ~~Plugins §5.2~~ — done 2026-10-21 (`SwapPfContext`, `SwapRules`, `SwapExecutor`, `SwapExecutorLegacy` rename, `SwapLineLock` FY27-only, derived-fields / validator / resolver / approval / auto-share branches). Push DLL; register `SwapLineLock` + new share steps; update Derived-Fields
    filter/pre-image (`register_swap_fy27_steps.py`).
-5. Server validation `fy27_swap_validate.py` (below) — before any UI.
+5. ~~Server validation `fy27_swap_validate.py`~~ — **PASS 2026-10-21** (see results below).
 6. `SwapBuilder` PCF + form placement (`swap_place_builder.py`) + `Book.StateSwap` form lib.
 7. Docs: this file → "built", `PLUGIN-REGISTRATION.md`, `dist/SCHEMA-StateSwap.md` FY27 section,
    gov cutover checklist, `WIRING.md`.
 
 ### Validation scenarios (`fy27_swap_validate.py`)
+
+**Result 2026-10-21 — PASS.** One TX ↔ OK swap, four legs on the G3 / G4 OPR LOAs, covers 3, 4,
+5, 5a, 6 (except the two items below) and 8: Fund/PG mismatch and an unfunded credit PF blocked at
+save; missing detail reduction / increase and a PF over-draw blocked at approval; leg and detail
+edits blocked after State A approval; after BE approval every PF, Prio total, Σ details, RF TDP /
+Funded matches, OK-D Requested lifted 20k → 27k, TX-D Requested unchanged, G3 / G4 TDP and
+remaining unchanged, 8 G4 distribution rows. **Not yet covered:** scenario 1 / the cross-LOA
+ledger pair (the sandbox has one OPR LOA per Fund/PG), a credit PF on a non-NPM-Review Prio (an
+existing guard already refuses to fund such a Prio, so it can't be seeded), re-approval
+idempotency, and scenario 7 (only Texas is seeded for FY26). The planned scenario list:
+
 
 1. **Two-way, Direct ↔ Direct, different LOAs**: A sends 10k from a G3 PF; B sends 5k from a G4
    PF. PFs, RF Funded/TDP, Prio totals both sides, ledger pairs, LOA remaining unchanged, A18 nets
