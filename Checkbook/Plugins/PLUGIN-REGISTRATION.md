@@ -1088,13 +1088,19 @@ or its LOA/Resource Amount changes.
 > `statecode`. Decision-driven amount changes roll up via the separate
 > `book_decision` step (see `DecisionRollupRecalculator`), not through this one.
 
-> **Bulk load / import caveat.** Edit-in-Excel and the Import Wizard write each
-> row *nested under a data-import job*, so their Funding Track updates run at
-> **Depth 2** — where this recalc's `Depth > 1` guard (in `LOATouchPropagator`)
-> skips them. A bulk Beginning-Balance load therefore does **not** roll up to
-> LOA TDP. Run the **`book_RecalculateLOATDP`** Custom API afterward to
-> reconcile (see below). Day-to-day form / app / flow edits run at Depth 1 and
-> are unaffected.
+> **Bulk load / import (fixed Oct 2026).** Edit-in-Excel and the Import Wizard
+> write each row *nested* (under ExecuteMultiple / the import job), at
+> **Depth 2**. `FundingTrackTDPRecalculator` and `DecisionRollupRecalculator`
+> now opt in to `LOATouchPropagator.RecalcWhenNested`: they run at any depth
+> and skip only when an ancestor is a write on an LOA-touch table (Decision,
+> Funding Track, LOA, Ledger, Requirement Funding) — the recursion brake. So
+> bulk Decision uploads and Beginning-Balance loads now roll up to LOA TDP.
+> The Ledger and Requirement Funding propagators keep the plain `Depth > 1`
+> skip (orchestrators write those and recalc themselves).
+> `FundingTrackLOASynchronizer` (pre-op) follows the same rule, skipping only
+> under an FT/LOA write, so a *bulk grain change* re-links the FT before the
+> post-op recalc runs. `book_RecalculateLOATDP` (below) remains the safety net
+> for historical drift.
 
 ### `Checkbook.Plugins.Recalculations.LOATDPReconciler`
 

@@ -12,7 +12,8 @@ namespace Checkbook.Plugins.Recalculations
     /// Shared base for plugins that, on Create/Update/Delete of some entity,
     /// must recalculate the LOA(s) referenced from that entity. Subclasses
     /// declare which entity they bind to and which attribute holds the LOA
-    /// EntityReference; the base does the Stage 40 / Depth &gt; 1 / message
+    /// EntityReference; the base does the Stage 40 / nesting (see
+    /// <see cref="RecalcWhenNested"/>) / message
     /// filtering, collects unique affected LOA ids (handling re-link on
     /// Update by recalculating both old and new LOA when a pre-image is
     /// registered), and drives <see cref="TDPCalculationHelper.BatchRecalculateLOATDP"/>
@@ -39,6 +40,61 @@ namespace Checkbook.Plugins.Recalculations
         /// </summary>
         protected virtual bool HandlesMessage(string message)
             => message == "Create" || message == "Update" || message == "Delete";
+
+        /// <summary>
+        /// When false (default) the plugin skips at <c>Depth &gt; 1</c>: the
+        /// tables it binds to are written by orchestrators (Realignment,
+        /// Turn-In, State Swap) that recalc LOA TDP themselves at the end, and
+        /// a mid-orchestration recalc can trip the non-negative guard on a
+        /// transient state.
+        ///
+        /// When true the plugin also runs nested, skipping only when an
+        /// ancestor is itself a write on an LOA-touch table or an LOA recalc
+        /// Custom API (see <see cref="IsNestedUnderLoaTouchWrite"/>) — the
+        /// recursion brake.
+        /// Use for tables only users write (Decisions, Funding Tracks), whose
+        /// Edit-in-Excel / Import Wizard saves arrive at Depth 2 under
+        /// ExecuteMultiple or the import job and were silently skipped.
+        /// </summary>
+        protected virtual bool RecalcWhenNested => false;
+
+        /// <summary>
+        /// Tables whose writes drive (or are) an LOA TDP recalc. A nested
+        /// write under one of these is a side effect of a recalc already in
+        /// progress — e.g. the Funding Track update from Decision's
+        /// <c>CalculateRollupFieldRequest</c>, or <c>LOAGenerator</c> linking a
+        /// new Funding Track — and the outer plugin covers it.
+        /// </summary>
+        private static readonly HashSet<string> LoaTouchTables = new HashSet<string>
+        {
+            EntityNames.Decision,
+            EntityNames.FundingTrack,
+            EntityNames.FundingLine,
+            EntityNames.Ledger,
+            EntityNames.RequirementFunding,
+        };
+
+        /// <summary>
+        /// Custom APIs that write LOA-touch rows and run
+        /// <c>BatchRecalculateLOATDP</c> themselves at the end
+        /// (<c>LOAGenerator</c> links FTs; <c>LOATDPReconciler</c> writes LOAs).
+        /// </summary>
+        private static readonly HashSet<string> LoaRecalcApis = new HashSet<string>
+        {
+            "book_GenerateLOAs",
+            "book_RecalculateLOATDP",
+        };
+
+        private static bool IsNestedUnderLoaTouchWrite(IPluginExecutionContext context)
+        {
+            for (var ancestor = context.ParentContext; ancestor != null; ancestor = ancestor.ParentContext)
+            {
+                if (LoaTouchTables.Contains(ancestor.PrimaryEntityName) ||
+                    LoaRecalcApis.Contains(ancestor.MessageName))
+                    return true;
+            }
+            return false;
+        }
 
         /// <summary>
         /// Resolves the set of LOA ids affected by this invocation. Default
@@ -103,8 +159,17 @@ namespace Checkbook.Plugins.Recalculations
 
             if (context.Depth > 1)
             {
-                tracing.Trace($"Skipping - depth {context.Depth} > 1 to avoid recursion.");
-                return;
+                if (!RecalcWhenNested)
+                {
+                    tracing.Trace($"Skipping - depth {context.Depth} > 1 to avoid recursion.");
+                    return;
+                }
+                if (IsNestedUnderLoaTouchWrite(context))
+                {
+                    tracing.Trace($"Skipping - depth {context.Depth}, nested under an LOA-touch write.");
+                    return;
+                }
+                tracing.Trace($"Depth {context.Depth} with no LOA-touch ancestor (bulk edit / import) - recalculating.");
             }
 
             Entity target = null;

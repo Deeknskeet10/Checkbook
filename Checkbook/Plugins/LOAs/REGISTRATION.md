@@ -55,8 +55,11 @@ Replaces (deactivate, don't delete):
 `FundingTrackLOASynchronizer` is **PreOp**; the existing
 `FundingTrackTDPRecalculator` is **PostOp**. They run in the same pipeline
 at the same depth, so the recalculator sees both the pre-image's old LOA
-and the synchronizer's new LOA on the target — and rolls up both. **Don't
-add a `Depth > 1` skip to the synchronizer for the same reason.**
+and the synchronizer's new LOA on the target — and rolls up both. Both skip
+only when nested under an FT/LOA write (the recalc also skips under the
+`book_GenerateLOAs` / `book_RecalculateLOATDP` Custom APIs), **not** on plain
+`Depth > 1` — Edit-in-Excel / Import Wizard updates arrive at Depth 2 and must
+re-link and roll up (fixed Oct 2026).
 
 The full step rows are in
 [`../PLUGIN-REGISTRATION.md`](../PLUGIN-REGISTRATION.md).
@@ -64,7 +67,7 @@ The full step rows are in
 ## Leave alone — existing TDP roll-up
 
 `FundingTrackTDPRecalculator` (PostOp Create/Update/Delete on
-`book_fundingtrack`) does NOT change. Its `Depth > 1` guard intentionally
+`book_fundingtrack`) needs no new steps. Its nesting guard intentionally
 skips when our Custom API issues recursive FT updates — in that path
 `LOAGenerator` drives `TDPCalculationHelper.BatchRecalculateLOATDP`
 itself at the end of its run.
