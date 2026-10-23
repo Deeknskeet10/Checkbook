@@ -19,7 +19,7 @@ One swap, four legs (many-to-many, both directions, one PF on both sides):
   Requested unchanged), Σ details ≡ total ≡ Σ PF on both itemized Prios, RF TDP / Funded,
   G3 / G4 TDP + remaining unchanged (same-LOA legs, no ledgers), G4 distributions, deactivated.
 
-Not covered here: the cross-LOA ledger pair (the sandbox has one OPR LOA per Fund/PG) and the
+Not covered here: the cross-LOA ledger pair (see fy27_swap_crossloa_validate.py) and the
 FY26 path (only Texas is seeded for FY26).
 Cleans up its own swaps / Requirements from earlier runs first (lock toggled off).
 Run from Checkbook/:  direnv exec . python3 devtools/sandbox-import/data-seed/transactional/fy27_swap_validate.py

@@ -210,8 +210,11 @@ description/display keys, Fluent pinned in package.json **and** `<platform-libra
 save; missing detail reduction / increase and a PF over-draw blocked at approval; leg and detail
 edits blocked after State A approval; after BE approval every PF, Prio total, Σ details, RF TDP /
 Funded matches, OK-D Requested lifted 20k → 27k, TX-D Requested unchanged, G3 / G4 TDP and
-remaining unchanged, 8 G4 distribution rows. **Not yet covered:** scenario 1 / the cross-LOA
-ledger pair (the sandbox has one OPR LOA per Fund/PG), a credit PF on a non-NPM-Review Prio (an
+remaining unchanged, 8 G4 distribution rows. **Cross-LOA ledger legs — PASS 2026-10-23**
+(`fy27_swap_crossloa_validate.py`): seeds a G5 OPR LOA with G3's Fund + PG, swaps TX G3 → OK G5 5k
+and OK G5 → TX G3 2k; one linked Swap ledger pair per leg (4 rows, debit ↔ credit both ways), G3 TDP
+−3k / G5 TDP +3k, both remaining unchanged, PFs / RFs / Prios 27k / 13k, OK Requested lifted.
+Repeatable (cleanup deletes the ledgers and reconciles FY27 LOA TDP). **Not yet covered:** a credit PF on a non-NPM-Review Prio (an
 existing guard already refuses to fund such a Prio, so it can't be seeded), re-approval
 idempotency, and scenario 7 (only Texas is seeded for FY26). The planned scenario list:
 
