@@ -1088,13 +1088,18 @@ or its LOA/Resource Amount changes.
 > `statecode`. Decision-driven amount changes roll up via the separate
 > `book_decision` step (see `DecisionRollupRecalculator`), not through this one.
 
-> **Bulk load / import (fixed Oct 2026).** Edit-in-Excel and the Import Wizard
-> write each row *nested* (under ExecuteMultiple / the import job), at
-> **Depth 2**. `FundingTrackTDPRecalculator` and `DecisionRollupRecalculator`
-> now opt in to `LOATouchPropagator.RecalcWhenNested`: they run at any depth
-> and skip only when an ancestor is a write on an LOA-touch table (Decision,
-> Funding Track, LOA, Ledger, Requirement Funding) — the recursion brake. So
-> bulk Decision uploads and Beginning-Balance loads now roll up to LOA TDP.
+> **Bulk load / import (fixed Oct 2026).** Import from Excel/CSV (the Import
+> Wizard) writes each row from an async import job at **Depth 2**, where the
+> old `Depth > 1` guard skipped the recalc (verified in Blipsnchitz: imported
+> Decisions left LOA TDP stale). Web API `$batch` and SDK `ExecuteMultiple`
+> run at Depth 1 and were never affected. `FundingTrackTDPRecalculator` and
+> `DecisionRollupRecalculator` now opt in to `LOATouchPropagator.RecalcWhenNested`:
+> they run at any depth and skip only when an *upstream* ancestor is a write on
+> an LOA-touch table (Decision, Funding Track, LOA, Ledger, Requirement Funding)
+> or the `book_GenerateLOAs` / `book_RecalculateLOATDP` Custom APIs — the
+> recursion brake. Dataverse also chains the operation's own outer context as a
+> parent; `Helpers/PipelineAncestryHelper` ignores that (same message + table +
+> record). So imported Decisions and Funding Tracks now roll up to LOA TDP.
 > The Ledger and Requirement Funding propagators keep the plain `Depth > 1`
 > skip (orchestrators write those and recalc themselves).
 > `FundingTrackLOASynchronizer` (pre-op) follows the same rule, skipping only

@@ -24,6 +24,30 @@ and the changes landed since the last merge (`d75d195`).
 
 ---
 
+## 📥 Bulk-upload LOA TDP fix (branch `bulk-upload-depth-guard`, 2026-10-23)
+
+Imported Decisions / Funding Tracks (Import from Excel/CSV, Depth 2) now roll
+up to LOA TDP. Validated in Blipsnchitz (import, `ExecuteMultiple`, `$batch`,
+`book_GenerateLOAs`).
+
+1. **Assembly** — push `Checkbook_Plugins.dll` (section **D**). No new steps.
+2. **Fix the `FundingTrackLOASynchronizer` step image** (PRT) — the sandbox,
+   imported 1:1 from prod, had it **wrong**, so the synchronizer has been
+   skipping every grain change ("No PreImage registered") at any depth:
+   - image **alias must be `PreImage`** (sandbox had `ftPre`);
+   - attributes: `book_disbursingofficial, book_fund, book_boc,
+     book_dollartype, book_pg, book_sag, book_mdep, book_category, book_ape,
+     book_lineofaccountingloa, owningbusinessunit` (sandbox lacked
+     `book_fund`, `book_category`);
+   - step filtering attributes must include **`book_category`**.
+   If the alias won't save in place, delete the image and re-add it.
+3. **One-off reconcile** — run `book_RecalculateLOATDP` (async, per FY) to
+   fix LOAs left stale by past imports. FTs whose grain was changed while the
+   synchronizer was broken may still sit on their old LOA (compare the FT's
+   grain to its LOA name); re-save a grain field to re-link them.
+
+---
+
 ## ⭐ Fast path — deploying commit `794cac1` (FY27 Spend Plan + Itemized-Detail FC)
 
 Do these **in order**; each step points at the detail below:

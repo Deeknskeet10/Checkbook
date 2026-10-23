@@ -58,7 +58,7 @@ at the same depth, so the recalculator sees both the pre-image's old LOA
 and the synchronizer's new LOA on the target — and rolls up both. Both skip
 only when nested under an FT/LOA write (the recalc also skips under the
 `book_GenerateLOAs` / `book_RecalculateLOATDP` Custom APIs), **not** on plain
-`Depth > 1` — Edit-in-Excel / Import Wizard updates arrive at Depth 2 and must
+`Depth > 1` — Import from Excel/CSV rows arrive at Depth 2 and must
 re-link and roll up (fixed Oct 2026).
 
 The full step rows are in

@@ -2,6 +2,7 @@ using System;
 using Microsoft.Xrm.Sdk;
 using Checkbook.Plugins.Base;
 using Checkbook.Plugins.Constants;
+using Checkbook.Plugins.Helpers;
 using Checkbook.Plugins.LOAs.Helpers;
 
 namespace Checkbook.Plugins.LOAs
@@ -21,7 +22,7 @@ namespace Checkbook.Plugins.LOAs
     /// TDP rollup on the old and new LOA is handled by the existing
     /// <c>FundingTrackTDPRecalculator</c> in PostOp, which reads our new
     /// target value alongside its own pre-image. Both use the same nesting
-    /// rule (skip only under an FT/LOA write), so bulk Excel / import updates
+    /// rule (skip only under an FT/LOA write), so Excel/CSV import updates
     /// re-link here and roll up there.
     ///
     /// Register: PreOp Update on <c>book_fundingtrack</c>, with a PreImage
@@ -57,9 +58,9 @@ namespace Checkbook.Plugins.LOAs
 
             // Recursion brake: skip only when nested under an FT/LOA write (e.g.
             // LOAGenerator linking FTs). A plain Depth > 1 guard also skipped
-            // Edit-in-Excel / Import Wizard updates (nested under ExecuteMultiple
-            // or the import job), so bulk grain changes never re-linked.
-            if (IsNestedUnderFundingTrackOrLoaWrite(context))
+            // Import from Excel/CSV updates (nested under the import job), so
+            // bulk grain changes never re-linked.
+            if (IsNestedUnderFundingTrackOrLoaWrite(context, tracing))
             {
                 tracing.Trace($"Skipping — depth {context.Depth}, nested under an FT/LOA write.");
                 return;
@@ -136,15 +137,12 @@ namespace Checkbook.Plugins.LOAs
                 LOAResolver.AssociateApe(service, loaId, ape, tracing);
         }
 
-        private static bool IsNestedUnderFundingTrackOrLoaWrite(IPluginExecutionContext context)
+        private static bool IsNestedUnderFundingTrackOrLoaWrite(IPluginExecutionContext context, ITracingService tracing)
         {
-            for (var ancestor = context.ParentContext; ancestor != null; ancestor = ancestor.ParentContext)
-            {
-                if (ancestor.PrimaryEntityName == EntityNames.FundingTrack ||
-                    ancestor.PrimaryEntityName == EntityNames.FundingLine)
-                    return true;
-            }
-            return false;
+            return PipelineAncestryHelper.FindUpstream(context,
+                a => a.PrimaryEntityName == EntityNames.FundingTrack ||
+                     a.PrimaryEntityName == EntityNames.FundingLine,
+                tracing) != null;
         }
     }
 }

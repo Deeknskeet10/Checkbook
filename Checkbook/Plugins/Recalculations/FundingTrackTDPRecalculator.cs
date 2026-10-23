@@ -9,7 +9,7 @@ namespace Checkbook.Plugins.Recalculations
     /// both the old and new LOA are recalculated.
     ///
     /// Runs nested too (<see cref="LOATouchPropagator.RecalcWhenNested"/>) so
-    /// Edit-in-Excel / Import Wizard Beginning-Balance loads (Depth 2) roll up.
+    /// Import from Excel/CSV Beginning-Balance loads (Depth 2) roll up.
     /// Still skips under a Decision's roll-up recalc or LOAGenerator's FT link,
     /// which recalc the LOA themselves.
     /// </summary>

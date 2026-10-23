@@ -22,7 +22,7 @@ namespace Checkbook.Plugins.Recalculations
     ///      <c>BatchRecalculateLOATDP</c> pass.
     ///
     /// Runs nested too (<see cref="LOATouchPropagator.RecalcWhenNested"/>):
-    /// Decisions are only written by users, and Edit-in-Excel / Import Wizard
+    /// Decisions are only written by users, and Import from Excel/CSV
     /// uploads land at Depth 2 — before Oct 2026 those skipped the recalc and
     /// left LOA TDP stale.
     /// </summary>

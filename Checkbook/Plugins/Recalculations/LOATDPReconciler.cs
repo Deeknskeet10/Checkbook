@@ -18,7 +18,7 @@ namespace Checkbook.Plugins.Recalculations
     /// Why this exists: until Oct 2026 the PostOp
     /// <see cref="FundingTrackTDPRecalculator"/> and
     /// <see cref="DecisionRollupRecalculator"/> skipped at <c>Depth &gt; 1</c>,
-    /// so Edit-in-Excel / Import Wizard loads (nested, Depth 2) never rolled up
+    /// so Import from Excel/CSV loads (import job, Depth 2) never rolled up
     /// to LOA TDP. Both now run nested (<see cref="LOATouchPropagator.RecalcWhenNested"/>);
     /// this API remains the deliberate, restartable reconcile for drift left by
     /// earlier bulk loads and anything else that lands deep in the pipeline

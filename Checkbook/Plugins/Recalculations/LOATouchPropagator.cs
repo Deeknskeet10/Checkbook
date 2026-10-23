@@ -49,12 +49,12 @@ namespace Checkbook.Plugins.Recalculations
         /// transient state.
         ///
         /// When true the plugin also runs nested, skipping only when an
-        /// ancestor is itself a write on an LOA-touch table or an LOA recalc
-        /// Custom API (see <see cref="IsNestedUnderLoaTouchWrite"/>) — the
-        /// recursion brake.
+        /// upstream ancestor (not this operation's own outer context — see
+        /// <see cref="PipelineAncestryHelper"/>) is a write on an LOA-touch
+        /// table or an LOA recalc Custom API — the recursion brake.
         /// Use for tables only users write (Decisions, Funding Tracks), whose
-        /// Edit-in-Excel / Import Wizard saves arrive at Depth 2 under
-        /// ExecuteMultiple or the import job and were silently skipped.
+        /// Import from Excel/CSV rows arrive at Depth 2 under the import
+        /// job and were silently skipped.
         /// </summary>
         protected virtual bool RecalcWhenNested => false;
 
@@ -85,15 +85,11 @@ namespace Checkbook.Plugins.Recalculations
             "book_RecalculateLOATDP",
         };
 
-        private static bool IsNestedUnderLoaTouchWrite(IPluginExecutionContext context)
+        private static bool IsNestedUnderLoaTouchWrite(IPluginExecutionContext context, ITracingService tracing)
         {
-            for (var ancestor = context.ParentContext; ancestor != null; ancestor = ancestor.ParentContext)
-            {
-                if (LoaTouchTables.Contains(ancestor.PrimaryEntityName) ||
-                    LoaRecalcApis.Contains(ancestor.MessageName))
-                    return true;
-            }
-            return false;
+            return PipelineAncestryHelper.FindUpstream(context,
+                a => LoaTouchTables.Contains(a.PrimaryEntityName) || LoaRecalcApis.Contains(a.MessageName),
+                tracing) != null;
         }
 
         /// <summary>
@@ -164,7 +160,7 @@ namespace Checkbook.Plugins.Recalculations
                     tracing.Trace($"Skipping - depth {context.Depth} > 1 to avoid recursion.");
                     return;
                 }
-                if (IsNestedUnderLoaTouchWrite(context))
+                if (IsNestedUnderLoaTouchWrite(context, tracing))
                 {
                     tracing.Trace($"Skipping - depth {context.Depth}, nested under an LOA-touch write.");
                     return;
