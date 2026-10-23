@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest>
+  <control namespace="ARNGCheckbook" constructor="SwapBuilder" version="0.1.1" display-name-key="SwapBuilder" description-key="FY27 State Swap entry builder. Each swap item is a leg from one Prioritization Funding line to another with the same Fund and PG. The sending state adds NPM Review Prioritizations and enters an amount per funded line, reducing Itemized Details by the total each itemized Prioritization sends. The receiving state picks the line each leg lands on from its own funded lines with that Fund and PG, increasing Itemized Details by the total each itemized Prioritization receives. Lines lock once either state approves. Bind to book_totalsentbya on the State Swap form." control-type="virtual">
+    <property name="amount" display-name-key="Amount" description-key="The bound field (book_totalsentbya, Decimal). The control reads and writes the swap lines via Web API." of-type="Decimal" usage="bound" required="false" />
+    <resources>
+      <code path="index.ts" order="1" />
+      <css path="css/SwapBuilder.css" order="1" />
+      <platform-library name="React" version="16.14.0" />
+      <platform-library name="Fluent" version="9.46.2" />
+    </resources>
+    <feature-usage>
+      <uses-feature name="WebAPI" required="true" />
+    </feature-usage>
+  </control>
+</manifest>

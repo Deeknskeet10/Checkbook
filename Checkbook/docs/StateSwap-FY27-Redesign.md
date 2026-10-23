@@ -1,6 +1,6 @@
 # State Swap FY27 Redesign — Prioritization Funding lines + Itemized Details
 
-Status: **in build — helper (§5.1), sandbox schema / security (§4), plugins (§5.2) built + server-validated in Blipsnchitz 2026-10-21; SwapBuilder PCF next** · 2026-10-20
+Status: **in build — helper (§5.1), sandbox schema / security (§4), plugins (§5.2) built + server-validated in Blipsnchitz 2026-10-21; SwapBuilder PCF v0.1.1 built + placed in Blipsnchitz 2026-10-23, UI walk-through pending** · 2026-10-20
 
 Related: [Realignment FY27 redesign](Realignment-FY27-Redesign.md),
 [Turn-In FY27 redesign](TurnIn-FY27-Redesign.md),
@@ -172,6 +172,16 @@ remaining-to-balance) and `TurnInBuilder` (multi-Prio lines, save-in-place).
 - FY26 swaps: show a message; the legacy subgrid stays. Form script hides the subgrid on FY27
   (new `Book.StateSwap` lib in `webresources/`, per WIRING.md — no one-off form script).
 
+**As built (2026-10-23, `pcf/SwapBuilder`):** bound to `book_totalsentbya`. The user's side is
+the state whose owning BU matches theirs (the SwapValidator test); Checkbook and System
+Administrators get an *Act for State A / B* toggle; anyone else gets the read-only summary. Two
+saves, each touching only its own rows: **Save what we send** upserts this state's legs (amount +
+debit PF; never the credit PF) and its detail reductions; **Save where it lands** sets the credit PF
+on incoming legs and upserts this state's detail increases. Rows are updated in place and only
+removed rows are deleted. A debit line can be **split** into several legs, so the receiver can land
+it on different lines (scenario 5a). A saved credit pick can be changed but not cleared. Locked
+(any approval, or inactive) → read-only summary of both directions plus all detail adjustments.
+
 Remember the manifest rules: version bump every change, no apostrophes in
 description/display keys, Fluent pinned in package.json **and** `<platform-library>`; rebuild
 `ARNGCheckbookExtensions` and copy the zip to `dist/` in the same commit.
@@ -185,7 +195,11 @@ description/display keys, Fluent pinned in package.json **and** `<platform-libra
 4. ~~Plugins §5.2~~ — done 2026-10-21 (`SwapPfContext`, `SwapRules`, `SwapExecutor`, `SwapExecutorLegacy` rename, `SwapLineLock` FY27-only, derived-fields / validator / resolver / approval / auto-share branches). Push DLL; register `SwapLineLock` + new share steps; update Derived-Fields
    filter/pre-image (`register_swap_fy27_steps.py`).
 5. ~~Server validation `fy27_swap_validate.py`~~ — **PASS 2026-10-21** (see results below).
-6. `SwapBuilder` PCF + form placement (`swap_place_builder.py`) + `Book.StateSwap` form lib.
+6. ~~`SwapBuilder` PCF + form placement + `Book.StateSwap` form lib~~ — built 2026-10-23
+   (`pcf/SwapBuilder` v0.1.1, `webresources/State-Swaps.js`, `swap_place_builder.py`;
+   `StateSwapApprovalProcess` v0.2.3 re-reads readiness on `book:swap-items-saved`).
+   Imported + placed in Blipsnchitz; queries checked against live data. **UI walk-through
+   pending** on draft swap `SWAP-FY27-UI-DRAFT` (TX ↔ OK).
 7. Docs: this file → "built", `PLUGIN-REGISTRATION.md`, `dist/SCHEMA-StateSwap.md` FY27 section,
    gov cutover checklist, `WIRING.md`.
 
