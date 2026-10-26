@@ -180,6 +180,7 @@ Register the mode plugins only after these `book_spendplan` /
 | `book_GenerateDistributions`        | `Checkbook.Plugins.Distributions.GenerateDistributionsPlugin`    | See [`Distributions/REGISTRATION.md`](Distributions/REGISTRATION.md). |
 | `book_ToggleFundedAmountLock`       | `Checkbook.Plugins.Admin.ToggleFundedAmountLockPlugin`           | Global, no inputs, output `IsLocked` (Boolean). Full spec in [`../docs/FundedAmountLock-Setup.md`](../docs/FundedAmountLock-Setup.md). |
 | `book_ToggleSpendPlanLock`          | `Checkbook.Plugins.Admin.ToggleSpendPlanLockPlugin`             | Global, no inputs, output `IsLocked` (Boolean). Full spec in [`../docs/SpendPlanLock-Setup.md`](../docs/SpendPlanLock-Setup.md). |
+| `book_CastVote`                     | `Checkbook.Plugins.Tickets.CastVotePlugin`                       | Global action. In `TicketId` (String), `Direction` (Integer ±1); out `NewScore`, `UserVote` (Integer). Full spec in [`Tickets/REGISTRATION.md`](Tickets/REGISTRATION.md). |
 
 The Custom API record's **Plugin Type** field auto-wires the handler; no
 separate SDK Message Processing Step is required beyond setting that field on
@@ -1746,6 +1747,25 @@ Custom API handler `book_ToggleSpendPlanLock`. Flips `book_LockSpendPlanEdits`,
 read by `SpendPlanEditLockGuard`. Backs the Admin Center "Spend Plan
 Lock/Unlock" command button; full setup in
 [`../docs/SpendPlanLock-Setup.md`](../docs/SpendPlanLock-Setup.md).
+
+---
+
+## Tickets
+
+> Full setup (Custom API definition, PCF placement, smoke test) lives in
+> [`Tickets/REGISTRATION.md`](Tickets/REGISTRATION.md).
+
+### `Checkbook.Plugins.Tickets.CastVotePlugin`
+
+Custom API handler `book_CastVote`, called by the `TicketVotingGrid` PCF.
+Toggles the initiating user's `book_ticketendorsement` row on a ticket
+(none → create, same direction → delete, opposite → flip), then recomputes
+`book_ticket.book_score` as the sum of all `book_value`s. The voter is stamped
+in `book_endorser`; alternate key `book_uniquevote` (`book_endorser`,
+`book_ticket`) blocks duplicate votes. The score write relies on plugins
+running as the sysadmin super user — voters typically lack Write on others'
+tickets. Wired via the Custom API's **Plugin Type** field — no separate Step
+registration.
 
 ---
 

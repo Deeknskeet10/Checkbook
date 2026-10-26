@@ -24,6 +24,25 @@ and the changes landed since the last merge (`d75d195`).
 
 ---
 
+## 🗳️ Ticket board (branch `ticket-board`, 2026-10-25)
+
+Tables, roles and views are already in the environment. Full spec in
+[`Tickets/REGISTRATION.md`](Tickets/REGISTRATION.md).
+
+1. **Assembly** — push `Checkbook_Plugins.dll`; confirm the new type
+   `Checkbook.Plugins.Tickets.CastVotePlugin` is listed.
+2. **Custom API** — create `book_CastVote` (Global action, Plugin Type =
+   `CastVotePlugin`; in `TicketId` String + `Direction` Integer; out
+   `NewScore` + `UserVote` Integer). No step registration.
+3. **PCF** — import `dist/ARNGCheckbookExtensions.zip` (adds
+   `TicketVotingGrid`), publish.
+4. **Portal** — score-sorted **Ticket Board** view with `TicketVotingGrid`
+   bound; add Tickets to the app sitemap.
+5. **Smoke test** — section 5 of the Tickets doc (two users, toggle/flip,
+   submitter-only edit).
+
+---
+
 ## 🧹 Plugin review cleanup (branch `plugin-review-cleanup`, 2026-10-16)
 
 Code-only refactor + bug fixes. **No registered plugin class was renamed,
