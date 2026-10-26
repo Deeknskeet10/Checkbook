@@ -65,6 +65,7 @@
     <ProjectReference Include="../../pcf/RealignmentBuilder/RealignmentBuilder.pcfproj" />
     <ProjectReference Include="../../pcf/TurnInBuilder/TurnInBuilder.pcfproj" />
     <ProjectReference Include="../../pcf/SwapBuilder/SwapBuilder.pcfproj" />
+    <ProjectReference Include="../../pcf/TicketVotingGrid/TicketVotingGrid.pcfproj" />
   </ItemGroup>
 
   <Import Project="$(MSBuildToolsPath)\Microsoft.Common.targets" />

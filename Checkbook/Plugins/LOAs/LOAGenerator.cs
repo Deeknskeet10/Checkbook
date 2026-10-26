@@ -19,8 +19,9 @@ namespace Checkbook.Plugins.LOAs
     ///   links the FT, and associates the FT's APE with the LOA.
     /// • At the end of the batch, recalcs TDP once per unique LOA touched.
     ///
-    /// The PostOp <c>FundingTrackTDPRecalculator</c> short-circuits at Depth>1,
-    /// so the FT updates we issue from inside this Custom API don't trigger it.
+    /// The PostOp <c>FundingTrackTDPRecalculator</c> skips when nested under
+    /// this Custom API (<c>LOATouchPropagator</c>'s recursion brake), so the FT
+    /// updates we issue from inside it don't trigger it.
     /// We do the recalc explicitly here — once per LOA rather than once per FT
     /// — to keep the work bounded by the LOA count, not the FT count.
     ///
@@ -119,7 +120,7 @@ namespace Checkbook.Plugins.LOAs
                         tracing.Trace($"FT {ft.Id}: created new LOA '{grain.CanonicalName}' → {loaId}.");
                     }
 
-                    // Link the FT to the LOA. The synchronizer guards Depth>1 so won't recurse.
+                    // Link the FT to the LOA. No grain field in the update, so the synchronizer no-ops.
                     var ftUpdate = new Entity(EntityNames.FundingTrack, ft.Id);
                     ftUpdate[FundingTrackAttributes.LineOfAccounting] =
                         new EntityReference(EntityNames.FundingLine, loaId);

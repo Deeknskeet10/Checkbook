@@ -2,6 +2,7 @@ using System;
 using Microsoft.Xrm.Sdk;
 using Checkbook.Plugins.Base;
 using Checkbook.Plugins.Constants;
+using Checkbook.Plugins.Helpers;
 using Checkbook.Plugins.LOAs.Helpers;
 
 namespace Checkbook.Plugins.LOAs
@@ -20,8 +21,9 @@ namespace Checkbook.Plugins.LOAs
     ///
     /// TDP rollup on the old and new LOA is handled by the existing
     /// <c>FundingTrackTDPRecalculator</c> in PostOp, which reads our new
-    /// target value alongside its own pre-image. We rely on the same pipeline
-    /// depth so its <c>Depth &gt; 1</c> guard doesn't skip.
+    /// target value alongside its own pre-image. Both use the same nesting
+    /// rule (skip only under an FT/LOA write), so Excel/CSV import updates
+    /// re-link here and roll up there.
     ///
     /// Register: PreOp Update on <c>book_fundingtrack</c>, with a PreImage
     /// containing the grain fields + <c>book_lineofaccountingloa</c> + <c>book_ape</c>.
@@ -54,10 +56,13 @@ namespace Checkbook.Plugins.LOAs
                 return;
             }
 
-            // Stop runaway recursion in case downstream plugins update FTs too.
-            if (context.Depth > 1)
+            // Recursion brake: skip only when nested under an FT/LOA write (e.g.
+            // LOAGenerator linking FTs). A plain Depth > 1 guard also skipped
+            // Import from Excel/CSV updates (nested under the import job), so
+            // bulk grain changes never re-linked.
+            if (IsNestedUnderFundingTrackOrLoaWrite(context, tracing))
             {
-                tracing.Trace($"Skipping — depth {context.Depth} > 1.");
+                tracing.Trace($"Skipping — depth {context.Depth}, nested under an FT/LOA write.");
                 return;
             }
 
@@ -130,6 +135,14 @@ namespace Checkbook.Plugins.LOAs
             var ape = grain.APE;
             if (ape != null)
                 LOAResolver.AssociateApe(service, loaId, ape, tracing);
+        }
+
+        private static bool IsNestedUnderFundingTrackOrLoaWrite(IPluginExecutionContext context, ITracingService tracing)
+        {
+            return PipelineAncestryHelper.FindUpstream(context,
+                a => a.PrimaryEntityName == EntityNames.FundingTrack ||
+                     a.PrimaryEntityName == EntityNames.FundingLine,
+                tracing) != null;
         }
     }
 }

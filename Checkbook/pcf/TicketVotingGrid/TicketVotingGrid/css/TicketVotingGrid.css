@@ -1,0 +1,6 @@
+/* Styling lives in makeStyles (Griffel) inside TicketVotingGridApp.tsx.
+   This file exists to satisfy the manifest <css> resource and to hold any
+   global overrides the component-scoped styles cannot express. */
+.TicketVotingGrid-root {
+  box-sizing: border-box;
+}

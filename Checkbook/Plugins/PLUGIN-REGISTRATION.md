@@ -180,6 +180,7 @@ Register the mode plugins only after these `book_spendplan` /
 | `book_GenerateDistributions`        | `Checkbook.Plugins.Distributions.GenerateDistributionsPlugin`    | See [`Distributions/REGISTRATION.md`](Distributions/REGISTRATION.md). |
 | `book_ToggleFundedAmountLock`       | `Checkbook.Plugins.Admin.ToggleFundedAmountLockPlugin`           | Global, no inputs, output `IsLocked` (Boolean). Full spec in [`../docs/FundedAmountLock-Setup.md`](../docs/FundedAmountLock-Setup.md). |
 | `book_ToggleSpendPlanLock`          | `Checkbook.Plugins.Admin.ToggleSpendPlanLockPlugin`             | Global, no inputs, output `IsLocked` (Boolean). Full spec in [`../docs/SpendPlanLock-Setup.md`](../docs/SpendPlanLock-Setup.md). |
+| `book_CastVote`                     | `Checkbook.Plugins.Tickets.CastVotePlugin`                       | Global action. In `TicketId` (String), `Direction` (Integer ±1); out `NewScore`, `UserVote` (Integer). Full spec in [`Tickets/REGISTRATION.md`](Tickets/REGISTRATION.md). |
 
 The Custom API record's **Plugin Type** field auto-wires the handler; no
 separate SDK Message Processing Step is required beyond setting that field on
@@ -1094,13 +1095,24 @@ or its LOA/Resource Amount changes.
 > `statecode`. Decision-driven amount changes roll up via the separate
 > `book_decision` step (see `DecisionRollupRecalculator`), not through this one.
 
-> **Bulk load / import caveat.** Edit-in-Excel and the Import Wizard write each
-> row *nested under a data-import job*, so their Funding Track updates run at
-> **Depth 2** — where this recalc's `Depth > 1` guard (in `LOATouchPropagator`)
-> skips them. A bulk Beginning-Balance load therefore does **not** roll up to
-> LOA TDP. Run the **`book_RecalculateLOATDP`** Custom API afterward to
-> reconcile (see below). Day-to-day form / app / flow edits run at Depth 1 and
-> are unaffected.
+> **Bulk load / import (fixed Oct 2026).** Import from Excel/CSV (the Import
+> Wizard) writes each row from an async import job at **Depth 2**, where the
+> old `Depth > 1` guard skipped the recalc (verified in Blipsnchitz: imported
+> Decisions left LOA TDP stale). Web API `$batch` and SDK `ExecuteMultiple`
+> run at Depth 1 and were never affected. `FundingTrackTDPRecalculator` and
+> `DecisionRollupRecalculator` now opt in to `LOATouchPropagator.RecalcWhenNested`:
+> they run at any depth and skip only when an *upstream* ancestor is a write on
+> an LOA-touch table (Decision, Funding Track, LOA, Ledger, Requirement Funding)
+> or the `book_GenerateLOAs` / `book_RecalculateLOATDP` Custom APIs — the
+> recursion brake. Dataverse also chains the operation's own outer context as a
+> parent; `Helpers/PipelineAncestryHelper` ignores that (same message + table +
+> record). So imported Decisions and Funding Tracks now roll up to LOA TDP.
+> The Ledger and Requirement Funding propagators keep the plain `Depth > 1`
+> skip (orchestrators write those and recalc themselves).
+> `FundingTrackLOASynchronizer` (pre-op) follows the same rule, skipping only
+> under an FT/LOA write, so a *bulk grain change* re-links the FT before the
+> post-op recalc runs. `book_RecalculateLOATDP` (below) remains the safety net
+> for historical drift.
 
 ### `Checkbook.Plugins.Recalculations.LOATDPReconciler`
 
@@ -1746,6 +1758,25 @@ Custom API handler `book_ToggleSpendPlanLock`. Flips `book_LockSpendPlanEdits`,
 read by `SpendPlanEditLockGuard`. Backs the Admin Center "Spend Plan
 Lock/Unlock" command button; full setup in
 [`../docs/SpendPlanLock-Setup.md`](../docs/SpendPlanLock-Setup.md).
+
+---
+
+## Tickets
+
+> Full setup (Custom API definition, PCF placement, smoke test) lives in
+> [`Tickets/REGISTRATION.md`](Tickets/REGISTRATION.md).
+
+### `Checkbook.Plugins.Tickets.CastVotePlugin`
+
+Custom API handler `book_CastVote`, called by the `TicketVotingGrid` PCF.
+Toggles the initiating user's `book_ticketendorsement` row on a ticket
+(none → create, same direction → delete, opposite → flip), then recomputes
+`book_ticket.book_score` as the sum of all `book_value`s. The voter is stamped
+in `book_endorser`; alternate key `book_uniquevote` (`book_endorser`,
+`book_ticket`) blocks duplicate votes. The score write relies on plugins
+running as the sysadmin super user — voters typically lack Write on others'
+tickets. Wired via the Custom API's **Plugin Type** field — no separate Step
+registration.
 
 ---
 

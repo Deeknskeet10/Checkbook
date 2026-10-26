@@ -15,15 +15,14 @@ namespace Checkbook.Plugins.Recalculations
     /// Ledger net − allocated</c>) via
     /// <see cref="TDPCalculationHelper.BatchRecalculateLOATDP"/>.
     ///
-    /// Why this exists: the PostOp <see cref="FundingTrackTDPRecalculator"/>
-    /// (via <see cref="LOATouchPropagator"/>) skips at <c>Depth &gt; 1</c>.
-    /// Funding Tracks are bulk-loaded through Edit-in-Excel / the Import
-    /// Wizard, which write each row *nested under a data-import job* — i.e. at
-    /// Depth 2 — so the recalc is suppressed and LOA TDP never rolls up from
-    /// the imported Beginning Balances. Day-to-day Decision edits recompute TDP
-    /// fine (they run at Depth 1 through the <c>book_decision</c> step); this
-    /// API is the deliberate, restartable reconcile for the annual bulk load
-    /// (and any other bulk change that lands deep in the pipeline).
+    /// Why this exists: until Oct 2026 the PostOp
+    /// <see cref="FundingTrackTDPRecalculator"/> and
+    /// <see cref="DecisionRollupRecalculator"/> skipped at <c>Depth &gt; 1</c>,
+    /// so Import from Excel/CSV loads (import job, Depth 2) never rolled up
+    /// to LOA TDP. Both now run nested (<see cref="LOATouchPropagator.RecalcWhenNested"/>);
+    /// this API remains the deliberate, restartable reconcile for drift left by
+    /// earlier bulk loads and anything else that lands deep in the pipeline
+    /// (bulk Ledger / Requirement Funding edits still skip).
     ///
     /// Invoked directly, this runs at Depth 1, so the guard is a non-issue: the
     /// LOA updates it issues land at Depth 2, where
