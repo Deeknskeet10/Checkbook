@@ -5,6 +5,12 @@ the Dataverse environment (Plugin Registration Tool + maker portal) to catch the
 environment up to `main`. Derived from [`PLUGIN-REGISTRATION.md`](PLUGIN-REGISTRATION.md)
 and the changes landed since the last merge (`d75d195`).
 
+> 🚀 **Gov at the prod baseline (1.11.0.119)?** Use
+> [`../dist/GOV-CUTOVER-FY27.md`](../dist/GOV-CUTOVER-FY27.md) instead of working
+> through this list by hand. Its `ARNGCheckbookFY27Cutover.zip` ships the
+> assembly **and all plugin steps** plus the FY27 schema/forms; the runbook covers
+> the remaining manual work (stale steps, roles, flows, env vars).
+
 > ✅ **Update (2026-08-02).** The **FY27 Spend Plan** and **Fund-Center-lock**
 > work formerly tagged *[PENDING – other session]* landed as commit `794cac1`
 > — schema, filters, and pre-images below are now final (source of truth:
@@ -40,6 +46,30 @@ Tables, roles and views are already in the environment. Full spec in
    bound; add Tickets to the app sitemap.
 5. **Smoke test** — section 5 of the Tickets doc (two users, toggle/flip,
    submitter-only edit).
+
+---
+
+## 📥 Bulk-upload LOA TDP fix (branch `bulk-upload-depth-guard`, 2026-10-23)
+
+Imported Decisions / Funding Tracks (Import from Excel/CSV, Depth 2) now roll
+up to LOA TDP. Validated in Blipsnchitz (import, `ExecuteMultiple`, `$batch`,
+`book_GenerateLOAs`).
+
+1. **Assembly** — push `Checkbook_Plugins.dll` (section **D**). No new steps.
+2. **Fix the `FundingTrackLOASynchronizer` step image** (PRT) — the sandbox,
+   imported 1:1 from prod, had it **wrong**, so the synchronizer has been
+   skipping every grain change ("No PreImage registered") at any depth:
+   - image **alias must be `PreImage`** (sandbox had `ftPre`);
+   - attributes: `book_disbursingofficial, book_fund, book_boc,
+     book_dollartype, book_pg, book_sag, book_mdep, book_category, book_ape,
+     book_lineofaccountingloa, owningbusinessunit` (sandbox lacked
+     `book_fund`, `book_category`);
+   - step filtering attributes must include **`book_category`**.
+   If the alias won't save in place, delete the image and re-add it.
+3. **One-off reconcile** — run `book_RecalculateLOATDP` (async, per FY) to
+   fix LOAs left stale by past imports. FTs whose grain was changed while the
+   synchronizer was broken may still sit on their old LOA (compare the FT's
+   grain to its LOA name); re-save a grain field to re-link them.
 
 ---
 
