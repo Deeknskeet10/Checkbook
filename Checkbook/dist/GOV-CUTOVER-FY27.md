@@ -43,6 +43,30 @@ and keep a retired auto-populate alive.
 
 Find each under **Checkbook_Plugins** → its plugin type → right-click the step → *Unregister*.
 
+### 1b. Delete stale plugin types (PRT)
+
+The import replaces the assembly, and Dataverse refuses it if the environment still
+has a **plugin type** whose class is gone from the DLL — even with no steps. These
+classes were removed from the code; delete any that exist under **Checkbook_Plugins**
+(unregister its steps first if it has any):
+
+| Plugin type | Removed |
+|-------------|---------|
+| `Checkbook.Plugins.Items.ItemizedDetailsReconciler` | 2026-07 (auto-populate retired) |
+| `Checkbook.Plugins.Validation.PrioritizationFundCenterLockGuard` | 2026-08 (FC lock retired) |
+| `Checkbook.Plugins.Items.PrioritizationItemizedFundCenterDefault` | 2026-08 (FC lock retired) |
+| `Checkbook.Plugins.Validation.SpendPlanFY27Validator` | 2026-10 (folded into Realignment rework) |
+| `Checkbook.Plugins.Validation.RequirementFundingTDPLock` | 2026-10 (→ `RequirementFundingFundedAmountLock`) |
+
+`ItemizedDetailsReconciler` backed the **`book_ReconcileItemizedDetails`** Custom API.
+If that Custom API exists, **delete it first** (maker portal → solution → Custom APIs,
+or Advanced Find on *Custom API*): its hidden implementation step pins the type, and
+PRT will not let you unregister the type until it is gone. Also remove any "Sync
+Itemized Details" command that called it.
+
+The import error names one missing type at a time — if it names a type not listed
+here, it is the same fix.
+
 ---
 
 ## 2. Import the PCF controls
