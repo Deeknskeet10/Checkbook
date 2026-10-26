@@ -402,3 +402,32 @@ Verify after publish:
 
 Full feature deployment (schema, plugins, PCF wiring):
 [`../dist/IMPLEMENTATION-FY27SpendPlan.md`](../dist/IMPLEMENTATION-FY27SpendPlan.md).
+
+---
+
+## 11. State-Swaps.js — book_stateswap main form "Information" (Oct 2026)
+
+New library, no predecessor (the State Swap form had no script). Create WR
+`book_StateSwaps` (display name *State Swaps*, file `State-Swaps.js`), type
+**JavaScript (JS)**, publish.
+
+| Event | Remove handler (library) | Add handler | Pass exec ctx | Parameters |
+|---|---|---|---|---|
+| Form OnLoad | (none — new) | `Book.StateSwap.onLoad` | yes | (none) |
+
+**Behavior:** FY27+ swaps are built by the **SwapBuilder** PCF
+(docs/StateSwap-FY27-Redesign.md §7). When `book_newfiscalyear` ≥ 2027 the script
+hides the legacy Swap Items subgrid (`Subgrid_new_1`) and shows the builder cell
+(control id `book_totalsentbya_builder`); on FY26 or with no Fiscal Year it does the
+reverse. It re-applies on Fiscal Year change via `addOnChange` in onLoad, so there
+is no extra handler to wire.
+
+**Form prerequisites:** a one-column section after *Overview* with a second
+*Total Sent by A* (`book_totalsentbya`) cell whose control is switched to
+`book_ARNGCheckbook.SwapBuilder` (hide its label). Sandbox placement + wiring:
+`devtools/sandbox-import/schema/swap_place_builder.py`. In gov, check the subgrid's
+control id on the form; if it is not `Subgrid_new_1`, update `ITEMS_SUBGRID` in
+the script.
+
+Verify after publish: an FY26 swap shows the Swap Items grid and no builder; an
+FY27 swap shows the builder and no grid; changing the Fiscal Year toggles them.

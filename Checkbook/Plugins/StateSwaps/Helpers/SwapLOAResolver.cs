@@ -11,8 +11,9 @@ namespace Checkbook.Plugins.StateSwaps.Helpers
     /// <summary>
     /// One resolved swap item: paired debit + credit legs with their LOAs and
     /// parent RFs materialized. LOAs and parent RFs are read from each side's
-    /// Prioritization (FY26: Prio → book_lineofaccounting, Prio → book_requirementfunding).
-    /// FY27 will need a different LOA path; isolate that change in this resolver.
+    /// Prioritization (FY26: Prio → book_lineofaccounting, Prio → book_requirementfunding)
+    /// or, FY27+, from each side's Prioritization Funding (PF → RF → LOA); see
+    /// <see cref="SwapLOAResolver.ResolveLegs"/>.
     /// </summary>
     public sealed class ResolvedSwapItem
     {
@@ -24,6 +25,9 @@ namespace Checkbook.Plugins.StateSwaps.Helpers
         public EntityReference CreditLOA;
         public EntityReference DebitRF;
         public EntityReference CreditRF;
+        // FY27+ only: the PF junction on each side (null on FY26 items).
+        public EntityReference DebitPF;
+        public EntityReference CreditPF;
         // Prio-level Fund Centers (may sit below state level — walk up with
         // FundCenterWalkHelper before using as a Distribution FC) and the
         // item's denormalized Fund / PG (SwapItemDerivedFieldsPlugin keeps
@@ -116,6 +120,57 @@ namespace Checkbook.Plugins.StateSwaps.Helpers
             }
 
             tracing.Trace($"SwapLOAResolver: resolved {resolved.Count} item(s) for swap {swapId}.");
+            return resolved;
+        }
+
+        /// <summary>
+        /// FY27+ (PF → PF legs): each side's RF, LOA, Prio and Fund Center come from its
+        /// Prioritization Funding; Fund / PG from the debit PF's LOA (SwapRules has already
+        /// required both sides to match). SwapValidator ran SwapRules pre-op; the null
+        /// checks here are a defensive guard.
+        /// </summary>
+        public static List<ResolvedSwapItem> ResolveLegs(
+            IOrganizationService service,
+            ITracingService tracing,
+            Guid swapId)
+        {
+            var legs = SwapRules.LoadLegs(service, swapId);
+            var pfs = SwapPfContext.Load(service,
+                legs.Where(l => l.DebitPF != null && l.CreditPF != null)
+                    .SelectMany(l => new[] { l.DebitPF.Id, l.CreditPF.Id }));
+
+            var resolved = new List<ResolvedSwapItem>(legs.Count);
+            foreach (var leg in legs)
+            {
+                if (leg.DebitPF == null || leg.CreditPF == null
+                    || !pfs.TryGetValue(leg.DebitPF.Id, out var debit)
+                    || !pfs.TryGetValue(leg.CreditPF.Id, out var credit))
+                    throw new InvalidPluginExecutionException(
+                        $"Swap Item {leg.SwapItemId} is missing a debit or credit Prioritization Funding.");
+                if (debit.LOA == null || credit.LOA == null)
+                    throw new InvalidPluginExecutionException(
+                        $"Swap Item {leg.SwapItemId}: a Prioritization Funding does not resolve to a Requirement Funding with an LOA.");
+
+                resolved.Add(new ResolvedSwapItem
+                {
+                    SwapItemId       = leg.SwapItemId,
+                    Amount           = leg.Amount,
+                    DebitPF          = leg.DebitPF,
+                    CreditPF         = leg.CreditPF,
+                    DebitPrio        = debit.Prioritization,
+                    CreditPrio       = credit.Prioritization,
+                    DebitRF          = debit.RequirementFunding,
+                    CreditRF         = credit.RequirementFunding,
+                    DebitLOA         = debit.LOA,
+                    CreditLOA        = credit.LOA,
+                    DebitFundCenter  = debit.FundCenter,
+                    CreditFundCenter = credit.FundCenter,
+                    Fund             = debit.Fund,
+                    PG               = debit.PG,
+                });
+            }
+
+            tracing.Trace($"SwapLOAResolver: resolved {resolved.Count} FY27 leg(s) for swap {swapId}.");
             return resolved;
         }
     }

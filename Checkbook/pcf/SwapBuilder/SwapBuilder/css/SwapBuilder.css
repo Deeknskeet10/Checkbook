@@ -1,0 +1,5 @@
+/* SwapBuilder: layout is driven by Fluent makeStyles; this file exists
+   so the manifest <css> resource resolves. Keep global overrides minimal. */
+.SwapBuilder-container {
+  font-size: 13px;
+}

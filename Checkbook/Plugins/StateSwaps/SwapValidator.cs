@@ -37,6 +37,10 @@ namespace Checkbook.Plugins.StateSwaps
     /// (not value-based) so a re-save that re-drives a stuck approval keeps the
     /// original stamp. SwapDenialPlugin clears the stamps on denial.
     ///
+    /// FY27+ swaps (PF → PF legs) replace steps 3–5 with SwapRules.Validate: both PFs set,
+    /// both usable (active, funded, Prio in NPM Review), per-leg Fund + PG, per-PF
+    /// availability, and itemized detail reductions / increases balanced per Prio.
+    ///
     /// Denial transitions bypass completeness / overdraw checks — a denied
     /// swap can be incomplete.
     ///
@@ -94,7 +98,7 @@ namespace Checkbook.Plugins.StateSwaps
             var swap = service.Retrieve(
                 EntityNames.StateSwap,
                 context.PrimaryEntityId,
-                new ColumnSet(StateSwapAttributes.StateA, StateSwapAttributes.StateB));
+                new ColumnSet(StateSwapAttributes.StateA, StateSwapAttributes.StateB, StateSwapAttributes.FiscalYear));
             var stateA = swap.GetAttributeValue<EntityReference>(StateSwapAttributes.StateA);
             var stateB = swap.GetAttributeValue<EntityReference>(StateSwapAttributes.StateB);
             if (stateA == null || stateB == null)
@@ -122,30 +126,16 @@ namespace Checkbook.Plugins.StateSwaps
                 return;
             }
 
-            // ---- 3. Completeness ----
-            // Every active item must have both Debit and Credit Prio set.
-            // Debit-first drafting is allowed on Save, but not for approval.
-            var incompleteCount = CountItemsMissingCreditPrio(service, context.PrimaryEntityId);
-            if (incompleteCount > 0)
+            if (!SwapRules.IsLegacy(swap))
             {
-                throw new InvalidPluginExecutionException(
-                    $"State Swap has {incompleteCount} item(s) missing a Credit Prioritization. " +
-                    "Every Swap Item must have both a Debit and a Credit Prioritization before approval.");
+                // ---- 3–5 (FY27+). PF → PF legs: completeness, per-PF availability,
+                // leg usability + Fund/PG, itemized detail balance. ----
+                SwapRules.Validate(service, tracing, context.PrimaryEntityId);
             }
-
-            // ---- 4. At least one item + 5. Overdraw ----
-            // One-sided swaps are allowed (a pure transfer with nothing coming
-            // back), so there is no both-sides-contribute check — only "the
-            // swap actually moves something". Recomputed live from Active
-            // items rather than trusting the stored totals/flag in case items
-            // were changed via a path that bypassed SwapRollupPlugin.
-
-            var perDebitPrio = SumActiveItemsByDebitPrio(service, context.PrimaryEntityId);
-            if (perDebitPrio.Count == 0)
-                throw new InvalidPluginExecutionException(
-                    "State Swap has no active Swap Items. Add at least one item before approving.");
-
-            ValidateAggregatedOverdraw(service, tracing, perDebitPrio);
+            else
+            {
+                ValidateLegacyItems(service, tracing, context.PrimaryEntityId);
+            }
 
             // ---- 6. BE approval prerequisites ----
             if (beTx)
@@ -178,6 +168,36 @@ namespace Checkbook.Plugins.StateSwaps
                 StateSwapAttributes.BEApproved,
                 StateSwapAttributes.BEApprovedBy,
                 StateSwapAttributes.BEApprovedOn);
+        }
+
+        /// <summary>FY26 (Prio-level) steps 3–5: completeness, at least one item, overdraw.</summary>
+        private static void ValidateLegacyItems(
+            IOrganizationService service, ITracingService tracing, Guid swapId)
+        {
+            // ---- 3. Completeness ----
+            // Every active item must have both Debit and Credit Prio set.
+            // Debit-first drafting is allowed on Save, but not for approval.
+            var incompleteCount = CountItemsMissingCreditPrio(service, swapId);
+            if (incompleteCount > 0)
+            {
+                throw new InvalidPluginExecutionException(
+                    $"State Swap has {incompleteCount} item(s) missing a Credit Prioritization. " +
+                    "Every Swap Item must have both a Debit and a Credit Prioritization before approval.");
+            }
+
+            // ---- 4. At least one item + 5. Overdraw ----
+            // One-sided swaps are allowed (a pure transfer with nothing coming
+            // back), so there is no both-sides-contribute check — only "the
+            // swap actually moves something". Recomputed live from Active
+            // items rather than trusting the stored totals/flag in case items
+            // were changed via a path that bypassed SwapRollupPlugin.
+
+            var perDebitPrio = SumActiveItemsByDebitPrio(service, swapId);
+            if (perDebitPrio.Count == 0)
+                throw new InvalidPluginExecutionException(
+                    "State Swap has no active Swap Items. Add at least one item before approving.");
+
+            ValidateAggregatedOverdraw(service, tracing, perDebitPrio);
         }
 
         private static void StampApproval(

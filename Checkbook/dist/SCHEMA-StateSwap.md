@@ -4,8 +4,8 @@ Cross-state fund exchange between two states, mirrored on the Turn-In /
 Realignment approval flow. Two new tables, a small additive change to
 `book_ledger`, one new option-set value, and role-team sharing.
 
-FY27 LOA divergence is **not** in scope for this document — the plugin
-layer will isolate that behind a `SwapLOAResolver` helper later.
+FY27 additions (PF → PF legs + itemized detail adjustments) are in **§10**;
+design in `docs/StateSwap-FY27-Redesign.md`.
 
 ---
 
@@ -307,3 +307,41 @@ replace it with a formula field.
 - Plugin steps register via the Plugin Registration Tool — see
   `Plugins/PLUGIN-REGISTRATION.md` (to be extended with the swap steps
   once code lands).
+
+---
+
+## 10. FY27 additions (PF → PF legs)
+
+Design: `docs/StateSwap-FY27-Redesign.md`. Sandbox scripts:
+`devtools/sandbox-import/schema/swap_fy27_schema.py` (schema) and `swap_fy27_security.py`
+(privileges). Both idempotent; replicate in gov via the maker portal / Security Roles.
+
+### 10.1 `book_swapitem` (existing) — new lookups
+
+| Logical name | Type | Relationship | Delete | Description |
+|---|---|---|---|---|
+| `book_debitprioritizationfunding` | Lookup → `book_prioritizationfunding` | `book_debitprioritizationfunding_book_swapitem` | RemoveLink | FY27 debit unit: the giving state's PF (Prio ↔ RF). Must be active, Funded > 0, on a FinalApproved Prio. |
+| `book_creditprioritizationfunding` | Lookup → `book_prioritizationfunding` | `book_creditprioritizationfunding_book_swapitem` | RemoveLink | FY27 credit unit: the receiving state's PF, same Fund + PG as the debit PF, same rules. |
+
+On FY27 swaps `book_debitprioritization` / `book_creditprioritization` are derived from these
+by `SwapItemDerivedFieldsPlugin`; FY26 swaps keep setting the Prio lookups directly.
+
+### 10.2 `book_swapdetailreduction` / `book_swapdetailincrease` (new, UserOwned)
+
+Same shape. One row = one Itemized Detail lowered (reduction) or raised (increase) so an
+itemized Prio the swap debits / credits keeps Σ details ≡ Prio total ≡ Σ PF. Prio-level and
+PF-agnostic: per itemized Prio, Σ rows on its details == Σ legs out of (reduction) / into
+(increase) it.
+
+| Logical name | Type | Required | Description |
+|---|---|---|---|
+| `book_swapdetailreductionid` / `book_swapdetailincreaseid` | Uniqueidentifier | System | Primary key |
+| `book_name` | Text (200) | None | Primary name |
+| `book_stateswap` | Lookup → `book_stateswap` | None | Parent. Relationship `book_stateswap_book_swapdetailreduction` / `book_stateswap_book_swapdetailincrease`: **Cascade** Delete / Assign / Reparent / Share / Unshare (same as `book_swapitem`). |
+| `book_itemizeddetail` | Lookup → `book_itemizeddetails` | None | The detail adjusted. RemoveLink. |
+| `book_newamount` | Decimal (2) | None | Amount to lower / raise the detail's Funded by (> 0). |
+
+### 10.3 Privileges
+
+Every `Book -` root role gets on both new tables the same verbs + depths it holds on
+`book_swapitem` (see `swap_fy27_security.py`; sandbox depths listed in the design doc §4).

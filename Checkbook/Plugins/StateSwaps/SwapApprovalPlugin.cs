@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Xrm.Sdk;
+using Microsoft.Xrm.Sdk.Query;
 using Checkbook.Plugins.Base;
 using Checkbook.Plugins.Constants;
 using Checkbook.Plugins.Helpers;
@@ -33,6 +34,11 @@ namespace Checkbook.Plugins.StateSwaps
     ///      per direction, giving state → A18 pair + A18 → receiving state pair,
     ///      all linked to the swap via book_stateswap)
     ///   7. Deactivate the swap (statecode Inactive, statuscode 2 = BE Approved)
+    ///
+    /// Steps 3–6 above are the FY26 (Prio-level) path. FY27+ swaps (PF → PF legs,
+    /// branch on book_newfiscalyear) resolve via SwapLOAResolver.ResolveLegs and run
+    /// SwapExecutor instead (docs/StateSwap-FY27-Redesign.md §6); distributions and
+    /// deactivation are shared.
     ///
     /// Validation (role gating, balance, overdraw) is owned by SwapValidator
     /// running pre-op on the same Update. By the time this runs we trust the
@@ -109,14 +115,49 @@ namespace Checkbook.Plugins.StateSwaps
 
             tracing.Trace($"SwapApprovalPlugin: processing BE approval on swap {swapId}.");
 
+            var swap = service.Retrieve(EntityNames.StateSwap, swapId,
+                new ColumnSet(StateSwapAttributes.FiscalYear));
+            bool legacy = SwapRules.IsLegacy(swap);
+
             // ---- 2. Resolve LOAs + RFs ----
-            var items = SwapLOAResolver.ResolveItems(service, tracing, swapId);
+            var items = legacy
+                ? SwapLOAResolver.ResolveItems(service, tracing, swapId)
+                : SwapLOAResolver.ResolveLegs(service, tracing, swapId);
             if (items.Count == 0)
             {
                 throw new InvalidPluginExecutionException(
                     "State Swap has no active Swap Items to process.");
             }
 
+            if (legacy)
+                ExecuteLegacy(service, tracing, swapId, items);
+            else
+                SwapExecutor.Execute(service, tracing, swapId, items);
+
+            // ---- 6b. AFP/Allotment Distributions (state → A18 → state) ----
+            // Linked to the swap via book_stateswap; the swap-related
+            // Distribution views and GFEBS entry work off these rows.
+            SwapDistributionCreator.CreateDistributions(service, tracing, swapId, items);
+
+            // ---- 7. Deactivate ----
+            // statuscode 2 = BE Approved (mapped Inactive in the schema).
+            tracing.Trace($"SwapApprovalPlugin: deactivating swap {swapId}.");
+            service.Update(new Entity(EntityNames.StateSwap, swapId)
+            {
+                [CommonAttributes.StateCode] = new OptionSetValue(StateCodeValues.Inactive),
+                [CommonAttributes.StatusCode] = new OptionSetValue(StatusCodeValues.InactiveDefault),
+            });
+
+            tracing.Trace("SwapApprovalPlugin: completed successfully.");
+        }
+
+        /// <summary>FY26 (Prio-level) steps 3–6: ledgers, LOA recalcs, Prio / RF deltas.</summary>
+        private static void ExecuteLegacy(
+            IOrganizationService service,
+            ITracingService tracing,
+            Guid swapId,
+            List<ResolvedSwapItem> items)
+        {
             // ---- 3. Ledger pairs (skip same-LOA net-zero rows) ----
             var touchedLOAs = new HashSet<Guid>();
             foreach (var item in items)
@@ -148,27 +189,11 @@ namespace Checkbook.Plugins.StateSwaps
             // ---- 5. Apply Prio + RF deltas ----
             // The RF validator's IsTriggeredByStateSwap bypass covers the
             // intermediate states this creates on each RF.
-            SwapPrioritizationUpdater.ApplyFundingDeltas(service, tracing, items);
+            SwapExecutorLegacy.ApplyFundingDeltas(service, tracing, items);
 
             // ---- 6. Recalc LOA TDP once more (catch-all, matches Realignment) ----
             foreach (var loaId in touchedLOAs)
                 TDPCalculationHelper.RecalculateLOATDP(service, loaId, tracing);
-
-            // ---- 6b. AFP/Allotment Distributions (state → A18 → state) ----
-            // Linked to the swap via book_stateswap; the swap-related
-            // Distribution views and GFEBS entry work off these rows.
-            SwapDistributionCreator.CreateDistributions(service, tracing, swapId, items);
-
-            // ---- 7. Deactivate ----
-            // statuscode 2 = BE Approved (mapped Inactive in the schema).
-            tracing.Trace($"SwapApprovalPlugin: deactivating swap {swapId}.");
-            service.Update(new Entity(EntityNames.StateSwap, swapId)
-            {
-                [CommonAttributes.StateCode] = new OptionSetValue(StateCodeValues.Inactive),
-                [CommonAttributes.StatusCode] = new OptionSetValue(StatusCodeValues.InactiveDefault),
-            });
-
-            tracing.Trace("SwapApprovalPlugin: completed successfully.");
         }
     }
 }

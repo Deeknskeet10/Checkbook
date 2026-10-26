@@ -22,6 +22,10 @@ namespace Checkbook.Plugins.StateSwaps
     /// state cannot see them under User-scope Read. Sharing each item at its own
     /// creation closes that gap.
     ///
+    /// Also registered on Create of the FY27 child tables book_swapdetailreduction and
+    /// book_swapdetailincrease (same book_stateswap lookup, same gap) — see
+    /// docs/StateSwap-FY27-Redesign.md §5.2.
+    ///
     /// Runs as the calling user, so the swap drafter's role must grant Share on
     /// book_swapitem (User scope is sufficient — they own the item they just
     /// created). Missing owner-teams are logged and skipped by the helper.
@@ -33,7 +37,9 @@ namespace Checkbook.Plugins.StateSwaps
             IOrganizationService service,
             ITracingService tracing)
         {
-            if (context.PrimaryEntityName != EntityNames.SwapItem) return;
+            if (context.PrimaryEntityName != EntityNames.SwapItem
+                && context.PrimaryEntityName != SwapDetailReductionAttributes.EntityLogicalName
+                && context.PrimaryEntityName != SwapDetailIncreaseAttributes.EntityLogicalName) return;
             if (context.MessageName != "Create") return;
 
             var target = GetTarget(context);
@@ -43,7 +49,7 @@ namespace Checkbook.Plugins.StateSwaps
             {
                 // Lookup may not be on the Target payload — fall back to a retrieve.
                 var item = service.Retrieve(
-                    EntityNames.SwapItem, context.PrimaryEntityId,
+                    context.PrimaryEntityName, context.PrimaryEntityId,
                     new ColumnSet(SwapItemAttributes.StateSwap));
                 swapRef = item.GetAttributeValue<EntityReference>(SwapItemAttributes.StateSwap);
             }
@@ -62,7 +68,7 @@ namespace Checkbook.Plugins.StateSwaps
             var stateA = swap.GetAttributeValue<EntityReference>(StateSwapAttributes.StateA);
             var stateB = swap.GetAttributeValue<EntityReference>(StateSwapAttributes.StateB);
 
-            var itemRef = new EntityReference(EntityNames.SwapItem, context.PrimaryEntityId);
+            var itemRef = new EntityReference(context.PrimaryEntityName, context.PrimaryEntityId);
 
             SwapTeamShareHelper.GrantAccessForState(service, tracing, itemRef, stateA);
             SwapTeamShareHelper.GrantAccessForState(service, tracing, itemRef, stateB);
