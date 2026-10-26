@@ -40,7 +40,8 @@ namespace Checkbook.Plugins.Helpers
                 return;
             }
 
-            var fy = GetEffectiveInt(target, preImage, RequirementFundingAttributes.FiscalYear);
+            // goal_fiscalyear picklist — the option value is the year (e.g. 2027).
+            var fy = GetEffectiveOptionSetValue(target, preImage, RequirementFundingAttributes.FiscalYear)?.Value;
             var activeFy = FiscalYearHelper.GetActivePlanningFiscalYear(service, tracing);
             if (fy != null && fy.Value < activeFy)
             {

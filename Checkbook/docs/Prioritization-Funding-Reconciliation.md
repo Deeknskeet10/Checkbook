@@ -22,7 +22,7 @@ A Prioritization's "funded" is entered on **two independent, orthogonal axes**:
 
 The RF total rolls up from the **per-RF** junctions; the Prio total comes from the **per-item**
 sum. Nothing forces them equal except `PrioritizationSingleRfAutoAllocate` — which **no-ops at
-2+ RFs** — and the junction→Prio rollup (`PrioritizationFundingRollupHelper`) **deliberately
+2+ RFs** — and the junction→Prio rollup (`FundingRollupHelper`) **deliberately
 skips in Itemized mode** ("items own the total; junctions are distributive metadata"). So
 multi-RF / itemized Prios drift, with **no validator catching it**. `book_itemizeddetails` has
 no RF lookup and `book_prioritizationfunding` has no item lookup — they are different
@@ -44,7 +44,7 @@ breakdowns of the same total.
 ## 3. Decisions
 
 1. **Per-detail Funded is the input** → Prio total = Σ details (Itemized rollup unchanged; the
-   `PrioritizationFundingRollupHelper` Itemized-skip stays — items own the total). Direct-mode
+   `FundingRollupHelper` Itemized-skip stays — items own the total). Direct-mode
    Prios (no items) keep Prio total = Σ PF as today.
 2. **No auto-seed of the multi-RF split.** The NPM allocates per RF by hand — "it's the NPM's
    job to identify how much and from where." (`SingleRfAutoAllocate` stays for the single-RF case.)

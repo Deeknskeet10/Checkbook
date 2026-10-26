@@ -24,7 +24,7 @@ that receives turned-in funds for **FY27 and later** Turn-Ins.
 | Default value | _(leave blank or set to the BE OPR record id)_ |
 | Current value (per env) | The `book_opr` record GUID for the OPR that should receive returns |
 
-Read by `TurnInLOAResolver.ResolveCreditLOA_FY27Plus` (via
+Read by `TurnInLOAResolver.ResolveHeaderCreditLoa` (via
 `Checkbook.Plugins.Helpers.EnvironmentVariableHelper.GetGuid`). The resolver:
 
 1. Parses the Turn-In's Fund name (`…D26` → FY26, `…D27` → FY27, etc).
@@ -43,7 +43,7 @@ The cutoff lives in `LOAs.Helpers.LOANameBuilder.LegacyGrainLastFy` (currently
 FY27 State/BE Turn-Ins built with the TurnInBuilder have **no header Fund/PG** —
 one Turn-In can span several Fund/SAGs (docs/TurnIn-FY27-Redesign.md). For these
 (`book_fiscalyear` ≥ 2027 and at least one item) the credit LOA is resolved **per
-debit LOA** by `TurnInLOAResolver.ResolveLOAsFy27`:
+debit LOA** by `TurnInLOAResolver.ResolveLOAsForItems`:
 `Fund (debit LOA's) + DisbursingOfficial(<env var GUID>) + (PG | SAG of the debit LOA)`,
 PG vs SAG by the Fund's appropriation as above. Each source LOA's money returns to
 the ARNG holding LOA with the same Fund + PG/SAG, so the env var must point at the

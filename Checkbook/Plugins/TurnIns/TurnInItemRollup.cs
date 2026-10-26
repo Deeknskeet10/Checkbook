@@ -50,7 +50,7 @@ namespace Checkbook.Plugins.TurnIns
                 TurninAttributes.FiscalYear, TurninAttributes.Origin, TurninAttributes.Amount,
                 TurninAttributes.AFPAmount, TurninAttributes.AllotmentAmount, TurninAttributes.StateCode));
 
-            if (!TurnInLOAResolver.IsFy27Plus(turnIn)) return;
+            if (TurnInRules.IsLegacy(turnIn)) return;
             if (turnIn.GetAttributeValue<OptionSetValue>(TurninAttributes.Origin)?.Value == TurnInOriginValues.Sweep) return;
             if (turnIn.GetAttributeValue<OptionSetValue>(TurninAttributes.StateCode)?.Value != StateCodeValues.Active) return;
 

@@ -30,27 +30,6 @@ namespace Checkbook.Plugins.TurnIns.Helpers
     }
 
     /// <summary>
-    /// Compares EntityReference by logical name + ID.
-    /// Required for dictionary key grouping of LOAs.
-    /// </summary>
-    internal class EntityReferenceComparer : IEqualityComparer<EntityReference>
-    {
-        public bool Equals(EntityReference x, EntityReference y)
-        {
-            if (x == null && y == null) return true;
-            if (x == null || y == null) return false;
-
-            return x.Id == y.Id &&
-                   string.Equals(x.LogicalName, y.LogicalName, StringComparison.OrdinalIgnoreCase);
-        }
-
-        public int GetHashCode(EntityReference obj)
-        {
-            return (obj.LogicalName + obj.Id.ToString()).ToLower().GetHashCode();
-        }
-    }
-
-    /// <summary>
     /// Resolves all LOAs needed to process a Turn-In.
     ///
     /// Debit LOAs come from prioritizations / requirement fundings via Turn-In items.
@@ -66,9 +45,9 @@ namespace Checkbook.Plugins.TurnIns.Helpers
     public static class TurnInLOAResolver
     {
         /// <summary>Env-var schema name holding the credit-side OPR GUID for FY27+ turn-ins.</summary>
-        public const string CreditOprEnvVar = "book_TurnInCreditOPR";
+        public const string CreditOprEnvVar = EnvironmentVariableKeys.TurnInCreditOpr;
 
-        public static TurnInLOAResolution ResolveLOAs(
+        public static TurnInLOAResolution ResolveLOAsForHeader(
             IOrganizationService service,
             ITracingService tracing,
             Entity turnIn,
@@ -139,7 +118,7 @@ namespace Checkbook.Plugins.TurnIns.Helpers
 
             if (fy <= LOANameBuilder.LegacyGrainLastFy)
             {
-                var risk = TryResolveCreditLOA_FY26(service, tracing, fund, pg);
+                var risk = TryResolveCreditLoaLegacy(service, tracing, fund, pg);
                 if (risk != null)
                 {
                     result.CreditLOAs[risk] = result.TotalAmount;
@@ -160,22 +139,13 @@ namespace Checkbook.Plugins.TurnIns.Helpers
             }
             else
             {
-                var creditLoa = ResolveCreditLOA_FY27Plus(service, tracing, fund, pg, appnOs.Value);
+                var creditLoa = ResolveHeaderCreditLoa(
+                    service, tracing, fund, pg, appnOs.Value, SingleCategoryOrNull(items));
                 result.CreditLOAs[creditLoa] = result.TotalAmount;
                 tracing.Trace($"Resolved credit LOA: {creditLoa.Id} (FY{fy} BE OPR branch).");
             }
 
             return result;
-        }
-
-        /// <summary>
-        /// True when the Turn-In's Fiscal Year (book_fiscalyear, goal_fiscalyear picklist —
-        /// value is the year, e.g. 2027) is past the legacy grain, i.e. FY27+.
-        /// </summary>
-        public static bool IsFy27Plus(Entity turnIn)
-        {
-            var fy = turnIn.GetAttributeValue<OptionSetValue>(TurninAttributes.FiscalYear)?.Value;
-            return fy.HasValue && fy.Value % 100 > LOANameBuilder.LegacyGrainLastFy;
         }
 
         /// <summary>
@@ -185,7 +155,7 @@ namespace Checkbook.Plugins.TurnIns.Helpers
         /// Fund and the same PG or SAG (by the Fund's appropriation). Funds go back to the
         /// ARNG LOA they came from.
         /// </summary>
-        public static TurnInLOAResolution ResolveLOAsFy27(
+        public static TurnInLOAResolution ResolveLOAsForItems(
             IOrganizationService service,
             ITracingService tracing,
             List<TurnInItemRecord> items)
@@ -247,6 +217,9 @@ namespace Checkbook.Plugins.TurnIns.Helpers
             q.Criteria.AddCondition(FundingLineAttributes.DisbursingOfficial, ConditionOperator.Equal, creditOprId);
             q.Criteria.AddCondition(byPg ? FundingLineAttributes.PG : FundingLineAttributes.SAG, ConditionOperator.Equal, key.Id);
             q.Criteria.AddCondition(FundingLineAttributes.StateCode, ConditionOperator.Equal, StateCodeValues.Active);
+            // Category is part of the FY27 LOA grain (DO-Fund-PG-FP-Category); without it two
+            // ARNG LOAs differing only by Category are ambiguous. Funded Program rides on Fund.
+            AddCategoryCondition(q, item.LOACategory);
 
             var matches = service.RetrieveMultiple(q).Entities;
             if (matches.Count == 0)
@@ -257,7 +230,8 @@ namespace Checkbook.Plugins.TurnIns.Helpers
             if (matches.Count > 1)
                 throw new InvalidPluginExecutionException(
                     $"Multiple ({matches.Count}) ARNG LOAs match Fund={item.LOAFund.Id}, " +
-                    $"{(byPg ? "PG" : "SAG")}={key.Id} — the holding LOA should be unique per (Fund, PG/SAG).");
+                    $"{(byPg ? "PG" : "SAG")}={key.Id}, Category={item.LOACategory?.ToString() ?? "(none)"} — " +
+                    "the holding LOA should be unique per (Fund, PG/SAG, Category).");
 
             tracing.Trace($"FY27 credit LOA for debit LOA {item.LOA.Id}: {matches[0].Id}.");
             return matches[0].ToEntityReference();
@@ -268,7 +242,7 @@ namespace Checkbook.Plugins.TurnIns.Helpers
         /// Returns null when no such LOA exists so the caller can fall back to
         /// crediting each item's source LOA in place.
         /// </summary>
-        private static EntityReference TryResolveCreditLOA_FY26(
+        private static EntityReference TryResolveCreditLoaLegacy(
             IOrganizationService service,
             ITracingService tracing,
             EntityReference fund,
@@ -301,12 +275,13 @@ namespace Checkbook.Plugins.TurnIns.Helpers
         /// PG vs SAG is chosen by the Fund's appropriation; for SAG-based APPNs the
         /// SAG is derived from the Turn-In's PG via SAG.book_pg.
         /// </summary>
-        private static EntityReference ResolveCreditLOA_FY27Plus(
+        private static EntityReference ResolveHeaderCreditLoa(
             IOrganizationService service,
             ITracingService tracing,
             EntityReference fund,
             EntityReference pg,
-            int appropriation)
+            int appropriation,
+            int? category)
         {
             var creditOprId = EnvironmentVariableHelper.GetGuid(service, CreditOprEnvVar);
             tracing.Trace($"FY27+ credit LOA: OPR={creditOprId} (from env var {CreditOprEnvVar}).");
@@ -342,6 +317,11 @@ namespace Checkbook.Plugins.TurnIns.Helpers
                 tracing.Trace($"APPN {appropriation} uses SAG; derived SAG {sagRef.Id} from PG {pg.Id}.");
             }
 
+            // Header path (Sweep Turn-Ins carry no items): Category is only known when every
+            // item's debit LOA agrees on it; otherwise rely on (Fund, OPR, PG/SAG) uniqueness.
+            if (category.HasValue)
+                flQuery.Criteria.AddCondition(FundingLineAttributes.Category, ConditionOperator.Equal, category.Value);
+
             var matches = service.RetrieveMultiple(flQuery).Entities;
             if (matches.Count == 0)
                 throw new InvalidPluginExecutionException(
@@ -358,6 +338,20 @@ namespace Checkbook.Plugins.TurnIns.Helpers
                     "the BE OPR's holding LOA should be unique per (Fund, PG/SAG).");
 
             return matches[0].ToEntityReference();
+        }
+
+        private static void AddCategoryCondition(QueryExpression q, int? category)
+        {
+            if (category.HasValue)
+                q.Criteria.AddCondition(FundingLineAttributes.Category, ConditionOperator.Equal, category.Value);
+            else
+                q.Criteria.AddCondition(FundingLineAttributes.Category, ConditionOperator.Null);
+        }
+
+        private static int? SingleCategoryOrNull(List<TurnInItemRecord> items)
+        {
+            var categories = items.Select(i => i.LOACategory).Where(c => c.HasValue).Distinct().ToList();
+            return categories.Count == 1 ? categories[0] : null;
         }
 
         /// <summary>
@@ -419,208 +413,6 @@ namespace Checkbook.Plugins.TurnIns.Helpers
             }
 
             return record.ToEntityReference();
-        }
-    }
-
-    /// <summary>
-    /// Represents a Turn-In Item record. Each item is one row on a Turn-In and represents
-    /// money being returned from a specific source: either a Prioritization (most common)
-    /// or directly from a Requirement Funding (when the parent RF has no children).
-    /// </summary>
-    public class TurnInItemRecord
-    {
-        /// <summary>Source Prioritization. Null on RF-only turn-ins.</summary>
-        public EntityReference Prioritization { get; set; }
-
-        /// <summary>
-        /// Source Requirement Funding. Always populated. When Prioritization is null this
-        /// is the direct source of funds; otherwise it's the parent of the Prio.
-        /// </summary>
-        public EntityReference RequirementFunding { get; set; }
-
-        /// <summary>Source LOA — the debit target on the ledger side.</summary>
-        public EntityReference LOA { get; set; }
-
-        /// <summary>Decimal amount being turned in from this item.</summary>
-        public decimal Amount { get; set; }
-
-        /// <summary>LOA's Fund. Used to group debit distributions by (Fund, PG).</summary>
-        public EntityReference LOAFund { get; set; }
-
-        /// <summary>LOA's PG. Used to group debit distributions by (Fund, PG).</summary>
-        public EntityReference LOAPG { get; set; }
-
-        /// <summary>LOA's SAG. FY27 credit-LOA matching for SAG-keyed appropriations.</summary>
-        public EntityReference LOASAG { get; set; }
-
-        /// <summary>
-        /// FY27: the Prioritization Funding junction the item turns in from. Null on FY26
-        /// items and RF-level items. When set, Prioritization / RequirementFunding are the
-        /// junction's own Prio / RF and LOA is the junction RF's LOA.
-        /// </summary>
-        public EntityReference PrioritizationFunding { get; set; }
-
-        /// <summary>FY27 per-item AFP / Allotment (header Fund/PG is dropped in FY27).</summary>
-        public decimal AFPAmount { get; set; }
-        public decimal AllotmentAmount { get; set; }
-
-        /// <summary>True when this item turns in funds directly from RF (no Prio).</summary>
-        public bool IsRFOnly => Prioritization == null && RequirementFunding != null;
-    }
-
-    /// <summary>
-    /// Repository to load Turn-In Items efficiently, including the related LOA's
-    /// Fund + PG (needed for distribution grouping).
-    /// </summary>
-    public static class TurnInItemRepository
-    {
-        public static List<TurnInItemRecord> GetTurnInItems(
-            IOrganizationService service,
-            ITracingService tracing,
-            Guid turnInId)
-        {
-            tracing.Trace("Loading Turn-In Items...");
-
-            // Column set uses the strongly-typed TurnInItemsAttributes constants.
-            // Historical note: this query used to reference "book_amounttaken" which does
-            // not exist in this env — the real child amount column is book_newturninamount
-            // (Decimal). See TurnInItemsAttributes.Amount.
-            //
-            // LOA is NOT stored on book_turninitems. It is derived from the linked
-            // Prioritization (or Requirement Funding when RF-only) below.
-            var q = new QueryExpression(EntityNames.TurnInItems)
-            {
-                ColumnSet = new ColumnSet(
-                    TurnInItemsAttributes.Amount,
-                    TurnInItemsAttributes.Turnin,
-                    TurnInItemsAttributes.Prioritization,
-                    TurnInItemsAttributes.RequirementFunding,
-                    TurnInItemsAttributes.PrioritizationFunding,
-                    TurnInItemsAttributes.AFPAmount,
-                    TurnInItemsAttributes.AllotmentAmount)
-            };
-
-            q.Criteria.AddCondition(TurnInItemsAttributes.Turnin, ConditionOperator.Equal, turnInId);
-            q.Criteria.AddCondition(TurnInItemsAttributes.StateCode, ConditionOperator.Equal, StateCodeValues.Active);
-
-            var results = service.RetrieveMultiple(q).Entities;
-
-            var list = new List<TurnInItemRecord>();
-            var loaCache = new Dictionary<Guid, Entity>();
-            var prioLoaCache = new Dictionary<Guid, EntityReference>();
-            var rfLoaCache = new Dictionary<Guid, EntityReference>();
-
-            foreach (var e in results)
-            {
-                var pri = e.GetAttributeValue<EntityReference>(TurnInItemsAttributes.Prioritization);
-                var rf = e.GetAttributeValue<EntityReference>(TurnInItemsAttributes.RequirementFunding);
-                var pf = e.GetAttributeValue<EntityReference>(TurnInItemsAttributes.PrioritizationFunding);
-
-                // Decimal column. NumericHelper covers Money/Double/Decimal sources.
-                decimal amount = NumericHelper.ToDecimal(e, TurnInItemsAttributes.Amount) ?? 0m;
-
-                // FY27: the PF junction is authoritative for the item's Prio and RF.
-                if (pf != null)
-                {
-                    var pfEnt = service.Retrieve(
-                        EntityNames.PrioritizationFunding,
-                        pf.Id,
-                        new ColumnSet(
-                            PrioritizationFundingAttributes.Prioritization,
-                            PrioritizationFundingAttributes.RequirementFunding));
-                    pri = pfEnt.GetAttributeValue<EntityReference>(PrioritizationFundingAttributes.Prioritization) ?? pri;
-                    rf = pfEnt.GetAttributeValue<EntityReference>(PrioritizationFundingAttributes.RequirementFunding) ?? rf;
-                }
-
-                // At least one of Prio / RF must be present so we know the source.
-                if (pri == null && rf == null)
-                    throw new InvalidPluginExecutionException(
-                        "Turn-In Item is missing both Prioritization and Requirement Funding — " +
-                        "at least one source must be specified.");
-
-                // Derive LOA from the source: Prio when present, otherwise RF. FY27
-                // Prioritizations carry no LOA (their money lives on PF junctions), so a
-                // Prio-backed FY27 item reads the LOA from its RF instead.
-                EntityReference loa;
-                if (pri != null && pf == null)
-                {
-                    if (!prioLoaCache.TryGetValue(pri.Id, out loa))
-                    {
-                        var prioEnt = service.Retrieve(
-                            EntityNames.Prioritization,
-                            pri.Id,
-                            new ColumnSet(PrioritizationAttributes.LineOfAccounting));
-                        loa = prioEnt.GetAttributeValue<EntityReference>(
-                            PrioritizationAttributes.LineOfAccounting);
-                        prioLoaCache[pri.Id] = loa;
-                    }
-
-                    if (loa == null && rf != null)
-                        loa = GetRfLoa(service, rfLoaCache, rf.Id);
-
-                    if (loa == null)
-                        throw new InvalidPluginExecutionException(
-                            $"Prioritization {pri.Id} has no LOA (book_lineofaccounting). " +
-                            "Cannot resolve the debit LOA for this Turn-In Item.");
-                }
-                else
-                {
-                    loa = GetRfLoa(service, rfLoaCache, rf.Id);
-
-                    if (loa == null)
-                        throw new InvalidPluginExecutionException(
-                            $"Requirement Funding {rf.Id} has no LOA (book_lineofaccounting). " +
-                            "Cannot resolve the debit LOA for this Turn-In Item.");
-                }
-
-                // Resolve LOA Fund + PG once per unique LOA (these drive distribution grouping).
-                if (!loaCache.TryGetValue(loa.Id, out var loaEntity))
-                {
-                    loaEntity = service.Retrieve(
-                        EntityNames.FundingLine,
-                        loa.Id,
-                        new ColumnSet(FundingLineAttributes.Fund, FundingLineAttributes.PG, FundingLineAttributes.SAG));
-                    loaCache[loa.Id] = loaEntity;
-                }
-
-                var loaFund = loaEntity.GetAttributeValue<EntityReference>(FundingLineAttributes.Fund);
-                var loaPg = loaEntity.GetAttributeValue<EntityReference>(FundingLineAttributes.PG);
-
-                list.Add(new TurnInItemRecord
-                {
-                    Prioritization = pri,
-                    RequirementFunding = rf,
-                    PrioritizationFunding = pf,
-                    LOA = loa,
-                    Amount = amount,
-                    LOAFund = loaFund,
-                    LOAPG = loaPg,
-                    LOASAG = loaEntity.GetAttributeValue<EntityReference>(FundingLineAttributes.SAG),
-                    AFPAmount = NumericHelper.ToDecimal(e, TurnInItemsAttributes.AFPAmount) ?? 0m,
-                    AllotmentAmount = NumericHelper.ToDecimal(e, TurnInItemsAttributes.AllotmentAmount) ?? 0m,
-                });
-
-                tracing.Trace(
-                    $"Loaded TurnInItem: Pri={pri?.Id.ToString() ?? "(none)"}, " +
-                    $"RF={rf?.Id.ToString() ?? "(none)"}, LOA={loa.Id}, " +
-                    $"Fund={loaFund?.Id.ToString() ?? "(none)"}, " +
-                    $"PG={loaPg?.Id.ToString() ?? "(none)"}, Amount={amount}");
-            }
-
-            return list;
-        }
-
-        private static EntityReference GetRfLoa(
-            IOrganizationService service, Dictionary<Guid, EntityReference> cache, Guid rfId)
-        {
-            if (cache.TryGetValue(rfId, out var loa)) return loa;
-            var rfEnt = service.Retrieve(
-                EntityNames.RequirementFunding,
-                rfId,
-                new ColumnSet(RequirementFundingAttributes.LineOfAccounting));
-            loa = rfEnt.GetAttributeValue<EntityReference>(RequirementFundingAttributes.LineOfAccounting);
-            cache[rfId] = loa;
-            return loa;
         }
     }
 }

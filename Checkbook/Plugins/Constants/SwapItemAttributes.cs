@@ -21,6 +21,11 @@ namespace Checkbook.Plugins.Constants
         // TurnIn's book_newamount convention.
         public const string Amount = "book_newamount";
 
+        // FY27 PF -> PF legs (docs/StateSwap-FY27-Redesign.md). On FY27 swaps the
+        // Debit/Credit Prioritization lookups above are derived from these.
+        public const string DebitPrioritizationFunding = "book_debitprioritizationfunding";
+        public const string CreditPrioritizationFunding = "book_creditprioritizationfunding";
+
         // Plugin-derived denormalizations from the debit Prio.
         public const string Fund = "book_fund";
         public const string PG = "book_pg";

@@ -9,6 +9,7 @@ using Checkbook.Plugins.Helpers;
 namespace Checkbook.Plugins.StateSwaps.Helpers
 {
     /// <summary>
+    /// FY26 (Prio-level) swap execution — FY27+ swaps run SwapExecutor (PF → PF legs).
     /// Applies net FundedAmount deltas to each Prioritization touched by a State
     /// Swap, and net TDP deltas to each Requirement Funding touched.
     /// Aggregates first so a Prio that appears as a debit in one item and a credit
@@ -19,7 +20,7 @@ namespace Checkbook.Plugins.StateSwaps.Helpers
     /// (Prioritization-RequestedvsFunded, entity-scoped, no bypass possible)
     /// never observes an invalid state. Mirrors RealignmentProcessor.
     /// </summary>
-    public static class SwapPrioritizationUpdater
+    public static class SwapExecutorLegacy
     {
         /// <summary>
         /// Order-sensitive, debit-first: release funds before claiming them so
@@ -38,7 +39,7 @@ namespace Checkbook.Plugins.StateSwaps.Helpers
         ///   2. Debit RFs: rolled-down FundedAmount + TDP cut in the SAME Update
         ///      (a TDP-only cut while Funded is stale-high would trip the
         ///      Funded &lt;= TDP business rule — mirrors
-        ///      RealignmentProcessor.ApplyDebitToRF). This frees LOA headroom.
+        ///      RequirementFundingHelper.ApplyDebit). This frees LOA headroom.
         ///   3. Credit RFs: TDP up (fits in the headroom step 2 released).
         ///   4. Credit Prios' Funded up (fits under the raised credit RF TDP).
         ///   5. Re-roll FundedAmount on every touched RF (an RF debited in one
@@ -73,7 +74,7 @@ namespace Checkbook.Plugins.StateSwaps.Helpers
             // is skipped there.
             foreach (var pair in rfDeltas.Where(p => p.Value < 0m))
             {
-                var update = PrioritizationRollupHelper.BuildRFFundedUpdate(
+                var update = FundingRollupHelper.BuildRFFundedUpdate(
                     service, pair.Key, tracing);
                 update[RequirementFundingAttributes.TDP] =
                     ComputeAdjustedTdp(service, tracing, pair.Key, pair.Value);
@@ -95,7 +96,7 @@ namespace Checkbook.Plugins.StateSwaps.Helpers
             // and idempotent. TDP is already final everywhere.
             foreach (var pair in rfDeltas)
             {
-                service.Update(PrioritizationRollupHelper.BuildRFFundedUpdate(
+                service.Update(FundingRollupHelper.BuildRFFundedUpdate(
                     service, pair.Key, tracing));
             }
         }
@@ -129,7 +130,7 @@ namespace Checkbook.Plugins.StateSwaps.Helpers
             if (newFunded < 0m) newFunded = 0m;
 
             tracing.Trace(
-                $"SwapPrioritizationUpdater: Prio {prioId} Funded {oldFunded} → {newFunded} (delta {delta}).");
+                $"SwapExecutorLegacy: Prio {prioId} Funded {oldFunded} → {newFunded} (delta {delta}).");
 
             var update = new Entity(EntityNames.Prioritization, prioId)
             {
@@ -143,7 +144,7 @@ namespace Checkbook.Plugins.StateSwaps.Helpers
             if (newFunded > requested)
             {
                 tracing.Trace(
-                    $"SwapPrioritizationUpdater: Prio {prioId} Requested {requested} → {newFunded} (raised to match Funded).");
+                    $"SwapExecutorLegacy: Prio {prioId} Requested {requested} → {newFunded} (raised to match Funded).");
                 update[PrioritizationAttributes.RequestedAmount] = newFunded;
             }
 
@@ -182,7 +183,7 @@ namespace Checkbook.Plugins.StateSwaps.Helpers
             if (newTdp < 0m) newTdp = 0m;
 
             tracing.Trace(
-                $"SwapPrioritizationUpdater: RF {rfId} TDP {oldTdp} → {newTdp} (delta {delta}).");
+                $"SwapExecutorLegacy: RF {rfId} TDP {oldTdp} → {newTdp} (delta {delta}).");
 
             return newTdp;
         }

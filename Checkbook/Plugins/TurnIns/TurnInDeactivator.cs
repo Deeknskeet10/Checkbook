@@ -31,7 +31,7 @@ namespace Checkbook.Plugins.TurnIns
             // same fix as RealignmentProcessor / SwapApprovalPlugin, commit
             // 23aef51): a real-time Business Rule on this table would nest the
             // user's denial save under another book_turnin Update, and an
-            // IsNestedUpdateOf(...) guard would silently drop it. The guard
+            // same-table-nesting guard would silently drop it. The guard
             // protected nothing: this step is filtered on book_stateapproved,
             // and both deactivation Updates (this plugin's and the approval
             // orchestrator's step 7) write only statecode/statuscode, so
@@ -59,7 +59,7 @@ namespace Checkbook.Plugins.TurnIns
             }
 
             // Already inactive? Nothing to do.
-            int? stateCode = preImage.GetAttributeValue<OptionSetValue>("statecode")?.Value;
+            int? stateCode = preImage.GetAttributeValue<OptionSetValue>(CommonAttributes.StateCode)?.Value;
             if (stateCode == StateCodeValues.Inactive)
             {
                 tracing.Trace("TurnInDeactivator: Turn-In already inactive; skipping.");
@@ -71,8 +71,8 @@ namespace Checkbook.Plugins.TurnIns
             // SetStateRequest is the supported API for deactivation, but a direct
             // statecode/statuscode update works for system-defined statuses too.
             var update = new Entity(EntityNames.Turnin, context.PrimaryEntityId);
-            update["statecode"] = new OptionSetValue(StateCodeValues.Inactive);
-            update["statuscode"] = new OptionSetValue(StatusCodeValues.InactiveDefault);
+            update[CommonAttributes.StateCode] = new OptionSetValue(StateCodeValues.Inactive);
+            update[CommonAttributes.StatusCode] = new OptionSetValue(StatusCodeValues.InactiveDefault);
 
             service.Update(update);
 

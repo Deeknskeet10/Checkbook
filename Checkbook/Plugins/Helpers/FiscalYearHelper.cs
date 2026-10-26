@@ -40,6 +40,18 @@ namespace Checkbook.Plugins.Helpers
         }
 
         /// <summary>
+        /// True for a legacy (FY26-and-earlier) fiscal year — the BOC/DollarType LOA
+        /// grain and the single-row / header-based pipelines. Takes the
+        /// goal_fiscalyear picklist value (the year, e.g. 2027) or a 2-digit year.
+        /// A missing FY counts as legacy.
+        /// </summary>
+        public static bool IsLegacyFiscalYear(int? fiscalYear)
+        {
+            return !fiscalYear.HasValue
+                || fiscalYear.Value % 100 <= LOAs.Helpers.LOANameBuilder.LegacyGrainLastFy;
+        }
+
+        /// <summary>
         /// Federal FY for a date: Oct–Dec belong to next year's FY, Jan–Sep to
         /// the current year's. (DateTime.Month is 1-based, so Oct = 10.)
         /// </summary>

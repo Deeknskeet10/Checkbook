@@ -42,14 +42,6 @@ namespace Checkbook.Plugins.Validation
             "A Line of Accounting must be selected when TDP amount is greater than zero.";
 
         /// <summary>
-        /// Error message when LOA record cannot be found.
-        /// </summary>
-        public static string LOANotFound(string loaId)
-        {
-            return $"The specified Line of Accounting ({loaId}) could not be found.";
-        }
-
-        /// <summary>
         /// Error message when TDP amount is negative.
         /// </summary>
         public static string NegativeTDP(decimal tdp)

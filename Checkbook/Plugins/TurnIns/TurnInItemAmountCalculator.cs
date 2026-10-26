@@ -44,7 +44,7 @@ namespace Checkbook.Plugins.TurnIns
 
             var turnIn = service.Retrieve(EntityNames.Turnin, turnInRef.Id,
                 new ColumnSet(TurninAttributes.FiscalYear, TurninAttributes.Origin));
-            if (!TurnInLOAResolver.IsFy27Plus(turnIn))
+            if (TurnInRules.IsLegacy(turnIn))
             {
                 tracing.Trace("TurnInItemAmountCalculator: FY26 Turn-In — header calculator owns AFP/Allotment.");
                 return;

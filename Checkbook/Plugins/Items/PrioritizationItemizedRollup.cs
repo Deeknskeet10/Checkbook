@@ -100,7 +100,9 @@ namespace Checkbook.Plugins.Items
             var prioritization = service.Retrieve(
                 EntityNames.Prioritization,
                 prioritizationId,
-                new ColumnSet(PrioritizationAttributes.FundingMode));
+                new ColumnSet(
+                    PrioritizationAttributes.FundingMode,
+                    PrioritizationAttributes.RequirementFunding));
             var fundingMode = prioritization
                 .GetAttributeValue<OptionSetValue>(PrioritizationAttributes.FundingMode);
             if (fundingMode == null || fundingMode.Value != FundingModeValues.Itemized)
@@ -129,12 +131,9 @@ namespace Checkbook.Plugins.Items
             var rows = service.RetrieveMultiple(new FetchExpression(fetch)).Entities;
             if (rows.Count > 0)
             {
-                requested = NumericHelper.ToDecimal(
-                    rows[0].GetAttributeValue<AliasedValue>("requested")?.Value, 0m);
-                validated = NumericHelper.ToDecimal(
-                    rows[0].GetAttributeValue<AliasedValue>("validated")?.Value, 0m);
-                funded = NumericHelper.ToDecimal(
-                    rows[0].GetAttributeValue<AliasedValue>("funded")?.Value, 0m);
+                requested = AliasedValueHelper.GetDecimal(rows[0], "requested");
+                validated = AliasedValueHelper.GetDecimal(rows[0], "validated");
+                funded = AliasedValueHelper.GetDecimal(rows[0], "funded");
             }
 
             tracingService.Trace(
@@ -149,6 +148,15 @@ namespace Checkbook.Plugins.Items
             };
 
             service.Update(update);
+
+            // The Prio update above runs at depth 2, where
+            // PrioritizationRollupToRequirementFunding early-returns — so a
+            // legacy (direct-lookup) Prio's RF must be re-rolled here. FY27 Prios
+            // have no direct RF; their junction roll-up owns the RF totals.
+            var rf = prioritization.GetAttributeValue<EntityReference>(
+                PrioritizationAttributes.RequirementFunding);
+            if (rf != null)
+                FundingRollupHelper.RecalculateRFFunded(service, rf.Id, tracingService);
         }
     }
 }

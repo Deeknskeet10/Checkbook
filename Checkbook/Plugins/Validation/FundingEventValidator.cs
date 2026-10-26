@@ -235,6 +235,13 @@ namespace Checkbook.Plugins.Validation
                 { FundingTypeValues.Allotment, new List<PctRange>() },
             };
 
+            // An event with no (or another) Funding Type can't violate AFP ≥ Allotment.
+            if (!rangesByType.ContainsKey(overrideType))
+            {
+                tracing.Trace($"Funding Type {overrideType} is neither AFP nor Allotment — skipping invariant B.");
+                return;
+            }
+
             bool overrideAppliedToAny = false;
             foreach (var row in rows)
             {
@@ -258,9 +265,11 @@ namespace Checkbook.Plugins.Validation
                         overridePct ?? row.Pct,
                         row.FundingEventName ?? "(self)"));
                 }
-                else
+                else if (rangesByType.TryGetValue(row.FundingType, out var ranges))
                 {
-                    rangesByType[row.FundingType].Add(new PctRange(
+                    // Events of other types (or with no type) don't take part in
+                    // the AFP ≥ Allotment comparison.
+                    ranges.Add(new PctRange(
                         row.StartDate, row.EndDate, row.Pct, row.FundingEventName ?? row.FundingEventId.ToString()));
                 }
             }
@@ -400,35 +409,28 @@ namespace Checkbook.Plugins.Validation
 
         private static FundingEventMeta RetrieveFundingEventMeta(IOrganizationService service, Guid fundingEventId)
         {
-            try
+            var fe = service.Retrieve(EntityNames.FundingEvent, fundingEventId, new ColumnSet(
+                FundingEventAttributes.FundingType,
+                FundingEventAttributes.StartDate,
+                FundingEventAttributes.EndDate,
+                FundingEventAttributes.StateCode));
+            return new FundingEventMeta
             {
-                var fe = service.Retrieve(EntityNames.FundingEvent, fundingEventId, new ColumnSet(
-                    FundingEventAttributes.FundingType,
-                    FundingEventAttributes.StartDate,
-                    FundingEventAttributes.EndDate,
-                    FundingEventAttributes.StateCode));
-                return new FundingEventMeta
-                {
-                    FundingType = fe.GetAttributeValue<OptionSetValue>(FundingEventAttributes.FundingType)?.Value ?? -1,
-                    StartDate   = fe.GetAttributeValue<DateTime?>(FundingEventAttributes.StartDate) ?? DateTime.MinValue,
-                    EndDate     = fe.GetAttributeValue<DateTime?>(FundingEventAttributes.EndDate)   ?? DateTime.MaxValue,
-                    IsInactive  = (fe.GetAttributeValue<OptionSetValue>("statecode")?.Value ?? 0) != StateCodeValues.Active,
-                };
-            }
-            catch
-            {
-                return null;
-            }
+                FundingType = fe.GetAttributeValue<OptionSetValue>(FundingEventAttributes.FundingType)?.Value ?? -1,
+                StartDate   = fe.GetAttributeValue<DateTime?>(FundingEventAttributes.StartDate) ?? DateTime.MinValue,
+                EndDate     = fe.GetAttributeValue<DateTime?>(FundingEventAttributes.EndDate)   ?? DateTime.MaxValue,
+                IsInactive  = (fe.GetAttributeValue<OptionSetValue>(FundingEventAttributes.StateCode)?.Value
+                               ?? StateCodeValues.Active) != StateCodeValues.Active,
+            };
         }
 
         private static string ResolveName(IOrganizationService service, string entityName, Guid id, string nameAttr)
         {
-            try
-            {
-                var e = service.Retrieve(entityName, id, new ColumnSet(nameAttr));
-                return e.GetAttributeValue<string>(nameAttr);
-            }
-            catch { return null; }
+            // Query, not Retrieve: the PG/SAG lookup may point at a SAG, and a
+            // missing row must fall back to the id in the message rather than fault.
+            var q = new QueryExpression(entityName) { ColumnSet = new ColumnSet(nameAttr), TopCount = 1 };
+            q.Criteria.AddCondition(entityName + "id", ConditionOperator.Equal, id);
+            return service.RetrieveMultiple(q).Entities.FirstOrDefault()?.GetAttributeValue<string>(nameAttr);
         }
 
         // -----------------------------------------------------------------
@@ -461,7 +463,7 @@ namespace Checkbook.Plugins.Validation
             // Boundary points: each range's Start and End+1 (exclusive end).
             var boundaries = new SortedSet<DateTime>();
             boundaries.Add(clipStart.Date);
-            boundaries.Add(clipEnd.Date.AddDays(1));
+            boundaries.Add(NextDay(clipEnd));
             foreach (var kvp in rangesByType)
                 foreach (var r in kvp.Value)
                 {
@@ -469,7 +471,7 @@ namespace Checkbook.Plugins.Validation
                     var s = r.Start < clipStart ? clipStart : r.Start;
                     var e = r.End   > clipEnd   ? clipEnd   : r.End;
                     boundaries.Add(s);
-                    boundaries.Add(e.AddDays(1));
+                    boundaries.Add(NextDay(e));
                 }
 
             var sorted = boundaries.ToList();
@@ -489,6 +491,13 @@ namespace Checkbook.Plugins.Validation
                 segments.Add(seg);
             }
             return segments;
+        }
+
+        /// <summary>Exclusive end boundary; open-ended ranges (no End Date →
+        /// DateTime.MaxValue) would overflow AddDays.</summary>
+        private static DateTime NextDay(DateTime d)
+        {
+            return d.Date >= DateTime.MaxValue.Date ? DateTime.MaxValue.Date : d.Date.AddDays(1);
         }
 
         // -----------------------------------------------------------------
@@ -511,7 +520,7 @@ namespace Checkbook.Plugins.Validation
         private static bool IsInactive(Entity e)
         {
             if (e == null) return false;
-            var sc = e.GetAttributeValue<OptionSetValue>("statecode");
+            var sc = e.GetAttributeValue<OptionSetValue>(CommonAttributes.StateCode);
             return sc != null && sc.Value != StateCodeValues.Active;
         }
 

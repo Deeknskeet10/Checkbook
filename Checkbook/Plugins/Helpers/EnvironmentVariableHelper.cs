@@ -115,6 +115,38 @@ namespace Checkbook.Plugins.Helpers
         }
 
         /// <summary>
+        /// Flips a Boolean env var by creating or updating its value (override)
+        /// record, and returns the new state.
+        /// </summary>
+        public static bool ToggleBool(IOrganizationService service, ITracingService tracing, string schemaName)
+        {
+            var (definitionId, valueRecord, effectiveValue) = GetValueRecord(service, schemaName);
+            var next = !ParseBool(effectiveValue);
+            var nextValue = next ? "true" : "false";
+
+            if (valueRecord == null)
+            {
+                service.Create(new Entity("environmentvariablevalue")
+                {
+                    ["environmentvariabledefinitionid"] =
+                        new EntityReference("environmentvariabledefinition", definitionId),
+                    ["value"] = nextValue,
+                });
+                tracing.Trace($"{schemaName}: created value record → {nextValue}.");
+            }
+            else
+            {
+                service.Update(new Entity("environmentvariablevalue", valueRecord.Id)
+                {
+                    ["value"] = nextValue,
+                });
+                tracing.Trace($"{schemaName}: updated value record → {nextValue}.");
+            }
+
+            return next;
+        }
+
+        /// <summary>
         /// Parses a boolean env-var wire value ("true"/"false", "yes"/"no",
         /// "1"/"0", case-insensitive). Anything else returns the default.
         /// </summary>

@@ -37,6 +37,10 @@ namespace Checkbook.Plugins.StateSwaps
     /// (not value-based) so a re-save that re-drives a stuck approval keeps the
     /// original stamp. SwapDenialPlugin clears the stamps on denial.
     ///
+    /// FY27+ swaps (PF → PF legs) replace steps 3–5 with SwapRules.Validate: both PFs set,
+    /// both usable (active, funded, Prio in NPM Review), per-leg Fund + PG, per-PF
+    /// availability, and itemized detail reductions / increases balanced per Prio.
+    ///
     /// Denial transitions bypass completeness / overdraw checks — a denied
     /// swap can be incomplete.
     ///
@@ -94,7 +98,7 @@ namespace Checkbook.Plugins.StateSwaps
             var swap = service.Retrieve(
                 EntityNames.StateSwap,
                 context.PrimaryEntityId,
-                new ColumnSet(StateSwapAttributes.StateA, StateSwapAttributes.StateB));
+                new ColumnSet(StateSwapAttributes.StateA, StateSwapAttributes.StateB, StateSwapAttributes.FiscalYear));
             var stateA = swap.GetAttributeValue<EntityReference>(StateSwapAttributes.StateA);
             var stateB = swap.GetAttributeValue<EntityReference>(StateSwapAttributes.StateB);
             if (stateA == null || stateB == null)
@@ -122,30 +126,16 @@ namespace Checkbook.Plugins.StateSwaps
                 return;
             }
 
-            // ---- 3. Completeness ----
-            // Every active item must have both Debit and Credit Prio set.
-            // Debit-first drafting is allowed on Save, but not for approval.
-            var incompleteCount = CountItemsMissingCreditPrio(service, context.PrimaryEntityId);
-            if (incompleteCount > 0)
+            if (!SwapRules.IsLegacy(swap))
             {
-                throw new InvalidPluginExecutionException(
-                    $"State Swap has {incompleteCount} item(s) missing a Credit Prioritization. " +
-                    "Every Swap Item must have both a Debit and a Credit Prioritization before approval.");
+                // ---- 3–5 (FY27+). PF → PF legs: completeness, per-PF availability,
+                // leg usability + Fund/PG, itemized detail balance. ----
+                SwapRules.Validate(service, tracing, context.PrimaryEntityId);
             }
-
-            // ---- 4. At least one item + 5. Overdraw ----
-            // One-sided swaps are allowed (a pure transfer with nothing coming
-            // back), so there is no both-sides-contribute check — only "the
-            // swap actually moves something". Recomputed live from Active
-            // items rather than trusting the stored totals/flag in case items
-            // were changed via a path that bypassed SwapRollupPlugin.
-
-            var perDebitPrio = SumActiveItemsByDebitPrio(service, context.PrimaryEntityId);
-            if (perDebitPrio.Count == 0)
-                throw new InvalidPluginExecutionException(
-                    "State Swap has no active Swap Items. Add at least one item before approving.");
-
-            ValidateAggregatedOverdraw(service, tracing, perDebitPrio);
+            else
+            {
+                ValidateLegacyItems(service, tracing, context.PrimaryEntityId);
+            }
 
             // ---- 6. BE approval prerequisites ----
             if (beTx)
@@ -178,6 +168,36 @@ namespace Checkbook.Plugins.StateSwaps
                 StateSwapAttributes.BEApproved,
                 StateSwapAttributes.BEApprovedBy,
                 StateSwapAttributes.BEApprovedOn);
+        }
+
+        /// <summary>FY26 (Prio-level) steps 3–5: completeness, at least one item, overdraw.</summary>
+        private static void ValidateLegacyItems(
+            IOrganizationService service, ITracingService tracing, Guid swapId)
+        {
+            // ---- 3. Completeness ----
+            // Every active item must have both Debit and Credit Prio set.
+            // Debit-first drafting is allowed on Save, but not for approval.
+            var incompleteCount = CountItemsMissingCreditPrio(service, swapId);
+            if (incompleteCount > 0)
+            {
+                throw new InvalidPluginExecutionException(
+                    $"State Swap has {incompleteCount} item(s) missing a Credit Prioritization. " +
+                    "Every Swap Item must have both a Debit and a Credit Prioritization before approval.");
+            }
+
+            // ---- 4. At least one item + 5. Overdraw ----
+            // One-sided swaps are allowed (a pure transfer with nothing coming
+            // back), so there is no both-sides-contribute check — only "the
+            // swap actually moves something". Recomputed live from Active
+            // items rather than trusting the stored totals/flag in case items
+            // were changed via a path that bypassed SwapRollupPlugin.
+
+            var perDebitPrio = SumActiveItemsByDebitPrio(service, swapId);
+            if (perDebitPrio.Count == 0)
+                throw new InvalidPluginExecutionException(
+                    "State Swap has no active Swap Items. Add at least one item before approving.");
+
+            ValidateAggregatedOverdraw(service, tracing, perDebitPrio);
         }
 
         private static void StampApproval(
@@ -231,13 +251,13 @@ namespace Checkbook.Plugins.StateSwaps
 
                 if (!isCheckbookAdmin)
                 {
-                    if (stateATx && !StateScopeHelper.IsUserInStateBU(service, tracing, userId, stateA))
+                    if (stateATx && !StateMembershipHelper.IsUserInStateBU(service, tracing, userId, stateA))
                     {
                         throw new InvalidPluginExecutionException(
                             "You cannot approve the State A side of this Swap — your account " +
                             "does not belong to State A's business unit.");
                     }
-                    if (stateBTx && !StateScopeHelper.IsUserInStateBU(service, tracing, userId, stateB))
+                    if (stateBTx && !StateMembershipHelper.IsUserInStateBU(service, tracing, userId, stateB))
                     {
                         throw new InvalidPluginExecutionException(
                             "You cannot approve the State B side of this Swap — your account " +
@@ -293,14 +313,16 @@ namespace Checkbook.Plugins.StateSwaps
                 </fetch>";
             var rows = service.RetrieveMultiple(new FetchExpression(fetch)).Entities;
             if (rows.Count == 0) return 0;
-            var raw = rows[0].GetAttributeValue<AliasedValue>("n")?.Value;
-            if (raw is int i) return i;
-            return 0;
+            return AliasedValueHelper.GetInt(rows[0], "n");
         }
 
-        private struct DebitBucket { public Guid DebitStateId; public decimal Amount; }
-
-        private static Dictionary<Guid, DebitBucket> SumActiveItemsByDebitPrio(
+        /// <summary>
+        /// Σ active item Amount per debit Prioritization. (Keyed by Prio only —
+        /// the old per-debit-state grouping was a leftover of the retired
+        /// both-sides rule, and it silently dropped items with no debit state
+        /// from the overdraw check.)
+        /// </summary>
+        private static Dictionary<Guid, decimal> SumActiveItemsByDebitPrio(
             IOrganizationService service,
             Guid swapId)
         {
@@ -308,7 +330,6 @@ namespace Checkbook.Plugins.StateSwaps
                 <fetch aggregate='true'>
                     <entity name='{EntityNames.SwapItem}'>
                         <attribute name='{SwapItemAttributes.DebitPrioritization}' alias='debitprio' groupby='true'/>
-                        <attribute name='{SwapItemAttributes.DebitState}' alias='debitstate' groupby='true'/>
                         <attribute name='{SwapItemAttributes.Amount}' alias='total' aggregate='sum'/>
                         <filter type='and'>
                             <condition attribute='{SwapItemAttributes.StateSwap}' operator='eq' value='{swapId}'/>
@@ -317,32 +338,12 @@ namespace Checkbook.Plugins.StateSwaps
                     </entity>
                 </fetch>";
 
-            var rows = service.RetrieveMultiple(new FetchExpression(fetch)).Entities;
-            var result = new Dictionary<Guid, DebitBucket>();
-            foreach (var row in rows)
+            var result = new Dictionary<Guid, decimal>();
+            foreach (var row in service.RetrieveMultiple(new FetchExpression(fetch)).Entities)
             {
-                var prioRef = row.GetAttributeValue<AliasedValue>("debitprio")?.Value as EntityReference;
-                var stateRef = row.GetAttributeValue<AliasedValue>("debitstate")?.Value as EntityReference;
-                var total = NumericHelper.ToDecimal(
-                    row.GetAttributeValue<AliasedValue>("total")?.Value, 0m);
-                if (prioRef == null || stateRef == null) continue;
-
-                if (result.TryGetValue(prioRef.Id, out var existing))
-                {
-                    result[prioRef.Id] = new DebitBucket
-                    {
-                        DebitStateId = existing.DebitStateId,
-                        Amount = existing.Amount + total,
-                    };
-                }
-                else
-                {
-                    result[prioRef.Id] = new DebitBucket
-                    {
-                        DebitStateId = stateRef.Id,
-                        Amount = total,
-                    };
-                }
+                var prioRef = AliasedValueHelper.GetReference(row, "debitprio");
+                if (prioRef == null) continue;
+                result[prioRef.Id] = AliasedValueHelper.GetDecimal(row, "total");
             }
             return result;
         }
@@ -350,12 +351,12 @@ namespace Checkbook.Plugins.StateSwaps
         private static void ValidateAggregatedOverdraw(
             IOrganizationService service,
             ITracingService tracing,
-            Dictionary<Guid, DebitBucket> perDebitPrio)
+            Dictionary<Guid, decimal> perDebitPrio)
         {
             foreach (var pair in perDebitPrio)
             {
                 var prioId = pair.Key;
-                var requested = pair.Value.Amount;
+                var requested = pair.Value;
 
                 var prio = service.Retrieve(
                     EntityNames.Prioritization,

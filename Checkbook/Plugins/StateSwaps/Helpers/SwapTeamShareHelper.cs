@@ -18,12 +18,6 @@ namespace Checkbook.Plugins.StateSwaps.Helpers
     /// </summary>
     public static class SwapTeamShareHelper
     {
-        // Suffixes match what appears in the team name after the abbreviation
-        // and separator. Kept in sync with <see cref="RoleNames"/> but *without*
-        // the "Book - " prefix since teams follow the schema doc's convention.
-        public const string ApproverSuffix = "State Approver";
-        public const string AdministratorSuffix = "State Administrator";
-
         private static readonly AccessRights SwapAccessRights =
             AccessRights.ReadAccess | AccessRights.WriteAccess | AccessRights.AppendToAccess;
 
@@ -43,9 +37,9 @@ namespace Checkbook.Plugins.StateSwaps.Helpers
             var abbr = ResolveStateAbbreviation(service, tracing, stateRef.Id);
             if (string.IsNullOrWhiteSpace(abbr)) return;
 
-            foreach (var suffix in TeamSuffixes())
+            foreach (var suffix in TeamNames.StateTeamSuffixes)
             {
-                var teamRef = FindTeamByName(service, tracing, $"{abbr} - {suffix}");
+                var teamRef = FindTeamByName(service, tracing, TeamNames.StateTeam(abbr, suffix));
                 if (teamRef == null) continue;
 
                 var grant = new GrantAccessRequest
@@ -80,9 +74,9 @@ namespace Checkbook.Plugins.StateSwaps.Helpers
             var abbr = ResolveStateAbbreviation(service, tracing, stateRef.Id);
             if (string.IsNullOrWhiteSpace(abbr)) return;
 
-            foreach (var suffix in TeamSuffixes())
+            foreach (var suffix in TeamNames.StateTeamSuffixes)
             {
-                var teamRef = FindTeamByName(service, tracing, $"{abbr} - {suffix}");
+                var teamRef = FindTeamByName(service, tracing, TeamNames.StateTeam(abbr, suffix));
                 if (teamRef == null) continue;
 
                 var revoke = new RevokeAccessRequest
@@ -140,27 +134,15 @@ namespace Checkbook.Plugins.StateSwaps.Helpers
             }
         }
 
-        private static IEnumerable<string> TeamSuffixes()
-        {
-            yield return ApproverSuffix;
-            yield return AdministratorSuffix;
-        }
-
         private static string ResolveStateAbbreviation(
             IOrganizationService service, ITracingService tracing, Guid stateId)
         {
-            try
-            {
-                var state = service.Retrieve(
-                    EntityNames.State, stateId,
-                    new ColumnSet(StateAttributes.Abbreviation));
-                return state.GetAttributeValue<string>(StateAttributes.Abbreviation);
-            }
-            catch (Exception ex)
-            {
-                tracing.Trace($"SwapTeamShareHelper: could not resolve State {stateId}: {ex.Message}");
-                return null;
-            }
+            // No try/catch: a swallowed fault silently skipped the share (and a
+            // failed call has already doomed the sync transaction anyway).
+            var state = service.Retrieve(
+                EntityNames.State, stateId,
+                new ColumnSet(StateAttributes.Abbreviation));
+            return state.GetAttributeValue<string>(StateAttributes.Abbreviation);
         }
 
         private static EntityReference FindTeamByName(

@@ -40,8 +40,6 @@ namespace Checkbook.Plugins.Realignments.Helpers
     /// </summary>
     public static class RealignmentDistributionCreator
     {
-        private const string HoldingFundCenterEnvVar = "book_DistributionHoldingFundCenter";
-
         public static void CreateDistributions(
             IOrganizationService service,
             ITracingService tracing,
@@ -71,8 +69,8 @@ namespace Checkbook.Plugins.Realignments.Helpers
                     "Fund Center — cannot resolve the state Fund Center for distributions.");
             }
 
-            var holdingFundCenterId = EnvironmentVariableHelper.GetGuid(service, HoldingFundCenterEnvVar);
-            var holdingFcRef = new EntityReference(EntityNames.FundCenter, holdingFundCenterId);
+            var holdingFcRef = DistributionWriter.GetHoldingFundCenter(service);
+            var holdingFundCenterId = holdingFcRef.Id;
             var fcCache = new Dictionary<Guid, FundCenterMeta>();
             var realignmentRef = new EntityReference(EntityNames.Realignments, realignmentId);
             var asOf = DateTime.UtcNow.Date;
@@ -150,20 +148,16 @@ namespace Checkbook.Plugins.Realignments.Helpers
             }
             else
             {
-                var turnInAmount = Math.Round(amount * debitRes.Percentage / 100m, 2);
+                var turnInAmount = DistributionWriter.Size(amount, debitRes.Percentage);
                 if (turnInAmount <= 0m)
                 {
                     tracing.Trace($"  {typeName} Turn-In amount rounds to ≤ 0 (amount={amount:C}, pct={debitRes.Percentage}) — skipping.");
                 }
                 else
                 {
-                    var turnInDebitId = CreateRow(service, realignmentRef, debitFund, debitPg,
-                        debitRes.FundingEvent, turnInAmount, debitStateFc,
-                        DisbursementDirectionValues.Debit, $"Realignment Turn-In {typeName} Debit", null);
-                    CreateRow(service, realignmentRef, debitFund, debitPg,
-                        debitRes.FundingEvent, turnInAmount, holdingFcRef,
-                        DisbursementDirectionValues.Credit, $"Realignment Turn-In {typeName} Credit", turnInDebitId);
-                    created += 2;
+                    created += DistributionWriter.CreatePair(service, DistributionsAttributes.Realignment, realignmentRef,
+                        debitFund, debitPg, debitRes.FundingEvent, turnInAmount, debitStateFc, holdingFcRef,
+                        $"Realignment Turn-In {typeName} Debit", $"Realignment Turn-In {typeName} Credit");
                     tracing.Trace(
                         $"  → {typeName} Turn-In {debitStateFc.Id} → A18: {turnInAmount:C} " +
                         $"(pct={debitRes.Percentage}, Fund={debitFund.Id}, PG={debitPg.Id}, FE={debitRes.FundingEvent.Id}).");
@@ -181,20 +175,16 @@ namespace Checkbook.Plugins.Realignments.Helpers
             }
             else
             {
-                var distAmount = Math.Round(amount * creditRes.Percentage / 100m, 2);
+                var distAmount = DistributionWriter.Size(amount, creditRes.Percentage);
                 if (distAmount <= 0m)
                 {
                     tracing.Trace($"  {typeName} Distribution amount rounds to ≤ 0 (amount={amount:C}, pct={creditRes.Percentage}) — skipping.");
                 }
                 else
                 {
-                    var distDebitId = CreateRow(service, realignmentRef, creditFund, creditPg,
-                        creditRes.FundingEvent, distAmount, holdingFcRef,
-                        DisbursementDirectionValues.Debit, $"Realignment Distribution {typeName} Debit", null);
-                    CreateRow(service, realignmentRef, creditFund, creditPg,
-                        creditRes.FundingEvent, distAmount, creditStateFc,
-                        DisbursementDirectionValues.Credit, $"Realignment Distribution {typeName} Credit", distDebitId);
-                    created += 2;
+                    created += DistributionWriter.CreatePair(service, DistributionsAttributes.Realignment, realignmentRef,
+                        creditFund, creditPg, creditRes.FundingEvent, distAmount, holdingFcRef, creditStateFc,
+                        $"Realignment Distribution {typeName} Debit", $"Realignment Distribution {typeName} Credit");
                     tracing.Trace(
                         $"  → {typeName} Distribution A18 → {creditStateFc.Id}: {distAmount:C} " +
                         $"(pct={creditRes.Percentage}, Fund={creditFund.Id}, PG={creditPg.Id}, FE={creditRes.FundingEvent.Id}).");
@@ -202,34 +192,6 @@ namespace Checkbook.Plugins.Realignments.Helpers
             }
 
             return created;
-        }
-
-        private static Guid CreateRow(
-            IOrganizationService service,
-            EntityReference realignmentRef,
-            EntityReference fund,
-            EntityReference pg,
-            EntityReference fundingEvent,
-            decimal amount,
-            EntityReference fundCenter,
-            int direction,
-            string remarks,
-            Guid? debitedDistributionId)
-        {
-            var row = new Entity(EntityNames.Distributions);
-            row[DistributionsAttributes.Amount]                = amount;
-            row[DistributionsAttributes.Fund]                  = fund;
-            row[DistributionsAttributes.PGSAG]                 = pg;
-            row[DistributionsAttributes.FundCenter]            = fundCenter;
-            row[DistributionsAttributes.FundingEvent]          = fundingEvent;
-            row[DistributionsAttributes.DisbursementDirection] = new OptionSetValue(direction);
-            row[DistributionsAttributes.ManualEntry]           = false;
-            row[DistributionsAttributes.Remarks]               = remarks;
-            row[DistributionsAttributes.Realignment]           = realignmentRef;
-            if (debitedDistributionId.HasValue)
-                row[DistributionsAttributes.DebitedDistribution] =
-                    new EntityReference(EntityNames.Distributions, debitedDistributionId.Value);
-            return service.Create(row);
         }
     }
 }

@@ -87,7 +87,7 @@ namespace Checkbook.Plugins.Validation
             bool fundedChanged = target.Contains(RequirementFundingAttributes.FundedAmount);
 
             // Determine if this RF has children
-            bool hasChildren = RequirementFundingHelpers.HasActiveChildren(service, context.PrimaryEntityId);
+            bool hasChildren = RequirementFundingHelper.HasActiveChildren(service, context.PrimaryEntityId);
             tracingService.Trace($"RF Has Children: {hasChildren}");
 
             /* 

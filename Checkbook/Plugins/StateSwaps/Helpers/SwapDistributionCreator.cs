@@ -33,7 +33,6 @@ namespace Checkbook.Plugins.StateSwaps.Helpers
     /// </summary>
     public static class SwapDistributionCreator
     {
-        private const string HoldingFundCenterEnvVar = "book_DistributionHoldingFundCenter";
 
         public static void CreateDistributions(
             IOrganizationService service,
@@ -43,8 +42,8 @@ namespace Checkbook.Plugins.StateSwaps.Helpers
         {
             tracing.Trace("SwapDistributionCreator: creating AFP/Allotment distributions...");
 
-            var holdingFundCenterId = EnvironmentVariableHelper.GetGuid(service, HoldingFundCenterEnvVar);
-            var holdingFcRef = new EntityReference(EntityNames.FundCenter, holdingFundCenterId);
+            var holdingFcRef = DistributionWriter.GetHoldingFundCenter(service);
+            var holdingFundCenterId = holdingFcRef.Id;
             var fcCache = new Dictionary<Guid, FundCenterMeta>();
             var swapRef = new EntityReference(EntityNames.StateSwap, swapId);
             var asOf = DateTime.UtcNow.Date;
@@ -143,7 +142,7 @@ namespace Checkbook.Plugins.StateSwaps.Helpers
                 return 0;
             }
 
-            var amount = Math.Round(flow.Amount * resolution.Percentage / 100m, 2);
+            var amount = DistributionWriter.Size(flow.Amount, resolution.Percentage);
             if (amount <= 0m)
             {
                 tracing.Trace($"  {typeName} amount rounds to ≤ 0 (TDP={flow.Amount:C}, pct={resolution.Percentage}) — skipping.");
@@ -151,53 +150,20 @@ namespace Checkbook.Plugins.StateSwaps.Helpers
             }
 
             // Pair 1 — the giving state's "turn-in" to A18.
-            var turnInDebitId = CreateRow(service, flow, swapRef, resolution.FundingEvent, amount,
-                flow.GivingFc, DisbursementDirectionValues.Debit,
-                $"State Swap Turn-In {typeName} Debit", null);
-            CreateRow(service, flow, swapRef, resolution.FundingEvent, amount,
-                holdingFcRef, DisbursementDirectionValues.Credit,
-                $"State Swap Turn-In {typeName} Credit", turnInDebitId);
+            DistributionWriter.CreatePair(service, DistributionsAttributes.StateSwap, swapRef,
+                flow.Fund, flow.PG, resolution.FundingEvent, amount, flow.GivingFc, holdingFcRef,
+                $"State Swap Turn-In {typeName} Debit", $"State Swap Turn-In {typeName} Credit");
 
             // Pair 2 — A18's distribution out to the receiving state.
-            var distDebitId = CreateRow(service, flow, swapRef, resolution.FundingEvent, amount,
-                holdingFcRef, DisbursementDirectionValues.Debit,
-                $"State Swap Distribution {typeName} Debit", null);
-            CreateRow(service, flow, swapRef, resolution.FundingEvent, amount,
-                flow.ReceivingFc, DisbursementDirectionValues.Credit,
-                $"State Swap Distribution {typeName} Credit", distDebitId);
+            DistributionWriter.CreatePair(service, DistributionsAttributes.StateSwap, swapRef,
+                flow.Fund, flow.PG, resolution.FundingEvent, amount, holdingFcRef, flow.ReceivingFc,
+                $"State Swap Distribution {typeName} Debit", $"State Swap Distribution {typeName} Credit");
 
             tracing.Trace(
                 $"  → {typeName} {flow.GivingFc.Id} → A18 → {flow.ReceivingFc.Id}: " +
                 $"{amount:C} (TDP={flow.Amount:C}, pct={resolution.Percentage}, " +
                 $"Fund={flow.Fund.Id}, PG={flow.PG.Id}, FE={resolution.FundingEvent.Id}).");
             return 4;
-        }
-
-        private static Guid CreateRow(
-            IOrganizationService service,
-            SwapFlow flow,
-            EntityReference swapRef,
-            EntityReference fundingEvent,
-            decimal amount,
-            EntityReference fundCenter,
-            int direction,
-            string remarks,
-            Guid? debitedDistributionId)
-        {
-            var row = new Entity(EntityNames.Distributions);
-            row[DistributionsAttributes.Amount]                = amount;
-            row[DistributionsAttributes.Fund]                  = flow.Fund;
-            row[DistributionsAttributes.PGSAG]                 = flow.PG;
-            row[DistributionsAttributes.FundCenter]            = fundCenter;
-            row[DistributionsAttributes.FundingEvent]          = fundingEvent;
-            row[DistributionsAttributes.DisbursementDirection] = new OptionSetValue(direction);
-            row[DistributionsAttributes.ManualEntry]           = false;
-            row[DistributionsAttributes.Remarks]               = remarks;
-            row[DistributionsAttributes.StateSwap]             = swapRef;
-            if (debitedDistributionId.HasValue)
-                row[DistributionsAttributes.DebitedDistribution] =
-                    new EntityReference(EntityNames.Distributions, debitedDistributionId.Value);
-            return service.Create(row);
         }
     }
 }

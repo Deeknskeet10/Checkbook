@@ -24,6 +24,25 @@ and the changes landed since the last merge (`d75d195`).
 
 ---
 
+## 🗳️ Ticket board (branch `ticket-board`, 2026-10-25)
+
+Tables, roles and views are already in the environment. Full spec in
+[`Tickets/REGISTRATION.md`](Tickets/REGISTRATION.md).
+
+1. **Assembly** — push `Checkbook_Plugins.dll`; confirm the new type
+   `Checkbook.Plugins.Tickets.CastVotePlugin` is listed.
+2. **Custom API** — create `book_CastVote` (Global action, Plugin Type =
+   `CastVotePlugin`; in `TicketId` String + `Direction` Integer; out
+   `NewScore` + `UserVote` Integer). No step registration.
+3. **PCF** — import `dist/ARNGCheckbookExtensions.zip` (adds
+   `TicketVotingGrid`), publish.
+4. **Portal** — score-sorted **Ticket Board** view with `TicketVotingGrid`
+   bound; add Tickets to the app sitemap.
+5. **Smoke test** — section 5 of the Tickets doc (two users, toggle/flip,
+   submitter-only edit).
+
+---
+
 ## 📥 Bulk-upload LOA TDP fix (branch `bulk-upload-depth-guard`, 2026-10-23)
 
 Imported Decisions / Funding Tracks (Import from Excel/CSV, Depth 2) now roll
@@ -45,6 +64,54 @@ up to LOA TDP. Validated in Blipsnchitz (import, `ExecuteMultiple`, `$batch`,
    fix LOAs left stale by past imports. FTs whose grain was changed while the
    synchronizer was broken may still sit on their old LOA (compare the FT's
    grain to its LOA name); re-save a grain field to re-link them.
+
+---
+
+## 🧹 Plugin review cleanup (branch `plugin-review-cleanup`, 2026-10-16)
+
+Code-only refactor + bug fixes. **No registered plugin class was renamed,
+moved or removed**, so every existing step keeps resolving after the DLL is
+pushed. (Helpers were merged/renamed, but helpers are not plugin types.)
+
+1. **Assembly** — re-register / push `Checkbook_Plugins.dll` (section **D**).
+2. **Env var** — confirm `book_DistributionHoldingFundCenter` holds the A18
+   (root) Fund Center. Turn-In Distributions now credit THAT FC (they used to
+   pick "the one FC with no parent"); every pipeline + the reconcile now agree.
+3. **Modify steps** (PRT):
+   - `PrioritizationFundingGuard` — Update on `book_prioritizationfunding`:
+     add **`statecode`** to the filtering attributes **and** the `PreImage`.
+   - `RequirementDetailFundingGuard` — Update on `book_requirementdetailfunding`:
+     add **`statecode`** to the filtering attributes **and** the `PreImage`.
+   - Without these, a reactivated junction still skips the TDP-cap / uniqueness
+     check (the code handles it; the step just never fires on `statecode`).
+4. **Ranks** (PRT) — Dataverse runs **lower** ranks first. The funded-amount
+   locks sit at rank 10 and are meant to run *before* the validators, so set:
+   - `PrioritizationFundingValidator` (Update, `book_prioritization`) → **20**
+   - `PrioritizationFundingGuard` (Update, `book_prioritizationfunding`) → **20**
+   - `RequirementFundingTDPValidator` (Update, `book_requirementfunding`) → **20**
+   - `RequirementDetailFundingGuard` (Update, `book_requirementdetailfunding`) → **20**
+   Check the current ranks first; anything still at the default **1** runs
+   before the lock today (users see a cap error instead of the lock message).
+5. **Smoke test** (sandbox, before prod):
+   - FY27 Turn-In on a Fund/PG where ARNG has LOAs in two Categories → credit
+     lands on the matching-Category LOA (was "Multiple ARNG LOAs").
+   - Cross-Fund Realignment, then **Generate Distributions** → its A18
+     round-trip rows survive (Phase 4 used to deactivate them).
+   - Move a Prio Funding junction to another RF over that RF's TDP → blocked.
+   - Re-save an already-approved, still-active Realignment as a non-approver →
+     blocked by RealignmentValidator.
+   - Itemized FY26 Prio: edit an Itemized Detail's funded → parent RF Funded
+     updates.
+   - Spend Plan lock on + Excel import / bulk edit of `book_spendplan` → blocked.
+
+> ⚠️ The sections below were last reconciled in **Aug 2026** (`794cac1`). The
+> Sep–Oct FY27 work (Turn-In items: `TurnInItemAmountCalculator`,
+> `TurnInItemRollup`, `TurnInLineLock`; Realignment items:
+> `RealignmentItemDerivedFields`, `RealignmentRollup`; Spend Plan
+> immutability / edit-lock guards + `ToggleSpendPlanLockPlugin`;
+> `RequirementBreakoutConsistencyGuard`; `PrioritizationSingleRfAutoAllocate`;
+> `LOATDPReconciler`) is **not** tracked here — verify each against
+> [`PLUGIN-REGISTRATION.md`](PLUGIN-REGISTRATION.md) in PRT.
 
 ---
 

@@ -145,8 +145,8 @@ This **replaces** today's `ExecutePriorToPrior` raw-funded manipulation: because
 (or RDF) junction amounts, the Prio/RF funded totals are the sum of the junctions. The
 junction rollups (`PrioritizationFundingRollup`, `RequirementDetailFundingRollup`) self-guard on
 `Depth > 1` and the processor's writes land deeper, so the processor **recalculates explicitly**
-(`PrioritizationRollupHelper.RecalculateRFFunded`, `…RecalculatePrioritizationFunded`,
-`RequirementDetailFundingRollupHelper.RecalculateRequirementDetail`) — same pattern the legacy
+(`FundingRollupHelper.RecalculateRFFunded`, `…RecalculatePrioritizationFunded`,
+`FundingRollupHelper.RecalculateRequirementDetail`) — same pattern the legacy
 processor already used for the RF leg. The conservation guards (abort, don't clamp, when the debit
 source is short) carry over per item.
 

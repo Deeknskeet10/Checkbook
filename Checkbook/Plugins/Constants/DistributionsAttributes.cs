@@ -24,5 +24,14 @@ namespace Checkbook.Plugins.Constants
         public const string Realignment = "book_realignment";
         public const string EnteredIntoGFEBS = "book_newenteredintogfebs";
         public const string StateCode = "statecode";
+
+        /// <summary>
+        /// Lookups that tie a row to the approval pipeline that wrote it (Turn-In,
+        /// State Swap, Realignment). A row carrying ANY of them is pipeline-owned and
+        /// immutable to the GenerateDistributions reconcile — both the bucket
+        /// processor and Phase 4 cleanup must check every entry. Add new pipelines here.
+        /// </summary>
+        public static readonly System.Collections.Generic.IReadOnlyList<string> PipelineParentLinks =
+            new[] { TurnIn, StateSwap, Realignment };
     }
 }

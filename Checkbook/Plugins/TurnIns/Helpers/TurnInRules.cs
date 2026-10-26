@@ -9,15 +9,26 @@ using Checkbook.Plugins.Helpers;
 namespace Checkbook.Plugins.TurnIns.Helpers
 {
     /// <summary>
-    /// FY27+ availability and balance rules for an item-based Turn-In, run by TurnInValidator
-    /// at approval in place of the FY26 per-Prio / per-RF availability check.
-    /// See docs/TurnIn-FY27-Redesign.md. The same rules the FY27 realignment applies
-    /// (RealignmentValidator.EnforceItemizedDebitBalance / EnforceRdfDebitBalance), keyed on
-    /// the Turn-In's own child tables.
+    /// Availability and balance rules for an item-based (FY27+) Turn-In, run by
+    /// TurnInValidator at approval in place of the legacy per-Prio / per-RF availability
+    /// check. See docs/TurnIn-FY27-Redesign.md. The same rules the item-based realignment
+    /// applies (RealignmentValidator.EnforceItemizedDebitBalance / EnforceRdfDebitBalance),
+    /// keyed on the Turn-In's own child tables.
     /// </summary>
-    public static class TurnInFy27Rules
+    public static class TurnInRules
     {
         private const decimal Epsilon = 0.005m;
+
+        /// <summary>
+        /// True when the Turn-In's Fiscal Year (book_fiscalyear, goal_fiscalyear picklist)
+        /// is legacy (FY26 and earlier) — or missing. Legacy Turn-Ins take the
+        /// header-based path (<see cref="TurnInExecutorLegacy"/>).
+        /// </summary>
+        public static bool IsLegacy(Entity turnIn)
+        {
+            return FiscalYearHelper.IsLegacyFiscalYear(
+                turnIn.GetAttributeValue<OptionSetValue>(TurninAttributes.FiscalYear)?.Value);
+        }
 
         public static void Validate(
             IOrganizationService service, ITracingService tracing, Guid turnInId, List<TurnInItemRecord> items)
@@ -90,7 +101,7 @@ namespace Checkbook.Plugins.TurnIns.Helpers
                 var pf = service.Retrieve(EntityNames.PrioritizationFunding, g.Key,
                     new ColumnSet(PrioritizationFundingAttributes.FundedAmount, PrioritizationFundingAttributes.Name));
                 decimal funded = pf.GetAttributeValue<decimal?>(PrioritizationFundingAttributes.FundedAmount) ?? 0m;
-                tracing.Trace($"TurnInFy27Rules: PF {g.Key} funded={funded:N2}, taking={requested:N2}.");
+                tracing.Trace($"TurnInRules: PF {g.Key} funded={funded:N2}, taking={requested:N2}.");
                 if (requested > funded + Epsilon)
                     throw new InvalidPluginExecutionException(
                         $"The Turn-In takes {requested:N2} from Prioritization Funding " +
@@ -158,7 +169,7 @@ namespace Checkbook.Plugins.TurnIns.Helpers
             {
                 decimal required = pulledByPrio[prioId];
                 decimal got = reducedByPrio.TryGetValue(prioId, out var g) ? g : 0m;
-                tracing.Trace($"TurnInFy27Rules: itemized Prio {prioId} required={required:N2}, reduced={got:N2}.");
+                tracing.Trace($"TurnInRules: itemized Prio {prioId} required={required:N2}, reduced={got:N2}.");
                 if (Math.Abs(got - required) >= Epsilon)
                     throw new InvalidPluginExecutionException(
                         $"This Turn-In takes {required:N2} from an itemized Prioritization. Before it can be approved, " +
@@ -223,8 +234,8 @@ namespace Checkbook.Plugins.TurnIns.Helpers
                 decimal funded = rf.GetAttributeValue<decimal?>(RequirementFundingAttributes.FundedAmount) ?? 0m;
 
                 bool prioFunded =
-                    PrioritizationFundingRollupHelper.SumForRequirementFunding(service, kv.Key).funded > 0m ||
-                    RequirementFundingHelpers.HasActiveChildren(service, kv.Key);
+                    FundingRollupHelper.SumPrioritizationFundingForRF(service, kv.Key).funded > 0m ||
+                    RequirementFundingHelper.HasActiveChildren(service, kv.Key);
                 if (prioFunded && kv.Value > withholding + Epsilon)
                     throw new InvalidPluginExecutionException(
                         $"{name} is funded through Prioritizations, so an RF-level Turn-In can take at most its " +
@@ -235,11 +246,11 @@ namespace Checkbook.Plugins.TurnIns.Helpers
                         $"The Turn-In takes {kv.Value:N2} from {name}, which holds only {withholding + funded:N2} " +
                         $"(Withholding {withholding:N2} + Funded {funded:N2}).");
 
-                bool hasRdf = RequirementDetailFundingRollupHelper.SumForRequirementFunding(service, kv.Key).funded > 0m;
+                bool hasRdf = FundingRollupHelper.SumRequirementDetailFundingForRF(service, kv.Key).funded > 0m;
                 decimal required = hasRdf ? Math.Max(0m, kv.Value - withholding) : 0m;
                 decimal got = reduced.TryGetValue(kv.Key, out var g) ? g : 0m;
                 tracing.Trace(
-                    $"TurnInFy27Rules: RF {kv.Key} taken={kv.Value:N2}, withholding={withholding:N2}, " +
+                    $"TurnInRules: RF {kv.Key} taken={kv.Value:N2}, withholding={withholding:N2}, " +
                     $"required RDF reduction={required:N2}, reduced={got:N2}.");
 
                 if (Math.Abs(got - required) >= Epsilon)

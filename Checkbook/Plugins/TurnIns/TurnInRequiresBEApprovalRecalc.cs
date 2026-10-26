@@ -4,6 +4,7 @@ using Microsoft.Xrm.Sdk;
 using Microsoft.Xrm.Sdk.Query;
 using Checkbook.Plugins.Base;
 using Checkbook.Plugins.Constants;
+using Checkbook.Plugins.Helpers;
 
 namespace Checkbook.Plugins.TurnIns
 {
@@ -107,8 +108,8 @@ namespace Checkbook.Plugins.TurnIns
             var rows = service.RetrieveMultiple(new FetchExpression(fetch)).Entities;
             if (rows.Count > 0)
             {
-                total = (int)(rows[0].GetAttributeValue<AliasedValue>("total")?.Value ?? 0);
-                withPrio = (int)(rows[0].GetAttributeValue<AliasedValue>("withPrio")?.Value ?? 0);
+                total = AliasedValueHelper.GetInt(rows[0], "total");
+                withPrio = AliasedValueHelper.GetInt(rows[0], "withPrio");
             }
 
             // BE Approval only for item-bearing Turn-Ins that carry an RF-only item

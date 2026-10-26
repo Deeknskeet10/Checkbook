@@ -12,7 +12,7 @@ namespace Checkbook.Plugins.Recalculations
     /// is created, updated (on funded/validated/parent-RF), or deleted.
     ///
     /// The actual aggregate fetch + update lives in
-    /// PrioritizationRollupHelper.RecalculateRFFunded. This plugin is
+    /// FundingRollupHelper.RecalculateRFFunded. This plugin is
     /// intentionally a thin shell that determines which parent RF needs the
     /// recalc and delegates. Depth-1 actors (e.g. RealignmentProcessor) that
     /// need the rollup result after their own nested Prioritization updates
@@ -43,6 +43,11 @@ namespace Checkbook.Plugins.Recalculations
             if (context.MessageName == "Delete")
             {
                 preImage = TryGetPreImage(context);
+                if (preImage == null)
+                {
+                    tracing.Trace("Delete without a pre-image — cannot resolve the parent RF.");
+                    return;
+                }
                 target = preImage;
             }
             else
@@ -53,9 +58,18 @@ namespace Checkbook.Plugins.Recalculations
                     preImage = TryGetPreImage(context);
             }
 
-            var parentRF = target.GetAttributeValue<EntityReference>(
-                PrioritizationAttributes.RequirementFunding
-            ) ?? preImage?.GetAttributeValue<EntityReference>(PrioritizationAttributes.RequirementFunding);
+            var parentRF = GetEffectiveEntityReference(
+                target, preImage, PrioritizationAttributes.RequirementFunding);
+
+            // Re-parented Prio: the old RF loses this Prio's funded amount and
+            // must be recalculated too, or it stays overstated.
+            var previousRF = preImage?.GetAttributeValue<EntityReference>(
+                PrioritizationAttributes.RequirementFunding);
+            if (previousRF != null && (parentRF == null || previousRF.Id != parentRF.Id))
+            {
+                tracing.Trace($"Prio moved off RF {previousRF.Id}; recalculating it.");
+                FundingRollupHelper.RecalculateRFFunded(service, previousRF.Id, tracing);
+            }
 
             // Defensive fallback: if neither Target nor PreImage carried the RF
             // (e.g. PreImage registration dropped), retrieve it from the row.
@@ -79,7 +93,7 @@ namespace Checkbook.Plugins.Recalculations
 
             tracing.Trace($"Rolling up Prioritizations for RF {parentRF.Id}");
 
-            PrioritizationRollupHelper.RecalculateRFFunded(service, parentRF.Id, tracing);
+            FundingRollupHelper.RecalculateRFFunded(service, parentRF.Id, tracing);
 
             tracing.Trace("Requirement Funding roll-up updated successfully.");
         }

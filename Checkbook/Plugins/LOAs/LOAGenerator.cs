@@ -28,7 +28,8 @@ namespace Checkbook.Plugins.LOAs
     /// Input parameters:
     ///   <c>FiscalYear</c> (int, optional) — Fund FY option-set value to limit the scope.
     ///                                       Pass 0 or omit to process all FYs.
-    ///   <c>BatchSize</c>  (int, optional) — Max number of FTs to attempt this invocation.
+    ///   <c>BatchSize</c>  (int, optional) — Max number of FTs to link this invocation
+    ///                     (skipped / failed FTs do not count toward it).
     ///                                       Pass 0 or omit for "process all in scope" (legacy).
     ///                                       Use to stay under the 2-minute sync sandbox limit
     ///                                       on large datasets; caller loops until Remaining=0.
@@ -84,7 +85,10 @@ namespace Checkbook.Plugins.LOAs
 
             foreach (var ft in QueryUnlinkedFundingTracks(service, fiscalYearFilter))
             {
-                if (batchSize > 0 && attempted >= batchSize)
+                // The cap counts only FTs that got linked. Skipped/failed FTs stay
+                // unlinked and come back first on the next run, so counting them
+                // would let BatchSize-many bad rows block all progress forever.
+                if (batchSize > 0 && created + linked >= batchSize)
                 {
                     tracing.Trace($"Reached BatchSize cap ({batchSize}); stopping this invocation.");
                     break;
@@ -189,9 +193,7 @@ namespace Checkbook.Plugins.LOAs
             var result = service.RetrieveMultiple(new FetchExpression(fetch));
             if (result.Entities.Count == 0) return 0;
 
-            var aliased = result.Entities[0].GetAttributeValue<AliasedValue>("cnt");
-            if (aliased?.Value is int i) return i;
-            return 0;
+            return AliasedValueHelper.GetInt(result.Entities[0], "cnt");
         }
 
         /// <summary>

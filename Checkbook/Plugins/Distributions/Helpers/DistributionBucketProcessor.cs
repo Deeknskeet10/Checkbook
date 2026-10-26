@@ -280,7 +280,7 @@ namespace Checkbook.Plugins.Distributions.Helpers
                 debit[DistributionsAttributes.DisbursementDirection] = new OptionSetValue(DisbursementDirectionValues.Debit);
                 debit[DistributionsAttributes.FundingEvent]          = fundingEventRef;
                 debit[DistributionsAttributes.ManualEntry]           = false;
-                if (holdingOwningBu != null) debit["owningbusinessunit"] = holdingOwningBu;
+                if (holdingOwningBu != null) debit[CommonAttributes.OwningBusinessUnit] = holdingOwningBu;
                 debitId = service.Create(debit);
                 result.DistributionsCreated++;
                 tracing.Trace($"  → Created consolidated Debit {debitId} at holding FC for {totalDebit:C}.");
@@ -304,7 +304,7 @@ namespace Checkbook.Plugins.Distributions.Helpers
                 credit[DistributionsAttributes.FundingEvent]          = fundingEventRef;
                 credit[DistributionsAttributes.DebitedDistribution]   = debitRef;
                 credit[DistributionsAttributes.ManualEntry]           = false;
-                if (s.bucket.OwningBusinessUnit != null) credit["owningbusinessunit"] = s.bucket.OwningBusinessUnit;
+                if (s.bucket.OwningBusinessUnit != null) credit[CommonAttributes.OwningBusinessUnit] = s.bucket.OwningBusinessUnit;
                 // Synchronous — references the debit created above (see note).
                 var creditId = service.Create(credit);
                 result.DistributionsCreated++;
@@ -423,9 +423,7 @@ namespace Checkbook.Plugins.Distributions.Helpers
                 var amendable =
                     !IsEntered(row)
                     && !(row.GetAttributeValue<bool?>(DistributionsAttributes.ManualEntry) ?? false)
-                    && row.GetAttributeValue<EntityReference>(DistributionsAttributes.TurnIn) == null
-                    && row.GetAttributeValue<EntityReference>(DistributionsAttributes.StateSwap) == null
-                    && row.GetAttributeValue<EntityReference>(DistributionsAttributes.Realignment) == null
+                    && DistributionsAttributes.PipelineParentLinks.All(a => row.GetAttributeValue<EntityReference>(a) == null)
                     && !(direction == DisbursementDirectionValues.Credit
                          && debitedRef != null && enteredDebitIds.Contains(debitedRef.Id))
                     // A pending sweep debit only ever lives at the holding FC;
@@ -637,7 +635,7 @@ namespace Checkbook.Plugins.Distributions.Helpers
             turnIn[TurninAttributes.Origin]     = new OptionSetValue(TurnInOriginValues.Sweep);
             turnIn[TurninAttributes.AFPAmount]       = fundingType == FundingTypeValues.AFP       ? amount : 0m;
             turnIn[TurninAttributes.AllotmentAmount] = fundingType == FundingTypeValues.Allotment ? amount : 0m;
-            if (owningBu != null) turnIn["owningbusinessunit"] = owningBu;
+            if (owningBu != null) turnIn[CommonAttributes.OwningBusinessUnit] = owningBu;
 
             batch.Create(turnIn);
             var typeName = fundingType == FundingTypeValues.AFP ? "AFP" : "Allotment";
