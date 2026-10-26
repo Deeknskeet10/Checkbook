@@ -1,7 +1,9 @@
 # Gov Dev Cutover — FY27 Realignment / Turn-In / State Swap + Ticket Board
 
-Status: **ready to run** · Built 2026-10-25 from the Blipsnchitz sandbox ·
-Target: a gov environment at the **prod baseline** (ARNGCheckbook 1.11.0.119).
+Status: **ready to run** · Cutover solution **v1.0.0.1**, rebuilt 2026-10-26 from
+`main` @ `a1db5f0` (plugin DLL built from a clean checkout of that commit) via the
+Blipsnchitz sandbox · Target: a gov environment at the **prod baseline**
+(ARNGCheckbook 1.11.0.119).
 
 Brings gov up to the four branches **plugin-review-cleanup → stateswap-fy27 →
 ticket-board → bulk-upload-depth-guard** (merged in that order). Everything a
