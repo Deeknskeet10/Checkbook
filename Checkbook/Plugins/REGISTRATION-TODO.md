@@ -5,6 +5,12 @@ the Dataverse environment (Plugin Registration Tool + maker portal) to catch the
 environment up to `main`. Derived from [`PLUGIN-REGISTRATION.md`](PLUGIN-REGISTRATION.md)
 and the changes landed since the last merge (`d75d195`).
 
+> 🚀 **Gov at the prod baseline (1.11.0.119)?** Use
+> [`../dist/GOV-CUTOVER-FY27.md`](../dist/GOV-CUTOVER-FY27.md) instead of working
+> through this list by hand. Its `ARNGCheckbookFY27Cutover.zip` ships the
+> assembly **and all plugin steps** plus the FY27 schema/forms; the runbook covers
+> the remaining manual work (stale steps, roles, flows, env vars).
+
 > ✅ **Update (2026-08-02).** The **FY27 Spend Plan** and **Fund-Center-lock**
 > work formerly tagged *[PENDING – other session]* landed as commit `794cac1`
 > — schema, filters, and pre-images below are now final (source of truth:
