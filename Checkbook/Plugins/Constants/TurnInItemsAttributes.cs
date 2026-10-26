@@ -40,7 +40,7 @@ namespace Checkbook.Plugins.Constants
     /// reduced (Funded and Requested) by the amount. For each Itemized Prio, Σ reductions
     /// must equal Σ the Turn-In Item amounts on its PF junctions, so Σ details ≡ Σ PF ≡
     /// Prio total holds after approval. Validated by TurnInValidator, applied by
-    /// TurnInFy27Processor.
+    /// TurnInExecutor.
     /// </summary>
     public static class TurnInDetailReductionAttributes
     {

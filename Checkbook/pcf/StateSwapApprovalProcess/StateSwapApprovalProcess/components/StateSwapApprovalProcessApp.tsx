@@ -293,6 +293,14 @@ export const StateSwapApprovalProcessApp: React.FC<StateSwapApprovalProcessProps
     void loadRoles();
   }, [reload, loadRoles]);
 
+  // The SwapBuilder (a separate control on the form) fires this after saving legs, so
+  // readiness (book_isbalanced, set by SwapRollupPlugin) is re-read without a refresh.
+  React.useEffect(() => {
+    const onSaved = (): void => void reload();
+    window.addEventListener("book:swap-items-saved", onSaved);
+    return () => window.removeEventListener("book:swap-items-saved", onSaved);
+  }, [reload]);
+
   const isCheckbookAdmin = React.useMemo(
     () => userRoles.has("Book - Checkbook Administrator"),
     [userRoles]

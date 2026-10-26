@@ -153,7 +153,7 @@ namespace Checkbook.Plugins.Realignments
                 throw new InvalidPluginExecutionException("Credited Requirement Funding is required for an RF→RF realignment.");
 
             // Does the debited RF have child Prioritizations?
-            bool hasChildren = RequirementFundingHelpers.HasActiveChildren(service, debitedReqRef.Id);
+            bool hasChildren = RequirementFundingHelper.HasActiveChildren(service, debitedReqRef.Id);
             tracing.Trace($"RF→RF: Debited RF {debitedReqRef.Id} has children? {hasChildren}");
 
             // Retrieve FundedAmount + Withholding

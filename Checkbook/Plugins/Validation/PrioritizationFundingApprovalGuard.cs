@@ -24,7 +24,7 @@ namespace Checkbook.Plugins.Validation
     ///      pull-back arrives via bulk edit / Web API / any path that skips it.
     ///
     /// Why funded ⟹ status 4 matters: RF.FundedAmount rolls up only
-    /// FinalApproved (status 4) child Prios (PrioritizationRollupHelper), while
+    /// FinalApproved (status 4) child Prios (FundingRollupHelper), while
     /// RF.TDP is not approval-filtered. A Prio holding funding below status 4 is
     /// therefore invisible to the roll-up and surfaces as a phantom TDP−Funded
     /// gap on the parent RF (see the realignment-rollup-approval-filter-gap
@@ -32,13 +32,13 @@ namespace Checkbook.Plugins.Validation
     ///
     /// FY27 note: when funding lives on book_prioritizationfunding junction rows,
     /// zeroing the rolled-up field alone is not sufficient — the next junction
-    /// roll-up would restore it. FY27 pull-backs must also clear the junction
-    /// rows, and the junction-side funding gate belongs in
-    /// PrioritizationFundingGuard. This guard remains the universal backstop.
+    /// roll-up would restore it, so PrioritizationPullbackFundingCleanup (post-op)
+    /// deactivates the junction rows and PrioritizationFundingGuard gates junction
+    /// increases. This guard remains the universal backstop.
     ///
     /// Registration intent (Plugin Registration Tool — no manifest in repo):
-    ///   • Message: Create | Entity: book_prioritization | Pre-Operation (20) | Sync
-    ///   • Message: Update | Entity: book_prioritization | Pre-Operation (20) | Sync
+    ///   • Message: Create | Entity: book_prioritization | Pre-Operation (rank 1) | Sync
+    ///   • Message: Update | Entity: book_prioritization | Pre-Operation (rank 15) | Sync
     ///       Filtering attributes: book_newfundedamounttdp, book_approvalstatus
     ///       Pre-Image "PreImage": book_newfundedamounttdp, book_approvalstatus
     /// </summary>

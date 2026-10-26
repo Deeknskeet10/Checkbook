@@ -93,7 +93,7 @@ namespace Checkbook.Plugins.Recalculations
                     PrioritizationAttributes.FiscalYear,
                     PrioritizationAttributes.FundedAmountTDP,
                     PrioritizationAttributes.ValidatedAmount,
-                    "owningbusinessunit"));
+                    CommonAttributes.OwningBusinessUnit));
 
             // ---- Gate 1: only a Prio that is HOLDING funding (NPM Review) ----
             // Below status 4 the funding guards block the write anyway, and the
@@ -114,7 +114,7 @@ namespace Checkbook.Plugins.Recalculations
             // FY26/FY27 discriminator: the RF roll-up UNIONs the direct-lookup
             // path (prioFunded) with the junction path (pfFunded) on the
             // assumption they are mutually exclusive per RF
-            // (PrioritizationRollupHelper.BuildRFFundedUpdate). If we materialize
+            // (FundingRollupHelper.BuildRFFundedUpdate). If we materialize
             // a junction for a Prio that ALSO carries book_requirementfunding, the
             // Prio lands in BOTH sums and the RF double-counts it — exactly the
             // Funded > TDP failure this guard exists to prevent. Keying off the
@@ -186,9 +186,9 @@ namespace Checkbook.Plugins.Recalculations
                 // business units" (modernized BUs) so owningbusinessunit is settable
                 // independently of the (NPM) owner; states then read their own via
                 // Business-Unit-depth read without an org-wide leak.
-                var prioBu = prio.GetAttributeValue<EntityReference>("owningbusinessunit");
+                var prioBu = prio.GetAttributeValue<EntityReference>(CommonAttributes.OwningBusinessUnit);
                 if (prioBu != null)
-                    create["owningbusinessunit"] = prioBu;
+                    create[CommonAttributes.OwningBusinessUnit] = prioBu;
 
                 service.Create(create);
 
@@ -228,7 +228,7 @@ namespace Checkbook.Plugins.Recalculations
         private static void RecalcRf(IOrganizationService service, ITracingService tracing, Guid rfId)
         {
             tracing.Trace($"Recalculating RF {rfId} from the junction split.");
-            PrioritizationRollupHelper.RecalculateRFFunded(service, rfId, tracing);
+            FundingRollupHelper.RecalculateRFFunded(service, rfId, tracing);
         }
 
         /// <summary>Active RF ids on a Requirement for a given Fiscal Year.</summary>

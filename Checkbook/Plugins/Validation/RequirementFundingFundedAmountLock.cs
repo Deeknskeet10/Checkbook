@@ -15,7 +15,7 @@ namespace Checkbook.Plugins.Validation
     /// so TDP can drop only as far as the available Withholding allows.
     ///
     /// Beyond the four funding tools, Funded Amount is legitimately recomputed
-    /// by the roll-ups that call <c>PrioritizationRollupHelper.RecalculateRFFunded</c>:
+    /// by the roll-ups that call <c>FundingRollupHelper.RecalculateRFFunded</c>:
     /// <c>PrioritizationRollupToRequirementFunding</c> /
     /// <c>PrioritizationSingleRfAutoAllocate</c> (Prioritization rows),
     /// <c>PrioritizationFundingRollup</c> (FY27 junction rows), and
@@ -42,7 +42,9 @@ namespace Checkbook.Plugins.Validation
             return base.IsAuthorizedAncestor(message, entityName) ||
                    IsRollupSourceWrite(message, entityName, EntityNames.Prioritization) ||
                    IsRollupSourceWrite(message, entityName, EntityNames.PrioritizationFunding) ||
-                   IsRollupSourceWrite(message, entityName, EntityNames.RequirementDetailFunding);
+                   IsRollupSourceWrite(message, entityName, EntityNames.RequirementDetailFunding) ||
+                   // PrioritizationItemizedRollup re-rolls a legacy Prio's direct RF.
+                   IsRollupSourceWrite(message, entityName, EntityNames.ItemizedDetails);
         }
     }
 }

@@ -33,7 +33,7 @@ namespace Checkbook.Plugins.TurnIns
     ///          on a leaf RF, but only RF.book_newwithholding when the RF has child
     ///          Prioritizations — turning in more than Withholding there drives TDP below
     ///          the roll-up-restored Funded amount → negative Withholding).
-    ///          FY27+ Turn-Ins check the junctions instead (TurnInFy27Rules): per-PF
+    ///          FY27+ Turn-Ins check the junctions instead (TurnInRules): per-PF
     ///          funded, itemized detail reductions == amount per itemized Prio, and for
     ///          RF-level items Withholding first with RDF reductions covering the rest.
     ///        - State-only rule: a regular geographic-state user (member of a
@@ -105,12 +105,12 @@ namespace Checkbook.Plugins.TurnIns
             var merged = GetMergedEntity(target, preImage);
             EnsureSweepFields(service, tracing, context.PrimaryEntityId, merged);
             var items = TurnInItemRepository.GetTurnInItems(service, tracing, context.PrimaryEntityId);
-            bool fy27 = TurnInLOAResolver.IsFy27Plus(merged);
-            // All lines RF-level; a mixed Turn-In is rejected by TurnInFy27Rules.
-            bool fy27RfLevel = fy27 && items.Count > 0 && items.All(i => i.IsRFOnly);
+            bool isLegacy = TurnInRules.IsLegacy(merged);
+            // All lines RF-level; a mixed Turn-In is rejected by TurnInRules.
+            bool rfLevel = !isLegacy && items.Count > 0 && items.All(i => i.IsRFOnly);
 
             EnforceApprovalRoles(
-                service, tracing, context.InitiatingUserId, stateApprovedInPayload, beApprovedInPayload, fy27RfLevel);
+                service, tracing, context.InitiatingUserId, stateApprovedInPayload, beApprovedInPayload, rfLevel);
 
             // ---- Idempotency: have we already created ledgers for this Turn-In? ----
             // Per design choice (Q2 = option C), existence of ledger rows linked back to
@@ -218,11 +218,11 @@ namespace Checkbook.Plugins.TurnIns
             // Each item in isolation may fit under the source's available amount while the
             // *sum* overdraws it. Aggregate first, then compare to the source once per source.
             // FY27+ money lives on junctions (PF / RDF), so availability and the
-            // itemized / RDF balance rules are checked there instead (TurnInFy27Rules).
-            if (TurnInLOAResolver.IsFy27Plus(merged))
-                TurnInFy27Rules.Validate(service, tracing, context.PrimaryEntityId, items);
+            // itemized / RDF balance rules are checked there instead (TurnInRules).
+            if (!isLegacy)
+                TurnInRules.Validate(service, tracing, context.PrimaryEntityId, items);
             else
-                ValidateAggregatedAvailability(service, tracing, items);
+                ValidateAggregatedAvailabilityLegacy(service, tracing, items);
 
             // ---- State-only rule: regular states must turn in through a Prioritization ----
             // A geographic-state user (member of a "{ABBR} - State Approver/Administrator"
@@ -238,7 +238,7 @@ namespace Checkbook.Plugins.TurnIns
             // would silently no-op (fail open) — the exact reason RF-only state turn-ins
             // were slipping through. The initiating user is the state approver.
             if (items.Any(i => i.IsRFOnly) &&
-                StateTeamHelper.IsRestrictedStateUser(
+                StateMembershipHelper.IsRestrictedStateUser(
                     service, tracing, context.InitiatingUserId, RfOnlyExemptAbbreviations))
             {
                 throw new InvalidPluginExecutionException(
@@ -268,7 +268,7 @@ namespace Checkbook.Plugins.TurnIns
             // fully approved — so letting the intermediate State approval through here
             // is safe.
             // FY27 RF-level Turn-Ins have no State step — the RI / CSOR approval alone runs them.
-            if (beApprovedInPayload && newBeApproved && !newStateApproved && !fy27RfLevel)
+            if (beApprovedInPayload && newBeApproved && !newStateApproved && !rfLevel)
             {
                 throw new InvalidPluginExecutionException(
                     "Budget Execution approval requires State Approval to already be in " +
@@ -283,7 +283,7 @@ namespace Checkbook.Plugins.TurnIns
         /// turn in through a Prioritization" rule — PEC and WTC may turn in items
         /// sourced directly from a Requirement Funding. Matched against the leading
         /// abbreviation of the user's "{ABBR} - State Approver/Administrator" owner
-        /// team (see <see cref="StateTeamHelper"/>).
+        /// team (see <see cref="StateMembershipHelper"/>).
         /// </summary>
         private static readonly string[] RfOnlyExemptAbbreviations = { "PEC", "WTC" };
 
@@ -343,9 +343,9 @@ namespace Checkbook.Plugins.TurnIns
             Guid userId,
             bool stateFlagInPayload,
             bool beFlagInPayload,
-            bool fy27RfLevel)
+            bool rfLevel)
         {
-            if (fy27RfLevel)
+            if (rfLevel)
             {
                 // FY27 RF-level: NPM creates, Resource Integrator / CSOR approves (one step,
                 // on book_beapproved). Neither the State nor Budget Execution is in the loop.
@@ -402,7 +402,7 @@ namespace Checkbook.Plugins.TurnIns
         /// individually while together overdrawing — which the downstream updaters would silently
         /// floor at zero.
         /// </summary>
-        private static void ValidateAggregatedAvailability(
+        private static void ValidateAggregatedAvailabilityLegacy(
             IOrganizationService service,
             ITracingService tracing,
             List<TurnInItemRecord> items)
@@ -470,7 +470,7 @@ namespace Checkbook.Plugins.TurnIns
                 decimal withholding = NumericHelper.ToDecimal(rf, RequirementFundingAttributes.Withholding) ?? 0m;
 
                 // An RF-only Turn-In reduces BOTH RF.TDP and RF.FundedAmount by the amount
-                // (see TurnInRequirementFundingUpdater). That is only sound on a leaf RF —
+                // (see TurnInExecutorLegacy). That is only sound on a leaf RF —
                 // one with no child Prioritizations — where FundedAmount is the RF's own
                 // direct funding. When the RF HAS child Prioritizations, FundedAmount is a
                 // roll-up of those Prios (PrioritizationRollupToRequirementFunding), so the
@@ -483,7 +483,7 @@ namespace Checkbook.Plugins.TurnIns
                 // Mirrors the RF→RF realignment rule in SetSameFundSagFlagPlugin: RF with
                 // children → available = Withholding; leaf RF → available = FundedAmount.
                 // Applies to FY26 and FY27+ alike (no fiscal-year branch).
-                bool hasChildren = RequirementFundingHelpers.HasActiveChildren(service, rfId);
+                bool hasChildren = RequirementFundingHelper.HasActiveChildren(service, rfId);
 
                 if (hasChildren)
                 {

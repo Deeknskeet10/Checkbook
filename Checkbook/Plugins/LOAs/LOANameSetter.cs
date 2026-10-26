@@ -119,7 +119,7 @@ namespace Checkbook.Plugins.LOAs
                 var oprBu = ResolveOprBusinessUnit(service, grain.OPR, tracing);
                 if (oprBu != null)
                 {
-                    target["owningbusinessunit"] = oprBu;
+                    target[CommonAttributes.OwningBusinessUnit] = oprBu;
                     tracing.Trace($"LOA BU set to {oprBu.Id} (inherited from OPR {grain.OPR.Id}).");
                 }
             }
@@ -135,8 +135,8 @@ namespace Checkbook.Plugins.LOAs
                 tracing.Trace("No Disbursing Official on target; leaving owningbusinessunit to Dataverse default.");
                 return null;
             }
-            var oprRecord = service.Retrieve(opr.LogicalName, opr.Id, new ColumnSet("owningbusinessunit"));
-            var bu = oprRecord.GetAttributeValue<EntityReference>("owningbusinessunit");
+            var oprRecord = service.Retrieve(opr.LogicalName, opr.Id, new ColumnSet(CommonAttributes.OwningBusinessUnit));
+            var bu = oprRecord.GetAttributeValue<EntityReference>(CommonAttributes.OwningBusinessUnit);
             if (bu == null)
                 tracing.Trace($"OPR {opr.Id} has no owningbusinessunit; leaving LOA BU unset.");
             return bu;

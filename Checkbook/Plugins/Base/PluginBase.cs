@@ -1,5 +1,4 @@
 using System;
-using System.Globalization;
 using Microsoft.Xrm.Sdk;
 using Checkbook.Plugins.Helpers;
 
@@ -23,7 +22,9 @@ namespace Checkbook.Plugins.Base
             var tracingService = (ITracingService)
                 serviceProvider.GetService(typeof(ITracingService));
 
-            // Run as the calling user (pass null for system context)
+            // Runs as the step's configured execution identity (context.UserId).
+            // In this project steps run as an elevated service account, so role /
+            // BU checks must use context.InitiatingUserId — the actual user.
             var service = serviceFactory.CreateOrganizationService(context.UserId);
 
             try
@@ -104,32 +105,12 @@ namespace Checkbook.Plugins.Base
             return null;
         }
 
-        /// <summary>
-        /// True when an ancestor pipeline is an Update on <paramref name="entityName"/>.
-        /// ⚠ Do NOT use this to guard approval orchestrators: real-time Business
-        /// Rules and other server-side field setters nest the user's
-        /// decision-bearing save under a same-table Update, so this guard
-        /// silently dropped every approval on book_realignments and
-        /// book_stateswap (all such guards were removed Aug 2026 — see
-        /// RealignmentProcessor / SwapApprovalPlugin / TurnInApprovalPlugin).
-        /// Prefer step filters that the plugin's own nested writes cannot
-        /// match (e.g. deactivate via statecode only), plus value+active and
-        /// ledger-existence idempotency checks. Currently unused; retained
-        /// for diagnostic use.
-        /// </summary>
-        protected static bool IsNestedUpdateOf(IPluginExecutionContext context, string entityName)
-        {
-            var ancestor = context.ParentContext;
-            while (ancestor != null)
-            {
-                if (ancestor.MessageName == "Update" &&
-                    ancestor.PrimaryEntityName == entityName)
-                    return true;
-
-                ancestor = ancestor.ParentContext;
-            }
-            return false;
-        }
+        // NOTE: there is deliberately no "is this nested under an Update of the
+        // same table?" helper. Such guards silently dropped every approval on
+        // book_realignments / book_stateswap / book_turnin (real-time Business
+        // Rules nest the user's decision save under a same-table Update) and were
+        // removed Aug 2026. Use step filters the plugin's own writes cannot match,
+        // plus value+active and ledger-existence idempotency checks.
 
         /// <summary>
         /// True when, after walking past platform wrapper messages (SetState,
@@ -137,7 +118,7 @@ namespace Checkbook.Plugins.Base
         /// i.e. the operation was issued by server-side automation (another
         /// plugin, a workflow, a Custom API) rather than directly by a user or
         /// a bulk wrapper. Use for "user-initiated only" lifecycle plugins.
-        /// Same pattern as DeactivationRoleGuard.
+        /// Used by DeactivationRoleGuard and SpendPlanEditLockGuard.
         /// </summary>
         protected static bool HasNonWrapperAncestor(IPluginExecutionContext context)
         {
@@ -189,7 +170,7 @@ namespace Checkbook.Plugins.Base
             return merged;
         }
 
-        protected bool GetEffectiveBool(Entity target, Entity preImage, string attribute)
+        protected static bool GetEffectiveBool(Entity target, Entity preImage, string attribute)
         {
             if (target != null && target.Contains(attribute))
                 return target.GetAttributeValue<bool>(attribute);
@@ -200,12 +181,12 @@ namespace Checkbook.Plugins.Base
             return false;
         }
 
-        // <summary>
-        // Returns the effective decimal for an attribute:
-        // - Prefers Target value when present; otherwise uses Pre-Image.
-        // - Safely converts AliasedValue, Money, decimal, double/float, integral, and string.
-        // - Returns defaultValue when both are missing or null.
-        // </summary>
+        /// <summary>
+        /// Returns the effective decimal for an attribute:
+        /// - Prefers Target value when present; otherwise uses Pre-Image.
+        /// - Safely converts AliasedValue, Money, decimal, double/float, integral, and string.
+        /// - Returns defaultValue when both are missing or null.
+        /// </summary>
         protected static decimal GetEffectiveDecimal(Entity target, Entity preImage, string attrName, decimal defaultValue = 0m)
         {
             object raw = null;
@@ -224,7 +205,7 @@ namespace Checkbook.Plugins.Base
         /// </summary>
         protected static int? GetEffectiveInt(Entity target, Entity preImage, string attributeName)
         {
-            if (target.Contains(attributeName))
+            if (target != null && target.Contains(attributeName))
                 return target.GetAttributeValue<int?>(attributeName);
 
             if (preImage != null && preImage.Contains(attributeName))
@@ -239,7 +220,7 @@ namespace Checkbook.Plugins.Base
         /// </summary>
         protected static EntityReference GetEffectiveEntityReference(Entity target, Entity preImage, string attributeName)
         {
-            if (target.Contains(attributeName))
+            if (target != null && target.Contains(attributeName))
                 return target.GetAttributeValue<EntityReference>(attributeName);
 
             if (preImage != null && preImage.Contains(attributeName))
@@ -254,7 +235,7 @@ namespace Checkbook.Plugins.Base
         /// </summary>
         protected static string GetEffectiveString(Entity target, Entity preImage, string attributeName)
         {
-            if (target.Contains(attributeName))
+            if (target != null && target.Contains(attributeName))
                 return target.GetAttributeValue<string>(attributeName);
 
             if (preImage != null && preImage.Contains(attributeName))
@@ -269,7 +250,7 @@ namespace Checkbook.Plugins.Base
         /// </summary>
         protected static OptionSetValue GetEffectiveOptionSetValue(Entity target, Entity preImage, string attributeName)
         {
-            if (target.Contains(attributeName))
+            if (target != null && target.Contains(attributeName))
                 return target.GetAttributeValue<OptionSetValue>(attributeName);
 
             if (preImage != null && preImage.Contains(attributeName))
@@ -279,8 +260,10 @@ namespace Checkbook.Plugins.Base
         }
 
         /// <summary>
-        /// Checks if an attribute has changed between target and pre-image.
-        /// Returns true if the attribute is in target (meaning it was modified).
+        /// True when the attribute is in the Target payload. Does NOT compare
+        /// against the pre-image: Excel, the Web API and flows can re-send an
+        /// unchanged value, so use a pre-image comparison when that matters.
+        /// (Name kept for its many callers.)
         /// </summary>
         protected static bool HasAttributeChanged(Entity target, string attributeName)
         {

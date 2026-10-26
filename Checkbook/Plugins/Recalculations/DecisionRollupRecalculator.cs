@@ -20,10 +20,16 @@ namespace Checkbook.Plugins.Recalculations
     ///   2. Resolve the FT's LOA and add it to the batch for
     ///      <see cref="LOATouchPropagator"/>'s final
     ///      <c>BatchRecalculateLOATDP</c> pass.
+    ///
+    /// Runs nested too (<see cref="LOATouchPropagator.RecalcWhenNested"/>):
+    /// Decisions are only written by users, and Import from Excel/CSV
+    /// uploads land at Depth 2 — before Oct 2026 those skipped the recalc and
+    /// left LOA TDP stale.
     /// </summary>
     public sealed class DecisionRollupRecalculator : LOATouchPropagator
     {
         protected override string EntityName => EntityNames.Decision;
+        protected override bool RecalcWhenNested => true;
 
         protected override void CollectAffectedLOAs(
             IOrganizationService service,

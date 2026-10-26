@@ -144,29 +144,50 @@ Plugins live in `Plugins/` — the `Checkbook_Plugins` project (assembly
 `Checkbook_Plugins.dll`, namespace root `Checkbook.Plugins`), targeting
 **.NET Framework 4.6.2**, strong-named with `Checkbook_Plugins.snk`, and
 referencing `Microsoft.CrmSdk.CoreAssemblies`. It is **already implemented** —
-**38 concrete plugin classes**, all inheriting `Base/PluginBase.cs` (four via
-the intermediate `Recalculations/LOATouchPropagator` base):
+about **65 concrete plugin classes** (list them with
+`grep -rn ': PluginBase\|: LOATouchPropagator\|: FundedAmountLockBase\|: EnvVarToggleBase' Plugins --include=*.cs`),
+all inheriting `Base/PluginBase.cs`, some via an intermediate abstract base
+(`Recalculations/LOATouchPropagator`, `Validation/FundedAmountLockBase`,
+`Admin/EnvVarToggleBase`).
+
+**Naming convention:** FY26 code paths carry a `Legacy` suffix
+(`TurnInExecutorLegacy`, `RealignmentExecutorLegacy`, `…AvailabilityLegacy`);
+current-model (FY27+) code takes the plain name (`TurnInExecutor`,
+`RealignmentExecutor`, `TurnInRules`) — never `Fy27` in a name. Registered
+plugin classes are **never renamed** (PRT steps bind to the type name).
+FY checks go through `FiscalYearHelper.IsLegacyFiscalYear`.
 
 ```
 Plugins/
 ├── Checkbook Plugins.sln · Checkbook_Plugins.csproj
 ├── PLUGIN-REGISTRATION.md           # SOURCE OF TRUTH for step registrations + pipeline maps
+├── REGISTRATION-TODO.md             # What still has to be done by hand in PRT
 ├── Base/PluginBase.cs               # Shared IPlugin base (Execute boilerplate + helpers)
-├── Admin/                           # ToggleFundedAmountLockPlugin (book_ToggleFundedAmountLock Custom API)
+├── Admin/                           # Lock-toggle Custom APIs (EnvVarToggleBase + 2 plugins)
 ├── Validation/                      # Pre-operation validators + guards (Prio funding, RF TDP,
-│                                    #   Realignment, FundingEvent, RD-funding XOR, funded-amount lock)
+│                                    #   Realignment, FundingEvent, RD-funding XOR, funded-amount
+│                                    #   locks, Spend Plan guards)
 ├── Naming/                          # PrioritizationNameSetter (see Naming/README.md)
-├── TurnIns/                         # Turn-In approve/deny pipeline (5 plugins + Helpers/)
-├── StateSwaps/                      # State Swap pipeline (6 plugins + Helpers/)
-├── Realignments/                    # RealignmentProcessor, SetSameFundSagFlagPlugin, LedgerCreator
-├── Recalculations/                  # TDP roll-up recalculators + LOATouchPropagator subclasses
+├── TurnIns/                         # Turn-In pipeline; Helpers/TurnInExecutor (items) +
+│                                    #   TurnInExecutorLegacy (FY26 / Sweep header path)
+├── StateSwaps/                      # State Swap pipeline (FY26 model) + Helpers/
+├── Realignments/                    # RealignmentProcessor (orchestrator); Helpers/RealignmentExecutor
+│                                    #   (items) + RealignmentExecutorLegacy (FY26 single-row)
+├── Recalculations/                  # Roll-up recalculators + LOATouchPropagator subclasses
 ├── Items/                           # ItemizedDetails sync/rollup, FC backfill + cascade
+├── SpendPlans/                      # Spend-plan stamps / mode cascade
 ├── LOAs/                            # LOA naming/generation (book_GenerateLOAs Custom API)
 ├── Distributions/                   # GenerateDistributionsPlugin (book_GenerateDistributions Custom API)
 ├── Funds/                           # FundKeySetter
-├── Helpers/                         # NumericHelper, TDPCalculationHelper, AliasedValueHelper,
-│                                    #   EnvironmentVariableHelper, LedgerIdempotency, rollup helpers …
-└── Constants/                       # Per-entity attribute/name/option-value constant files
+├── Tickets/                         # Ticket voting (book_CastVote Custom API)
+├── Helpers/                         # Shared logic — use these, don't re-implement:
+│                                    #   FundingRollupHelper (all funded/validated roll-ups),
+│                                    #   RequirementFundingHelper, TDPCalculationHelper,
+│                                    #   DistributionWriter, LedgerCreator, FundCenterWalkHelper,
+│                                    #   StateMembershipHelper, UserRoleHelper, FiscalYearHelper,
+│                                    #   EnvironmentVariableHelper, NumericHelper, AliasedValueHelper …
+└── Constants/                       # Per-entity attribute/name/option-value constants;
+                                     #   CommonAttributes (statecode/owner/BU), EnvironmentVariableKeys
 ```
 
 ```bash

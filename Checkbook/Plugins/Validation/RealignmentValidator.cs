@@ -59,11 +59,44 @@ namespace Checkbook.Plugins.Validation
             bool beDeniedTx = ApprovalTransitionDetector.DetectOptionSetTransition(
                 target, preImage, RealignmentsAttributes.BEDecision, RealignmentBEDecisionValues.Denied);
 
-            // If no approval/denial transition is in the payload, this is an
-            // ordinary edit/save — nothing for the gate to do.
-            if (!stateApprovedTx && !stateDeniedTx && !beApprovedTx && !beDeniedTx)
+            // RealignmentProcessor executes on value-in-payload + record-active (so a
+            // re-save re-drives a stuck approval). The gate must fire on the same
+            // condition, or a re-save carrying an already-stored Approved would move
+            // money without passing role/shape/balance checks. Stamps below stay
+            // transition-based so a re-drive keeps the original approver.
+            // The validator's pre-image may not carry statecode; read it only when a
+            // value-only (non-transition) payload actually needs the answer, so an
+            // inactive (processed) record re-saved by Excel / a flow is not gated.
+            bool anyDecisionValue =
+                target.Contains(RealignmentsAttributes.StateApproved) ||
+                target.Contains(RealignmentsAttributes.BEDecision);
+            bool recordActive = false;
+            if (anyDecisionValue)
             {
-                tracing.Trace("No approval/denial transition detected — skipping RealignmentValidator.");
+                var stateCode = preImage?.GetAttributeValue<OptionSetValue>(CommonAttributes.StateCode)?.Value
+                    ?? service.Retrieve(EntityNames.Realignments, context.PrimaryEntityId,
+                            new ColumnSet(CommonAttributes.StateCode))
+                        .GetAttributeValue<OptionSetValue>(CommonAttributes.StateCode)?.Value
+                    ?? StateCodeValues.Active;
+                recordActive = stateCode == StateCodeValues.Active;
+            }
+            bool stateApproved = stateApprovedTx || (recordActive &&
+                ApprovalTransitionDetector.PayloadHasOptionSetValue(
+                    target, RealignmentsAttributes.StateApproved, RealignmentBEDecisionValues.Approved));
+            bool stateDenied = stateDeniedTx || (recordActive &&
+                ApprovalTransitionDetector.PayloadHasOptionSetValue(
+                    target, RealignmentsAttributes.StateApproved, RealignmentBEDecisionValues.Denied));
+            bool beApproved = beApprovedTx || (recordActive &&
+                ApprovalTransitionDetector.PayloadHasOptionSetValue(
+                    target, RealignmentsAttributes.BEDecision, RealignmentBEDecisionValues.Approved));
+            bool beDenied = beDeniedTx || (recordActive &&
+                ApprovalTransitionDetector.PayloadHasOptionSetValue(
+                    target, RealignmentsAttributes.BEDecision, RealignmentBEDecisionValues.Denied));
+
+            // No approval/denial value in the payload — an ordinary edit/save.
+            if (!stateApproved && !stateDenied && !beApproved && !beDenied)
+            {
+                tracing.Trace("No approval/denial value in payload — skipping RealignmentValidator.");
                 return;
             }
 
@@ -77,15 +110,15 @@ namespace Checkbook.Plugins.Validation
             // initiating user, never the execution identity.)
             EnforceApprovalRoles(
                 service, tracing, context.InitiatingUserId,
-                stateApprovedTx || stateDeniedTx,
-                beApprovedTx || beDeniedTx,
+                stateApproved || stateDenied,
+                beApproved || beDenied,
                 context.PrimaryEntityId);
 
             // Denials are allowed regardless of shape prerequisites — a denied
             // realignment can be in any state. RealignmentProcessor deactivates it.
-            if (stateDeniedTx || beDeniedTx)
+            if (stateDenied || beDenied)
             {
-                tracing.Trace("Denial transition — role gate passed; skipping shape prerequisite checks.");
+                tracing.Trace("Denial — role gate passed; skipping shape prerequisite checks.");
                 return;
             }
 
@@ -147,7 +180,7 @@ namespace Checkbook.Plugins.Validation
 
             // If State approves a non-Same SAG/Fund realignment; continue forward
             // until BE Decision (State approval alone cannot finalize it).
-            if (stateApprovedTx && !beApprovedTx && !sameFundSAG)
+            if (stateApproved && !beApproved && !sameFundSAG)
             {
                 tracing.Trace("State Approved - Not same SAG or Fund - requires BE Approval.");
                 // fall through to the stamp; no prerequisite is violated.
@@ -435,7 +468,7 @@ namespace Checkbook.Plugins.Validation
 
         /// <summary>
         /// OPR debit balance gate (FY27 §9.9). An RF→RF item lowers its debit RF the way
-        /// ApplyDebitToRF does: Withholding first, then Funded + TDP together. On a
+        /// RequirementFundingHelper.ApplyDebit does: Withholding first, then Funded + TDP together. On a
         /// direct-funded RF, Funded == Σ active Requirement Detail Funding, so the part of the
         /// move Withholding cannot cover must come out of those junctions. Per debit RF:
         ///   Σ(active RDF reductions on that RF) == max(0, Σ item amount − RF.Withholding)
@@ -516,14 +549,14 @@ namespace Checkbook.Plugins.Validation
                 var rf = service.Retrieve(EntityNames.RequirementFunding, kv.Key,
                     new ColumnSet(RequirementFundingAttributes.Withholding, RequirementFundingAttributes.Name));
                 decimal withholding = rf.GetAttributeValue<decimal?>(RequirementFundingAttributes.Withholding) ?? 0m;
-                bool hasRdf = RequirementDetailFundingRollupHelper.SumForRequirementFunding(service, kv.Key).funded > 0m;
+                bool hasRdf = FundingRollupHelper.SumRequirementDetailFundingForRF(service, kv.Key).funded > 0m;
 
                 // An RF funded through Prioritizations (FY27 PF junctions or FY26 direct
                 // links) can only give up Withholding on the OPR path — its Funded belongs to
                 // the Prioritizations and moves with a State realignment instead.
                 bool prioFunded =
-                    PrioritizationFundingRollupHelper.SumForRequirementFunding(service, kv.Key).funded > 0m ||
-                    RequirementFundingHelpers.HasActiveChildren(service, kv.Key);
+                    FundingRollupHelper.SumPrioritizationFundingForRF(service, kv.Key).funded > 0m ||
+                    RequirementFundingHelper.HasActiveChildren(service, kv.Key);
                 if (prioFunded && kv.Value > withholding + BalanceEpsilon)
                     throw new InvalidPluginExecutionException(
                         $"{rf.GetAttributeValue<string>(RequirementFundingAttributes.Name)} is funded through Prioritizations, " +
@@ -666,7 +699,7 @@ namespace Checkbook.Plugins.Validation
                 {
                     var debitState = ResolveDebitingState(service, tracing, realignmentId);
                     if (debitState != null &&
-                        !StateScopeHelper.IsUserInStateBU(service, tracing, userId, debitState))
+                        !StateMembershipHelper.IsUserInStateBU(service, tracing, userId, debitState))
                     {
                         throw new InvalidPluginExecutionException(
                             "You cannot act on the State Approval of this Realignment — your account " +
@@ -709,25 +742,19 @@ namespace Checkbook.Plugins.Validation
             ITracingService tracing,
             Guid realignmentId)
         {
-            try
-            {
-                var realignment = service.Retrieve(
-                    EntityNames.Realignments, realignmentId,
-                    new ColumnSet(RealignmentsAttributes.DebitedPrioritization));
-                var debitPrior = realignment.GetAttributeValue<EntityReference>(
-                    RealignmentsAttributes.DebitedPrioritization);
-                if (debitPrior == null) return null;
+            // No try/catch: a lookup failure must not fail open (null skips the
+            // cross-state BU scope check).
+            var realignment = service.Retrieve(
+                EntityNames.Realignments, realignmentId,
+                new ColumnSet(RealignmentsAttributes.DebitedPrioritization));
+            var debitPrior = realignment.GetAttributeValue<EntityReference>(
+                RealignmentsAttributes.DebitedPrioritization);
+            if (debitPrior == null) return null;
 
-                var prio = service.Retrieve(
-                    EntityNames.Prioritization, debitPrior.Id,
-                    new ColumnSet(PrioritizationAttributes.State));
-                return prio.GetAttributeValue<EntityReference>(PrioritizationAttributes.State);
-            }
-            catch (Exception ex)
-            {
-                tracing.Trace($"RealignmentValidator: could not resolve debiting state: {ex.Message}");
-                return null;
-            }
+            var prio = service.Retrieve(
+                EntityNames.Prioritization, debitPrior.Id,
+                new ColumnSet(PrioritizationAttributes.State));
+            return prio.GetAttributeValue<EntityReference>(PrioritizationAttributes.State);
         }
     }
 }

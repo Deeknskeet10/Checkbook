@@ -180,6 +180,7 @@ Register the mode plugins only after these `book_spendplan` /
 | `book_GenerateDistributions`        | `Checkbook.Plugins.Distributions.GenerateDistributionsPlugin`    | See [`Distributions/REGISTRATION.md`](Distributions/REGISTRATION.md). |
 | `book_ToggleFundedAmountLock`       | `Checkbook.Plugins.Admin.ToggleFundedAmountLockPlugin`           | Global, no inputs, output `IsLocked` (Boolean). Full spec in [`../docs/FundedAmountLock-Setup.md`](../docs/FundedAmountLock-Setup.md). |
 | `book_ToggleSpendPlanLock`          | `Checkbook.Plugins.Admin.ToggleSpendPlanLockPlugin`             | Global, no inputs, output `IsLocked` (Boolean). Full spec in [`../docs/SpendPlanLock-Setup.md`](../docs/SpendPlanLock-Setup.md). |
+| `book_CastVote`                     | `Checkbook.Plugins.Tickets.CastVotePlugin`                       | Global action. In `TicketId` (String), `Direction` (Integer ±1); out `NewScore`, `UserVote` (Integer). Full spec in [`Tickets/REGISTRATION.md`](Tickets/REGISTRATION.md). |
 
 The Custom API record's **Plugin Type** field auto-wires the handler; no
 separate SDK Message Processing Step is required beyond setting that field on
@@ -211,7 +212,7 @@ Mode is **Synchronous** unless explicitly noted Async.
 > - `context.UserId` is the *service account* — it holds admin roles and sits
 >   in no state owner team / state BU. Authorizing against it silently
 >   rubber-stamps every role gate and, worse, makes cross-state BU-scope checks
->   (`StateScopeHelper.IsUserInStateBU`) pass as "admin" and skip entirely.
+>   (`StateMembershipHelper.IsUserInStateBU`) pass as "admin" and skip entirely.
 > - `context.InitiatingUserId` is the **actual approver** — this is what every
 >   role/team/BU authorization check must use.
 >
@@ -279,7 +280,7 @@ Full setup (env var, Custom API, command button):
 
 | # | Message | Primary entity        | Stage          | Mode | Filtering attributes         | Notes |
 |---|---------|-----------------------|----------------|------|------------------------------|-------|
-| 1 | Update  | `book_prioritization` | Pre-Operation  | Sync | `book_newfundedamounttdp`    | Rank **10** (runs before the other Pre-Op Update validators). **Requires PreImage** (`book_newfundedamounttdp`) — falls back to a Retrieve if the image is missing. |
+| 1 | Update  | `book_prioritization` | Pre-Operation  | Sync | `book_newfundedamounttdp`    | Rank **10** — must run before the other Pre-Op Update validators, so those must be registered at a HIGHER rank (Dataverse runs lower ranks first; see "Rank order" below). **Requires PreImage** (`book_newfundedamounttdp`) — falls back to a Retrieve if the image is missing. |
 
 ### `Checkbook.Plugins.Validation.PrioritizationFundingApprovalGuard`
 
@@ -304,20 +305,20 @@ Review). Two concerns in one Pre-Op step:
    this step is the guaranteed enforcement for bulk-edit / Web API paths.
 
 Why it matters: `RF.FundedAmount` rolls up only FinalApproved (status 4) child
-Prios (`PrioritizationRollupHelper`) while `RF.TDP` is not approval-filtered, so
+Prios (`FundingRollupHelper`) while `RF.TDP` is not approval-filtered, so
 a Prio holding funding below status 4 is invisible to the roll-up and surfaces
 as a phantom `TDP − Funded` gap on the parent RF.
 
 FY27 caveat: funding physically lives on `book_prioritizationfunding` junction
 rows there, so zeroing the rolled-up field alone would be restored by the next
 junction roll-up — FY27 pull-backs additionally need the junction rows cleared
-(tracked separately; junction-side funding gate belongs in
-`PrioritizationFundingGuard`).
+— done by `PrioritizationPullbackFundingCleanup` (post-op), while the junction-side
+funding gate lives in `PrioritizationFundingGuard`.
 
 | # | Message | Primary entity        | Stage          | Mode | Filtering attributes                        | Notes |
 |---|---------|-----------------------|----------------|------|---------------------------------------------|-------|
 | 1 | Create  | `book_prioritization` | Pre-Operation  | Sync | *(none)*                                    | Blocks creating a funded Prio below NPM Review. Order **before** `PrioritizationFundingValidator`. |
-| 2 | Update  | `book_prioritization` | Pre-Operation  | Sync | `book_newfundedamounttdp, book_approvalstatus` | Rank **15** (after the reduction lock at 10, before `PrioritizationFundingValidator`). **Requires PreImage** (`book_newfundedamounttdp, book_approvalstatus`). |
+| 2 | Update  | `book_prioritization` | Pre-Operation  | Sync | `book_newfundedamounttdp, book_approvalstatus` | Rank **15** — after the reduction lock (10), before `PrioritizationFundingValidator`, so register the validator at rank 20 (lower ranks run first). **Requires PreImage** (`book_newfundedamounttdp, book_approvalstatus`). |
 
 ### `Checkbook.Plugins.Validation.PrioritizationFundingValidator`
 
@@ -371,7 +372,9 @@ funded-amount *increase* is rejected unless the parent Prioritization is in NPM
 Review — reductions and the pull-back deactivation stay allowed).
 
 The RF.TDP cap is enforced by the shared `JunctionGuard.EnforceTDPCap` helper
-and, like the approval check, fires **on INCREASES only** (`newFunded > oldFunded`).
+and, like the approval check, fires **on INCREASES only** — `newFunded` vs. what the row
+contributed to THIS RF before the save (0 for a Create, a move from another RF, or a
+reactivation).
 A junction reduction can never push the RF total further over cap, so it is
 always allowed — this is what lets the FY27 `PrioritizationFundingGrid` rebalance
 allocations across RFs (pull funding off one, add to another) when the RF is
@@ -392,7 +395,7 @@ elevation needed.
 | # | Message | Primary entity                | Stage          | Mode | Filtering attributes                                                                       | Notes |
 |---|---------|-------------------------------|----------------|------|--------------------------------------------------------------------------------------------|-------|
 | 1 | Create  | `book_prioritizationfunding`  | Pre-Operation  | Sync | *(none)*                                                                                   | Validates new junction + autopops name + aligns `ownerid` to parent Prio's owner. |
-| 2 | Update  | `book_prioritizationfunding`  | Pre-Operation  | Sync | `book_prioritization, book_requirementfunding, book_fundedamount, book_validatedamount`    | Re-validates on amount or parent change. **Requires PreImage** (same four attrs). |
+| 2 | Update  | `book_prioritizationfunding`  | Pre-Operation  | Sync | `book_prioritization, book_requirementfunding, book_fundedamount, book_validatedamount, statecode` | Re-validates on amount, parent or state change (a reactivation / move to another RF is checked as a full increase; deactivation is always allowed). **Requires PreImage** (same five attrs). ⚠ `statecode` added 2026-10-16 — update the step in PRT. |
 
 > **FY27 reconciliation cap (2026-10-06, no new step):** the guard now also rejects a junction
 > write that would make **Σ active PF.funded for the Prioritization exceed the Prio's funded
@@ -447,7 +450,7 @@ it also **role-gates and stamps** every approval/denial transition — the
 - A **State stage** action (approve or deny `book_newstateapproved`) requires
   `Book - State Approver` / `Book - State Administrator` /
   `Book - Checkbook Administrator`, scoped (non-admins) to the **debiting
-  state's** BU via `StateScopeHelper.IsUserInStateBU`. The debiting state is
+  state's** BU via `StateMembershipHelper.IsUserInStateBU`. The debiting state is
   read live: realignment → `book_debitedprioritization` → `book_state`.
 - A **BE stage** action (approve or deny `book_bedecision`) requires
   `Book - Budget Executor` / `Book - Checkbook Administrator`.
@@ -481,7 +484,7 @@ reductions are always allowed even when the RF is over cap. See the
 | # | Message | Primary entity                    | Stage          | Mode | Filtering attributes                                                                              | Notes |
 |---|---------|-----------------------------------|----------------|------|---------------------------------------------------------------------------------------------------|-------|
 | 1 | Create  | `book_requirementdetailfunding`   | Pre-Operation  | Sync | *(none)*                                                                                          | Validates junction parents, XOR, uniqueness, RF.TDP cap; autopops name. |
-| 2 | Update  | `book_requirementdetailfunding`   | Pre-Operation  | Sync | `book_requirementdetail, book_requirementfunding, book_fundedamount, book_validatedamount`        | Re-validates on amount or parent change. **Requires PreImage** (same four attrs). |
+| 2 | Update  | `book_requirementdetailfunding`   | Pre-Operation  | Sync | `book_requirementdetail, book_requirementfunding, book_fundedamount, book_validatedamount, statecode` | Re-validates on amount, parent or state change (reactivation / RF move = full increase; deactivation always allowed). **Requires PreImage** (same five attrs). ⚠ `statecode` added 2026-10-16 — update the step in PRT. |
 | 3 | Create  | `book_prioritization`             | Pre-Operation  | Sync | *(none)*                                                                                          | Rank **20** (after `PrioritizationFundCenterBackfill` at 10, before `PrioritizationNameSetter` at 30). Rejects new Prio if its Requirement already has active RD-direct funding. |
 
 ### `Checkbook.Plugins.Validation.RequirementDetailFundingFundedAmountLock`
@@ -496,7 +499,7 @@ State Swaps / the Distribution generator. **Added 2026-10-14.**
 
 | # | Message | Primary entity                  | Stage          | Mode | Filtering attributes | Notes |
 |---|---------|---------------------------------|----------------|------|----------------------|-------|
-| 1 | Update  | `book_requirementdetailfunding` | Pre-Operation  | Sync | `book_fundedamount`  | Rank **10** (before `RequirementDetailFundingGuard`). **PreImage** `PreImage` (`book_fundedamount`). |
+| 1 | Update  | `book_requirementdetailfunding` | Pre-Operation  | Sync | `book_fundedamount`  | Rank **10** — must run before `RequirementDetailFundingGuard`, so register that guard at rank 20 (lower ranks run first). **PreImage** `PreImage` (`book_fundedamount`). |
 
 ### `Checkbook.Plugins.Validation.RequirementFundingFundedAmountLock`
 
@@ -508,7 +511,7 @@ on `book_requirementfunding` — increases and no-op writes are always allowed.
 (Funded ≤ TDP) keeps a TDP reduction within the available Withholding
 (TDP − Funded). Authorized ancestors: the four funding tools + the Distribution
 generator, plus the roll-up sources that recompute RF Funded via
-`PrioritizationRollupHelper.RecalculateRFFunded` — `book_prioritization`,
+`FundingRollupHelper.RecalculateRFFunded` — `book_prioritization`,
 `book_prioritizationfunding`, `book_requirementdetailfunding` (Create / Update /
 Delete). Full setup:
 [`../docs/FundedAmountLock-Setup.md`](../docs/FundedAmountLock-Setup.md).
@@ -519,7 +522,7 @@ Delete). Full setup:
 
 | # | Message | Primary entity            | Stage          | Mode | Filtering attributes   | Notes |
 |---|---------|---------------------------|----------------|------|------------------------|-------|
-| 1 | Update  | `book_requirementfunding` | Pre-Operation  | Sync | `book_newfundedamount` | Rank **10** (runs before `RequirementFundingTDPValidator`). **Requires PreImage** (`book_newfundedamount`) — falls back to a Retrieve if the image is missing. |
+| 1 | Update  | `book_requirementfunding` | Pre-Operation  | Sync | `book_newfundedamount` | Rank **10** — must run before `RequirementFundingTDPValidator`, so register that validator at rank 20 (lower ranks run first). **Requires PreImage** (`book_newfundedamount`) — falls back to a Retrieve if the image is missing. |
 
 ### `Checkbook.Plugins.Validation.ItemizedDetailFundedAmountLock`
 
@@ -552,7 +555,7 @@ generator (all via the base). Full setup:
 
 | # | Message | Primary entity               | Stage          | Mode | Filtering attributes | Notes |
 |---|---------|------------------------------|----------------|------|----------------------|-------|
-| 1 | Update  | `book_prioritizationfunding` | Pre-Operation  | Sync | `book_fundedamount`  | Rank **10** (runs before `PrioritizationFundingGuard` so users get the lock message, not a cap error). **Requires PreImage** (`book_fundedamount`) — falls back to a Retrieve if the image is missing. |
+| 1 | Update  | `book_prioritizationfunding` | Pre-Operation  | Sync | `book_fundedamount`  | Rank **10** — must run before `PrioritizationFundingGuard` so users get the lock message, not a cap error; register the guard at rank 20 (lower ranks run first). **Requires PreImage** (`book_fundedamount`) — falls back to a Retrieve if the image is missing. |
 
 ### `Checkbook.Plugins.Validation.RequirementFundingTDPValidator`
 
@@ -564,7 +567,7 @@ LOA-allocation check when the update is mid-realignment (detected by walking
 | # | Message | Primary entity            | Stage          | Mode | Filtering attributes                                                              | Notes |
 |---|---------|---------------------------|----------------|------|-----------------------------------------------------------------------------------|-------|
 | 1 | Create  | `book_requirementfunding` | Pre-Operation  | Sync | *(none)*                                                                          | Validates new RF against its LOA. |
-| 2 | Update  | `book_requirementfunding` | Pre-Operation  | Sync | `book_tdp, book_fundedamount, book_lineofaccounting`                              | Re-validates on TDP / Funded / LOA change. **Requires PreImage** (`book_tdp, book_fundedamount, book_lineofaccounting`). |
+| 2 | Update  | `book_requirementfunding` | Pre-Operation  | Sync | `book_newtdp, book_newfundedamount, book_lineofaccounting`                              | Re-validates on TDP / Funded / LOA change. **Requires PreImage** (`book_newtdp, book_newfundedamount, book_lineofaccounting`). |
 
 ### `Checkbook.Plugins.Validation.SpendPlanValidator`
 
@@ -710,7 +713,7 @@ decision check ensures only the actual decision write processes.
 > (direct/OPR), or plain **RequirementFunding** granularity. `RealignmentProcessor`
 > and `RealignmentValidator` branch on "has active items?" — with items they take
 > their shape from the rollup (`book_allsamefundsag` + `book_realignmententrymode`)
-> and the processor iterates items (`ProcessItems`); without items the legacy
+> and the processor hands off to `RealignmentExecutor` (`ProcessItems`); without items the legacy
 > FY26 single-row path runs unchanged (coexistence, no migration).
 
 **Schema (maker portal / `devtools/sandbox-import/schema/realign_item_schema.py`):**
@@ -857,7 +860,7 @@ mode Prios keep their manually entered funding.
 | # | Message | Primary entity          | Stage          | Mode | Filtering attributes | Notes |
 |---|---------|-------------------------|----------------|------|----------------------|-------|
 | 1 | Create  | `book_itemizeddetails`  | Post-Operation | Sync | *(none)*             | Recalcs the new parent Prio. |
-| 2 | Update  | `book_itemizeddetails`  | Post-Operation | Sync | `book_newrequestedamount, book_validatedamount, book_newfundedamounttdp, book_prioritization, statecode` | Recalcs current parent; if Prio reassigned, also old parent. **Requires PreImage** (`book_prioritization`). |
+| 2 | Update  | `book_itemizeddetails`  | Post-Operation | Sync | `book_requestedamount, book_validatedamount, book_fundedamount, book_prioritization, statecode` | Recalcs current parent; if Prio reassigned, also old parent. **Requires PreImage** (`book_prioritization`). |
 | 3 | Delete  | `book_itemizeddetails`  | Post-Operation | Sync | *(none)*             | Recalcs the (pre-image) parent. **Requires PreImage** (`book_prioritization`). |
 
 ### `Checkbook.Plugins.Items.PrioritizationFundCenterBackfill`
@@ -897,7 +900,7 @@ national → non-national leave existing Prio FCs in place.
 |---|---------|---------------------|-----------------|------|-----------------------------------|-------|
 | 1 | Update  | `book_requirements` | Post-Operation  | Sync | `book_fundcenter, book_national`  | Cascades to linked Prios. **Requires PreImage** (`book_fundcenter, book_national`). Cascades even to Prios with active Itemized Details — the Itemized-Details FC lock was retired Aug 2026 (see the retirement note in the FY27 schema section). |
 
-### `Checkbook.Plugins.Items.PrioritizationFundingSpendPlanStamp`
+### `Checkbook.Plugins.SpendPlans.PrioritizationFundingSpendPlanStamp`
 
 Stamps the spend-plan classification onto a Prioritization Funding from its
 parent Requirement + RF: `book_centrallymanaged` (mirror of `book_national`),
@@ -910,7 +913,7 @@ snapshot for its FY. Pre-op so the values land in the same write.
 | 1 | Create  | `book_prioritizationfunding`| Pre-Operation  | Sync | *(none)*             | Stamps CM / mode / LOA on new PFs. |
 | 2 | Update  | `book_prioritizationfunding`| Pre-Operation  | Sync | `book_requirementfunding` | Re-stamps when the RF is re-pointed. **Requires PreImage** (`book_requirementfunding`). |
 
-### `Checkbook.Plugins.Items.RequirementSpendPlanModeCascade`
+### `Checkbook.Plugins.SpendPlans.RequirementSpendPlanModeCascade`
 
 When a Requirement's `book_national` or `book_breakout` flips, re-stamps
 `book_centrallymanaged` / `book_spendplanmode` on its PFs — **only for FY ≥ the
@@ -921,7 +924,7 @@ so past FYs stay frozen. Mirrors the stamp plugin's mode derivation.
 |---|---------|---------------------|----------------|------|----------------------|-------|
 | 1 | Update  | `book_requirements` | Post-Operation | Sync | `book_national, book_breakout` | Re-stamps active-FY PFs. **Requires PreImage** (`book_national, book_breakout`). |
 
-### `Checkbook.Plugins.Items.RequirementFundingLoaCascade`
+### `Checkbook.Plugins.Helpers.RequirementFundingLoaCascade`
 
 When an RF's LOA (`book_lineofaccounting`) changes, pushes it onto the stamped
 `book_lineofaccounting` of its PFs so the state rollup keeps reaching the right
@@ -953,9 +956,13 @@ bulk-rename runbook live in [`Naming/README.md`](Naming/README.md).
 
 ## Recalculations
 
-All recalc plugins below register **Post-Operation Sync** and guard
-`context.Depth > 1` internally to prevent re-entry from their own nested
-updates.
+All recalc plugins below register **Post-Operation Sync**. Most guard
+`context.Depth > 1` (orchestrators call the shared helpers directly instead);
+exceptions: `SpendPlanStateRollup` and `PrioritizationItemizedRollup` have no
+depth guard (they must run nested), `PrioritizationSingleRfAutoAllocate` only stops
+at Depth > 8, and `FundingLineTDPRemainingUpdater` enforces at Depth == 1 only.
+A Depth > 1 guard also means Excel / bulk imports (which arrive at depth 2) skip
+the roll-up — see the deferred depth-guard audit.
 
 ### `Checkbook.Plugins.Recalculations.PrioritizationFundingRollup`
 
@@ -963,8 +970,8 @@ Rolls `book_prioritizationfunding` junction amounts up onto **both** the parent
 Prioritization's `book_newfundedamounttdp` + `book_validatedamount` **and** the
 parent Requirement Funding's `book_fundedamount` + `book_validatedamount`. The
 Prio aggregate + update lives in
-`Helpers/PrioritizationFundingRollupHelper.RecalculatePrioritizationFunded`; the
-RF leg calls `Helpers/PrioritizationRollupHelper.RecalculateRFFunded` directly
+`Helpers/FundingRollupHelper.RecalculatePrioritizationFunded`; the
+RF leg calls `Helpers/FundingRollupHelper.RecalculateRFFunded` directly
 (the Prio update this plugin issues runs at depth+1, where the depth-guarded
 `PrioritizationRollupToRequirementFunding` early-returns, so it never fires to
 refresh the RF). On re-parent it recalcs both the old and new RF.
@@ -995,7 +1002,7 @@ Only buckets that already have spend-plan rows are touched. Never creates rows.
 Rolls child Prioritization funded/validated totals up onto the parent
 Requirement Funding. Depth-guarded; depth-1 actors (e.g.
 `RealignmentProcessor`, `TurnInApprovalPlugin`) that need the result after
-their own nested Prio updates must call `PrioritizationRollupHelper.RecalculateRFFunded`
+their own nested Prio updates must call `FundingRollupHelper.RecalculateRFFunded`
 directly.
 
 | # | Message | Primary entity        | Stage           | Mode | Filtering attributes                                                                                          | Notes |
@@ -1014,14 +1021,14 @@ junction whenever the NPM sets the Prio total. Covers **both** funding modes —
 Direct (NPM types `book_newfundedamounttdp` / `book_validatedamount` in the V&F
 editor) and Itemized (`PrioritizationItemizedRollup` sums the details onto the
 same two fields) — because both fire this step's filter. It recalculates the
-parent RF directly via `PrioritizationRollupHelper.RecalculateRFFunded` (the
+parent RF directly via `FundingRollupHelper.RecalculateRFFunded` (the
 junction write lands at depth ≥ 2, where `PrioritizationFundingRollup`
 self-guards and won't refresh the RF). No pre-image needed — the post-operation
 `Retrieve` reads the committed totals + parents.
 
 **FY26 guard.** A Prio that already funds an RF through the legacy direct
 `book_requirementfunding` lookup is skipped outright — that is the FY26 shape,
-and the RF roll-up (`PrioritizationRollupHelper.BuildRFFundedUpdate`) UNIONs the
+and the RF roll-up (`FundingRollupHelper.BuildRFFundedUpdate`) UNIONs the
 direct-lookup path with the junction path on the assumption they are mutually
 exclusive per RF. Materializing a junction for a Prio that also carries the
 direct lookup lands it in **both** sums and the RF double-counts it → a spurious
@@ -1088,13 +1095,24 @@ or its LOA/Resource Amount changes.
 > `statecode`. Decision-driven amount changes roll up via the separate
 > `book_decision` step (see `DecisionRollupRecalculator`), not through this one.
 
-> **Bulk load / import caveat.** Edit-in-Excel and the Import Wizard write each
-> row *nested under a data-import job*, so their Funding Track updates run at
-> **Depth 2** — where this recalc's `Depth > 1` guard (in `LOATouchPropagator`)
-> skips them. A bulk Beginning-Balance load therefore does **not** roll up to
-> LOA TDP. Run the **`book_RecalculateLOATDP`** Custom API afterward to
-> reconcile (see below). Day-to-day form / app / flow edits run at Depth 1 and
-> are unaffected.
+> **Bulk load / import (fixed Oct 2026).** Import from Excel/CSV (the Import
+> Wizard) writes each row from an async import job at **Depth 2**, where the
+> old `Depth > 1` guard skipped the recalc (verified in Blipsnchitz: imported
+> Decisions left LOA TDP stale). Web API `$batch` and SDK `ExecuteMultiple`
+> run at Depth 1 and were never affected. `FundingTrackTDPRecalculator` and
+> `DecisionRollupRecalculator` now opt in to `LOATouchPropagator.RecalcWhenNested`:
+> they run at any depth and skip only when an *upstream* ancestor is a write on
+> an LOA-touch table (Decision, Funding Track, LOA, Ledger, Requirement Funding)
+> or the `book_GenerateLOAs` / `book_RecalculateLOATDP` Custom APIs — the
+> recursion brake. Dataverse also chains the operation's own outer context as a
+> parent; `Helpers/PipelineAncestryHelper` ignores that (same message + table +
+> record). So imported Decisions and Funding Tracks now roll up to LOA TDP.
+> The Ledger and Requirement Funding propagators keep the plain `Depth > 1`
+> skip (orchestrators write those and recalc themselves).
+> `FundingTrackLOASynchronizer` (pre-op) follows the same rule, skipping only
+> under an FT/LOA write, so a *bulk grain change* re-links the FT before the
+> post-op recalc runs. `book_RecalculateLOATDP` (below) remains the safety net
+> for historical drift.
 
 ### `Checkbook.Plugins.Recalculations.LOATDPReconciler`
 
@@ -1182,7 +1200,7 @@ LOA's TDP Remaining so the form view doesn't go stale.
 | # | Message | Primary entity            | Stage           | Mode | Filtering attributes                       | Notes |
 |---|---------|---------------------------|-----------------|------|--------------------------------------------|-------|
 | 1 | Create  | `book_requirementfunding` | Post-Operation  | Sync | *(none)*                                   | Recalcs LOA. |
-| 2 | Update  | `book_requirementfunding` | Post-Operation  | Sync | `book_tdp, book_lineofaccounting`          | Recalcs LOA on TDP / LOA change. |
+| 2 | Update  | `book_requirementfunding` | Post-Operation  | Sync | `book_newtdp, book_lineofaccounting`          | Recalcs LOA on TDP / LOA change. |
 | 3 | Delete  | `book_requirementfunding` | Post-Operation  | Sync | *(none)*                                   | Recalcs pre-image LOA. **Requires PreImage** (`book_lineofaccounting`). |
 
 ---
@@ -1195,11 +1213,11 @@ LOA's TDP Remaining so the form view doesn't go stale.
 > Turn-In can span several Fund/SAGs. AFP/Allotment are sized **per item**
 > (`TurnInItemAmountCalculator`) and rolled up to the header (`TurnInItemRollup`);
 > the header `TurnInAmountCalculator` skips FY27. `TurnInValidator` runs
-> `TurnInFy27Rules` (per-PF funded, itemized detail reductions, RF Withholding first
-> + RDF reductions) and `TurnInApprovalPlugin` runs `TurnInFy27Executor` (junction
+> `TurnInRules` (per-PF funded, itemized detail reductions, RF Withholding first
+> + RDF reductions) and `TurnInApprovalPlugin` runs `TurnInExecutor` (junction
 > reductions, Requested lowered, per-debit-LOA ARNG credit, per-Fund/PG
 > distributions). FY26 and zero-item Sweep Turn-Ins keep the existing path.
-> Branch key: `book_turnin.book_fiscalyear` (`TurnInLOAResolver.IsFy27Plus`).
+> Branch key: `book_turnin.book_fiscalyear` (`TurnInRules.IsLegacy`, inverted).
 > **FY27 RF-level route (2026-10-16):** a Turn-In whose lines are all RF-level is
 > created by an NPM and approved in one step by a Resource Integrator / CSOR /
 > Checkbook Administrator on `book_beapproved`; `TurnInValidator` refuses a State
@@ -1252,10 +1270,10 @@ source, and approval ordering.
 > Turn-In Item must carry a Prioritization. PEC and WTC are non-geographic
 > entities and stay **exempt** (they may turn in RF-only). Checkbook
 > Administrators and Budget Executors hold no such state team and pass. The
-> check runs via `StateTeamHelper.IsRestrictedStateUser` (a name-pattern query
+> check runs via `StateMembershipHelper.IsRestrictedStateUser` (a name-pattern query
 > over the user's team memberships) on the State's approval save. Exempt
 > abbreviations live in `TurnInValidator.RfOnlyExemptAbbreviations`; the state
-> owner-team suffixes live in `StateTeamHelper.StateTeamSuffixes`.
+> owner-team suffixes live in `StateMembershipHelper.StateTeamSuffixes`.
 
 Also enforces **role gating** via `UserRoleHelper`: State approval requires
 `Book - State Approver`, `Book - State Administrator`, or
@@ -1392,6 +1410,15 @@ Prioritizations. Six plugin classes cover derived-fields, roll-up, validation,
 auto-sharing, BE-approval orchestration, and denial reset. Design and data-model
 detail is in [`../dist/SCHEMA-StateSwap.md`](../dist/SCHEMA-StateSwap.md).
 
+**FY27+ (2026-10-21):** swaps whose `book_newfiscalyear` is FY27 or later are **PF → PF legs**
+(`book_debitprioritizationfunding` → `book_creditprioritizationfunding`) with Prio-level itemized
+detail adjustments (`book_swapdetailreduction` / `book_swapdetailincrease`). Every plugin below
+branches on the FY; FY26 swaps keep the Prio-level path unchanged. A seventh class,
+`SwapLineLock`, locks FY27 lines once either state approves. Design:
+[`../docs/StateSwap-FY27-Redesign.md`](../docs/StateSwap-FY27-Redesign.md); sandbox registration:
+`devtools/sandbox-import/schema/register_swap_fy27_steps.py`; end-to-end check:
+`devtools/sandbox-import/data-seed/transactional/fy27_swap_validate.py`.
+
 ### `Checkbook.Plugins.StateSwaps.SwapItemDerivedFieldsPlugin`
 
 Pre-op writer on `book_swapitem`. Denormalizes `book_fund`, `book_pg`, and
@@ -1399,10 +1426,15 @@ Pre-op writer on `book_swapitem`. Denormalizes `book_fund`, `book_pg`, and
 enforces the per-row invariants (both Prios share a Fund + PG; the two Prios
 belong to distinct states matching the parent's StateA + StateB; amount > 0).
 
+**FY27+:** the item names PFs instead of Prios. The plugin requires the debit PF, derives
+`book_debitprioritization` / `book_creditprioritization` + Fund / PG / Debit State from the PFs
+(PF → RF → LOA), and requires each PF to be active, funded and on an NPM Review Prio, the credit
+PF to share the debit PF's Fund + PG, and the two states to be the parent's, one each.
+
 | # | Message | Primary entity   | Stage         | Mode | Filtering attributes                                                                                          | Notes |
 |---|---------|------------------|---------------|------|---------------------------------------------------------------------------------------------------------------|-------|
 | 1 | Create  | `book_swapitem`  | Pre-Operation | Sync | *(none)*                                                                                                      | Initial derived-field write + invariant enforcement. |
-| 2 | Update  | `book_swapitem`  | Pre-Operation | Sync | `book_debitprioritization, book_creditprioritization, book_stateswap, book_newamount`                          | Re-derive on any input change. **Requires PreImage** (`book_debitprioritization, book_creditprioritization, book_stateswap, book_newamount`). |
+| 2 | Update  | `book_swapitem`  | Pre-Operation | Sync | `book_debitprioritization, book_creditprioritization, book_stateswap, book_newamount, book_debitprioritizationfunding, book_creditprioritizationfunding` | Re-derive on any input change. **Requires PreImage** (same six attributes). The two PF lookups were added for FY27 (2026-10-21). |
 
 ### `Checkbook.Plugins.StateSwaps.SwapRollupPlugin`
 
@@ -1424,13 +1456,18 @@ only on false → true) so a re-save that re-drives a stuck approval is
 validated and role-gated like the original; denial detection stays
 transition-based. Enforces
 idempotency (no re-processing if ledgers exist), role gating with
-**per-state BU scoping** via `StateScopeHelper` (a State A Approver in the
+**per-state BU scoping** via `StateMembershipHelper` (a State A Approver in the
 wrong BU cannot approve the State A side), at-least-one-active-item
 (recomputed live from active items — the stored totals are not trusted;
 **one-sided swaps are allowed**, there is no both-sides-contribute check
 since Aug 2026), overdraw per debit Prio, and the "BE requires both state
 approvals" prereq. Denial transitions skip completeness / overdraw /
 BE-prereq checks so an incomplete swap can still be denied.
+
+**FY27+:** completeness / at-least-one-item / overdraw are replaced by `Helpers/SwapRules`:
+both PFs set on every item; both PFs active, funded and on an NPM Review Prio; per-item Fund + PG
+match; per debit PF Σ legs ≤ Funded; per itemized Prio Σ detail reductions == Σ legs out of it
+and Σ detail increases == Σ legs into it (rows on any other Prio rejected).
 
 After validation passes, the validator **stamps the audit fields** for each
 approval flag transitioning false → true in the Update:
@@ -1485,6 +1522,22 @@ User-level **Share** on `book_swapitem`.
 | # | Message | Primary entity  | Stage           | Mode | Filtering attributes | Notes |
 |---|---------|-----------------|-----------------|------|----------------------|-------|
 | 1 | Create  | `book_swapitem` | Post-Operation  | Sync | *(none)*             | Share the new item with StateA + StateB teams. |
+| 2 | Create  | `book_swapdetailreduction` | Post-Operation | Sync | *(none)* | FY27 (2026-10-21): share the new detail reduction the same way. |
+| 3 | Create  | `book_swapdetailincrease`  | Post-Operation | Sync | *(none)* | FY27 (2026-10-21): share the new detail increase the same way. |
+
+### `Checkbook.Plugins.StateSwaps.SwapLineLock`
+
+Pre-op guard (FY27+ swaps only; mirrors `TurnInLineLock`). Blocks Create / Update / Delete of
+`book_swapitem`, `book_swapdetailreduction` and `book_swapdetailincrease` (and re-parenting onto /
+off such a swap) once the parent swap is inactive, carries any approval (State A, State B or BE),
+or has ledgers. A denial clears the approvals and re-opens editing. The cascade from a whole-swap
+Delete is allowed. Reads the parent FY itself; no role bypass.
+
+| # | Message | Primary entity | Stage | Mode | Filtering attributes | Notes |
+|---|---------|----------------|-------|------|----------------------|-------|
+| 1–3 | Create / Update / Delete | `book_swapitem` | Pre-Operation | Sync | *(none)* | Update + Delete **PreImage** `book_stateswap` (falls back to a Retrieve). |
+| 4–6 | Create / Update / Delete | `book_swapdetailreduction` | Pre-Operation | Sync | *(none)* | Same. |
+| 7–9 | Create / Update / Delete | `book_swapdetailincrease` | Pre-Operation | Sync | *(none)* | Same. |
 
 ### `Checkbook.Plugins.StateSwaps.SwapApprovalPlugin`
 
@@ -1503,10 +1556,19 @@ self-deactivate (statecode/statuscode only) nor `SwapRollupPlugin`'s
 parent writes (totals + isbalanced) can re-trigger it. Resolves each item's debit/credit
 LOA + parent RF via `SwapLOAResolver`, writes ledger pairs (skipping
 same-LOA net-zero items), recalcs touched LOA TDPs, applies net Prio
-`FundedAmount` and parent RF `TDP` deltas via `SwapPrioritizationUpdater`,
+`FundedAmount` and parent RF `TDP` deltas via `SwapExecutorLegacy`,
 recalcs LOA TDPs again as a catch-all, creates AFP/Allotment Distributions
 via `SwapDistributionCreator`, and deactivates the swap (statecode
 Inactive, statuscode 2 = BE Approved).
+
+**FY27+** swaps resolve via `SwapLOAResolver.ResolveLegs` (each side's RF / LOA / Prio / Fund
+Center from its PF) and run `Helpers/SwapExecutor` instead of the ledger + delta steps: per leg
+debit-first (ledger pair when cross-LOA, debit PF down, debit RF TDP down then credit RF TDP up
+via `JunctionFundingHelper`), then credit detail increases, then each credit PF set to
+*pre-swap Funded − Σ out + Σ in* (absolute — safe with `PrioritizationSingleRfAutoAllocate` and
+with a PF on both sides), Direct credit Prio Requested lifted first when the new Funded exceeds
+it, then debit detail reductions, re-sums and an enforcing LOA recalc. Distributions and
+deactivation are shared with FY26. No registration change.
 
 **Swap Distributions** (added Jul 2026): a swap is modeled as both states
 performing a turn-in to A18, with A18 then distributing the agreed amounts
@@ -1522,7 +1584,7 @@ immutable by the `book_GenerateDistributions` reconcile. Prerequisites: the
 `book_DistributionHoldingFundCenter` env var.
 
 When a credit pushes a Prio's `FundedAmount` above its `RequestedAmount`,
-`SwapPrioritizationUpdater` raises `RequestedAmount` to match **in the same
+`SwapExecutorLegacy` raises `RequestedAmount` to match **in the same
 Update** — the entity-scoped "Requested vs Funded" business rule on
 Prioritization has no ancestor-context bypass and would otherwise block the
 swap (same pattern as `RealignmentProcessor`).
@@ -1530,11 +1592,11 @@ swap (same pattern as `RealignmentProcessor`).
 The debit side has the mirror-image trap on RF: the "Req Funding - Funded
 vs TDP" real-time business rule (entity-scoped, no bypass possible) rejects
 any RF write where `FundedAmount` > `TDP`, and the RF's rollup
-`FundedAmount` stays stale-high until `SwapPrioritizationUpdater` recomputes
+`FundedAmount` stays stale-high until `SwapExecutorLegacy` recomputes
 it (the rollup plugins skip at depth > 1). So the updater writes each debit
 RF's reduced `TDP` **and** its rolled-down `FundedAmount`/`ValidatedAmount`
-in the same Update (via `PrioritizationRollupHelper.BuildRFFundedUpdate`),
-mirroring `RealignmentProcessor.ApplyDebitToRF`. A TDP-only debit write
+in the same Update (via `FundingRollupHelper.BuildRFFundedUpdate`),
+mirroring `RequirementFundingHelper.ApplyDebit`. A TDP-only debit write
 would be rejected by the business rule.
 
 Piggybacks on the `IsTriggeredByStateSwap` bypass added to
@@ -1543,7 +1605,7 @@ RF delta application would otherwise trip that plugin's TDP-vs-Funded
 check (the bypass covers the plugin only, hence the same-Update fold above
 for the business rule).
 
-> **⚠ Delta ordering is debit-first (2026-08-06).** `SwapPrioritizationUpdater`
+> **⚠ Delta ordering is debit-first (2026-08-06).** `SwapExecutorLegacy`
 > applies: (1) debit Prios' Funded down, (2) debit RFs' Funded rolldown +
 > TDP cut in one Update, (3) credit RFs' TDP up, (4) credit Prios' Funded
 > up, (5) final Funded rollup on every touched RF. Funds are *released
@@ -1675,17 +1737,46 @@ migration note if an env still has an older Async registration.
 
 ## Admin
 
+Both lock toggles share `Admin/EnvVarToggleBase` (role gate on
+`Book - Checkbook Administrator`, direct or team-derived; flip a Boolean
+env var via `EnvironmentVariableHelper.ToggleBool`; return `IsLocked`). Each is
+wired via its Custom API's **Plugin Type** field — no separate Step registration.
+
 ### `Checkbook.Plugins.Admin.ToggleFundedAmountLockPlugin`
 
-Custom API handler `book_ToggleFundedAmountLock`. Flips the
-`book_LockManualFundedEdits` env-var value record (read by both
-`PrioritizationFundedAmountLock` and `RequirementFundingFundedAmountLock`)
-and returns the new state as `IsLocked`. Role-gated in code to
-`Book - Checkbook Administrator`
-(direct or team-derived). Wired via the Custom API's **Plugin Type** field —
-no separate Step registration. Backs the Admin Center "Lock/Unlock Funding"
+Custom API handler `book_ToggleFundedAmountLock`. Flips
+`book_LockManualFundedEdits`, read by all five `FundedAmountLockBase` guards
+(`PrioritizationFundedAmountLock`, `PrioritizationFundingFundedAmountLock`,
+`RequirementFundingFundedAmountLock`, `RequirementDetailFundingFundedAmountLock`,
+`ItemizedDetailFundedAmountLock`). Backs the Admin Center "Lock/Unlock Funding"
 command button; full setup in
 [`../docs/FundedAmountLock-Setup.md`](../docs/FundedAmountLock-Setup.md).
+
+### `Checkbook.Plugins.Admin.ToggleSpendPlanLockPlugin`
+
+Custom API handler `book_ToggleSpendPlanLock`. Flips `book_LockSpendPlanEdits`,
+read by `SpendPlanEditLockGuard`. Backs the Admin Center "Spend Plan
+Lock/Unlock" command button; full setup in
+[`../docs/SpendPlanLock-Setup.md`](../docs/SpendPlanLock-Setup.md).
+
+---
+
+## Tickets
+
+> Full setup (Custom API definition, PCF placement, smoke test) lives in
+> [`Tickets/REGISTRATION.md`](Tickets/REGISTRATION.md).
+
+### `Checkbook.Plugins.Tickets.CastVotePlugin`
+
+Custom API handler `book_CastVote`, called by the `TicketVotingGrid` PCF.
+Toggles the initiating user's `book_ticketendorsement` row on a ticket
+(none → create, same direction → delete, opposite → flip), then recomputes
+`book_ticket.book_score` as the sum of all `book_value`s. The voter is stamped
+in `book_endorser`; alternate key `book_uniquevote` (`book_endorser`,
+`book_ticket`) blocks duplicate votes. The score write relies on plugins
+running as the sysadmin super user — voters typically lack Write on others'
+tickets. Wired via the Custom API's **Plugin Type** field — no separate Step
+registration.
 
 ---
 
@@ -1714,7 +1805,8 @@ a step or changing a rank: the ordering constraints live here.
 | 4 | Pre-Op (rank 20) | Sync | `RequirementDetailFundingGuard` | XOR guard; before NameSetter so rejected Prios skip the naming retrieves. |
 | 5 | Pre-Op (rank 30) | Sync | `PrioritizationNameSetter` | Reads `book_fundcenter` from Target — MUST run after the backfill. |
 | 6 | Post-Op | Sync | `PrioritizationRollupToRequirementFunding` | Rolls new Prio into parent RF totals. |
-| 7 | Post-Op | **Async** | `ItemizedDetailsSynchronizer` | Sets FundingMode from the Requirement's RDs (no seeding — Itemized Details are user-selected); async, so it lands after the transaction. |
+| 7 | Post-Op | Sync | `PrioritizationSingleRfAutoAllocate` | Materializes the single PF junction when the Prio is created already funded at NPM Review (FY27 single-RF). |
+| 8 | Post-Op | **Async** | `ItemizedDetailsSynchronizer` | Sets FundingMode from the Requirement's RDs (no seeding — Itemized Details are user-selected); async, so it lands after the transaction. |
 
 **Update** (in order):
 
@@ -1722,11 +1814,12 @@ a step or changing a rank: the ordering constraints live here.
 |---|---|---|---|---|
 | 1 | Pre-Op (rank 10) | Sync | `PrioritizationFundedAmountLock` | `book_newfundedamounttdp` — reduction lock runs before other validators so users get the lock message, not a cap error. Increases pass through. |
 | 2 | Pre-Op (rank 15) | Sync | `PrioritizationFundingApprovalGuard` | `book_newfundedamounttdp, book_approvalstatus` — blocks funding increases below NPM Review; strips funding on pull-back out of NPM Review. **Requires PreImage** (both attrs). |
-| 3 | Pre-Op | Sync | `PrioritizationFundingValidator` | `book_newfundedamounttdp, book_requirementfunding, book_approvalstatus, statecode` |
+| 3 | Pre-Op (rank 20) | Sync | `PrioritizationFundingValidator` | `book_newfundedamounttdp, book_requirementfunding, book_approvalstatus, statecode` |
 | 4 | Pre-Op | Sync | `PrioritizationNameSetter` | `book_state, book_requirementfunding, book_requirement, book_statepriority, book_fundcenter, book_newfiscalyear` |
 | 5 | Post-Op | Sync | `PrioritizationRollupToRequirementFunding` | `book_newfundedamounttdp, book_validatedamount, book_requirementfunding, statecode` |
-| 6 | Post-Op | Sync | `PrioritizationPullbackFundingCleanup` | `book_approvalstatus` — deactivates FY27 junction rows on pull-back out of NPM Review. PreImage `book_approvalstatus`. |
-| 7 | Post-Op | **Async** | `ItemizedDetailsSynchronizer` | `book_requirement, book_requirementfunding` (re-point to a different Requirement deletes stale details + resets FundingMode) |
+| 6 | Post-Op | Sync | `PrioritizationSingleRfAutoAllocate` | `book_newfundedamounttdp, book_validatedamount` — after the RF roll-up; syncs the single FY27 PF junction to the new total. |
+| 7 | Post-Op | Sync | `PrioritizationPullbackFundingCleanup` | `book_approvalstatus` — deactivates FY27 junction rows on pull-back out of NPM Review. PreImage `book_approvalstatus`. |
+| 8 | Post-Op | **Async** | `ItemizedDetailsSynchronizer` | `book_requirement, book_requirementfunding` (re-point to a different Requirement deletes stale details + resets FundingMode) |
 
 **Delete**: Post-Op Sync `PrioritizationRollupToRequirementFunding` (recalcs the pre-image parent RF).
 

@@ -19,15 +19,17 @@ namespace Checkbook.Plugins.LOAs
     ///   links the FT, and associates the FT's APE with the LOA.
     /// • At the end of the batch, recalcs TDP once per unique LOA touched.
     ///
-    /// The PostOp <c>FundingTrackTDPRecalculator</c> short-circuits at Depth>1,
-    /// so the FT updates we issue from inside this Custom API don't trigger it.
+    /// The PostOp <c>FundingTrackTDPRecalculator</c> skips when nested under
+    /// this Custom API (<c>LOATouchPropagator</c>'s recursion brake), so the FT
+    /// updates we issue from inside it don't trigger it.
     /// We do the recalc explicitly here — once per LOA rather than once per FT
     /// — to keep the work bounded by the LOA count, not the FT count.
     ///
     /// Input parameters:
     ///   <c>FiscalYear</c> (int, optional) — Fund FY option-set value to limit the scope.
     ///                                       Pass 0 or omit to process all FYs.
-    ///   <c>BatchSize</c>  (int, optional) — Max number of FTs to attempt this invocation.
+    ///   <c>BatchSize</c>  (int, optional) — Max number of FTs to link this invocation
+    ///                     (skipped / failed FTs do not count toward it).
     ///                                       Pass 0 or omit for "process all in scope" (legacy).
     ///                                       Use to stay under the 2-minute sync sandbox limit
     ///                                       on large datasets; caller loops until Remaining=0.
@@ -83,7 +85,10 @@ namespace Checkbook.Plugins.LOAs
 
             foreach (var ft in QueryUnlinkedFundingTracks(service, fiscalYearFilter))
             {
-                if (batchSize > 0 && attempted >= batchSize)
+                // The cap counts only FTs that got linked. Skipped/failed FTs stay
+                // unlinked and come back first on the next run, so counting them
+                // would let BatchSize-many bad rows block all progress forever.
+                if (batchSize > 0 && created + linked >= batchSize)
                 {
                     tracing.Trace($"Reached BatchSize cap ({batchSize}); stopping this invocation.");
                     break;
@@ -115,7 +120,7 @@ namespace Checkbook.Plugins.LOAs
                         tracing.Trace($"FT {ft.Id}: created new LOA '{grain.CanonicalName}' → {loaId}.");
                     }
 
-                    // Link the FT to the LOA. The synchronizer guards Depth>1 so won't recurse.
+                    // Link the FT to the LOA. No grain field in the update, so the synchronizer no-ops.
                     var ftUpdate = new Entity(EntityNames.FundingTrack, ft.Id);
                     ftUpdate[FundingTrackAttributes.LineOfAccounting] =
                         new EntityReference(EntityNames.FundingLine, loaId);
@@ -188,9 +193,7 @@ namespace Checkbook.Plugins.LOAs
             var result = service.RetrieveMultiple(new FetchExpression(fetch));
             if (result.Entities.Count == 0) return 0;
 
-            var aliased = result.Entities[0].GetAttributeValue<AliasedValue>("cnt");
-            if (aliased?.Value is int i) return i;
-            return 0;
+            return AliasedValueHelper.GetInt(result.Entities[0], "cnt");
         }
 
         /// <summary>

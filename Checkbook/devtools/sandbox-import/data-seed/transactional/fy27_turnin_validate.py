@@ -31,7 +31,6 @@ SP_USER = "3f90bd45-7cbe-f111-aaaf-70a8a5af378b"
 CHECKBOOK_ADMIN_ROLE = "14ee21c6-2121-f011-998a-001dd805b842"
 LOCK_VAL_ID = "ab79ea15-b1c1-f111-aaaf-70a8a5af378b"  # book_LockManualFundedEdits value
 ARNG_OPR = "9b6d7541-02c1-f111-aaaf-70a8a5af378b"
-CATEGORY_RISK = 0
 TAG = time.strftime("%m%d%H%M")
 
 
@@ -175,14 +174,17 @@ ARNG3 = rid("book_fundinglines", "ARNG-206510D27-111-TRNG-RISK")
 
 
 def arng_for(loa):
-    l = dvapi.get("book_fundinglines(%s)?$select=_book_fund_value,_book_pg_value,_book_sag_value,book_fiscalyear" % loa)
+    # TurnInLOAResolver matches the ARNG LOA on Category too (FY27 grain DO-Fund-PG-FP-Category),
+    # so the holding LOA carries the source LOA's Category.
+    l = dvapi.get("book_fundinglines(%s)?$select=_book_fund_value,_book_pg_value,_book_sag_value,book_fiscalyear,book_category" % loa)
+    cat = l.get("book_category")
     hit = _q("book_fundinglines", "book_fundinglineid",
-             "_book_fund_value eq %s and _book_sag_value eq %s and _book_disbursingofficial_value eq %s"
-             % (l["_book_fund_value"], l["_book_sag_value"], ARNG_OPR))
+             "_book_fund_value eq %s and _book_sag_value eq %s and _book_disbursingofficial_value eq %s and book_category eq %s"
+             % (l["_book_fund_value"], l["_book_sag_value"], ARNG_OPR, "null" if cat is None else cat))
     if hit: return hit[0]["book_fundinglineid"]
     print("creating ARNG holding LOA for", loa)
     return dvapi.post("book_fundinglines", {
-        "book_name": "ARNG-HOLDING-" + loa[:8], "book_fiscalyear": l["book_fiscalyear"], "book_category": CATEGORY_RISK,
+        "book_name": "ARNG-HOLDING-" + loa[:8], "book_fiscalyear": l["book_fiscalyear"], "book_category": cat,
         **ref("book_fundingline", "book_fund", "book_funds", l["_book_fund_value"]),
         **ref("book_fundingline", "book_pg", "book_pgs", l["_book_pg_value"]),
         **ref("book_fundingline", "book_sag", "book_sags", l["_book_sag_value"]),

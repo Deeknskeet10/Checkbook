@@ -32,8 +32,8 @@ namespace Checkbook.Plugins.Recalculations
     ///         PreImage:  "PreImage" — book_prioritization, book_requirementfunding
     ///
     /// The aggregate fetch + Prio update lives in
-    /// PrioritizationFundingRollupHelper.RecalculatePrioritizationFunded; the RF
-    /// math lives in PrioritizationRollupHelper.RecalculateRFFunded.
+    /// FundingRollupHelper.RecalculatePrioritizationFunded; the RF
+    /// math lives in FundingRollupHelper.RecalculateRFFunded.
     /// </summary>
     public class PrioritizationFundingRollup : PluginBase
     {
@@ -85,7 +85,7 @@ namespace Checkbook.Plugins.Recalculations
             if (oldPrioRef != null && newPrioRef != null && oldPrioRef.Id != newPrioRef.Id)
             {
                 tracing.Trace($"Parent Prioritization changed: {oldPrioRef.Id} → {newPrioRef.Id}");
-                PrioritizationFundingRollupHelper.RecalculatePrioritizationFunded(
+                FundingRollupHelper.RecalculatePrioritizationFunded(
                     service, oldPrioRef.Id, tracing);
             }
 
@@ -96,7 +96,7 @@ namespace Checkbook.Plugins.Recalculations
                 return;
             }
 
-            PrioritizationFundingRollupHelper.RecalculatePrioritizationFunded(
+            FundingRollupHelper.RecalculatePrioritizationFunded(
                 service, prioRef.Id, tracing);
 
             tracing.Trace("Prioritization rollup complete.");
@@ -133,7 +133,7 @@ namespace Checkbook.Plugins.Recalculations
             foreach (var rfId in rfIds)
             {
                 tracing.Trace($"Recalculating RF {rfId} from junction split.");
-                PrioritizationRollupHelper.RecalculateRFFunded(service, rfId, tracing);
+                FundingRollupHelper.RecalculateRFFunded(service, rfId, tracing);
             }
 
             tracing.Trace("Requirement Funding roll-up complete.");

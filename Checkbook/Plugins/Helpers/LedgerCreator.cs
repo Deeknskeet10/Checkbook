@@ -31,28 +31,9 @@ namespace Checkbook.Plugins.Helpers
             decimal amount,
             Guid realignmentId)
         {
-            tracing.Trace("Creating Realignment ledger pair.");
-
-            var realignmentRef = new EntityReference(EntityNames.Realignments, realignmentId);
-
-            var debitId = CreateLedgerEntry(
-                service, debitLOA, amount,
-                LedgerTypeValues.Realignment, LedgerDirectionValues.Debited,
-                LedgerAttributes.Realignment, realignmentRef,
-                relatedEntry: null);
-
-            var creditId = CreateLedgerEntry(
-                service, creditLOA, amount,
-                LedgerTypeValues.Realignment, LedgerDirectionValues.Credited,
-                LedgerAttributes.Realignment, realignmentRef,
-                relatedEntry: new EntityReference(EntityNames.Ledger, debitId));
-
-            service.Update(new Entity(EntityNames.Ledger, debitId)
-            {
-                [LedgerAttributes.RelatedEntry] = new EntityReference(EntityNames.Ledger, creditId),
-            });
-
-            tracing.Trace("Realignment ledger pair created and linked.");
+            CreateLinkedPair(service, tracing, "Realignment", debitLOA, creditLOA, amount,
+                LedgerTypeValues.Realignment, LedgerAttributes.Realignment,
+                new EntityReference(EntityNames.Realignments, realignmentId));
         }
 
         /// <summary>
@@ -68,20 +49,32 @@ namespace Checkbook.Plugins.Helpers
             decimal amount,
             Guid stateSwapId)
         {
-            tracing.Trace($"Creating State Swap ledger pair (amount {amount}).");
+            CreateLinkedPair(service, tracing, "State Swap", debitLOA, creditLOA, amount,
+                LedgerTypeValues.Swap, LedgerAttributes.StateSwap,
+                new EntityReference(EntityNames.StateSwap, stateSwapId));
+        }
 
-            var swapRef = new EntityReference(EntityNames.StateSwap, stateSwapId);
-
+        private static void CreateLinkedPair(
+            IOrganizationService service,
+            ITracingService tracing,
+            string label,
+            EntityReference debitLOA,
+            EntityReference creditLOA,
+            decimal amount,
+            int ledgerType,
+            string parentAttribute,
+            EntityReference parent)
+        {
             var debitId = CreateLedgerEntry(
                 service, debitLOA, amount,
-                LedgerTypeValues.Swap, LedgerDirectionValues.Debited,
-                LedgerAttributes.StateSwap, swapRef,
+                ledgerType, LedgerDirectionValues.Debited,
+                parentAttribute, parent,
                 relatedEntry: null);
 
             var creditId = CreateLedgerEntry(
                 service, creditLOA, amount,
-                LedgerTypeValues.Swap, LedgerDirectionValues.Credited,
-                LedgerAttributes.StateSwap, swapRef,
+                ledgerType, LedgerDirectionValues.Credited,
+                parentAttribute, parent,
                 relatedEntry: new EntityReference(EntityNames.Ledger, debitId));
 
             service.Update(new Entity(EntityNames.Ledger, debitId)
@@ -89,20 +82,19 @@ namespace Checkbook.Plugins.Helpers
                 [LedgerAttributes.RelatedEntry] = new EntityReference(EntityNames.Ledger, creditId),
             });
 
-            tracing.Trace($"State Swap ledger pair created: debit {debitId} / credit {creditId}.");
+            tracing.Trace($"{label} ledger pair created: debit {debitId} / credit {creditId} (amount {amount}).");
         }
 
         /// <summary>
         /// Creates ledger entries for a Turn-In: one debit per unique source
         /// LOA (from <paramref name="debits"/>) and one credit per credit LOA
-        /// (from <paramref name="credits"/>). Empty credits indicates the
-        /// "funds stay on source LOA" fallback — both sides are skipped.
+        /// (from <paramref name="credits"/>). Empty credits (FY26: no RISK LOA)
+        /// means the funds stay on their source LOA — no ledgers are written.
         ///
         /// Linking strategy: each debit's RelatedEntry points to the same-LOA
-        /// credit when one exists (FY26 RISK-missing fallback case where
-        /// debit and credit share the source LOA); otherwise to the first
-        /// credit so the chain is still queryable. Each credit gets the
-        /// inverse link.
+        /// credit when one exists (a debit LOA that is also a credit LOA);
+        /// otherwise to the first credit so the chain is still queryable. Each
+        /// credit gets the inverse link.
         /// </summary>
         public static void CreateTurnInEntries(
             IOrganizationService service,

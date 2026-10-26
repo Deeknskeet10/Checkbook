@@ -39,7 +39,7 @@ Replaces (deactivate, don't delete):
      | Name | Type | Optional | Notes |
      |---|---|---|---|
      | `FiscalYear` | Integer | Yes | Fund FY option-set value. `0` or omitted = all FYs. |
-     | `BatchSize`  | Integer | Yes | Max Funding Tracks to attempt this invocation. `0` or omitted = unlimited. Use with `Remaining` to pump large backlogs in slices. |
+     | `BatchSize`  | Integer | Yes | Max Funding Tracks to link (create or match an LOA) this invocation; skipped/failed FTs do not count toward it. `0` or omitted = unlimited. Use with `Remaining` to pump large backlogs in slices. |
    - Response properties:
      | Name | Type | Notes |
      |---|---|---|
@@ -47,7 +47,7 @@ Replaces (deactivate, don't delete):
      | `Linked`  | Integer | |
      | `Skipped` | Integer | |
      | `Failed`  | Integer | FTs that threw during processing (per-FT failures do not abort the run). |
-     | `Remaining` | Integer | FTs left unprocessed when `BatchSize` capped the run; re-invoke until 0. |
+     | `Remaining` | Integer | Active FTs in scope still unlinked after this run — includes skipped and failed FTs, so it may never reach 0; re-invoke until a batch links nothing. |
      | `FailedDetails` | String | Semicolon-joined `FT id: error` list for the `Failed` count. |
 
 ## Step-ordering contract
@@ -55,8 +55,11 @@ Replaces (deactivate, don't delete):
 `FundingTrackLOASynchronizer` is **PreOp**; the existing
 `FundingTrackTDPRecalculator` is **PostOp**. They run in the same pipeline
 at the same depth, so the recalculator sees both the pre-image's old LOA
-and the synchronizer's new LOA on the target — and rolls up both. **Don't
-add a `Depth > 1` skip to the synchronizer for the same reason.**
+and the synchronizer's new LOA on the target — and rolls up both. Both skip
+only when nested under an FT/LOA write (the recalc also skips under the
+`book_GenerateLOAs` / `book_RecalculateLOATDP` Custom APIs), **not** on plain
+`Depth > 1` — Import from Excel/CSV rows arrive at Depth 2 and must
+re-link and roll up (fixed Oct 2026).
 
 The full step rows are in
 [`../PLUGIN-REGISTRATION.md`](../PLUGIN-REGISTRATION.md).
@@ -64,7 +67,7 @@ The full step rows are in
 ## Leave alone — existing TDP roll-up
 
 `FundingTrackTDPRecalculator` (PostOp Create/Update/Delete on
-`book_fundingtrack`) does NOT change. Its `Depth > 1` guard intentionally
+`book_fundingtrack`) needs no new steps. Its nesting guard intentionally
 skips when our Custom API issues recursive FT updates — in that path
 `LOAGenerator` drives `TDPCalculationHelper.BatchRecalculateLOATDP`
 itself at the end of its run.

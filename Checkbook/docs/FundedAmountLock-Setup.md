@@ -369,7 +369,7 @@ API's `IsLocked` response and refreshes the grid.
   never drop below what is funded. An RF with child Prios can only give up
   Withholding through Realignments / Turn-Ins anyway.
 - **RF Funded roll-up ancestors** — RF Funded is recomputed by
-  `PrioritizationRollupHelper.RecalculateRFFunded` from Prio, junction, and
+  `FundingRollupHelper.RecalculateRFFunded` from Prio, junction, and
   RD-funding writes, so the RF guard authorizes Create / Update / Delete on
   `book_prioritization`, `book_prioritizationfunding`, and
   `book_requirementdetailfunding` in the parent chain. Manual reductions at

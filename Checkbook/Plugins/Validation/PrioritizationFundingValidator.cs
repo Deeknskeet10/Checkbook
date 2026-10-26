@@ -79,7 +79,10 @@ namespace Checkbook.Plugins.Validation
 
             tracing.Trace($"RF TDP = {rfTDP}");
 
-            // ---- 1. Calculate sibling totals (APPROVED + ACTIVE only) ----
+            // ---- 1. Calculate sibling totals (APPROVED + ACTIVE only, excluding this Prio) ----
+            var selfExclude = context.MessageName == "Update"
+                ? $"<condition attribute='{PrioritizationAttributes.Id}' operator='ne' value='{context.PrimaryEntityId}'/>"
+                : string.Empty;
             var fetch = $@"
                 <fetch aggregate='true'>
                   <entity name='{EntityNames.Prioritization}'>
@@ -87,6 +90,7 @@ namespace Checkbook.Plugins.Validation
                     <filter type='and'>
                         <condition attribute='{PrioritizationAttributes.ApprovalStatus}' operator='eq' value='{ApprovalStatusValues.FinalApproved}'/>
                         <condition attribute='{PrioritizationAttributes.StateCode}' operator='eq' value='{StateCodeValues.Active}'/>
+                        {selfExclude}
                     </filter>
                     <link-entity name='{EntityNames.RequirementFunding}' from='{RequirementFundingAttributes.Id}' 
                                  to='{PrioritizationAttributes.RequirementFunding}' link-type='inner'>
@@ -106,10 +110,16 @@ namespace Checkbook.Plugins.Validation
             tracing.Trace($"Sibling funded total: {siblingFundedSum}");
 
             // ---- 2. Compute proposed total (include new change) ----
-            // NOTE: Fetch includes the current record for Update, so subtract old value.
-            decimal oldFunded = preImage?.GetAttributeValue<decimal?>(PrioritizationAttributes.FundedAmountTDP) ?? 0m;
+            // The fetch excludes this Prio, so proposed = siblings + new. What this
+            // Prio contributed to THIS RF before the change is its old funded amount
+            // only if it was already under this RF — a re-parent is a full increase
+            // on the new RF.
+            var previousRF = preImage?.GetAttributeValue<EntityReference>(PrioritizationAttributes.RequirementFunding);
+            decimal oldFunded = previousRF != null && previousRF.Id == parentRF.Id
+                ? preImage.GetAttributeValue<decimal?>(PrioritizationAttributes.FundedAmountTDP) ?? 0m
+                : 0m;
 
-            var proposedTotal = siblingFundedSum - oldFunded + newFunded;
+            var proposedTotal = siblingFundedSum + newFunded;
 
             tracing.Trace($"Proposed total after change: {proposedTotal}");
 

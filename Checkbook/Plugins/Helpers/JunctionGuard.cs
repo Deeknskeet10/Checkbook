@@ -56,26 +56,67 @@ namespace Checkbook.Plugins.Helpers
         }
 
         /// <summary>
+        /// True when the row is inactive after this Update — it is being deactivated,
+        /// or it was already inactive and stays so. Such a row contributes nothing
+        /// to any total and must never be blocked by uniqueness/cap/approval checks
+        /// (deactivation is how duplicate, mismatched and over-cap rows get cleaned
+        /// up). A pre-image without statecode counts as active.
+        /// </summary>
+        public static bool IsInactiveAfterSave(Entity target, Entity preImage, string stateCodeAttribute)
+        {
+            var sc = target.GetAttributeValue<OptionSetValue>(stateCodeAttribute)
+                     ?? preImage?.GetAttributeValue<OptionSetValue>(stateCodeAttribute);
+            return sc != null && sc.Value != StateCodeValues.Active;
+        }
+
+        /// <summary>
+        /// What this row contributed to <paramref name="rfId"/>'s active funded total
+        /// BEFORE this operation: the pre-image funded amount when the row was
+        /// active and already on this RF, otherwise 0 (Create, re-parent from another
+        /// RF, or reactivation of an inactive row). A pre-image without statecode is
+        /// treated as active.
+        /// </summary>
+        public static decimal PriorContribution(
+            Entity preImage, string rfFkAttribute, Guid rfId,
+            string fundedAttribute, string stateCodeAttribute)
+        {
+            if (preImage == null) return 0m;
+            var wasActive = (preImage.GetAttributeValue<OptionSetValue>(stateCodeAttribute)?.Value
+                             ?? StateCodeValues.Active) == StateCodeValues.Active;
+            var wasOnRf = preImage.GetAttributeValue<EntityReference>(rfFkAttribute)?.Id == rfId;
+            return wasActive && wasOnRf
+                ? NumericHelper.ToDecimal(preImage, fundedAttribute) ?? 0m
+                : 0m;
+        }
+
+        /// <summary>
         /// Throws when the sum of FundedAmount across active junction rows on
         /// the given RF — with this Create/Update applied — would exceed
-        /// <paramref name="rfTDP"/>. On Update the aggregate includes the
-        /// pre-image's old funded value, so callers pass <paramref name="oldFunded"/>
-        /// to swap old → new; on Create the aggregate doesn't include self yet.
+        /// <paramref name="rfTDP"/>. The aggregate excludes this row, so the
+        /// proposed total is (other rows) + <paramref name="newFunded"/>.
+        /// <paramref name="priorContribution"/> (see <see cref="PriorContribution"/>)
+        /// decides whether this is an increase on THIS RF — a re-parent or
+        /// reactivation counts its full amount as new.
         /// </summary>
         public static void EnforceTDPCap(
             IOrganizationService service,
             ITracingService tracing,
             string junctionEntity,
+            string idAttribute,
             string stateCodeAttribute,
             string rfFkAttribute,
             string fundedAttribute,
             Guid rfId,
             decimal rfTDP,
             decimal newFunded,
-            decimal oldFunded,
+            decimal priorContribution,
             IPluginExecutionContext context)
         {
             tracing.Trace($"RF TDP = {rfTDP}");
+
+            var selfExclude = context.MessageName == "Update" && context.PrimaryEntityId != Guid.Empty
+                ? $"<condition attribute='{idAttribute}' operator='ne' value='{context.PrimaryEntityId}'/>"
+                : string.Empty;
 
             var fetch = $@"
                 <fetch aggregate='true'>
@@ -84,26 +125,25 @@ namespace Checkbook.Plugins.Helpers
                         <filter type='and'>
                             <condition attribute='{stateCodeAttribute}' operator='eq' value='{StateCodeValues.Active}'/>
                             <condition attribute='{rfFkAttribute}' operator='eq' value='{rfId}'/>
+                            {selfExclude}
                         </filter>
                     </entity>
                 </fetch>";
 
             var result = service.RetrieveMultiple(new FetchExpression(fetch));
-            var siblingSum = result.Entities.Count > 0
+            var otherSum = result.Entities.Count > 0
                 ? AliasedValueHelper.GetDecimal(result.Entities[0], "total_funded")
                 : 0m;
 
-            var proposedTotal = context.MessageName == "Create"
-                ? siblingSum + newFunded
-                : siblingSum - oldFunded + newFunded;
+            var proposedTotal = otherSum + newFunded;
 
             tracing.Trace(
-                $"Sibling sum={siblingSum}, oldFunded={oldFunded}, newFunded={newFunded}, " +
+                $"Other rows={otherSum}, priorContribution={priorContribution}, newFunded={newFunded}, " +
                 $"proposed={proposedTotal}");
 
-            // Only ENFORCE the cap when this row's FundedAmount is being
-            // INCREASED (newFunded > oldFunded; a Create is always an increase
-            // from 0). A reduction — or the pull-back deactivation — can never
+            // Only ENFORCE the cap when this row's contribution to THIS RF is
+            // INCREASING (a Create, re-parent or reactivation is always an
+            // increase from 0). A reduction — or the pull-back deactivation — can never
             // push the RF total further over its TDP cap, so blocking it is
             // never correct and deadlocks legitimate remediation: this guard
             // fires once per junction row, but a grid save that rebalances two
@@ -115,7 +155,7 @@ namespace Checkbook.Plugins.Helpers
             // back under the cap and every row's save is rejected. Mirrors the
             // increases-only intent of the NPM-Review approval check in the
             // callers, and the same fix in PrioritizationFundingValidator.
-            bool isIncrease = newFunded > oldFunded;
+            bool isIncrease = newFunded > priorContribution;
 
             if (isIncrease && proposedTotal > rfTDP)
             {

@@ -4,6 +4,8 @@ using Microsoft.Xrm.Sdk;
 using Microsoft.Xrm.Sdk.Query;
 using Checkbook.Plugins.Base;
 using Checkbook.Plugins.Constants;
+using Checkbook.Plugins.Helpers;
+using Checkbook.Plugins.StateSwaps.Helpers;
 
 namespace Checkbook.Plugins.StateSwaps
 {
@@ -51,6 +53,21 @@ namespace Checkbook.Plugins.StateSwaps
 
             var target = GetTarget(context);
             var preImage = TryGetPreImage(context);
+
+            // FY27+ swaps are PF -> PF legs (docs/StateSwap-FY27-Redesign.md); the
+            // Prioritization lookups are derived from the PFs instead of entered.
+            var parentRef = GetEffectiveEntityReference(target, preImage, SwapItemAttributes.StateSwap);
+            if (parentRef != null)
+            {
+                var parentSwap = service.Retrieve(EntityNames.StateSwap, parentRef.Id, new ColumnSet(
+                    StateSwapAttributes.FiscalYear, StateSwapAttributes.StateA, StateSwapAttributes.StateB));
+                if (!FiscalYearHelper.IsLegacyFiscalYear(
+                        parentSwap.GetAttributeValue<OptionSetValue>(StateSwapAttributes.FiscalYear)?.Value))
+                {
+                    ApplyPfLeg(service, tracing, target, preImage, parentSwap);
+                    return;
+                }
+            }
 
             var debitPrio = GetEffectiveEntityReference(target, preImage,
                 SwapItemAttributes.DebitPrioritization);
@@ -154,6 +171,79 @@ namespace Checkbook.Plugins.StateSwaps
                 $"CreditPrioSet={creditPrio != null}.");
         }
 
+        /// <summary>
+        /// FY27 leg: the giving state names a debit PF (+ amount); the receiving state later
+        /// names a credit PF. Both must be usable (active, funded, Prio in NPM Review), the
+        /// states must be the parent's two states, one each, and the leg stays within one
+        /// Fund + PG. Derives the Prio lookups, Fund / PG and Debit State onto the Target.
+        /// Re-checked at approval by SwapRules (balances can change after a save).
+        /// </summary>
+        private static void ApplyPfLeg(
+            IOrganizationService service, ITracingService tracing,
+            Entity target, Entity preImage, Entity parentSwap)
+        {
+            var debitPf = GetEffectiveEntityReference(target, preImage, SwapItemAttributes.DebitPrioritizationFunding);
+            var creditPf = GetEffectiveEntityReference(target, preImage, SwapItemAttributes.CreditPrioritizationFunding);
+            var amount = GetEffectiveDecimal(target, preImage, SwapItemAttributes.Amount);
+
+            if (debitPf == null)
+                throw new InvalidPluginExecutionException(
+                    "A Swap Item on an FY27 State Swap must name the Prioritization Funding (Fund/SAG line) it sends from.");
+            if (amount <= 0m)
+                throw new InvalidPluginExecutionException("Swap Item Amount must be greater than zero.");
+            if (creditPf != null && creditPf.Id == debitPf.Id)
+                throw new InvalidPluginExecutionException(
+                    "A Swap Item cannot send to the same Prioritization Funding it sends from.");
+
+            var stateA = parentSwap.GetAttributeValue<EntityReference>(StateSwapAttributes.StateA);
+            var stateB = parentSwap.GetAttributeValue<EntityReference>(StateSwapAttributes.StateB);
+            if (stateA == null || stateB == null)
+                throw new InvalidPluginExecutionException(
+                    "State Swap must have both State A and State B set before items can be added.");
+
+            var ids = creditPf != null ? new[] { debitPf.Id, creditPf.Id } : new[] { debitPf.Id };
+            var pfs = SwapPfContext.Load(service, ids);
+            if (!pfs.TryGetValue(debitPf.Id, out var debit))
+                throw new InvalidPluginExecutionException("Could not load the debit Prioritization Funding.");
+
+            var reason = debit.UnusableReason();
+            if (reason != null)
+                throw new InvalidPluginExecutionException($"This Swap Item cannot send from it: {reason}.");
+            if (debit.State.Id != stateA.Id && debit.State.Id != stateB.Id)
+                throw new InvalidPluginExecutionException(
+                    "The debit Prioritization Funding must belong to State A or State B on the parent Swap.");
+
+            SwapPfContext credit = null;
+            if (creditPf != null)
+            {
+                if (!pfs.TryGetValue(creditPf.Id, out credit))
+                    throw new InvalidPluginExecutionException("Could not load the credit Prioritization Funding.");
+                reason = credit.UnusableReason();
+                if (reason != null)
+                    throw new InvalidPluginExecutionException($"This Swap Item cannot send to it: {reason}.");
+                if (credit.State.Id == debit.State.Id)
+                    throw new InvalidPluginExecutionException(
+                        "Swap items cannot debit and credit within the same State.");
+                if (credit.State.Id != stateA.Id && credit.State.Id != stateB.Id)
+                    throw new InvalidPluginExecutionException(
+                        "The credit Prioritization Funding must belong to State A or State B on the parent Swap.");
+                if (credit.Fund.Id != debit.Fund.Id || credit.PG.Id != debit.PG.Id)
+                    throw new InvalidPluginExecutionException(
+                        "Each Swap Item stays within one Fund and PG: the credit Prioritization Funding must have the " +
+                        "same Fund and PG as the debit one. Trade a different Fund or PG as a separate item.");
+            }
+
+            target[SwapItemAttributes.DebitPrioritization] = debit.Prioritization;
+            target[SwapItemAttributes.CreditPrioritization] = credit?.Prioritization;
+            target[SwapItemAttributes.Fund] = debit.Fund;
+            target[SwapItemAttributes.PG] = debit.PG;
+            target[SwapItemAttributes.DebitState] = debit.State;
+
+            tracing.Trace(
+                $"SwapItemDerivedFieldsPlugin: FY27 leg validated. DebitPF={debit.PfId}, CreditPF={credit?.PfId}, " +
+                $"Fund={debit.Fund.Id}, PG={debit.PG.Id}, DebitState={debit.State.Id}, Amount={amount}.");
+        }
+
         private sealed class PrioContext
         {
             public Guid PrioId;
@@ -200,8 +290,8 @@ namespace Checkbook.Plugins.StateSwaps
                 {
                     PrioId = row.Id,
                     State  = row.GetAttributeValue<EntityReference>(PrioritizationAttributes.State),
-                    Fund   = (row.GetAttributeValue<AliasedValue>("loa." + FundingLineAttributes.Fund))?.Value as EntityReference,
-                    PG     = (row.GetAttributeValue<AliasedValue>("loa." + FundingLineAttributes.PG))?.Value as EntityReference,
+                    Fund   = AliasedValueHelper.GetReference(row, "loa." + FundingLineAttributes.Fund),
+                    PG     = AliasedValueHelper.GetReference(row, "loa." + FundingLineAttributes.PG),
                 });
             }
             return list;

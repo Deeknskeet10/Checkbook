@@ -99,9 +99,8 @@ namespace Checkbook.Plugins.Realignments
             var rows = service.RetrieveMultiple(new FetchExpression(fetch)).Entities;
             if (rows.Count > 0)
             {
-                total = NumericHelper.ToDecimal(rows[0].GetAttributeValue<AliasedValue>("total")?.Value, 0m);
-                var rawCnt = rows[0].GetAttributeValue<AliasedValue>("cnt")?.Value;
-                count = rawCnt is int i ? i : 0;
+                total = AliasedValueHelper.GetDecimal(rows[0], "total");
+                count = AliasedValueHelper.GetInt(rows[0], "cnt");
             }
 
             if (count > 0)
@@ -120,8 +119,7 @@ namespace Checkbook.Plugins.Realignments
                 var sameRows = service.RetrieveMultiple(new FetchExpression(sameFetch)).Entities;
                 if (sameRows.Count > 0)
                 {
-                    var rawSame = sameRows[0].GetAttributeValue<AliasedValue>("cnt")?.Value;
-                    sameCount = rawSame is int i ? i : 0;
+                    sameCount = AliasedValueHelper.GetInt(sameRows[0], "cnt");
                 }
             }
 

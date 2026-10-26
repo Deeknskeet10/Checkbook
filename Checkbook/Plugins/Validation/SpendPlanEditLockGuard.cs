@@ -14,9 +14,9 @@ namespace Checkbook.Plugins.Validation
     /// review or a roll-forward is in progress. Toggled from the Admin Center
     /// via <see cref="Admin.ToggleSpendPlanLockPlugin"/>.
     ///
-    /// "Direct user write" means a top-level operation — a form save, the
+    /// "Direct user write" means a user-initiated operation — a form save, the
     /// Spend Plan PCF, bulk edit, an Excel import, or a raw Web API call. Those
-    /// have no <see cref="IPluginExecutionContext.ParentContext"/>. Writes made
+    /// have no parent context beyond platform wrappers (ExecuteMultiple). Writes made
     /// by other plugins (the roll-ups that recompute book_fundedamount, the
     /// future automated Actual process, a Turn-In / Realignment cascade) run
     /// under a parent context and pass through untouched — same ancestor-walk
@@ -61,10 +61,12 @@ namespace Checkbook.Plugins.Validation
                 return;
 
             // System-generated write (roll-up, cascade, automated Actual process)
-            // — always allowed. Only top-level user writes are lockable.
-            if (context.ParentContext != null)
+            // — always allowed. Only user writes are lockable. Bulk edit and Excel
+            // import arrive under an ExecuteMultiple wrapper, which is still a
+            // direct user action, so walk past platform wrappers before deciding.
+            if (HasNonWrapperAncestor(context))
             {
-                tracing.Trace("SpendPlanEditLock: parent context present — system write, allow.");
+                tracing.Trace("SpendPlanEditLock: automated parent operation — system write, allow.");
                 return;
             }
 

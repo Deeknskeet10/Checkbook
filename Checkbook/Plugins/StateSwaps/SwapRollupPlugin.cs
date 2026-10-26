@@ -133,8 +133,7 @@ namespace Checkbook.Plugins.StateSwaps
                 </fetch>";
             var rows = service.RetrieveMultiple(new FetchExpression(fetch)).Entities;
             if (rows.Count == 0) return 0;
-            var raw = rows[0].GetAttributeValue<AliasedValue>("n")?.Value;
-            return raw is int i ? i : 0;
+            return AliasedValueHelper.GetInt(rows[0], "n");
         }
 
         private static decimal SumActiveItemsForDebitState(
@@ -156,8 +155,7 @@ namespace Checkbook.Plugins.StateSwaps
 
             var rows = service.RetrieveMultiple(new FetchExpression(fetch)).Entities;
             if (rows.Count == 0) return 0m;
-            var raw = rows[0].GetAttributeValue<AliasedValue>("total")?.Value;
-            return NumericHelper.ToDecimal(raw, 0m);
+            return AliasedValueHelper.GetDecimal(rows[0], "total");
         }
     }
 }
