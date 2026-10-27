@@ -67,13 +67,22 @@ Itemized Details" command that called it.
 The import error names one missing type at a time — if it names a type not listed
 here, it is the same fix.
 
-**Check before importing.** Open this URL in gov dev (signed in) to list every type
-registered on the assembly, and delete any name that is **not** in the
-[appendix](#appendix--plugin-types-in-the-dll):
+**Check before importing.** In PRT, expand **(Assembly) Checkbook_Plugins** — every
+child node is a registered plugin type. Delete any whose name is **not** in the
+[appendix](#appendix--plugin-types-in-the-dll). (The Web API query
+`plugintypes?$select=typename&$filter=_pluginassemblyid_value eq 6836b59c-ded0-4517-b69b-37233137a49c`
+lists the same thing, but browser access to the API may be denied in gov.)
 
-```
-https://<gov-org>.crm.microsoftdynamics.us/api/data/v9.2/plugintypes?$select=typename&$filter=_pluginassemblyid_value eq 6836b59c-ded0-4517-b69b-37233137a49c&$orderby=typename
-```
+### 1c. Update the assembly with the shipped DLL (PRT)
+
+Use **`dist/Checkbook_Plugins.dll`** — the exact DLL inside the cutover zip (built from
+`main`, version 1.1.0.0, all 66 types). Do **not** use a local build unless your checkout
+is current with `main`: an older checkout lacks the new classes and PRT reports them
+missing (e.g. *"Checkbook.Plugins.Tickets.CastVotePlugin"*).
+
+PRT → select **Checkbook_Plugins** → *Update* → choose `dist/Checkbook_Plugins.dll` →
+select all plugins → *Update Selected Plugins*. This succeeds once §1b has removed every
+stale type. The solution import in §3 then carries the same DLL (no-op) plus the steps.
 
 > If the import says *"Existing plug-in types have been removed. Please update major or
 > minor version of plug-in assembly"*, a stale type is still registered — do **not**
