@@ -67,6 +67,20 @@ Itemized Details" command that called it.
 The import error names one missing type at a time — if it names a type not listed
 here, it is the same fix.
 
+**Check before importing.** Open this URL in gov dev (signed in) to list every type
+registered on the assembly, and delete any name that is **not** in the
+[appendix](#appendix--plugin-types-in-the-dll):
+
+```
+https://<gov-org>.crm.microsoftdynamics.us/api/data/v9.2/plugintypes?$select=typename&$filter=_pluginassemblyid_value eq 6836b59c-ded0-4517-b69b-37233137a49c&$orderby=typename
+```
+
+> If the import says *"Existing plug-in types have been removed. Please update major or
+> minor version of plug-in assembly"*, a stale type is still registered — do **not**
+> bump the assembly version. Dataverse refuses a major/minor change on an existing
+> assembly (via `pac`, PRT update, or solution import — verified in the sandbox); the
+> only fix is deleting the stale type.
+
 ---
 
 ## 2. Import the PCF controls
@@ -236,3 +250,78 @@ FY27 plugins:
   env var, `SpendPlanEditLockGuard` steps): the plugin types ship in the assembly but nothing
   is registered, so it stays inert. Set up separately per `docs/SpendPlanLock-Setup.md`.
 - **In-app notifications** — still in progress, not on any of these branches.
+
+---
+
+## Appendix — plugin types in the DLL
+
+The 66 types in `Checkbook_Plugins` 1.1.0.0 as shipped. Gov may register only these.
+
+```
+Checkbook.Plugins.Admin.ToggleFundedAmountLockPlugin
+Checkbook.Plugins.Admin.ToggleSpendPlanLockPlugin
+Checkbook.Plugins.Distributions.GenerateDistributionsPlugin
+Checkbook.Plugins.Funds.FundKeySetter
+Checkbook.Plugins.Helpers.RequirementFundingLoaCascade
+Checkbook.Plugins.Items.ItemizedDetailsSynchronizer
+Checkbook.Plugins.Items.PrioritizationFundCenterBackfill
+Checkbook.Plugins.Items.PrioritizationItemizedRollup
+Checkbook.Plugins.Items.RequirementFundCenterCascade
+Checkbook.Plugins.LOAs.FundingTrackLOASynchronizer
+Checkbook.Plugins.LOAs.LOAGenerator
+Checkbook.Plugins.LOAs.LOANameSetter
+Checkbook.Plugins.Naming.PrioritizationNameSetter
+Checkbook.Plugins.Realignments.RealignmentItemDerivedFields
+Checkbook.Plugins.Realignments.RealignmentProcessor
+Checkbook.Plugins.Realignments.RealignmentRollup
+Checkbook.Plugins.Realignments.SetSameFundSagFlagPlugin
+Checkbook.Plugins.Recalculations.DecisionRollupRecalculator
+Checkbook.Plugins.Recalculations.FundingLineTDPRemainingUpdater
+Checkbook.Plugins.Recalculations.FundingTrackTDPRecalculator
+Checkbook.Plugins.Recalculations.LOATDPReconciler
+Checkbook.Plugins.Recalculations.LedgerCreateFundingLineUpdater
+Checkbook.Plugins.Recalculations.PrioritizationFundingRollup
+Checkbook.Plugins.Recalculations.PrioritizationRollupToRequirementFunding
+Checkbook.Plugins.Recalculations.PrioritizationSingleRfAutoAllocate
+Checkbook.Plugins.Recalculations.RequirementDetailFundingRollup
+Checkbook.Plugins.Recalculations.RequirementFundingTDPRemainingUpdater
+Checkbook.Plugins.Recalculations.SpendPlanStateRollup
+Checkbook.Plugins.SpendPlans.PrioritizationFundingSpendPlanStamp
+Checkbook.Plugins.SpendPlans.RequirementSpendPlanModeCascade
+Checkbook.Plugins.StateSwaps.SwapApprovalPlugin
+Checkbook.Plugins.StateSwaps.SwapAutoSharePlugin
+Checkbook.Plugins.StateSwaps.SwapDenialPlugin
+Checkbook.Plugins.StateSwaps.SwapItemAutoSharePlugin
+Checkbook.Plugins.StateSwaps.SwapItemDerivedFieldsPlugin
+Checkbook.Plugins.StateSwaps.SwapLineLock
+Checkbook.Plugins.StateSwaps.SwapRollupPlugin
+Checkbook.Plugins.StateSwaps.SwapValidator
+Checkbook.Plugins.Tickets.CastVotePlugin
+Checkbook.Plugins.TurnIns.TurnInAmountCalculator
+Checkbook.Plugins.TurnIns.TurnInApprovalPlugin
+Checkbook.Plugins.TurnIns.TurnInDeactivator
+Checkbook.Plugins.TurnIns.TurnInItemAmountCalculator
+Checkbook.Plugins.TurnIns.TurnInItemRollup
+Checkbook.Plugins.TurnIns.TurnInLineLock
+Checkbook.Plugins.TurnIns.TurnInRequiresBEApprovalRecalc
+Checkbook.Plugins.TurnIns.TurnInValidator
+Checkbook.Plugins.Validation.DeactivationRoleGuard
+Checkbook.Plugins.Validation.FundingEventValidator
+Checkbook.Plugins.Validation.FundingRequiresRequirementFundingGuard
+Checkbook.Plugins.Validation.ItemizedDetailFundedAmountLock
+Checkbook.Plugins.Validation.PrioritizationFundedAmountLock
+Checkbook.Plugins.Validation.PrioritizationFundingApprovalGuard
+Checkbook.Plugins.Validation.PrioritizationFundingFundedAmountLock
+Checkbook.Plugins.Validation.PrioritizationFundingGuard
+Checkbook.Plugins.Validation.PrioritizationFundingValidator
+Checkbook.Plugins.Validation.PrioritizationPullbackFundingCleanup
+Checkbook.Plugins.Validation.RealignmentValidator
+Checkbook.Plugins.Validation.RequirementBreakoutConsistencyGuard
+Checkbook.Plugins.Validation.RequirementDetailFundingFundedAmountLock
+Checkbook.Plugins.Validation.RequirementDetailFundingGuard
+Checkbook.Plugins.Validation.RequirementFundingFundedAmountLock
+Checkbook.Plugins.Validation.RequirementFundingTDPValidator
+Checkbook.Plugins.Validation.SpendPlanEditLockGuard
+Checkbook.Plugins.Validation.SpendPlanImmutabilityGuard
+Checkbook.Plugins.Validation.SpendPlanValidator
+```
