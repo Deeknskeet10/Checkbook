@@ -73,16 +73,39 @@ child node is a registered plugin type. Delete any whose name is **not** in the
 `plugintypes?$select=typename&$filter=_pluginassemblyid_value eq 6836b59c-ded0-4517-b69b-37233137a49c`
 lists the same thing, but browser access to the API may be denied in gov.)
 
-### 1c. Update the assembly with the shipped DLL (PRT)
+### 1c. Do NOT update the assembly in PRT — let the solution do it
 
-Use **`dist/Checkbook_Plugins.dll`** — the exact DLL inside the cutover zip (built from
-`main`, version 1.1.0.0, all 66 types). Do **not** use a local build unless your checkout
-is current with `main`: an older checkout lacks the new classes and PRT reports them
-missing (e.g. *"Checkbook.Plugins.Tickets.CastVotePlugin"*).
+The cutover zip carries the assembly **with its plugin type IDs**, and the steps and the
+`book_CastVote` Custom API reference those IDs. If PRT registers the new types first, it
+gives them fresh IDs and the import fails with *"lookup reference to a plugin type could
+not be resolved … plugintypeexportkey"*.
 
-PRT → select **Checkbook_Plugins** → *Update* → choose `dist/Checkbook_Plugins.dll` →
-select all plugins → *Update Selected Plugins*. This succeeds once §1b has removed every
-stale type. The solution import in §3 then carries the same DLL (no-op) plus the steps.
+**If you already updated the assembly in PRT**, delete these 13 plugin types (all new in
+this release; PRT just created them, so they have no steps) and re-import — the import
+recreates them with the IDs the solution expects:
+
+```
+Checkbook.Plugins.Admin.ToggleSpendPlanLockPlugin
+Checkbook.Plugins.Realignments.RealignmentItemDerivedFields
+Checkbook.Plugins.Realignments.RealignmentRollup
+Checkbook.Plugins.StateSwaps.SwapLineLock
+Checkbook.Plugins.Tickets.CastVotePlugin
+Checkbook.Plugins.TurnIns.TurnInItemAmountCalculator
+Checkbook.Plugins.TurnIns.TurnInItemRollup
+Checkbook.Plugins.TurnIns.TurnInLineLock
+Checkbook.Plugins.Validation.FundingRequiresRequirementFundingGuard
+Checkbook.Plugins.Validation.ItemizedDetailFundedAmountLock
+Checkbook.Plugins.Validation.PrioritizationFundingFundedAmountLock
+Checkbook.Plugins.Validation.RequirementDetailFundingFundedAmountLock
+Checkbook.Plugins.Validation.SpendPlanEditLockGuard
+```
+
+If one of them **does** have steps, it was registered by hand in this environment earlier —
+stop and compare before deleting.
+
+`dist/Checkbook_Plugins.dll` is the exact DLL inside the zip (main, 1.1.0.0, 66 types),
+kept for reference / a standalone PRT update in an environment that will **not** receive
+the cutover solution.
 
 > If the import says *"Existing plug-in types have been removed. Please update major or
 > minor version of plug-in assembly"*, a stale type is still registered — do **not**
