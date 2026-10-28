@@ -30,6 +30,11 @@ solution can carry is in two zips; the rest is the manual steps below.
 
 ## 1. Delete five stale plugin steps (PRT) — BEFORE importing
 
+> **Repeat §1–§1b in every environment** (Dev, Test, Prod) before its import — whether
+> you import the cutover zip or promote a full solution exported from Dev. These are
+> each environment's own registrations; no solution can delete or repair them, and the
+> import fails on the same step / type in each environment until they are cleaned up.
+
 The sandbox re-registered three of these under new IDs (the cutover zip brings
 the new ones) and retired the fourth. Leaving them would run the validators twice
 and keep a retired auto-populate alive.
