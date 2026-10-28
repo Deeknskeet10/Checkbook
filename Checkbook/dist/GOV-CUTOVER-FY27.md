@@ -28,7 +28,7 @@ solution can carry is in two zips; the rest is the manual steps below.
 
 ---
 
-## 1. Delete four stale plugin steps (PRT) — BEFORE importing
+## 1. Delete five stale plugin steps (PRT) — BEFORE importing
 
 The sandbox re-registered three of these under new IDs (the cutover zip brings
 the new ones) and retired the fourth. Leaving them would run the validators twice
@@ -40,6 +40,7 @@ and keep a retired auto-populate alive.
 | `SpendPlanValidator: Update of book_spendplan` | `41ac2d99-6b8f-f111-ab0f-001dd8204df7` | replaced (new ID in zip) |
 | `RequirementFundingFundedAmountLock: Update of book_requirementfunding` | `a4d9f6b5-ea8c-f111-ab0f-001dd8204df7` | replaced (new ID in zip) |
 | `ItemizedDetailsSynchronizer: Create of book_requirementdetails` | `f9b09535-2753-f111-bec5-001dd8204df7` | retired (Itemized Details are user-selected) |
+| `RequirementFundingTDPRemainingUpdater: Create of book_requirementfunding` | `d13614f4-b552-f111-bec5-001dd8204df7` | prod copy has a stale filter (`exchangerate`, `transactioncurrencyid`, deleted columns such as `book_validatedamount`) that blocks the import from updating it; the zip recreates it clean, same ID |
 
 Find each under **Checkbook_Plugins** → its plugin type → right-click the step → *Unregister*.
 
