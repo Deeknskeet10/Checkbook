@@ -1,6 +1,6 @@
 # Gov Dev Cutover — FY27 Realignment / Turn-In / State Swap + Ticket Board
 
-Status: **ready to run** · Cutover solution **v1.0.0.1**, rebuilt 2026-10-26 from
+Status: **ready to run** · Cutover solution **v1.0.0.2** (1.0.0.2: stale filters cleared from 4 Create steps), rebuilt 2026-10-26 from
 `main` @ `a1db5f0` (plugin DLL built from a clean checkout of that commit) via the
 Blipsnchitz sandbox · Target: a gov environment at the **prod baseline**
 (ARNGCheckbook 1.11.0.119).
