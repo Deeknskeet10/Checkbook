@@ -176,6 +176,14 @@ Book.TurnIn = (function () {
       setItemsSectionVisible(formContext, false);
       setControlsDisabled(formContext, FY27_LOCKED_CONTROLS, true);
     }
+    // book_newamount is Business Required at the table level (FY26 header entry),
+    // but on FY27 it is a locked roll-up that stays empty until the builder adds
+    // lines — and the builder only runs after the first save. Drop the requirement
+    // so the header can be created; restore it when FY flips back to FY26.
+    var amountAttr = formContext.getAttribute("book_newamount");
+    if (amountAttr && typeof amountAttr.setRequiredLevel === "function") {
+      amountAttr.setRequiredLevel(itemBased || isSweep ? "none" : "required");
+    }
   }
 
   function getOrigin(formContext) {

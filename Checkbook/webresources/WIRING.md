@@ -285,7 +285,9 @@ cross-reference below).
 
 **FY27 (2026-10-15):** when `book_fiscalyear` ≥ 2027 on a State-origin Turn-In the
 script hides `book_fund` / `book_pg` and the legacy items section, locks
-`book_newamount` / `book_afpamount` / `book_allotmentamount` (item roll-ups), and
+`book_newamount` / `book_afpamount` / `book_allotmentamount` (item roll-ups) — also
+dropping `book_newamount` from Business Required so the header can be saved
+before any lines exist — and
 shows the **TurnInBuilder** cell (control id `book_newamount_builder`, hidden on
 FY26 and Sweep). It re-applies on Fiscal Year change via `addOnChange` in onLoad —
 no extra handler to wire. Builder placement: `devtools/sandbox-import/schema/turnin_place_builder.py`.
