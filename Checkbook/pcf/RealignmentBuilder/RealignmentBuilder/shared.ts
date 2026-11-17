@@ -54,6 +54,15 @@ export function num(v: unknown): number {
 export function money(n: number): string {
   return n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
+/** Compact money for tight spaces: 2,493,731 -> "2.49M", 1,500 -> "1.50K", 0 -> "0.00". */
+export function compactMoney(n: number): string {
+  const abs = Math.abs(n);
+  const sign = n < 0 ? "-" : "";
+  if (abs >= 1e9) return `${sign}${(abs / 1e9).toFixed(2)}B`;
+  if (abs >= 1e6) return `${sign}${(abs / 1e6).toFixed(2)}M`;
+  if (abs >= 1e3) return `${sign}${(abs / 1e3).toFixed(2)}K`;
+  return `${sign}${abs.toFixed(2)}`;
+}
 /** OData string literal for a user-typed search term (quotes doubled, URL-encoded). */
 export function odataString(s: string): string {
   return `'${encodeURIComponent(s.replace(/'/g, "''"))}'`;

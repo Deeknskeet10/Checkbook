@@ -32,6 +32,7 @@ import {
   EPS,
   num,
   money,
+  compactMoney,
   cleanId,
   odataString,
   useStyles,
@@ -497,7 +498,7 @@ export const OprBuilder: React.FC<OprBuilderProps> = ({ webAPI, recordId }) => {
     </>
   );
   const rfLabel = (r: RfOpt): string =>
-    `${r.name} — TDP ${money(r.tdp)} · Funded ${money(r.funded)} · Withholding ${money(r.withholding)}`;
+    `${r.name} | TDP: ${compactMoney(r.tdp)} | F: ${compactMoney(r.funded)} | W: ${compactMoney(r.withholding)}`;
 
   const renderSummary = (): React.ReactElement => (
     <div className={styles.section}>
