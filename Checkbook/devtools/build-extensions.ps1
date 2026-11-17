@@ -33,6 +33,20 @@ Select-String -Path (Join-Path $projDir "ARNGCheckbookExtensions.cdsproj") -Patt
     }
   }
 
+# 1b. Bump the solution version's last segment (1.9.0.1 -> 1.9.0.2) so Dataverse
+#     sees the import as an upgrade. Preserves the file's BOM/encoding.
+$solXml = Join-Path $projDir "src/Other/Solution.xml"
+$bytes  = [IO.File]::ReadAllBytes($solXml)
+$hasBom = $bytes.Length -ge 3 -and $bytes[0] -eq 0xEF -and $bytes[1] -eq 0xBB -and $bytes[2] -eq 0xBF
+$text   = [IO.File]::ReadAllText($solXml)
+$m = [regex]::Match($text, '<Version>(\d+)\.(\d+)\.(\d+)\.(\d+)</Version>')
+if (-not $m.Success) { throw "No <Version> found in $solXml" }
+$oldVer = "$($m.Groups[1]).$($m.Groups[2]).$($m.Groups[3]).$($m.Groups[4])"
+$newVer = "$($m.Groups[1]).$($m.Groups[2]).$($m.Groups[3]).$([int]$m.Groups[4].Value + 1)"
+$text = $text.Remove($m.Index, $m.Length).Insert($m.Index, "<Version>$newVer</Version>")
+[IO.File]::WriteAllText($solXml, $text, (New-Object Text.UTF8Encoding($hasBom)))
+Write-Host "Solution version: $oldVer -> $newVer"
+
 # 2. Build the delivery solution.
 Write-Host "dotnet build -c $Configuration"
 Push-Location $projDir
