@@ -8,7 +8,8 @@ namespace Checkbook.Plugins.Constants
         public const string Id = "book_realignmentsid";
         public const string Name = "book_name";
         public const string Amount = "book_newamount";
-        public const string FiscalYear = "book_fiscalyear";
+        public const string FiscalYear = "book_fiscalyear";            // formula column — read-only
+        public const string NewFiscalYear = "book_newfiscalyear";      // editable goal_fiscalyear picklist
         public const string RealignmentStatus = "book_realignmentstatus";
         public const string RealignmentType = "book_realignmenttype";
         public const string CreditedLOA = "book_newcreditedloa";

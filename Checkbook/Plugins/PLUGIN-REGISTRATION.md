@@ -705,6 +705,20 @@ decision check ensures only the actual decision write processes.
 |---|---------|---------------------|-----------------|------|------------------------------------------|-------|
 | 1 | Update  | `book_realignments` | Post-Operation  | Sync | `book_newstateapproved, book_bedecision` | Fires when a decision value is in the payload and the record is active. **Requires PreImage** (full image — must include `statecode`; reads many attrs via `GetEffective*` and `TryGetPreImage`). |
 
+### `Checkbook.Plugins.Realignments.RealignmentNameSetter`
+
+Stamps `book_name` on Create when the caller left it blank
+(`FY{fy}-Realignment-{yyyyMMdd-HHmmss}` UTC; FY from `book_newfiscalyear`, omitted if unset).
+Lets Name stay hidden on the entry form so the initial save the RealignmentBuilder
+needs is not blocked. Never overwrites a user-supplied Name. **After registering,
+relax `book_name` on `book_realignments` from Business Required to Optional** — the
+form-level required check fires before any plugin runs, so the plugin alone does
+not fix the save.
+
+| # | Message | Primary entity      | Stage         | Mode | Filtering attributes | Notes |
+|---|---------|---------------------|---------------|------|----------------------|-------|
+| 1 | Create  | `book_realignments` | Pre-Operation | Sync | *(none)*             | No images. Must be replicated in gov. |
+
 ### FY27 multi-line redesign — `book_realignmentitem`
 
 > See [`../docs/Realignment-FY27-Redesign.md`](../docs/Realignment-FY27-Redesign.md).

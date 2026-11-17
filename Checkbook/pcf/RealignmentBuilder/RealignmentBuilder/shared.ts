@@ -54,6 +54,10 @@ export function num(v: unknown): number {
 export function money(n: number): string {
   return n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
+/** OData string literal for a user-typed search term (quotes doubled, URL-encoded). */
+export function odataString(s: string): string {
+  return `'${encodeURIComponent(s.replace(/'/g, "''"))}'`;
+}
 export function cleanId(v: unknown): string {
   return typeof v === "string" ? v.replace(/[{}]/g, "").toLowerCase() : "";
 }

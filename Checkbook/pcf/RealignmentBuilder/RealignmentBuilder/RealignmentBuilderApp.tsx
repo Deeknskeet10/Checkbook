@@ -5,15 +5,14 @@ import {
   Badge,
   Button,
   Checkbox,
-  Combobox,
   Divider,
   Input,
   MessageBar,
   MessageBarBody,
-  Option,
   Spinner,
   Text,
 } from "@fluentui/react-components";
+import { SearchPicker, SEARCH_PAGE } from "./SearchPicker";
 
 import {
   WebApi,
@@ -34,6 +33,7 @@ import {
   num,
   money,
   cleanId,
+  odataString,
   useStyles,
   wipeRealignmentChildren,
 } from "./shared";
@@ -168,25 +168,8 @@ export const StateBuilder: React.FC<StateBuilderProps> = ({ webAPI, recordId }) 
         setDebitPrioName((r[`_book_debitedprioritization_value${FV}`] as string) ?? "");
         setCreditPrioName((r[`_book_creditedprioritization_value${FV}`] as string) ?? "");
 
-        const fyFilter = fy == null ? "" : ` and book_newfiscalyear eq ${fy}`;
-        const res = await webAPI.retrieveMultipleRecords(
-          PRIORITIZATION,
-          "?$select=book_name,_book_requirement_value,book_newfiscalyear,book_fundingmode" +
-            `&$filter=statecode eq ${STATECODE_ACTIVE}${fyFilter}` +
-            "&$orderby=book_name asc&$top=500"
-        );
-        if (cancelled) return;
-        setPrios(
-          res.entities.map((e) => ({
-            id: cleanId(e.book_prioritizationid),
-            name: (e.book_name as string) ?? "(unnamed)",
-            requirementId: e._book_requirement_value ? cleanId(e._book_requirement_value) : null,
-            fiscalYear: e.book_newfiscalyear == null ? null : num(e.book_newfiscalyear),
-            fundingMode: e.book_fundingmode == null ? null : num(e.book_fundingmode),
-          }))
-        );
       } catch {
-        if (!cancelled) setError("Could not load the Realignment or Prioritizations.");
+        if (!cancelled) setError("Could not load the Realignment.");
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -195,6 +178,59 @@ export const StateBuilder: React.FC<StateBuilderProps> = ({ webAPI, recordId }) 
       cancelled = true;
     };
   }, [webAPI, recordId, reloadKey]);
+
+  // ---- Prioritization search (thousands per FY: never preloaded) -----------
+  const PRIO_SELECT = "?$select=book_name,_book_requirement_value,book_newfiscalyear,book_fundingmode";
+  const toPrio = (e: Record<string, unknown>): PrioOpt => ({
+    id: cleanId(e.book_prioritizationid),
+    name: (e.book_name as string) ?? "(unnamed)",
+    requirementId: e._book_requirement_value ? cleanId(e._book_requirement_value) : null,
+    fiscalYear: e.book_newfiscalyear == null ? null : num(e.book_newfiscalyear),
+    fundingMode: e.book_fundingmode == null ? null : num(e.book_fundingmode),
+  });
+  const rememberPrio = React.useCallback(
+    (p: PrioOpt): void => setPrios((prev) => (prev.some((x) => x.id === p.id) ? prev : [...prev, p])),
+    []
+  );
+  const searchPrios = React.useCallback(
+    async (q: string, excludeId: string): Promise<PrioOpt[]> => {
+      let filter = `statecode eq ${STATECODE_ACTIVE}`;
+      if (fiscalYear != null) filter += ` and book_newfiscalyear eq ${fiscalYear}`;
+      if (excludeId) filter += ` and book_prioritizationid ne ${excludeId}`;
+      if (q) filter += ` and contains(book_name,${odataString(q)})`;
+      const res = await webAPI.retrieveMultipleRecords(
+        PRIORITIZATION,
+        `${PRIO_SELECT}&$filter=${filter}&$orderby=book_name asc&$top=${SEARCH_PAGE}`
+      );
+      return res.entities.map(toPrio);
+    },
+    [webAPI, fiscalYear]
+  );
+  const searchDebitPrios = React.useCallback((q: string) => searchPrios(q, ""), [searchPrios]);
+  const searchCreditPrios = React.useCallback((q: string) => searchPrios(q, debitPrioId), [searchPrios, debitPrioId]);
+
+  // A saved selection is not in any search page: fetch it by id so its name,
+  // Requirement and funding mode are known.
+  React.useEffect(() => {
+    for (const id of [debitPrioId, creditPrioId]) {
+      if (!id || prios.some((p) => p.id === id)) continue;
+      void webAPI
+        .retrieveRecord(PRIORITIZATION, id, PRIO_SELECT)
+        .then((e) => rememberPrio(toPrio(e)))
+        .catch(() => setError("Could not load the selected Prioritization."));
+    }
+  }, [webAPI, debitPrioId, creditPrioId, prios, rememberPrio]);
+
+  // Credit RF picker: the Requirement's RFs are already loaded below, so filter them here.
+  const searchCreditRfs = React.useCallback(
+    (q: string): Promise<RfOpt[]> =>
+      Promise.resolve(
+        creditRfs
+          .filter((o) => !q || o.name.toLowerCase().includes(q.toLowerCase()))
+          .slice(0, SEARCH_PAGE)
+      ),
+    [creditRfs]
+  );
 
   // ---- when debit Prio changes: load its active PF junctions + details -----
   React.useEffect(() => {
@@ -412,6 +448,9 @@ export const StateBuilder: React.FC<StateBuilderProps> = ({ webAPI, recordId }) 
         book_newamount: moveTotal,
         [`book_DebitedPrioritization@odata.bind`]: `/${SET.prio}(${debitPrioId})`,
         [`book_CreditedPrioritization@odata.bind`]: `/${SET.prio}(${creditPrioId})`,
+        // Clear RFs left on the parent by a previous OPR save.
+        [`book_newDebitedRequirement@odata.bind`]: null,
+        [`book_newCreditedRequirement@odata.bind`]: null,
       });
 
       // 2) rebuild: wipe every child row (both entry modes) before re-creating.
@@ -644,56 +683,38 @@ export const StateBuilder: React.FC<StateBuilderProps> = ({ webAPI, recordId }) 
             <div className={styles.pickers}>
               <div className={styles.pickerField}>
                 <Text className={styles.heading}>Debiting Prioritization</Text>
-                <Combobox
-                  placeholder="Select the Prioritization to move funds FROM"
-                  selectedOptions={debitPrioId ? [debitPrioId] : []}
-                  value={debitPrio?.name ?? ""}
-                  onOptionSelect={(_, d) => {
-                    setDebitPrioId(d.optionValue ?? "");
+                <SearchPicker
+                  placeholder="Type to search the Prioritization to move funds FROM"
+                  selected={debitPrio}
+                  search={searchDebitPrios}
+                  optionLabel={(p) => p.name + (p.fundingMode === FUNDING_MODE_ITEMIZED ? "  (Itemized)" : "")}
+                  onSelect={(p) => {
+                    rememberPrio(p);
+                    setDebitPrioId(p.id);
                   }}
-                >
-                  {prios.map((p) => (
-                    <Option key={p.id} value={p.id} text={p.name}>
-                      {p.name}
-                      {p.fundingMode === FUNDING_MODE_ITEMIZED ? "  (Itemized)" : ""}
-                    </Option>
-                  ))}
-                </Combobox>
+                />
               </div>
               <div className={styles.pickerField}>
                 <Text className={styles.heading}>Crediting Prioritization</Text>
-                <Combobox
-                  placeholder="Select the Prioritization to move funds TO"
-                  selectedOptions={creditPrioId ? [creditPrioId] : []}
-                  value={creditPrio?.name ?? ""}
-                  onOptionSelect={(_, d) => {
-                    setCreditPrioId(d.optionValue ?? "");
+                <SearchPicker
+                  placeholder="Type to search the Prioritization to move funds TO"
+                  selected={creditPrio}
+                  search={searchCreditPrios}
+                  onSelect={(p) => {
+                    rememberPrio(p);
+                    setCreditPrioId(p.id);
                   }}
-                >
-                  {prios
-                    .filter((p) => p.id !== debitPrioId)
-                    .map((p) => (
-                      <Option key={p.id} value={p.id} text={p.name}>
-                        {p.name}
-                      </Option>
-                    ))}
-                </Combobox>
+                />
               </div>
               <div className={styles.pickerField}>
                 <Text className={styles.heading}>Credit Requirement Funding</Text>
-                <Combobox
-                  placeholder={creditPrioId ? "Select the receiving RF" : "Pick a crediting Prioritization first"}
+                <SearchPicker
+                  placeholder={creditPrioId ? "Type to search the receiving RF" : "Pick a crediting Prioritization first"}
                   disabled={!creditPrioId}
-                  selectedOptions={creditRfId ? [creditRfId] : []}
-                  value={creditRfs.find((o) => o.id === creditRfId)?.name ?? ""}
-                  onOptionSelect={(_, d) => setCreditRfId(d.optionValue ?? "")}
-                >
-                  {creditRfs.map((o) => (
-                    <Option key={o.id} value={o.id} text={o.name}>
-                      {o.name}
-                    </Option>
-                  ))}
-                </Combobox>
+                  selected={creditRfs.find((o) => o.id === creditRfId) ?? null}
+                  search={searchCreditRfs}
+                  onSelect={(o) => setCreditRfId(o.id)}
+                />
               </div>
             </div>
 

@@ -5,15 +5,14 @@ import {
   Badge,
   Button,
   Checkbox,
-  Combobox,
   Divider,
   Input,
   MessageBar,
   MessageBarBody,
-  Option,
   Spinner,
   Text,
 } from "@fluentui/react-components";
+import { SearchPicker, SEARCH_PAGE } from "./SearchPicker";
 import {
   WebApi,
   REALIGNMENT,
@@ -34,6 +33,7 @@ import {
   num,
   money,
   cleanId,
+  odataString,
   useStyles,
   wipeRealignmentChildren,
 } from "./shared";
@@ -95,6 +95,8 @@ export const OprBuilder: React.FC<OprBuilderProps> = ({ webAPI, recordId }) => {
 
   const [isActive, setIsActive] = React.useState(true);
   const [hasParentPrios, setHasParentPrios] = React.useState(false);
+  const [fiscalYear, setFiscalYear] = React.useState<number | null>(null);
+  // Cache of RFs the user has picked / saved (the full list is never preloaded).
   const [rfs, setRfs] = React.useState<RfOpt[]>([]);
 
   const [debitRfId, setDebitRfId] = React.useState("");
@@ -137,23 +139,7 @@ export const OprBuilder: React.FC<OprBuilderProps> = ({ webAPI, recordId }) => {
         setIsActive(num(r.statecode) === STATECODE_ACTIVE);
         setHasParentPrios(!!r._book_debitedprioritization_value || !!r._book_creditedprioritization_value);
         const fyRaw = r.book_newfiscalyear ?? r.book_fiscalyear;
-        const fyFilter = fyRaw == null ? "" : ` and book_newfiscalyear eq ${num(fyRaw)}`;
-        const res = await webAPI.retrieveMultipleRecords(
-          REQ_FUNDING,
-          "?$select=book_name,book_newtdp,book_newfundedamount,book_newwithholding,_book_requirement_value" +
-            `&$filter=statecode eq ${STATECODE_ACTIVE}${fyFilter}&$orderby=book_name asc&$top=500`
-        );
-        if (cancelled) return;
-        setRfs(
-          res.entities.map((e) => ({
-            id: cleanId(e.book_requirementfundingid),
-            name: (e.book_name as string) ?? "(RF)",
-            requirementId: cleanId(e._book_requirement_value),
-            tdp: num(e.book_newtdp),
-            funded: num(e.book_newfundedamount),
-            withholding: num(e.book_newwithholding),
-          }))
-        );
+        setFiscalYear(fyRaw == null ? null : num(fyRaw));
 
         // Saved OPR rows (items with a debit RF) for the summary + Edit pre-fill.
         const [items, reds, incs] = await Promise.all([
@@ -216,6 +202,50 @@ export const OprBuilder: React.FC<OprBuilderProps> = ({ webAPI, recordId }) => {
       cancelled = true;
     };
   }, [webAPI, recordId, reloadKey]);
+
+  // ---- RF search (thousands per FY: never preloaded) --------------------------
+  const RF_SELECT =
+    "?$select=book_name,book_newtdp,book_newfundedamount,book_newwithholding,_book_requirement_value";
+  const toRf = (e: Record<string, unknown>): RfOpt => ({
+    id: cleanId(e.book_requirementfundingid),
+    name: (e.book_name as string) ?? "(RF)",
+    requirementId: cleanId(e._book_requirement_value),
+    tdp: num(e.book_newtdp),
+    funded: num(e.book_newfundedamount),
+    withholding: num(e.book_newwithholding),
+  });
+  const rememberRf = React.useCallback(
+    (r: RfOpt): void => setRfs((prev) => (prev.some((x) => x.id === r.id) ? prev : [...prev, r])),
+    []
+  );
+  const searchRfs = React.useCallback(
+    async (q: string, excludeId: string, needsTdp: boolean): Promise<RfOpt[]> => {
+      let filter = `statecode eq ${STATECODE_ACTIVE}`;
+      if (fiscalYear != null) filter += ` and book_newfiscalyear eq ${fiscalYear}`;
+      if (needsTdp) filter += " and book_newtdp gt 0";
+      if (excludeId) filter += ` and book_requirementfundingid ne ${excludeId}`;
+      if (q) filter += ` and contains(book_name,${odataString(q)})`;
+      const res = await webAPI.retrieveMultipleRecords(
+        REQ_FUNDING,
+        `${RF_SELECT}&$filter=${filter}&$orderby=book_name asc&$top=${SEARCH_PAGE}`
+      );
+      return res.entities.map(toRf);
+    },
+    [webAPI, fiscalYear]
+  );
+  const searchDebitRfs = React.useCallback((q: string) => searchRfs(q, creditRfId, true), [searchRfs, creditRfId]);
+  const searchCreditRfs = React.useCallback((q: string) => searchRfs(q, debitRfId, false), [searchRfs, debitRfId]);
+
+  // A saved selection (Edit pre-fill) is not in any search page: fetch it by id.
+  React.useEffect(() => {
+    for (const id of [debitRfId, creditRfId]) {
+      if (!id || rfs.some((r) => r.id === id)) continue;
+      void webAPI
+        .retrieveRecord(REQ_FUNDING, id, RF_SELECT)
+        .then((e) => rememberRf(toRf(e)))
+        .catch(() => setError("Could not load the selected Requirement Funding."));
+    }
+  }, [webAPI, debitRfId, creditRfId, rfs, rememberRf]);
 
   // ---- debit RF: is it Prioritization-funded? its RDF junctions --------------
   React.useEffect(() => {
@@ -395,6 +425,10 @@ export const OprBuilder: React.FC<OprBuilderProps> = ({ webAPI, recordId }) => {
       const parent: Record<string, unknown> = {
         book_realignmententrymode: ENTRY_MODE_OPR,
         book_newamount: amt,
+        // Mirror the item's RFs onto the parent (State mode does the same with the
+        // Prioritizations) so the form, views and RealignmentsFlow show them.
+        [`book_newDebitedRequirement@odata.bind`]: `/${SET.rf}(${debitRfId})`,
+        [`book_newCreditedRequirement@odata.bind`]: `/${SET.rf}(${creditRfId})`,
       };
       if (hasParentPrios) {
         parent["book_DebitedPrioritization@odata.bind"] = null;
@@ -552,20 +586,16 @@ export const OprBuilder: React.FC<OprBuilderProps> = ({ webAPI, recordId }) => {
             <div className={styles.pickers}>
               <div className={styles.pickerField}>
                 <Text className={styles.heading}>Debit Requirement Funding</Text>
-                <Combobox
-                  placeholder="Select the RF to move funds FROM"
-                  selectedOptions={debitRfId ? [debitRfId] : []}
-                  value={debitRf?.name ?? ""}
-                  onOptionSelect={(_, d) => setDebitRfId(d.optionValue ?? "")}
-                >
-                  {rfs
-                    .filter((r) => r.tdp > 0)
-                    .map((r) => (
-                      <Option key={r.id} value={r.id} text={r.name}>
-                        {rfLabel(r)}
-                      </Option>
-                    ))}
-                </Combobox>
+                <SearchPicker
+                  placeholder="Type to search the RF to move funds FROM"
+                  selected={debitRf}
+                  search={searchDebitRfs}
+                  optionLabel={rfLabel}
+                  onSelect={(r) => {
+                    rememberRf(r);
+                    setDebitRfId(r.id);
+                  }}
+                />
               </div>
               <div className={styles.pickerField}>
                 <Text className={styles.heading}>Amount</Text>
@@ -578,20 +608,16 @@ export const OprBuilder: React.FC<OprBuilderProps> = ({ webAPI, recordId }) => {
               </div>
               <div className={styles.pickerField}>
                 <Text className={styles.heading}>Credit Requirement Funding</Text>
-                <Combobox
-                  placeholder="Select the RF to move funds TO"
-                  selectedOptions={creditRfId ? [creditRfId] : []}
-                  value={creditRf?.name ?? ""}
-                  onOptionSelect={(_, d) => setCreditRfId(d.optionValue ?? "")}
-                >
-                  {rfs
-                    .filter((r) => r.id !== debitRfId)
-                    .map((r) => (
-                      <Option key={r.id} value={r.id} text={r.name}>
-                        {rfLabel(r)}
-                      </Option>
-                    ))}
-                </Combobox>
+                <SearchPicker
+                  placeholder="Type to search the RF to move funds TO"
+                  selected={creditRf}
+                  search={searchCreditRfs}
+                  optionLabel={rfLabel}
+                  onSelect={(r) => {
+                    rememberRf(r);
+                    setCreditRfId(r.id);
+                  }}
+                />
               </div>
             </div>
 
