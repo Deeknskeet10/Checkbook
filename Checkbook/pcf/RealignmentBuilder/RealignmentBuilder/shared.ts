@@ -112,6 +112,12 @@ export const useStyles = makeStyles({
   heading: { fontWeight: tokens.fontWeightSemibold },
   pickers: { display: "flex", flexWrap: "wrap", columnGap: "24px", rowGap: "10px" },
   pickerField: { display: "flex", flexDirection: "column", rowGap: "4px", minWidth: "260px" },
+  // Debit | Credit two-column layout.
+  sides: { display: "grid", gridTemplateColumns: "1fr 1fr", columnGap: "0px" },
+  side: { display: "flex", flexDirection: "column", rowGap: "10px", ...shorthands.padding("0px", "16px"), minWidth: 0 },
+  sideCredit: { ...shorthands.borderLeft("1px", "solid", tokens.colorNeutralStroke2) },
+  sideTitle: { fontWeight: tokens.fontWeightBold, letterSpacing: "0.06em" },
+  field: { display: "flex", flexDirection: "column", rowGap: "4px" },
   table: { width: "100%", borderCollapse: "collapse" },
   th: {
     textAlign: "left",

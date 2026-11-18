@@ -22,6 +22,7 @@ import {
 } from "./shared";
 import { StateBuilder } from "./RealignmentBuilderApp";
 import { OprBuilder } from "./OprBuilder";
+import { ADMIN_ROLES } from "./lookups";
 
 export interface RealignmentBuilderProps {
   webAPI: WebApi;
@@ -115,6 +116,8 @@ export const RealignmentBuilderApp: React.FC<RealignmentBuilderProps> = ({ webAP
   const isState = STATE_ROLES.some((r) => roles.has(r));
   const isOpr = OPR_ROLES.some((r) => roles.has(r));
   const canChoose = roles.has(CHECKBOOK_ADMIN) || isState === isOpr;
+  // Admins may realign in every State; everyone else only in States matching their Teams.
+  const isAdmin = ADMIN_ROLES.some((r) => roles.has(r));
   const roleMode: EntryMode = isOpr && !isState ? ENTRY_MODE_OPR : ENTRY_MODE_STATE;
   const mode: EntryMode = chosen ?? savedMode ?? roleMode;
   const switching = savedMode !== null && mode !== savedMode;
@@ -149,7 +152,7 @@ export const RealignmentBuilderApp: React.FC<RealignmentBuilderProps> = ({ webAP
       {mode === ENTRY_MODE_OPR ? (
         <OprBuilder key="opr" webAPI={webAPI} recordId={id} />
       ) : (
-        <StateBuilder key="state" webAPI={webAPI} recordId={id} />
+        <StateBuilder key="state" webAPI={webAPI} recordId={id} userId={userId} isAdmin={isAdmin} />
       )}
     </>
   );

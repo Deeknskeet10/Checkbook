@@ -7,12 +7,22 @@ import {
   Checkbox,
   Divider,
   Input,
+  Label,
   MessageBar,
   MessageBarBody,
   Spinner,
   Text,
 } from "@fluentui/react-components";
-import { SearchPicker, SEARCH_PAGE } from "./SearchPicker";
+import { SearchPicker, SEARCH_PAGE, PickerOpt } from "./SearchPicker";
+import {
+  EMPTY_RF_FILTER,
+  FUND,
+  OPR,
+  RfFilter,
+  rfFilterFragment,
+  searchByName,
+  useDebounced,
+} from "./lookups";
 import {
   WebApi,
   REALIGNMENT,
@@ -120,6 +130,21 @@ export const OprBuilder: React.FC<OprBuilderProps> = ({ webAPI, recordId }) => {
   });
   const [prefillKey, setPrefillKey] = React.useState(0);
 
+  // Narrowing filters per side: [Distributing Official] [Fund] [Requirement]. They only
+  // shape the RF search below; they are not saved.
+  const [debitFilter, setDebitFilter] = React.useState<RfFilter>(EMPTY_RF_FILTER);
+  const [creditFilter, setCreditFilter] = React.useState<RfFilter>(EMPTY_RF_FILTER);
+  const debitReq = useDebounced(debitFilter.requirement);
+  const creditReq = useDebounced(creditFilter.requirement);
+  const debitScope = React.useMemo<RfFilter>(
+    () => ({ official: debitFilter.official, fund: debitFilter.fund, requirement: debitReq }),
+    [debitFilter.official, debitFilter.fund, debitReq]
+  );
+  const creditScope = React.useMemo<RfFilter>(
+    () => ({ official: creditFilter.official, fund: creditFilter.fund, requirement: creditReq }),
+    [creditFilter.official, creditFilter.fund, creditReq]
+  );
+
   const debitRf = rfs.find((r) => r.id === debitRfId) ?? null;
   const creditRf = rfs.find((r) => r.id === creditRfId) ?? null;
 
@@ -220,8 +245,11 @@ export const OprBuilder: React.FC<OprBuilderProps> = ({ webAPI, recordId }) => {
     []
   );
   const searchRfs = React.useCallback(
-    async (q: string, excludeId: string, needsTdp: boolean): Promise<RfOpt[]> => {
-      let filter = `statecode eq ${STATECODE_ACTIVE}`;
+    async (q: string, excludeId: string, needsTdp: boolean, scope: RfFilter): Promise<RfOpt[]> => {
+      // Fund / Distributing Official / Requirement narrowing (null = it matches nothing).
+      const scoped = await rfFilterFragment(webAPI, scope);
+      if (scoped == null) return [];
+      let filter = `statecode eq ${STATECODE_ACTIVE}${scoped}`;
       if (fiscalYear != null) filter += ` and book_newfiscalyear eq ${fiscalYear}`;
       if (needsTdp) filter += " and book_newtdp gt 0";
       if (excludeId) filter += ` and book_requirementfundingid ne ${excludeId}`;
@@ -234,8 +262,22 @@ export const OprBuilder: React.FC<OprBuilderProps> = ({ webAPI, recordId }) => {
     },
     [webAPI, fiscalYear]
   );
-  const searchDebitRfs = React.useCallback((q: string) => searchRfs(q, creditRfId, true), [searchRfs, creditRfId]);
-  const searchCreditRfs = React.useCallback((q: string) => searchRfs(q, debitRfId, false), [searchRfs, debitRfId]);
+  const searchDebitRfs = React.useCallback(
+    (q: string) => searchRfs(q, creditRfId, true, debitScope),
+    [searchRfs, creditRfId, debitScope]
+  );
+  const searchCreditRfs = React.useCallback(
+    (q: string) => searchRfs(q, debitRfId, false, creditScope),
+    [searchRfs, debitRfId, creditScope]
+  );
+  const searchOfficials = React.useCallback(
+    (q: string) => searchByName(webAPI, OPR, "book_oprid", q, SEARCH_PAGE),
+    [webAPI]
+  );
+  const searchFunds = React.useCallback(
+    (q: string) => searchByName(webAPI, FUND, "book_fundid", q, SEARCH_PAGE),
+    [webAPI]
+  );
 
   // A saved selection (Edit pre-fill) is not in any search page: fetch it by id.
   React.useEffect(() => {
@@ -500,6 +542,40 @@ export const OprBuilder: React.FC<OprBuilderProps> = ({ webAPI, recordId }) => {
   const rfLabel = (r: RfOpt): string =>
     `${r.name} | TDP: ${compactMoney(r.tdp)} | F: ${compactMoney(r.funded)} | W: ${compactMoney(r.withholding)}`;
 
+  // [Distributing Official] [Fund] [Requirement] -- narrows one side's RF search.
+  const renderFilters = (f: RfFilter, set: React.Dispatch<React.SetStateAction<RfFilter>>): React.ReactElement => (
+    <>
+      <div className={styles.field}>
+        <Label weight="semibold">Distributing Official</Label>
+        <SearchPicker
+          placeholder="Any (type to search)"
+          selected={f.official}
+          search={searchOfficials}
+          onSelect={(o: PickerOpt) => set((x) => ({ ...x, official: o }))}
+          onClear={() => set((x) => ({ ...x, official: null }))}
+        />
+      </div>
+      <div className={styles.field}>
+        <Label weight="semibold">Fund</Label>
+        <SearchPicker
+          placeholder="Any (type to search)"
+          selected={f.fund}
+          search={searchFunds}
+          onSelect={(o: PickerOpt) => set((x) => ({ ...x, fund: o }))}
+          onClear={() => set((x) => ({ ...x, fund: null }))}
+        />
+      </div>
+      <div className={styles.field}>
+        <Label weight="semibold">Requirement</Label>
+        <Input
+          placeholder="Type part of the Requirement name"
+          value={f.requirement}
+          onChange={(_, d) => set((x) => ({ ...x, requirement: d.value }))}
+        />
+      </div>
+    </>
+  );
+
   const renderSummary = (): React.ReactElement => (
     <div className={styles.section}>
       <div className={styles.balanceRow}>
@@ -584,42 +660,54 @@ export const OprBuilder: React.FC<OprBuilderProps> = ({ webAPI, recordId }) => {
 
         {!loading && isActive && mode === "edit" && (
           <>
-            <div className={styles.pickers}>
-              <div className={styles.pickerField}>
-                <Text className={styles.heading}>Debit Requirement Funding</Text>
-                <SearchPicker
-                  placeholder="Type to search the RF to move funds FROM"
-                  selected={debitRf}
-                  search={searchDebitRfs}
-                  optionLabel={rfLabel}
-                  onSelect={(r) => {
-                    rememberRf(r);
-                    setDebitRfId(r.id);
-                  }}
-                />
+            <div className={styles.sides}>
+              {/* DEBIT */}
+              <div className={styles.side}>
+                <Text className={styles.sideTitle}>DEBIT</Text>
+                {renderFilters(debitFilter, setDebitFilter)}
+                <div className={styles.field}>
+                  <Label weight="semibold">Requirement Funding</Label>
+                  <SearchPicker
+                    placeholder="Type to search the RF to move funds FROM"
+                    selected={debitRf}
+                    search={searchDebitRfs}
+                    optionLabel={rfLabel}
+                    onSelect={(r) => {
+                      rememberRf(r);
+                      setDebitRfId(r.id);
+                    }}
+                  />
+                </div>
               </div>
-              <div className={styles.pickerField}>
-                <Text className={styles.heading}>Amount</Text>
-                <Input
-                  className={styles.amtInput}
-                  type="number"
-                  value={amount}
-                  onChange={(_, d) => setAmount(d.value)}
-                />
+
+              {/* CREDIT */}
+              <div className={`${styles.side} ${styles.sideCredit}`}>
+                <Text className={styles.sideTitle}>CREDIT</Text>
+                {renderFilters(creditFilter, setCreditFilter)}
+                <div className={styles.field}>
+                  <Label weight="semibold">Requirement Funding</Label>
+                  <SearchPicker
+                    placeholder="Type to search the RF to move funds TO"
+                    selected={creditRf}
+                    search={searchCreditRfs}
+                    optionLabel={rfLabel}
+                    onSelect={(r) => {
+                      rememberRf(r);
+                      setCreditRfId(r.id);
+                    }}
+                  />
+                </div>
               </div>
-              <div className={styles.pickerField}>
-                <Text className={styles.heading}>Credit Requirement Funding</Text>
-                <SearchPicker
-                  placeholder="Type to search the RF to move funds TO"
-                  selected={creditRf}
-                  search={searchCreditRfs}
-                  optionLabel={rfLabel}
-                  onSelect={(r) => {
-                    rememberRf(r);
-                    setCreditRfId(r.id);
-                  }}
-                />
-              </div>
+            </div>
+
+            <div className={styles.pickerField}>
+              <Label weight="semibold">Amount</Label>
+              <Input
+                className={styles.amtInput}
+                type="number"
+                value={amount}
+                onChange={(_, d) => setAmount(d.value)}
+              />
             </div>
 
             {debitRf && (

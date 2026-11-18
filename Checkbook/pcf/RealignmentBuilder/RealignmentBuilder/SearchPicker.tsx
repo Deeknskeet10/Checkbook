@@ -22,6 +22,8 @@ interface SearchPickerProps<T extends PickerOpt> {
   /** Text shown in the dropdown row; defaults to the option's name. */
   optionLabel?: (o: T) => string;
   onSelect: (o: T) => void;
+  /** When set, the picker shows a clear (x) button and calls this when the selection is cleared. */
+  onClear?: () => void;
 }
 
 /**
@@ -36,6 +38,7 @@ export function SearchPicker<T extends PickerOpt>({
   search,
   optionLabel,
   onSelect,
+  onClear,
 }: SearchPickerProps<T>): React.ReactElement {
   const [open, setOpen] = React.useState(false);
   const [text, setText] = React.useState(selected?.name ?? "");
@@ -93,6 +96,7 @@ export function SearchPicker<T extends PickerOpt>({
     <Combobox
       placeholder={placeholder}
       disabled={disabled}
+      clearable={!!onClear && !!selected}
       value={text}
       selectedOptions={selected ? [selected.id] : []}
       onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
@@ -108,6 +112,10 @@ export function SearchPicker<T extends PickerOpt>({
         const picked = results.find((o) => o.id === d.optionValue);
         setDirty(false);
         if (picked) onSelect(picked);
+        else if (onClear && d.selectedOptions.length === 0) {
+          setText("");
+          onClear();
+        }
       }}
     >
       {results.map((o) => (

@@ -7,12 +7,15 @@ import {
   Checkbox,
   Divider,
   Input,
+  Label,
   MessageBar,
   MessageBarBody,
   Spinner,
   Text,
 } from "@fluentui/react-components";
-import { SearchPicker, SEARCH_PAGE } from "./SearchPicker";
+import { SearchPicker, SEARCH_PAGE, PickerOpt } from "./SearchPicker";
+import { ListDropdown } from "./ListDropdown";
+import { accountingForRfs, loadActualStates, searchFundCenters, useDebounced } from "./lookups";
 
 import {
   WebApi,
@@ -41,7 +44,13 @@ import {
 export interface StateBuilderProps {
   webAPI: WebApi;
   recordId: string;
+  userId?: string;
+  /** System Administrator / Checkbook Administrator: may pick any State. */
+  isAdmin: boolean;
 }
+
+/** Max Prioritizations listed per dropdown; the user narrows with State / Fund Center / Requirement text. */
+const PRIO_PAGE = 100;
 
 // Itemized Detail query: the autonumber name plus the Requirement Item's Item / TDC / MDEP.
 const DETAIL_SELECT =
@@ -53,6 +62,10 @@ interface PrioOpt {
   id: string;
   name: string;
   requirementId: string | null;
+  /** The Prioritization's Requirement Funding; its Line of Accounting carries the Fund. */
+  rfId: string;
+  stateId: string;
+  fundCenter: PickerOpt | null;
   fiscalYear: number | null;
   fundingMode: number | null;
 }
@@ -61,7 +74,6 @@ interface PfRow {
   rfId: string;
   rfName: string;
   funded: number;
-  selected: boolean;
   move: string;
 }
 interface RfOpt {
@@ -97,7 +109,7 @@ const toDetailRow = (e: Record<string, unknown>): DetailRow => {
 };
 
 /** State entry path: debit Prioritization's PF junctions -> credit Prioritization + RF. */
-export const StateBuilder: React.FC<StateBuilderProps> = ({ webAPI, recordId }) => {
+export const StateBuilder: React.FC<StateBuilderProps> = ({ webAPI, recordId, userId, isAdmin }) => {
   const styles = useStyles();
 
   const [loading, setLoading] = React.useState(true);
@@ -108,6 +120,8 @@ export const StateBuilder: React.FC<StateBuilderProps> = ({ webAPI, recordId }) 
 
   const [isActive, setIsActive] = React.useState(true);
   const [fiscalYear, setFiscalYear] = React.useState<number | null>(null);
+  // SelectedFiscalYear: the FY text used in Prioritization names ("FY2027").
+  const [selectedFiscalYear, setSelectedFiscalYear] = React.useState<string>("");
   const [mode, setMode] = React.useState<"view" | "edit">("edit");
 
   // Already-saved rows (for the read-only summary).
@@ -117,9 +131,29 @@ export const StateBuilder: React.FC<StateBuilderProps> = ({ webAPI, recordId }) 
   const [debitPrioName, setDebitPrioName] = React.useState<string>("");
   const [creditPrioName, setCreditPrioName] = React.useState<string>("");
 
+  // Prioritizations the user has picked / saved (names, Requirement, funding mode).
   const [prios, setPrios] = React.useState<PrioOpt[]>([]);
   const [debitPrioId, setDebitPrioId] = React.useState<string>("");
   const [creditPrioId, setCreditPrioId] = React.useState<string>("");
+
+  // State + Fund Center narrow both sides; each side has its own Requirement text.
+  const [states, setStates] = React.useState<PickerOpt[]>([]); // ActualStateList
+  const [statesLoading, setStatesLoading] = React.useState(true);
+  const [stateId, setStateId] = React.useState<string>("");
+  const [fundCenter, setFundCenter] = React.useState<PickerOpt | null>(null);
+  const [debitReqText, setDebitReqText] = React.useState("");
+  const [creditReqText, setCreditReqText] = React.useState("");
+  const debitReqQuery = useDebounced(debitReqText.trim());
+  const creditReqQuery = useDebounced(creditReqText.trim());
+  const [debitResults, setDebitResults] = React.useState<PrioOpt[]>([]);
+  const [creditResults, setCreditResults] = React.useState<PrioOpt[]>([]);
+  const [debitSearching, setDebitSearching] = React.useState(false);
+  const [creditSearching, setCreditSearching] = React.useState(false);
+  const [debitCapped, setDebitCapped] = React.useState(false);
+  const [creditCapped, setCreditCapped] = React.useState(false);
+  // Fund of the debit Prioritization (Prio -> RF -> LOA -> Fund); the credit side must match it.
+  const [debitFund, setDebitFund] = React.useState<{ prioId: string; fundId: string } | null>(null);
+  const [debitRfId, setDebitRfId] = React.useState<string>("");
 
   const [pfRows, setPfRows] = React.useState<PfRow[]>([]);
   const [creditRfs, setCreditRfs] = React.useState<RfOpt[]>([]);
@@ -152,19 +186,24 @@ export const StateBuilder: React.FC<StateBuilderProps> = ({ webAPI, recordId }) 
         const r = await webAPI.retrieveRecord(
           REALIGNMENT,
           recordId,
-          "?$select=statecode,book_realignmententrymode,book_newfiscalyear,book_fiscalyear,book_newamount," +
-            "_book_debitedprioritization_value,_book_creditedprioritization_value"
+          "?$select=statecode,book_realignmententrymode,book_newfiscalyear,book_newamount," +
+            "_book_debitedprioritization_value,_book_creditedprioritization_value," +
+            "_book_newdebitedrequirement_value,_book_newcreditedrequirement_value"
         );
         if (cancelled) return;
         const active = num(r.statecode) === STATECODE_ACTIVE;
-        // Prefer the editable book_newfiscalyear (goal_fiscalyear picklist); fall back to
-        // the legacy formula book_fiscalyear. Both are option values == the year.
-        const fyRaw = r.book_newfiscalyear ?? r.book_fiscalyear;
-        const fy = fyRaw == null ? null : num(fyRaw);
+        // The builder only works once book_newfiscalyear (goal_fiscalyear picklist, option value == the year)
+        // is filled in.
+        const fy = r.book_newfiscalyear == null ? null : num(r.book_newfiscalyear);
+        const fyLabel = (r[`book_newfiscalyear${FV}`] as string | undefined) ?? "";
         setIsActive(active);
         setFiscalYear(fy);
+        // Same text PrioritizationNameSetter stamps into the name: "FY" + year.
+        setSelectedFiscalYear(fy == null ? "" : /^FY\d{4}$/.test(fyLabel) ? fyLabel : `FY${fy}`);
         setDebitPrioId(cleanId(r._book_debitedprioritization_value));
         setCreditPrioId(cleanId(r._book_creditedprioritization_value));
+        setDebitRfId(cleanId(r._book_newdebitedrequirement_value));
+        setCreditRfId(cleanId(r._book_newcreditedrequirement_value));
         setDebitPrioName((r[`_book_debitedprioritization_value${FV}`] as string) ?? "");
         setCreditPrioName((r[`_book_creditedprioritization_value${FV}`] as string) ?? "");
 
@@ -179,12 +218,51 @@ export const StateBuilder: React.FC<StateBuilderProps> = ({ webAPI, recordId }) 
     };
   }, [webAPI, recordId, reloadKey]);
 
-  // ---- Prioritization search (thousands per FY: never preloaded) -----------
-  const PRIO_SELECT = "?$select=book_name,_book_requirement_value,book_newfiscalyear,book_fundingmode";
+  // ---- ActualStateList -----------------------------------------------------
+  React.useEffect(() => {
+    let cancelled = false;
+    setStatesLoading(true);
+    void (async () => {
+      try {
+        const list = await loadActualStates(webAPI, userId ?? "", isAdmin);
+        if (cancelled) return;
+        setStates(list);
+        // Default to the first State alphabetically (the list is sorted).
+        setStateId((prev) => (list.some((s) => s.id === prev) ? prev : list[0]?.id ?? ""));
+      } catch {
+        if (!cancelled) setError("Could not load your States.");
+      } finally {
+        if (!cancelled) setStatesLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [webAPI, userId, isAdmin]);
+  const selectedState = states.find((s) => s.id === stateId) ?? null;
+  const stateLocked = states.length === 1;
+
+  // ---- Prioritization search ------------------------------------------------
+  // Thousands per FY, so never preloaded: each side lists only the Prioritizations matching
+  //   SearchQuery = SelectedFiscalYear-SelectedState-SelectedFundCenter-<Requirement text>
+  // (the FY27+ name PrioritizationNameSetter stamps). The Fund Center and Requirement text
+  // are optional: the name must start with the leading segments that are filled in and
+  // contain the Requirement text.
+  const PRIO_SELECT =
+    "?$select=book_name,_book_requirement_value,_book_requirementfunding_value,_book_state_value," +
+    "_book_fundcenter_value,book_newfiscalyear,book_fundingmode";
   const toPrio = (e: Record<string, unknown>): PrioOpt => ({
     id: cleanId(e.book_prioritizationid),
     name: (e.book_name as string) ?? "(unnamed)",
     requirementId: e._book_requirement_value ? cleanId(e._book_requirement_value) : null,
+    rfId: cleanId(e._book_requirementfunding_value),
+    stateId: cleanId(e._book_state_value),
+    fundCenter: e._book_fundcenter_value
+      ? {
+          id: cleanId(e._book_fundcenter_value),
+          name: (e[`_book_fundcenter_value${FV}`] as string) ?? "",
+        }
+      : null,
     fiscalYear: e.book_newfiscalyear == null ? null : num(e.book_newfiscalyear),
     fundingMode: e.book_fundingmode == null ? null : num(e.book_fundingmode),
   });
@@ -192,24 +270,120 @@ export const StateBuilder: React.FC<StateBuilderProps> = ({ webAPI, recordId }) 
     (p: PrioOpt): void => setPrios((prev) => (prev.some((x) => x.id === p.id) ? prev : [...prev, p])),
     []
   );
-  const searchPrios = React.useCallback(
-    async (q: string, excludeId: string): Promise<PrioOpt[]> => {
-      let filter = `statecode eq ${STATECODE_ACTIVE}`;
-      if (fiscalYear != null) filter += ` and book_newfiscalyear eq ${fiscalYear}`;
-      if (excludeId) filter += ` and book_prioritizationid ne ${excludeId}`;
-      if (q) filter += ` and contains(book_name,${odataString(q)})`;
+  const fetchPrios = React.useCallback(
+    async (reqText: string): Promise<PrioOpt[]> => {
+      if (fiscalYear == null || !selectedState) return [];
+      const prefix = fundCenter
+        ? `${selectedFiscalYear}-${selectedState.name}-${fundCenter.name}-`
+        : `${selectedFiscalYear}-${selectedState.name}-`;
+      let filter =
+        `statecode eq ${STATECODE_ACTIVE} and book_newfiscalyear eq ${fiscalYear}` +
+        ` and startswith(book_name,${odataString(prefix)})`;
+      if (reqText) filter += ` and contains(book_name,${odataString(reqText)})`;
       const res = await webAPI.retrieveMultipleRecords(
         PRIORITIZATION,
-        `${PRIO_SELECT}&$filter=${filter}&$orderby=book_name asc&$top=${SEARCH_PAGE}`
+        `${PRIO_SELECT}&$filter=${filter}&$orderby=book_name asc&$top=${PRIO_PAGE}`
       );
       return res.entities.map(toPrio);
     },
-    [webAPI, fiscalYear]
+    [webAPI, fiscalYear, selectedFiscalYear, selectedState, fundCenter]
   );
-  const searchDebitPrios = React.useCallback((q: string) => searchPrios(q, ""), [searchPrios]);
-  const searchCreditPrios = React.useCallback((q: string) => searchPrios(q, debitPrioId), [searchPrios, debitPrioId]);
 
-  // A saved selection is not in any search page: fetch it by id so its name,
+  // Debit side: every match.
+  React.useEffect(() => {
+    let cancelled = false;
+    setDebitSearching(true);
+    void (async () => {
+      try {
+        const rows = await fetchPrios(debitReqQuery);
+        if (cancelled) return;
+        setDebitResults(rows);
+        setDebitCapped(rows.length >= PRIO_PAGE);
+      } catch {
+        if (!cancelled) setError("Could not search the debiting Prioritizations.");
+      } finally {
+        if (!cancelled) setDebitSearching(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [fetchPrios, debitReqQuery]);
+
+  // The debit Prioritization's Fund: Prioritization -> Requirement Funding -> Line of Accounting -> Fund.
+  const debitPrioRfId = prios.find((p) => p.id === debitPrioId)?.rfId ?? null;
+  React.useEffect(() => {
+    if (!debitPrioId) {
+      setDebitFund(null);
+      return;
+    }
+    if (debitPrioRfId == null) return; // the Prioritization itself is still loading
+    let cancelled = false;
+    void (async () => {
+      try {
+        const acct = await accountingForRfs(webAPI, [debitPrioRfId]);
+        if (!cancelled) setDebitFund({ prioId: debitPrioId, fundId: acct.get(debitPrioRfId)?.fundId ?? "" });
+      } catch {
+        if (!cancelled) setError("Could not resolve the debiting Prioritization's Fund.");
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [webAPI, debitPrioId, debitPrioRfId]);
+  const debitFundId = debitFund && debitFund.prioId === debitPrioId ? debitFund.fundId : null;
+
+  // Credit side: only Prioritizations on the debit Prioritization's Fund, never the debit one itself.
+  React.useEffect(() => {
+    if (!debitPrioId || debitFundId == null) {
+      setCreditResults([]);
+      setCreditSearching(false);
+      return;
+    }
+    let cancelled = false;
+    setCreditSearching(true);
+    void (async () => {
+      try {
+        const rows = (await fetchPrios(creditReqQuery)).filter((p) => p.id !== debitPrioId);
+        const acct = await accountingForRfs(
+          webAPI,
+          rows.map((p) => p.rfId)
+        );
+        if (cancelled) return;
+        setCreditResults(debitFundId ? rows.filter((p) => acct.get(p.rfId)?.fundId === debitFundId) : []);
+        setCreditCapped(rows.length >= PRIO_PAGE - 1);
+      } catch {
+        if (!cancelled) setError("Could not search the crediting Prioritizations.");
+      } finally {
+        if (!cancelled) setCreditSearching(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [webAPI, fetchPrios, creditReqQuery, debitPrioId, debitFundId]);
+
+  // A saved credit Prioritization on a different Fund than the (new) debit one is no longer valid.
+  const creditPrioRfId = prios.find((p) => p.id === creditPrioId)?.rfId ?? null;
+  React.useEffect(() => {
+    if (!creditPrioId || creditPrioRfId == null || !debitFundId) return;
+    let cancelled = false;
+    void (async () => {
+      try {
+        const acct = await accountingForRfs(webAPI, [creditPrioRfId]);
+        if (cancelled || acct.get(creditPrioRfId)?.fundId === debitFundId) return;
+        setCreditPrioId("");
+        setError("The crediting Prioritization was cleared: its Fund must match the debiting Prioritization's Fund.");
+      } catch {
+        /* non-fatal: the server re-validates */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [webAPI, creditPrioId, creditPrioRfId, debitFundId]);
+
+  // A saved selection is not in any result page: fetch it by id so its name,
   // Requirement and funding mode are known.
   React.useEffect(() => {
     for (const id of [debitPrioId, creditPrioId]) {
@@ -220,6 +394,26 @@ export const StateBuilder: React.FC<StateBuilderProps> = ({ webAPI, recordId }) 
         .catch(() => setError("Could not load the selected Prioritization."));
     }
   }, [webAPI, debitPrioId, creditPrioId, prios, rememberPrio]);
+
+  // Reopening a saved realignment: start the State / Fund Center filters on the saved debit Prioritization.
+  const filtersSeeded = React.useRef(false);
+  React.useEffect(() => {
+    if (filtersSeeded.current || !debitPrio || states.length === 0) return;
+    filtersSeeded.current = true;
+    if (states.some((s) => s.id === debitPrio.stateId)) setStateId(debitPrio.stateId);
+    if (debitPrio.fundCenter?.name) setFundCenter(debitPrio.fundCenter);
+  }, [debitPrio, states]);
+
+  const searchFcs = React.useCallback((q: string) => searchFundCenters(webAPI, q, SEARCH_PAGE), [webAPI]);
+
+  // Debit RF dropdown: the RFs this Prioritization holds funding on (its Prioritization Funding junctions).
+  const debitRfs = React.useMemo<RfOpt[]>(() => {
+    const seen = new Set<string>();
+    return pfRows
+      .filter((r) => (seen.has(r.rfId) ? false : (seen.add(r.rfId), true)))
+      .map((r) => ({ id: r.rfId, name: r.rfName }));
+  }, [pfRows]);
+  const debitPfRows = pfRows.filter((r) => r.rfId === debitRfId);
 
   // Credit RF picker: the Requirement's RFs are already loaded below, so filter them here.
   const searchCreditRfs = React.useCallback(
@@ -249,23 +443,26 @@ export const StateBuilder: React.FC<StateBuilderProps> = ({ webAPI, recordId }) 
             "&$expand=book_RequirementFunding($select=book_name)"
         );
         if (cancelled) return;
-        setPfRows(
-          pfRes.entities
-            .map((e) => {
-              const rf = e.book_RequirementFunding as Record<string, unknown> | undefined;
-              return {
-                id: cleanId(e.book_prioritizationfundingid),
-                rfId: cleanId(e._book_requirementfunding_value),
-                rfName:
-                  (rf?.book_name as string) ??
-                  (e[`_book_requirementfunding_value${FV}`] as string) ??
-                  "(RF)",
-                funded: num(e.book_fundedamount),
-                selected: false,
-                move: "",
-              } as PfRow;
-            })
-            .filter((r) => r.funded > 0)
+        const rows = pfRes.entities
+          .map((e) => {
+            const rf = e.book_RequirementFunding as Record<string, unknown> | undefined;
+            return {
+              id: cleanId(e.book_prioritizationfundingid),
+              rfId: cleanId(e._book_requirementfunding_value),
+              rfName:
+                (rf?.book_name as string) ??
+                (e[`_book_requirementfunding_value${FV}`] as string) ??
+                "(RF)",
+              funded: num(e.book_fundedamount),
+              move: "",
+            } as PfRow;
+          })
+          .filter((r) => r.funded > 0);
+        setPfRows(rows);
+        // Keep the saved / picked debit RF if this Prioritization funds it; otherwise default
+        // to its only RF (or make the user choose).
+        setDebitRfId((prev) =>
+          rows.some((r) => r.rfId === prev) ? prev : rows.length === 1 ? rows[0].rfId : ""
         );
 
         const idRes = await webAPI.retrieveMultipleRecords(
@@ -407,7 +604,8 @@ export const StateBuilder: React.FC<StateBuilderProps> = ({ webAPI, recordId }) 
   }, [webAPI, recordId, reloadKey]);
 
   // ---- derived totals ------------------------------------------------------
-  const selectedPf = pfRows.filter((r) => r.selected);
+  // One debit RF: its junction row(s) carry the move amount.
+  const selectedPf = debitPfRows.filter((r) => num(r.move) > 0);
   const moveTotal = selectedPf.reduce((s, r) => s + num(r.move), 0);
   const overMove = selectedPf.find((r) => num(r.move) > r.funded + EPS);
   const reduceTotal = detailRows.filter((r) => r.selected).reduce((s, r) => s + num(r.reduce), 0);
@@ -428,6 +626,7 @@ export const StateBuilder: React.FC<StateBuilderProps> = ({ webAPI, recordId }) 
     !!debitPrioId &&
     !!creditPrioId &&
     debitPrioId !== creditPrioId &&
+    !!debitRfId &&
     !!creditRfId &&
     moveTotal > EPS &&
     !overMove &&
@@ -442,15 +641,16 @@ export const StateBuilder: React.FC<StateBuilderProps> = ({ webAPI, recordId }) 
     setError(null);
     setSaveMsg(null);
     try {
-      // 1) parent: entry mode + debit/credit Prio + legacy amount (for the flow viz).
+      // 1) parent: entry mode + the four selections (debit/credit Prioritization and
+      //    Requirement Funding) + legacy amount (for the flow viz). The items below, not
+      //    these parent lookups, drive processing in the FY27 item model.
       await webAPI.updateRecord(REALIGNMENT, recordId, {
         book_realignmententrymode: ENTRY_MODE_STATE,
         book_newamount: moveTotal,
         [`book_DebitedPrioritization@odata.bind`]: `/${SET.prio}(${debitPrioId})`,
         [`book_CreditedPrioritization@odata.bind`]: `/${SET.prio}(${creditPrioId})`,
-        // Clear RFs left on the parent by a previous OPR save.
-        [`book_newDebitedRequirement@odata.bind`]: null,
-        [`book_newCreditedRequirement@odata.bind`]: null,
+        [`book_newDebitedRequirement@odata.bind`]: `/${SET.rf}(${debitRfId})`,
+        [`book_newCreditedRequirement@odata.bind`]: `/${SET.rf}(${creditRfId})`,
       });
 
       // 2) rebuild: wipe every child row (both entry modes) before re-creating.
@@ -506,9 +706,9 @@ export const StateBuilder: React.FC<StateBuilderProps> = ({ webAPI, recordId }) 
   const beginEdit = (): void => {
     setSaveMsg(null);
     const moveByPf = new Map(savedItems.map((i) => [i.pfId, i.amount]));
-    setPfRows((rows) =>
-      rows.map((r) => (moveByPf.has(r.id) ? { ...r, selected: true, move: String(moveByPf.get(r.id)) } : r))
-    );
+    setPfRows((rows) => rows.map((r) => (moveByPf.has(r.id) ? { ...r, move: String(moveByPf.get(r.id)) } : r)));
+    const savedPfRow = pfRows.find((r) => moveByPf.has(r.id));
+    if (savedPfRow) setDebitRfId(savedPfRow.rfId);
     const prefill = (saved: { detailId: string; amount: number }[]) => {
       const byDetail = new Map(saved.map((d) => [d.detailId, d.amount]));
       return (rows: DetailRow[]): DetailRow[] =>
@@ -679,88 +879,165 @@ export const StateBuilder: React.FC<StateBuilderProps> = ({ webAPI, recordId }) 
 
         {!loading && isActive && mode === "edit" && (
           <>
-            {/* Prioritization pickers */}
-            <div className={styles.pickers}>
-              <div className={styles.pickerField}>
-                <Text className={styles.heading}>Debiting Prioritization</Text>
-                <SearchPicker
-                  placeholder="Type to search the Prioritization to move funds FROM"
-                  selected={debitPrio}
-                  search={searchDebitPrios}
-                  optionLabel={(p) => p.name + (p.fundingMode === FUNDING_MODE_ITEMIZED ? "  (Itemized)" : "")}
-                  onSelect={(p) => {
-                    rememberPrio(p);
-                    setDebitPrioId(p.id);
-                  }}
-                />
-              </div>
-              <div className={styles.pickerField}>
-                <Text className={styles.heading}>Crediting Prioritization</Text>
-                <SearchPicker
-                  placeholder="Type to search the Prioritization to move funds TO"
-                  selected={creditPrio}
-                  search={searchCreditPrios}
-                  onSelect={(p) => {
-                    rememberPrio(p);
-                    setCreditPrioId(p.id);
-                  }}
-                />
-              </div>
-              <div className={styles.pickerField}>
-                <Text className={styles.heading}>Credit Requirement Funding</Text>
-                <SearchPicker
-                  placeholder={creditPrioId ? "Type to search the receiving RF" : "Pick a crediting Prioritization first"}
-                  disabled={!creditPrioId}
-                  selected={creditRfs.find((o) => o.id === creditRfId) ?? null}
-                  search={searchCreditRfs}
-                  onSelect={(o) => setCreditRfId(o.id)}
-                />
-              </div>
-            </div>
+            {fiscalYear == null && (
+              <MessageBar intent="info">
+                <MessageBarBody>Set the Fiscal Year on this Realignment first; the builder lists that year&apos;s Prioritizations.</MessageBarBody>
+              </MessageBar>
+            )}
+            {fiscalYear != null && !statesLoading && states.length === 0 && (
+              <MessageBar intent="warning">
+                <MessageBarBody>
+                  None of your Teams match a State, so there is nothing to realign here. Ask an administrator to add you to
+                  your State&apos;s team.
+                </MessageBarBody>
+              </MessageBar>
+            )}
+
+            {fiscalYear != null && states.length > 0 && (
+              <>
+                {/* Filters shared by both sides: [State] [Fund Center] */}
+                <div className={styles.pickers}>
+                  <div className={styles.pickerField}>
+                    <Label weight="semibold">State</Label>
+                    <ListDropdown
+                      placeholder="Select a State"
+                      disabled={stateLocked}
+                      busy={statesLoading}
+                      options={states}
+                      selected={selectedState}
+                      onSelect={(s) => setStateId(s.id)}
+                    />
+                  </div>
+                  <div className={styles.pickerField}>
+                    <Label weight="semibold">Fund Center</Label>
+                    <SearchPicker
+                      placeholder="Type to search Fund Centers (optional)"
+                      selected={fundCenter}
+                      search={searchFcs}
+                      onSelect={setFundCenter}
+                      onClear={() => setFundCenter(null)}
+                    />
+                  </div>
+                  <div className={styles.pickerField}>
+                    <Label weight="semibold">Fiscal Year</Label>
+                    <Text>{selectedFiscalYear}</Text>
+                  </div>
+                </div>
+
+                <Divider />
+
+                <div className={styles.sides}>
+                  {/* DEBIT */}
+                  <div className={styles.side}>
+                    <Text className={styles.sideTitle}>DEBIT</Text>
+                    <div className={styles.field}>
+                      <Label weight="semibold">Requirement</Label>
+                      <Input
+                        placeholder="Type part of the Requirement name"
+                        value={debitReqText}
+                        onChange={(_, d) => setDebitReqText(d.value)}
+                      />
+                    </div>
+                    <div className={styles.field}>
+                      <Label weight="semibold">Prioritization</Label>
+                      <ListDropdown
+                        placeholder="Select the Prioritization to move funds FROM"
+                        busy={debitSearching}
+                        options={debitResults}
+                        selected={debitPrio}
+                        optionLabel={(p) => p.name + (p.fundingMode === FUNDING_MODE_ITEMIZED ? "  (Itemized)" : "")}
+                        hint={debitCapped ? `Showing the first ${PRIO_PAGE} — type a Requirement to narrow` : undefined}
+                        onSelect={(p) => {
+                          rememberPrio(p);
+                          setDebitPrioId(p.id);
+                        }}
+                      />
+                    </div>
+                    <div className={styles.field}>
+                      <Label weight="semibold">Requirement Funding</Label>
+                      <ListDropdown
+                        placeholder={debitPrioId ? "Select the RF to move funds FROM" : "Pick a debiting Prioritization first"}
+                        disabled={!debitPrioId}
+                        options={debitRfs}
+                        selected={debitRfs.find((o) => o.id === debitRfId) ?? null}
+                        onSelect={(o) => setDebitRfId(o.id)}
+                      />
+                    </div>
+                  </div>
+
+                  {/* CREDIT */}
+                  <div className={`${styles.side} ${styles.sideCredit}`}>
+                    <Text className={styles.sideTitle}>CREDIT</Text>
+                    <div className={styles.field}>
+                      <Label weight="semibold">Requirement</Label>
+                      <Input
+                        placeholder="Type part of the Requirement name"
+                        value={creditReqText}
+                        onChange={(_, d) => setCreditReqText(d.value)}
+                      />
+                    </div>
+                    <div className={styles.field}>
+                      <Label weight="semibold">Prioritization</Label>
+                      <ListDropdown
+                        placeholder={
+                          debitPrioId ? "Select the Prioritization to move funds TO" : "Pick a debiting Prioritization first"
+                        }
+                        disabled={!debitPrioId}
+                        busy={creditSearching}
+                        options={creditResults}
+                        selected={creditPrio}
+                        optionLabel={(p) => p.name + (p.fundingMode === FUNDING_MODE_ITEMIZED ? "  (Itemized)" : "")}
+                        hint={creditCapped ? `Showing the first ${PRIO_PAGE} — type a Requirement to narrow` : undefined}
+                        onSelect={(p) => {
+                          rememberPrio(p);
+                          setCreditPrioId(p.id);
+                        }}
+                      />
+                      <Text className={styles.muted}>Only Prioritizations on the same Fund as the debit Prioritization.</Text>
+                    </div>
+                    <div className={styles.field}>
+                      <Label weight="semibold">Requirement Funding</Label>
+                      <ListDropdown
+                        placeholder={creditPrioId ? "Select the receiving RF" : "Pick a crediting Prioritization first"}
+                        disabled={!creditPrioId}
+                        options={creditRfs}
+                        selected={creditRfs.find((o) => o.id === creditRfId) ?? null}
+                        onSelect={(o) => setCreditRfId(o.id)}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
 
             <Divider />
 
-            {/* PF junction subgrid */}
+            {/* PF junction (the debit RF's funding on the debit Prioritization) */}
             <div className={styles.section}>
               <Text className={styles.heading}>
                 Prioritization Funding to move {debitPrio ? `from ${debitPrio.name}` : ""}
               </Text>
               {!debitPrioId && <Text>Select a debiting Prioritization to list its funding.</Text>}
               {debitPrioId && pfRows.length === 0 && <Text>No active funded Prioritization Funding on this Prioritization.</Text>}
-              {pfRows.length > 0 && (
+              {debitPrioId && pfRows.length > 0 && !debitRfId && <Text>Select the debit Requirement Funding.</Text>}
+              {debitPfRows.length > 0 && (
                 <table className={styles.table}>
                   <thead>
                     <tr>
-                      <th className={styles.th}></th>
                       <th className={styles.th}>Requirement Funding</th>
                       <th className={styles.th}>Funded</th>
                       <th className={styles.th}>Move amount</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {pfRows.map((r) => (
+                    {debitPfRows.map((r) => (
                       <tr key={r.id}>
-                        <td className={styles.td}>
-                          <Checkbox
-                            checked={r.selected}
-                            onChange={(_, d) =>
-                              setPfRows((rows) =>
-                                rows.map((x) =>
-                                  x.id === r.id
-                                    ? { ...x, selected: !!d.checked, move: d.checked ? x.move : "" }
-                                    : x
-                                )
-                              )
-                            }
-                          />
-                        </td>
                         <td className={styles.td}>{r.rfName}</td>
                         <td className={styles.td}>{money(r.funded)}</td>
                         <td className={styles.td}>
                           <Input
                             className={styles.amtInput}
                             type="number"
-                            disabled={!r.selected}
                             value={r.move}
                             onChange={(_, d) =>
                               setPfRows((rows) => rows.map((x) => (x.id === r.id ? { ...x, move: d.value } : x)))
