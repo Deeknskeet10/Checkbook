@@ -4,6 +4,12 @@ import { Combobox, Option } from "@fluentui/react-components";
 /** Max options rendered per search; the user narrows further by typing. */
 export const SEARCH_PAGE = 50;
 
+/**
+ * Caps the open dropdown at ~8 rows (a medium Option is ~32px + listbox padding);
+ * the rest scroll. Without it Fluent lets the listbox grow to 80vh.
+ */
+export const LISTBOX_STYLE: React.CSSProperties = { maxHeight: "270px", overflowY: "auto" };
+
 export interface PickerOpt {
   id: string;
   name: string;
@@ -97,6 +103,7 @@ export function SearchPicker<T extends PickerOpt>({
       placeholder={placeholder}
       disabled={disabled}
       clearable={!!onClear && !!selected}
+      listbox={{ style: LISTBOX_STYLE }}
       value={text}
       selectedOptions={selected ? [selected.id] : []}
       onChange={(e: React.ChangeEvent<HTMLInputElement>) => {

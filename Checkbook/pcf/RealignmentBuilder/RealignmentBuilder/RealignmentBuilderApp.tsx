@@ -895,6 +895,11 @@ export const StateBuilder: React.FC<StateBuilderProps> = ({ webAPI, recordId, us
 
             {fiscalYear != null && states.length > 0 && (
               <>
+                <div className={styles.pickerField}>
+                  <Label weight="semibold">Fiscal Year</Label>
+                  <Text>{selectedFiscalYear}</Text>
+                </div>
+
                 {/* Filters shared by both sides: [State] [Fund Center] */}
                 <div className={styles.pickers}>
                   <div className={styles.pickerField}>
@@ -917,10 +922,6 @@ export const StateBuilder: React.FC<StateBuilderProps> = ({ webAPI, recordId, us
                       onSelect={setFundCenter}
                       onClear={() => setFundCenter(null)}
                     />
-                  </div>
-                  <div className={styles.pickerField}>
-                    <Label weight="semibold">Fiscal Year</Label>
-                    <Text>{selectedFiscalYear}</Text>
                   </div>
                 </div>
 

@@ -122,8 +122,10 @@ export const RealignmentBuilderApp: React.FC<RealignmentBuilderProps> = ({ webAP
   const mode: EntryMode = chosen ?? savedMode ?? roleMode;
   const switching = savedMode !== null && mode !== savedMode;
 
+  // One column wrapper: the host container lays sibling roots out side by side otherwise,
+  // leaving the builder beside the type picker instead of under it.
   return (
-    <>
+    <div style={{ display: "flex", flexDirection: "column", width: "100%" }}>
       {canChoose && (
         <FluentProvider theme={webLightTheme} style={{ width: "100%" }}>
           <div className={styles.root}>
@@ -154,6 +156,6 @@ export const RealignmentBuilderApp: React.FC<RealignmentBuilderProps> = ({ webAP
       ) : (
         <StateBuilder key="state" webAPI={webAPI} recordId={id} userId={userId} isAdmin={isAdmin} />
       )}
-    </>
+    </div>
   );
 };

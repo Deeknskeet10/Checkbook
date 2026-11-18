@@ -1,6 +1,6 @@
 import * as React from "react";
 import { Dropdown, Option } from "@fluentui/react-components";
-import type { PickerOpt } from "./SearchPicker";
+import { LISTBOX_STYLE, type PickerOpt } from "./SearchPicker";
 
 interface ListDropdownProps<T extends PickerOpt> {
   placeholder?: string;
@@ -33,6 +33,7 @@ export function ListDropdown<T extends PickerOpt>({
     <Dropdown
       placeholder={placeholder}
       disabled={disabled}
+      listbox={{ style: LISTBOX_STYLE }}
       value={selected?.name ?? ""}
       selectedOptions={selected ? [selected.id] : []}
       onOptionSelect={(_, d) => {
