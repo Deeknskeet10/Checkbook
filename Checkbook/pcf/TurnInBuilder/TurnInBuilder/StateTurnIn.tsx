@@ -457,7 +457,7 @@ export const StateTurnIn: React.FC<StateTurnInProps> = ({ webAPI, recordId, isAc
         <div className={styles.balanceRow}>
           <Text className={styles.heading}>{b.prio.name}</Text>
           {isItemized(b) && <Badge appearance="outline">Itemized</Badge>}
-          <Button size="small" appearance="subtle" onClick={() => removePrio(b.prio.id)}>
+          <Button size="small" appearance="primary" className={styles.removeBtn} onClick={() => removePrio(b.prio.id)}>
             Remove
           </Button>
         </div>
@@ -528,8 +528,8 @@ export const StateTurnIn: React.FC<StateTurnInProps> = ({ webAPI, recordId, isAc
                 <tr>
                   <th className={styles.th}>Item · TDC · MDEP</th>
                   <th className={styles.th}>Detail #</th>
-                  <th className={styles.th}>Funded</th>
                   <th className={styles.th}>Requested</th>
+                  <th className={styles.th}>Funded</th>
                   <th className={styles.th}>Reduce by</th>
                 </tr>
               </thead>
@@ -538,8 +538,8 @@ export const StateTurnIn: React.FC<StateTurnInProps> = ({ webAPI, recordId, isAc
                   <tr key={r.id}>
                     <td className={styles.td}>{detailLabel(r)}</td>
                     <td className={styles.td}>{r.name}</td>
-                    <td className={styles.td}>{money(r.funded)}</td>
                     <td className={styles.td}>{money(r.requested)}</td>
+                    <td className={styles.td}>{money(r.funded)}</td>
                     <td className={styles.td}>
                       <Input
                         className={styles.amtInput}

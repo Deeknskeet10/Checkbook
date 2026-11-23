@@ -40,7 +40,7 @@ const orEq = (attr: string, ids: string[]): string => `(${ids.map((id) => `${att
 
 /**
  * ActualStateList: the States this user may realign in.
- *   LoadedStateList = every active State.
+ *   LoadedStateList = every active State that has an Abbreviation.
  *   Admins (System Administrator / Checkbook Administrator) get all of them; everyone else
  *   gets the States matching one of their Teams. A Team matches a State when its name is
  *   the State's name or abbreviation, or starts with "<State name> - " / "<Abbr> - "
@@ -50,13 +50,18 @@ const orEq = (attr: string, ids: string[]): string => `(${ids.map((id) => `${att
 export async function loadActualStates(webAPI: WebApi, userId: string, isAdmin: boolean): Promise<PickerOpt[]> {
   const res = await webAPI.retrieveMultipleRecords(
     STATE,
-    `?$select=book_name,book_abbreviation&$filter=statecode eq ${STATECODE_ACTIVE}&$orderby=book_name asc`
+    `?$select=book_name,book_abbreviation` +
+      `&$filter=statecode eq ${STATECODE_ACTIVE} and book_abbreviation ne null` +
+      "&$orderby=book_name asc"
   );
-  const loaded = res.entities.map((e) => ({
-    id: cleanId(e.book_stateid),
-    name: (e.book_name as string) ?? "",
-    abbr: ((e.book_abbreviation as string) ?? "").trim().toLowerCase(),
-  }));
+  const loaded = res.entities
+    .map((e) => ({
+      id: cleanId(e.book_stateid),
+      name: (e.book_name as string) ?? "",
+      abbr: ((e.book_abbreviation as string) ?? "").trim().toLowerCase(),
+    }))
+    // Only States that have an Abbreviation (also drops whitespace-only values).
+    .filter((s) => s.abbr !== "");
 
   let actual = loaded;
   if (!isAdmin) {
@@ -156,7 +161,17 @@ export async function rfFilterFragment(webAPI: WebApi, f: RfFilter): Promise<str
   if (f.fund || f.official) {
     let loaFilter = `statecode eq ${STATECODE_ACTIVE}`;
     if (f.fund) loaFilter += ` and _book_fund_value eq ${f.fund.id}`;
-    if (f.official) loaFilter += ` and _book_disbursingofficial_value eq ${f.official.id}`;
+    if (f.official) {
+      // OPRs are per-State records, so several share one name ("G1"). Match the LOA's
+      // Distributing Official by name, not by the one record the picker happened to return.
+      const oprs = await webAPI.retrieveMultipleRecords(
+        OPR,
+        `?$select=book_oprid&$filter=statecode eq ${STATECODE_ACTIVE} and book_name eq ${odataString(f.official.name)}&$top=${SCOPE_CAP}`
+      );
+      const oprIds = oprs.entities.map((e) => cleanId(e.book_oprid));
+      if (oprIds.length === 0) return null;
+      loaFilter += ` and ${orEq("_book_disbursingofficial_value", oprIds)}`;
+    }
     const res = await webAPI.retrieveMultipleRecords(
       LOA,
       `?$select=book_fundinglineid&$filter=${loaFilter}&$top=${SCOPE_CAP}`

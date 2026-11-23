@@ -15,7 +15,7 @@ import {
 } from "@fluentui/react-components";
 import { SearchPicker, SEARCH_PAGE, PickerOpt } from "./SearchPicker";
 import { ListDropdown } from "./ListDropdown";
-import { accountingForRfs, loadActualStates, searchFundCenters, useDebounced } from "./lookups";
+import { loadActualStates, searchFundCenters, useDebounced } from "./lookups";
 
 import {
   WebApi,
@@ -151,8 +151,6 @@ export const StateBuilder: React.FC<StateBuilderProps> = ({ webAPI, recordId, us
   const [creditSearching, setCreditSearching] = React.useState(false);
   const [debitCapped, setDebitCapped] = React.useState(false);
   const [creditCapped, setCreditCapped] = React.useState(false);
-  // Fund of the debit Prioritization (Prio -> RF -> LOA -> Fund); the credit side must match it.
-  const [debitFund, setDebitFund] = React.useState<{ prioId: string; fundId: string } | null>(null);
   const [debitRfId, setDebitRfId] = React.useState<string>("");
 
   const [pfRows, setPfRows] = React.useState<PfRow[]>([]);
@@ -310,32 +308,11 @@ export const StateBuilder: React.FC<StateBuilderProps> = ({ webAPI, recordId, us
     };
   }, [fetchPrios, debitReqQuery]);
 
-  // The debit Prioritization's Fund: Prioritization -> Requirement Funding -> Line of Accounting -> Fund.
-  const debitPrioRfId = prios.find((p) => p.id === debitPrioId)?.rfId ?? null;
+  // Credit side: any matching Prioritization except the debit one.
+  // TEMPORARY: the "same Fund as the debit Prioritization" restriction (Prio -> RF -> LOA -> Fund,
+  // via accountingForRfs) is removed for now. Restore it from git history when re-enabling.
   React.useEffect(() => {
     if (!debitPrioId) {
-      setDebitFund(null);
-      return;
-    }
-    if (debitPrioRfId == null) return; // the Prioritization itself is still loading
-    let cancelled = false;
-    void (async () => {
-      try {
-        const acct = await accountingForRfs(webAPI, [debitPrioRfId]);
-        if (!cancelled) setDebitFund({ prioId: debitPrioId, fundId: acct.get(debitPrioRfId)?.fundId ?? "" });
-      } catch {
-        if (!cancelled) setError("Could not resolve the debiting Prioritization's Fund.");
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [webAPI, debitPrioId, debitPrioRfId]);
-  const debitFundId = debitFund && debitFund.prioId === debitPrioId ? debitFund.fundId : null;
-
-  // Credit side: only Prioritizations on the debit Prioritization's Fund, never the debit one itself.
-  React.useEffect(() => {
-    if (!debitPrioId || debitFundId == null) {
       setCreditResults([]);
       setCreditSearching(false);
       return;
@@ -345,12 +322,8 @@ export const StateBuilder: React.FC<StateBuilderProps> = ({ webAPI, recordId, us
     void (async () => {
       try {
         const rows = (await fetchPrios(creditReqQuery)).filter((p) => p.id !== debitPrioId);
-        const acct = await accountingForRfs(
-          webAPI,
-          rows.map((p) => p.rfId)
-        );
         if (cancelled) return;
-        setCreditResults(debitFundId ? rows.filter((p) => acct.get(p.rfId)?.fundId === debitFundId) : []);
+        setCreditResults(rows);
         setCreditCapped(rows.length >= PRIO_PAGE - 1);
       } catch {
         if (!cancelled) setError("Could not search the crediting Prioritizations.");
@@ -361,27 +334,7 @@ export const StateBuilder: React.FC<StateBuilderProps> = ({ webAPI, recordId, us
     return () => {
       cancelled = true;
     };
-  }, [webAPI, fetchPrios, creditReqQuery, debitPrioId, debitFundId]);
-
-  // A saved credit Prioritization on a different Fund than the (new) debit one is no longer valid.
-  const creditPrioRfId = prios.find((p) => p.id === creditPrioId)?.rfId ?? null;
-  React.useEffect(() => {
-    if (!creditPrioId || creditPrioRfId == null || !debitFundId) return;
-    let cancelled = false;
-    void (async () => {
-      try {
-        const acct = await accountingForRfs(webAPI, [creditPrioRfId]);
-        if (cancelled || acct.get(creditPrioRfId)?.fundId === debitFundId) return;
-        setCreditPrioId("");
-        setError("The crediting Prioritization was cleared: its Fund must match the debiting Prioritization's Fund.");
-      } catch {
-        /* non-fatal: the server re-validates */
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [webAPI, creditPrioId, creditPrioRfId, debitFundId]);
+  }, [fetchPrios, creditReqQuery, debitPrioId]);
 
   // A saved selection is not in any result page: fetch it by id so its name,
   // Requirement and funding mode are known.
@@ -994,7 +947,6 @@ export const StateBuilder: React.FC<StateBuilderProps> = ({ webAPI, recordId, us
                           setCreditPrioId(p.id);
                         }}
                       />
-                      <Text className={styles.muted}>Only Prioritizations on the same Fund as the debit Prioritization.</Text>
                     </div>
                     <div className={styles.field}>
                       <Label weight="semibold">Requirement Funding</Label>

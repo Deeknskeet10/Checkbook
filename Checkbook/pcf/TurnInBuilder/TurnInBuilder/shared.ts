@@ -163,6 +163,20 @@ export const useStyles = makeStyles({
   },
   amtInput: { width: "130px" },
   balanceRow: { display: "flex", alignItems: "center", columnGap: "10px" },
+  removeBtn: {
+    backgroundColor: tokens.colorPaletteRedBackground3,
+    color: tokens.colorNeutralForegroundOnBrand,
+    ...shorthands.border("1px", "solid", tokens.colorPaletteRedBackground3),
+    ":hover": {
+      backgroundColor: tokens.colorPaletteRedForeground1,
+      color: tokens.colorNeutralForegroundOnBrand,
+      ...shorthands.border("1px", "solid", tokens.colorPaletteRedForeground1),
+    },
+    ":hover:active": {
+      backgroundColor: tokens.colorPaletteRedForeground1,
+      color: tokens.colorNeutralForegroundOnBrand,
+    },
+  },
   footer: { display: "flex", alignItems: "center", columnGap: "12px" },
   muted: { color: tokens.colorNeutralForeground3, fontSize: tokens.fontSizeBase200 },
 });

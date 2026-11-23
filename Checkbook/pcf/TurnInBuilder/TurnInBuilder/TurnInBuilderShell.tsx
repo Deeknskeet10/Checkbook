@@ -162,7 +162,7 @@ export const TurnInBuilderApp: React.FC<TurnInBuilderProps> = ({ webAPI, recordI
               <Text className={styles.heading}>Turn-In type</Text>
               <RadioGroup layout="horizontal" value={mode} onChange={(_, d) => setChosen(d.value as EntryMode)}>
                 <Radio value="state" label="Prioritization (State)" />
-                <Radio value="rf" label="Requirement Funding (NPM)" />
+                <Radio value="rf" label="TARC Requirement (NPM)" />
               </RadioGroup>
             </div>
             {switching && (

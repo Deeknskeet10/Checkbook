@@ -271,7 +271,14 @@ export const OprBuilder: React.FC<OprBuilderProps> = ({ webAPI, recordId }) => {
     [searchRfs, debitRfId, creditScope]
   );
   const searchOfficials = React.useCallback(
-    (q: string) => searchByName(webAPI, OPR, "book_oprid", q, SEARCH_PAGE),
+    // One row per name: OPRs are per-State records, and the RF filter matches every OPR with the picked name.
+    async (q: string) => {
+      const seen = new Set<string>();
+      return (await searchByName(webAPI, OPR, "book_oprid", q, SEARCH_PAGE)).filter((o) => {
+        const k = o.name.trim().toLowerCase();
+        return seen.has(k) ? false : (seen.add(k), true);
+      });
+    },
     [webAPI]
   );
   const searchFunds = React.useCallback(
