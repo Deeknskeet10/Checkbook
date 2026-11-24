@@ -130,16 +130,12 @@ namespace Checkbook.Plugins.TurnIns
             bool anyRfOnly = items.Any(i => i.IsRFOnly);
             bool newStateApproved = GetEffectiveBool(target, preImage, TurninAttributes.StateApproved);
             bool newBeApproved = GetEffectiveBool(target, preImage, TurninAttributes.BEApproved);
-            // FY27 RF-level Turn-Ins are approved in one step by a Resource Integrator / CSOR
-            // (carried on book_beapproved) — no State step.
             EnsureFiscalYear(service, merged, turnInId);
-            bool rfLevel = items.Count > 0 && items.All(i => i.IsRFOnly) && !TurnInRules.IsLegacy(merged);
-            // FY27+ (non-legacy): EVERY Turn-In needs BE approval on top of State — including
-            // Prio-backed and zero-item Sweep Turn-Ins. Pre-FY27 only RF-only Turn-Ins did.
+            // FY27+ (non-legacy): EVERY Turn-In — RF-level included (the NPM's submission is
+            // the first step) — needs BE approval on top of State / NPM, including Prio-backed
+            // and zero-item Sweep Turn-Ins. Pre-FY27 only RF-only Turn-Ins did.
             bool beRequired = anyRfOnly || !TurnInRules.IsLegacy(merged);
-            bool readyToExecute = rfLevel
-                ? newBeApproved
-                : beRequired ? (newStateApproved && newBeApproved) : newStateApproved;
+            bool readyToExecute = beRequired ? (newStateApproved && newBeApproved) : newStateApproved;
 
             if (!readyToExecute)
             {
@@ -147,6 +143,19 @@ namespace Checkbook.Plugins.TurnIns
                     $"Approval recorded but Turn-In not yet ready to execute " +
                     $"(anyRfOnly={anyRfOnly}, state={newStateApproved}, be={newBeApproved}). " +
                     "Awaiting the remaining approval — no financial side effects yet.");
+
+                // State has approved and BE still has to decide: surface that in the status.
+                // Status-only write — touches neither approval flag nor statecode, so it
+                // cannot re-trigger this step or TurnInDeactivator. No ledgers exist yet.
+                int? currentStatus = preImage?.GetAttributeValue<OptionSetValue>(TurninAttributes.TurnInStatus)?.Value;
+                if (newStateApproved && !newBeApproved
+                    && currentStatus != TurnInStatusValues.AwaitingBEApproval)
+                {
+                    service.Update(new Entity(EntityNames.Turnin, turnInId)
+                    {
+                        [TurninAttributes.TurnInStatus] = new OptionSetValue(TurnInStatusValues.AwaitingBEApproval),
+                    });
+                }
                 return;
             }
 

@@ -143,17 +143,21 @@ namespace Checkbook.Plugins.Constants
 
     /// <summary>
     /// Values for book_turnin.book_turninstatus (FY27+ approval lifecycle).
-    /// Pending is the default on every new Turn-In. Approved is stamped by
-    /// TurnInApprovalPlugin when the Turn-In is fully approved and processed. Denied is
-    /// stamped by TurnInDeactivator when Budget Execution denies — the Turn-In is deactivated
-    /// and kept for record keeping; a denied Turn-In is final (the user creates a new one).
-    /// Column must exist in the maker portal before this assembly is deployed.
+    /// Pending is the default on every new Turn-In. AwaitingBEApproval is stamped by
+    /// TurnInApprovalPlugin when State approves and Budget Execution is still to decide —
+    /// no ledgers exist yet. Approved is stamped by the same plugin when BE approves and the
+    /// Turn-In is processed (the ONLY point ledgers are created). Denied is stamped by
+    /// TurnInDeactivator when Budget Execution denies — the Turn-In is deactivated and kept
+    /// for record keeping; a denied Turn-In is final (the user creates a new one).
+    /// Column must exist in the maker portal (with these exact values) before this assembly
+    /// is deployed; the PCF approval control mirrors Denied.
     /// </summary>
     public static class TurnInStatusValues
     {
         public const int Pending = 0;
-        public const int Approved = 1;
-        public const int Denied = 2;
+        public const int AwaitingBEApproval = 1;
+        public const int Approved = 2;
+        public const int Denied = 3;
     }
 
     /// <summary>

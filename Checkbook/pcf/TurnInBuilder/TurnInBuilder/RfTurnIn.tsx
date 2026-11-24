@@ -445,17 +445,19 @@ export const RfTurnIn: React.FC<RfTurnInProps> = ({ webAPI, recordId, isActive, 
 
         {!loading && isActive && mode === "edit" && (
           <>
-            <div className={styles.pickers}>
-              <div className={styles.pickerField}>
-                <Text className={styles.heading}>Name Contains</Text>
-                <Input
-                  placeholder="Search Requirement Fundings"
-                  value={nameFilter}
-                  onChange={(_, d) => setNameFilter(d.value)}
-                  contentAfter={rfsLoading ? <Spinner size="extra-tiny" /> : undefined}
-                />
-              </div>
-              <div className={styles.pickerField}>
+            {/* Row 1: name search | requirement type. Row 2: RF picker. Row 3: amount(s). */}
+            <div style={{ display: "flex", flexDirection: "column", rowGap: "12px", width: "100%" }}>
+              <div style={{ display: "flex", alignItems: "flex-end", columnGap: "16px", width: "100%" }}>
+                <div className={styles.pickerField} style={{ flex: 1, minWidth: 0 }}>
+                  <Text className={styles.heading}>Name Contains</Text>
+                  <Input
+                    placeholder="Search Requirement Fundings"
+                    value={nameFilter}
+                    onChange={(_, d) => setNameFilter(d.value)}
+                    contentAfter={rfsLoading ? <Spinner size="extra-tiny" /> : undefined}
+                  />
+                </div>
+                <Divider vertical style={{ height: "32px", flexGrow: 0 }} />
                 <RadioGroup
                   layout="horizontal"
                   value={String(reqType)}
@@ -469,8 +471,12 @@ export const RfTurnIn: React.FC<RfTurnInProps> = ({ webAPI, recordId, isActive, 
                   <Radio value={String(REQ_TYPE_TARC)} label="TARC" />
                   <Radio value={String(REQ_TYPE_STATE)} label="State" />
                 </RadioGroup>
+              </div>
+              <Divider />
+              <div className={styles.pickerField} style={{ width: "100%", minWidth: 0 }}>
                 <Text className={styles.heading}>Requirement Funding</Text>
                 <Combobox
+                  style={{ width: "100%", maxWidth: "none", minWidth: 0 }}
                   placeholder="Select the RF to turn funds in from"
                   selectedOptions={rfId ? [rfId] : []}
                   value={rfInput ?? rf?.name ?? ""}
@@ -495,39 +501,45 @@ export const RfTurnIn: React.FC<RfTurnInProps> = ({ webAPI, recordId, isActive, 
                   )}
                 </Combobox>
               </div>
-              <div className={styles.pickerField}>
-                <Text className={styles.heading}>TDP to turn in</Text>
-                <Input
-                  className={styles.amtInput}
-                  type="number"
-                  value={amount}
-                  onChange={(_, d) => setAmount(d.value)}
-                />
+              <Divider />
+              <div style={{ display: "flex", flexWrap: "wrap", columnGap: "24px", rowGap: "10px" }}>
+                <div className={styles.pickerField} style={{ minWidth: 0 }}>
+                  <Text className={styles.heading}>Turn-In Amount</Text>
+                  <Input
+                    className={styles.amtInput}
+                    type="number"
+                    value={amount}
+                    disabled={!rfId}
+                    onChange={(_, d) => setAmount(d.value)}
+                  />
+                </div>
+                {SHOW_AFP_ALLOT && (
+                  <div className={styles.pickerField} style={{ minWidth: 0 }}>
+                    <Text className={styles.heading}>AFP (optional)</Text>
+                    <Input
+                      className={styles.amtInput}
+                      type="number"
+                      placeholder="auto"
+                      value={afp}
+                      disabled={!rfId}
+                      onChange={(_, d) => setAfp(d.value)}
+                    />
+                  </div>
+                )}
+                {SHOW_AFP_ALLOT && (
+                  <div className={styles.pickerField} style={{ minWidth: 0 }}>
+                    <Text className={styles.heading}>Allotment (optional)</Text>
+                    <Input
+                      className={styles.amtInput}
+                      type="number"
+                      placeholder="auto"
+                      value={allot}
+                      disabled={!rfId}
+                      onChange={(_, d) => setAllot(d.value)}
+                    />
+                  </div>
+                )}
               </div>
-              {SHOW_AFP_ALLOT && (
-                <div className={styles.pickerField}>
-                  <Text className={styles.heading}>AFP (optional)</Text>
-                  <Input
-                    className={styles.amtInput}
-                    type="number"
-                    placeholder="auto"
-                    value={afp}
-                    onChange={(_, d) => setAfp(d.value)}
-                  />
-                </div>
-              )}
-              {SHOW_AFP_ALLOT && (
-                <div className={styles.pickerField}>
-                  <Text className={styles.heading}>Allotment (optional)</Text>
-                  <Input
-                    className={styles.amtInput}
-                    type="number"
-                    placeholder="auto"
-                    value={allot}
-                    onChange={(_, d) => setAllot(d.value)}
-                  />
-                </div>
-              )}
             </div>
 
             {rf && (

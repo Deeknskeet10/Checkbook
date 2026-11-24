@@ -41,8 +41,8 @@ namespace Checkbook.Plugins.TurnIns
     ///          "{ABBR} - State Approver/Administrator" owner team, ABBR not PEC/WTC)
     ///          may not turn in RF-only items — every item must carry a Prioritization.
     ///          PEC and WTC are exempt (may turn in RF-only).
-    ///        - Approval ordering: RF-only Turn-Ins — and ALL FY27+ Turn-Ins (RF-level
-    ///          excepted: RI / CSOR single step) — take a two-step approval (State
+    ///        - Approval ordering: RF-only Turn-Ins — and ALL FY27+ Turn-Ins, RF-level
+    ///          included (NPM submits, then BE) — take a two-step approval (State / NPM
     ///          first, then BE). This validator only enforces that a BE-approval save
     ///          has State approval already in place; the RF-only "BE before funds move"
     ///          rule itself is gated in TurnInApprovalPlugin's execution-readiness check
@@ -270,12 +270,14 @@ namespace Checkbook.Plugins.TurnIns
             // TurnInApprovalPlugin, which creates ledgers only once the Turn-In is
             // fully approved — so letting the intermediate State approval through here
             // is safe.
-            // FY27 RF-level Turn-Ins have no State step — the RI / CSOR approval alone runs them.
-            if (beApprovedInPayload && newBeApproved && !newStateApproved && !rfLevel)
+            // FY27 RF-level Turn-Ins follow the same order: the NPM's submission (carried on
+            // book_stateapproved) must be in place before BE decides.
+            if (beApprovedInPayload && newBeApproved && !newStateApproved)
             {
                 throw new InvalidPluginExecutionException(
-                    "Budget Execution approval requires State Approval to already be in " +
-                    "place. Approve for the State first, then grant Budget Execution approval.");
+                    "Budget Execution approval requires the first-step approval (State / NPM) to " +
+                    "already be in place. Approve for the State / NPM first, then grant Budget " +
+                    "Execution approval.");
             }
 
             tracing.Trace("TurnInValidator: all validations passed.");
@@ -350,18 +352,23 @@ namespace Checkbook.Plugins.TurnIns
         {
             if (rfLevel)
             {
-                // FY27 RF-level: NPM creates, Resource Integrator / CSOR approves (one step,
-                // on book_beapproved). Neither the State nor Budget Execution is in the loop.
-                if (stateFlagInPayload)
+                // FY27 RF-level: same two-step flow as every Turn-In — Pending -> the NPM
+                // submits (book_stateapproved; no State team is involved) -> Awaiting BE
+                // Approval -> BE approves / denies (book_beapproved). Resource Integrator and
+                // CSOR keep their existing ability to give the final decision.
+                if (stateFlagInPayload && !UserRoleHelper.HasAnyRole(
+                        service, tracing, userId,
+                        RoleNames.NPM, RoleNames.CheckbookAdministrator))
                     throw new InvalidPluginExecutionException(
-                        "This Turn-In turns in funds from a Requirement Funding. It is approved by a Resource " +
-                        "Integrator or CSOR, not by the State.");
+                        "Only users in the NPM or Checkbook Administrator roles may submit a Requirement " +
+                        "Funding Turn-In for Budget Execution approval.");
                 if (beFlagInPayload && !UserRoleHelper.HasAnyRole(
                         service, tracing, userId,
-                        RoleNames.ResourceIntegrator, RoleNames.CSOR, RoleNames.CheckbookAdministrator))
+                        RoleNames.BudgetExecutor, RoleNames.ResourceIntegrator, RoleNames.CSOR,
+                        RoleNames.CheckbookAdministrator))
                     throw new InvalidPluginExecutionException(
-                        "Only users in the Resource Integrator, CSOR, or Checkbook Administrator roles may " +
-                        "approve a Requirement Funding Turn-In.");
+                        "Only users in the Budget Executor, Resource Integrator, CSOR, or Checkbook " +
+                        "Administrator roles may approve a Requirement Funding Turn-In.");
                 return;
             }
 

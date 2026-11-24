@@ -68,9 +68,16 @@ const STATE_ROLES = [
   "Book - Checkbook Administrator",
 ];
 const BE_ROLES = ["Book - Budget Executor", "Book - Checkbook Administrator"];
-// FY27 Requirement Funding Turn-Ins: NPM creates, Resource Integrator / CSOR approves in
-// one step (carried on book_beapproved) — no State or Budget Execution step.
-const RF_ROLES = ["Book - Resource Integrator", "Book - CSOR", "Book - Checkbook Administrator"];
+// FY27 Requirement Funding Turn-Ins take the same two steps as every Turn-In: the NPM submits
+// (carried on book_stateapproved — no State team is involved), then BE decides. Resource
+// Integrator / CSOR may also give the final decision.
+const RF_SUBMIT_ROLES = ["Book - NPM", "Book - Checkbook Administrator"];
+const RF_DECIDE_ROLES = [
+  "Book - Budget Executor",
+  "Book - Resource Integrator",
+  "Book - CSOR",
+  "Book - Checkbook Administrator",
+];
 const FISCAL_YEAR = "book_fiscalyear";
 const FIRST_RF_ROUTE_FY = 2027;
 // FY27+: every Turn-In goes State -> BE (the BE step is always shown, even when
@@ -79,7 +86,8 @@ const FIRST_RF_ROUTE_FY = 2027;
 // record keeping — the user must create a new Turn-In.
 const FIRST_ALWAYS_BE_FY = 2027;
 const TURNIN_STATUS = "book_turninstatus";
-const TURNIN_STATUS_DENIED = 2;
+// book_turninstatus: Pending 0 / Awaiting BE Approval 1 / Approved 2 / Denied 3.
+const TURNIN_STATUS_DENIED = 3;
 const ORIGIN = "book_origin";
 const ORIGIN_SWEEP = 1;
 const TURNIN_ITEM_ENTITY = "book_turninitems";
@@ -95,7 +103,7 @@ interface TurnInRecord {
   beAlways: boolean;
   /** book_turninstatus = Denied — final; the Turn-In is kept for record keeping only. */
   denied: boolean;
-  /** FY27+ Requirement Funding Turn-In: single RI / CSOR approval. */
+  /** FY27+ Requirement Funding Turn-In: NPM submits (first step), then BE / RI / CSOR decides. */
   rfRoute: boolean;
   /**
    * Has at least one active line with a Prioritization or Requirement Funding. Sweep
@@ -165,7 +173,6 @@ const useStyles = makeStyles({
 });
 
 function stageOf(rec: TurnInRecord): Stage {
-  if (rec.rfRoute) return rec.beApproved ? "done" : "be";
   if (!rec.stateApproved) return "state";
   if ((rec.requiresBEApproval || rec.beAlways) && !rec.beApproved) return "be";
   return "done";
@@ -266,17 +273,14 @@ export const TurnInApprovalProcessApp: React.FC<TurnInApprovalProcessProps> = ({
     return () => window.removeEventListener(ITEMS_SAVED_EVENT, onSaved);
   }, [reload]);
 
+  const rfRoute = !!record?.rfRoute;
   const canApproveState = React.useMemo(
-    () => STATE_ROLES.some((r) => userRoles.has(r)),
-    [userRoles]
+    () => (rfRoute ? RF_SUBMIT_ROLES : STATE_ROLES).some((r) => userRoles.has(r)),
+    [userRoles, rfRoute]
   );
   const canApproveBE = React.useMemo(
-    () => BE_ROLES.some((r) => userRoles.has(r)),
-    [userRoles]
-  );
-  const canApproveRf = React.useMemo(
-    () => RF_ROLES.some((r) => userRoles.has(r)),
-    [userRoles]
+    () => (rfRoute ? RF_DECIDE_ROLES : BE_ROLES).some((r) => userRoles.has(r)),
+    [userRoles, rfRoute]
   );
 
   const update = async (payload: Record<string, unknown>) => {
@@ -354,16 +358,11 @@ export const TurnInApprovalProcessApp: React.FC<TurnInApprovalProcessProps> = ({
   const blocked = busy || isDisabled || notBuilt;
 
   // Stage list — index used to decide past/current/future styling.
-  const stages: { key: Stage; label: string }[] = record.rfRoute
-    ? [
-        { key: "be", label: "RI / CSOR Approval" },
-        { key: "done", label: "Approved" },
-      ]
-    : [
-        { key: "state", label: "State Approval" },
-        ...(showBE ? [{ key: "be" as Stage, label: "BE Approval" }] : []),
-        { key: "done", label: "Approved" },
-      ];
+  const stages: { key: Stage; label: string }[] = [
+    { key: "state", label: record.rfRoute ? "NPM Approval" : "State Approval" },
+    ...(showBE ? [{ key: "be" as Stage, label: "BE Approval" }] : []),
+    { key: "done", label: "Approved" },
+  ];
   const currentIdx = stages.findIndex((s) => s.key === current);
 
   const iconFor = (idx: number) => {
@@ -403,36 +402,19 @@ export const TurnInApprovalProcessApp: React.FC<TurnInApprovalProcessProps> = ({
                 disabled={blocked || !canApproveState}
                 onClick={() => void setFlag(STATE_APPROVED, true)}
               >
-                Approve — State
+                {record.rfRoute ? "Submit — NPM" : "Approve — State"}
               </Button>
               {!canApproveState && (
                 <Text className={styles.helper}>
-                  Only State Approvers, State Administrators, or Checkbook
-                  Administrators can approve.
+                  {record.rfRoute
+                    ? "Only NPMs or Checkbook Administrators can submit a Requirement Funding Turn-In."
+                    : "Only State Approvers, State Administrators, or Checkbook Administrators can approve."}
                 </Text>
               )}
             </>
           )}
 
-          {current === "be" && record.rfRoute && (
-            <>
-              <Button
-                appearance="primary"
-                disabled={blocked || !canApproveRf}
-                onClick={() => void setFlag(BE_APPROVED, true)}
-              >
-                Approve — RI / CSOR
-              </Button>
-              {!canApproveRf && (
-                <Text className={styles.helper}>
-                  Only Resource Integrators, CSORs, or Checkbook Administrators can
-                  approve a Requirement Funding Turn-In.
-                </Text>
-              )}
-            </>
-          )}
-
-          {current === "be" && !record.rfRoute && (
+          {current === "be" && (
             <>
               <Button
                 appearance="primary"
@@ -462,8 +444,9 @@ export const TurnInApprovalProcessApp: React.FC<TurnInApprovalProcessProps> = ({
               )}
               {!canApproveBE && (
                 <Text className={styles.helper}>
-                  Only Budget Executors or Checkbook Administrators can
-                  approve BE.
+                  {record.rfRoute
+                    ? "Only Budget Executors, Resource Integrators, CSORs, or Checkbook Administrators can approve BE."
+                    : "Only Budget Executors or Checkbook Administrators can approve BE."}
                 </Text>
               )}
             </>

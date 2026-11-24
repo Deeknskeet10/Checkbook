@@ -1344,9 +1344,11 @@ PCF's BE **Deny** is exactly this: it writes `book_stateapproved = false` +
 `book_turninstatus = Denied`, which this step turns into the deactivation (no
 registration change — the step filter stays `book_stateapproved`).
 FY27+ approval gate (`TurnInApprovalPlugin`): **every** non-legacy Turn-In needs
-State **and** BE approval before execution (RF-level keeps its single RI / CSOR
-approval); on completion it stamps `book_turninstatus` = Approved. Requires the
-`book_turninstatus` optionset (Pending 0 / Approved 1 / Denied 2, default Pending). No financial
+State **and** BE approval before execution (RF-level too: the NPM submits on
+`book_stateapproved`, then BE / RI / CSOR decides); a State / NPM approval stamps `book_turninstatus` = Awaiting BE Approval (no ledgers
+yet) and BE approval stamps Approved on completion — ledgers are created only then.
+Requires the `book_turninstatus` optionset (Pending 0 / Awaiting BE Approval 1 /
+Approved 2 / Denied 3, default Pending). No financial
 side effects — `TurnInValidator`'s idempotency guarantees no ledgers exist
 when this path runs. Denial detection stays transition-based (a bare false
 can't distinguish "denied" from "never approved"). **No nesting or Depth

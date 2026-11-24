@@ -16,7 +16,8 @@ namespace Checkbook.Plugins.Constants
         public const string CheckbookAdministrator = "Book - Checkbook Administrator";
         public const string StateAdministrator     = "Book - State Administrator";
         public const string StateApprover          = "Book - State Approver";
-        // FY27 RF-level Turn-In approvers (TurnInValidator).
+        // FY27 RF-level Turn-Ins: the NPM submits (first step), BE / RI / CSOR decide (TurnInValidator).
+        public const string NPM                    = "Book - NPM";
         public const string ResourceIntegrator     = "Book - Resource Integrator";
         public const string CSOR                   = "Book - CSOR";
 
