@@ -1,0 +1,15 @@
+<Project>
+  <!--
+    Speeds up `dotnet build` of the delivery solution.
+
+    Microsoft.PowerApps.MSBuild.Pcf decides whether to run `npm run build` by comparing
+    every file under the project (glob "**") against out/controls/**/bundle.js. It does not
+    exclude node_modules, so each PCF project stats tens of thousands of files (Fluent UI)
+    on every build even when nothing changed. The target appends to this property, so
+    seeding it here removes node_modules from the input set. package.json (and thus any
+    dependency change) is still an input.
+  -->
+  <PropertyGroup>
+    <_ExcludeNpmRunBuildInput>node_modules/**</_ExcludeNpmRunBuildInput>
+  </PropertyGroup>
+</Project>
