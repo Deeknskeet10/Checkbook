@@ -34,6 +34,10 @@ export interface TurnInBuilderProps {
 const STATE_ROLES = ["Book - State PM", "Book - State Approver", "Book - State Administrator", "Book - FC Reviewer"];
 const RF_ROLES = ["Book - NPM", "Book - Resource Integrator", "Book - CSOR"];
 const CHECKBOOK_ADMIN = "Book - Checkbook Administrator";
+const SYSTEM_ADMIN = "System Administrator";
+const NPM_ROLE = "Book - NPM";
+// Roles that may not pick the RF-level ("TARC Requirement (NPM)") Turn-In type.
+const NO_RF_OPTION_ROLES = ["Book - State PM", "Book - State Approver", "Book - State Administrator"];
 const ORIGIN_SWEEP = 1;
 const FIRST_ITEM_BASED_FY = 2027;
 
@@ -48,7 +52,7 @@ interface Header {
  * FY27 Turn-In entry. A saved Turn-In keeps its saved type; a new one defaults from the
  * user's roles: State roles -> Prioritization, NPM / Resource Integrator / CSOR -> RF-level. A State user never gets the RF option — States turn in through a
  * Prioritization (TurnInValidator enforces the same). Dual-role, no-role and Checkbook
- * Administrator users get a toggle.
+ * Administrator users get a toggle, hidden once lines are saved (the type is then locked to them).
  */
 export const TurnInBuilderApp: React.FC<TurnInBuilderProps> = ({ webAPI, recordId, userId }) => {
   const styles = useStyles();
@@ -150,29 +154,33 @@ export const TurnInBuilderApp: React.FC<TurnInBuilderProps> = ({ webAPI, recordI
   const canChoose = isAdmin || (isRf && isState) || (!isRf && !isState);
   const roleMode: EntryMode = isRf && !isState ? "rf" : "state";
   // A State user (no RF role, not admin) is always on the Prioritization path.
-  const mode: EntryMode = isState && !isRf && !isAdmin ? "state" : (chosen ?? savedMode ?? roleMode);
-  const switching = savedMode !== null && mode !== savedMode;
+  // Once lines are saved the type is locked to them (savedMode); before that the toggle decides.
+  const locked = savedMode !== null;
+  const mode: EntryMode = isState && !isRf && !isAdmin ? "state" : (savedMode ?? chosen ?? roleMode);
+
+  // Option restrictions. Checkbook / System Administrators are never restricted. An NPM can't pick
+  // the Prioritization (State) type; State Admin / Approver / PM can't pick the TARC Requirement (NPM)
+  // type. A user holding both an NPM and a State role stays unrestricted (the two rules conflict).
+  const unrestricted = isAdmin || roles.has(SYSTEM_ADMIN);
+  const isNpm = roles.has(NPM_ROLE);
+  const isRestrictedState = NO_RF_OPTION_ROLES.some((r) => roles.has(r));
+  const disablePrioOption = !unrestricted && isNpm && !isRestrictedState;
+  const disableRfOption = !unrestricted && isRestrictedState && !isNpm;
+  const showSelector = canChoose || disablePrioOption || disableRfOption;
 
   return (
-    <>
-      {canChoose && (
+    // Column layout so the type selector sits above the builder rather than beside it.
+    <div style={{ display: "flex", flexDirection: "column", width: "100%" }}>
+      {showSelector && !locked && (
         <FluentProvider theme={webLightTheme} style={{ width: "100%" }}>
           <div className={styles.root}>
             <div className={styles.balanceRow}>
               <Text className={styles.heading}>Turn-In type</Text>
               <RadioGroup layout="horizontal" value={mode} onChange={(_, d) => setChosen(d.value as EntryMode)}>
-                <Radio value="state" label="Prioritization (State)" />
-                <Radio value="rf" label="TARC Requirement (NPM)" />
+                <Radio value="state" label="Prioritization (State)" disabled={disablePrioOption} />
+                <Radio value="rf" label="TARC Requirement (NPM)" disabled={disableRfOption} />
               </RadioGroup>
             </div>
-            {switching && (
-              <MessageBar intent="warning">
-                <MessageBarBody>
-                  This Turn-In was saved as a {savedMode === "rf" ? "Requirement Funding" : "Prioritization"} Turn-In.
-                  Saving it as the other type replaces those lines.
-                </MessageBarBody>
-              </MessageBar>
-            )}
           </div>
         </FluentProvider>
       )}
@@ -188,6 +196,6 @@ export const TurnInBuilderApp: React.FC<TurnInBuilderProps> = ({ webAPI, recordI
           fundCenterId={header.fundCenterId}
         />
       )}
-    </>
+    </div>
   );
 };

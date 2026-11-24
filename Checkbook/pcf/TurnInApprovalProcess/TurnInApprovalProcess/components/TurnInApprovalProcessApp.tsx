@@ -73,6 +73,17 @@ const BE_ROLES = ["Book - Budget Executor", "Book - Checkbook Administrator"];
 const RF_ROLES = ["Book - Resource Integrator", "Book - CSOR", "Book - Checkbook Administrator"];
 const FISCAL_YEAR = "book_fiscalyear";
 const FIRST_RF_ROUTE_FY = 2027;
+// FY27+: every Turn-In goes State -> BE (the BE step is always shown, even when
+// book_requiresbeapproval is false). A BE Deny is final: status = Denied, State approval is
+// cleared (the signal TurnInDeactivator keys on) and the record is deactivated and kept for
+// record keeping — the user must create a new Turn-In.
+const FIRST_ALWAYS_BE_FY = 2027;
+const TURNIN_STATUS = "book_turninstatus";
+const TURNIN_STATUS_DENIED = 2;
+const ORIGIN = "book_origin";
+const ORIGIN_SWEEP = 1;
+const TURNIN_ITEM_ENTITY = "book_turninitems";
+const STATECODE_ACTIVE = 0;
 
 type Stage = "state" | "be" | "done";
 
@@ -80,8 +91,17 @@ interface TurnInRecord {
   stateApproved: boolean;
   beApproved: boolean;
   requiresBEApproval: boolean;
+  /** FY27+: the BE step is mandatory for every Turn-In, independent of requiresBEApproval. */
+  beAlways: boolean;
+  /** book_turninstatus = Denied — final; the Turn-In is kept for record keeping only. */
+  denied: boolean;
   /** FY27+ Requirement Funding Turn-In: single RI / CSOR approval. */
   rfRoute: boolean;
+  /**
+   * Has at least one active line with a Prioritization or Requirement Funding. Sweep
+   * Turn-Ins are approved with zero lines (AFP-only path), so they always count as built.
+   */
+  built: boolean;
 }
 
 const useStyles = makeStyles({
@@ -147,7 +167,7 @@ const useStyles = makeStyles({
 function stageOf(rec: TurnInRecord): Stage {
   if (rec.rfRoute) return rec.beApproved ? "done" : "be";
   if (!rec.stateApproved) return "state";
-  if (rec.requiresBEApproval && !rec.beApproved) return "be";
+  if ((rec.requiresBEApproval || rec.beAlways) && !rec.beApproved) return "be";
   return "done";
 }
 
@@ -175,18 +195,29 @@ export const TurnInApprovalProcessApp: React.FC<TurnInApprovalProcessProps> = ({
       return;
     }
     try {
-      const rec = await webAPI.retrieveRecord(
-        entityName || TURNIN_ENTITY,
-        cleanId,
-        `?$select=${STATE_APPROVED},${BE_APPROVED},${REQUIRES_BE},${FISCAL_YEAR}`
-      );
+      const [rec, lines] = await Promise.all([
+        webAPI.retrieveRecord(
+          entityName || TURNIN_ENTITY,
+          cleanId,
+          `?$select=${STATE_APPROVED},${BE_APPROVED},${REQUIRES_BE},${FISCAL_YEAR},${ORIGIN},${TURNIN_STATUS}`
+        ),
+        webAPI.retrieveMultipleRecords(
+          TURNIN_ITEM_ENTITY,
+          `?$select=_book_turnin_value&$filter=_book_turnin_value eq ${cleanId}` +
+            ` and statecode eq ${STATECODE_ACTIVE}` +
+            " and (_book_prioritization_value ne null or _book_requirementfunding_value ne null)&$top=1"
+        ),
+      ]);
       const fyRaw: unknown = rec[FISCAL_YEAR];
       const fy = typeof fyRaw === "number" ? fyRaw : 0;
       setRecord({
         stateApproved: !!rec[STATE_APPROVED],
         beApproved: !!rec[BE_APPROVED],
         requiresBEApproval: !!rec[REQUIRES_BE],
+        beAlways: fy >= FIRST_ALWAYS_BE_FY,
+        denied: rec[TURNIN_STATUS] === TURNIN_STATUS_DENIED,
         rfRoute: !!rec[REQUIRES_BE] && fy >= FIRST_RF_ROUTE_FY,
+        built: rec[ORIGIN] === ORIGIN_SWEEP || lines.entities.length > 0,
       });
     } catch (e: any) {
       setError(e?.message ?? "Failed to load Turn-In record.");
@@ -248,14 +279,12 @@ export const TurnInApprovalProcessApp: React.FC<TurnInApprovalProcessProps> = ({
     [userRoles]
   );
 
-  const setFlag = async (field: string, value: boolean) => {
+  const update = async (payload: Record<string, unknown>) => {
     if (!cleanId) return;
     setBusy(true);
     setError(null);
     try {
-      await webAPI.updateRecord(entityName || TURNIN_ENTITY, cleanId, {
-        [field]: value,
-      });
+      await webAPI.updateRecord(entityName || TURNIN_ENTITY, cleanId, payload);
       await reload();
     } catch (e: any) {
       // The plugin's InvalidPluginExecutionException message shows up as
@@ -265,6 +294,13 @@ export const TurnInApprovalProcessApp: React.FC<TurnInApprovalProcessProps> = ({
       setBusy(false);
     }
   };
+
+  const setFlag = (field: string, value: boolean) => update({ [field]: value });
+
+  // FY27+ BE Deny: final. Status -> Denied and State approval cleared in one save;
+  // TurnInDeactivator keys on the State flag flipping true -> false and deactivates the record.
+  const denyTurnIn = () =>
+    update({ [STATE_APPROVED]: false, [TURNIN_STATUS]: TURNIN_STATUS_DENIED });
 
   if (loading) {
     return (
@@ -286,8 +322,36 @@ export const TurnInApprovalProcessApp: React.FC<TurnInApprovalProcessProps> = ({
     );
   }
 
+  // Denied is terminal: no stage chevrons or actions, just the outcome. The record is kept
+  // (inactive) for record keeping; a new Turn-In must be created instead.
+  if (record.denied) {
+    return (
+      <FluentProvider theme={webLightTheme} className={styles.provider}>
+        <div className={styles.root}>
+          <div className={styles.chevronRow}>
+            <div className={[styles.chevron, styles.chevronFirst, styles.chevronCurrent].join(" ")}>
+              <Text>Denied</Text>
+            </div>
+          </div>
+          <div style={{ marginTop: 8 }}>
+            <MessageBar intent="error">
+              <MessageBarBody>
+                This Turn-In was denied and is kept for record keeping. Create a new Turn-In to
+                resubmit.
+              </MessageBarBody>
+            </MessageBar>
+          </div>
+        </div>
+      </FluentProvider>
+    );
+  }
+
   const current = stageOf(record);
-  const showBE = record.requiresBEApproval;
+  // FY27+: the BE step is always visible. Pre-FY27 it only appears when BE is required.
+  const showBE = record.requiresBEApproval || record.beAlways;
+  // Nothing to approve yet: no Prioritization or Requirement Funding lines are saved.
+  const notBuilt = !record.built && current !== "done";
+  const blocked = busy || isDisabled || notBuilt;
 
   // Stage list — index used to decide past/current/future styling.
   const stages: { key: Stage; label: string }[] = record.rfRoute
@@ -336,7 +400,7 @@ export const TurnInApprovalProcessApp: React.FC<TurnInApprovalProcessProps> = ({
             <>
               <Button
                 appearance="primary"
-                disabled={busy || isDisabled || !canApproveState}
+                disabled={blocked || !canApproveState}
                 onClick={() => void setFlag(STATE_APPROVED, true)}
               >
                 Approve — State
@@ -354,7 +418,7 @@ export const TurnInApprovalProcessApp: React.FC<TurnInApprovalProcessProps> = ({
             <>
               <Button
                 appearance="primary"
-                disabled={busy || isDisabled || !canApproveRf}
+                disabled={blocked || !canApproveRf}
                 onClick={() => void setFlag(BE_APPROVED, true)}
               >
                 Approve — RI / CSOR
@@ -372,18 +436,30 @@ export const TurnInApprovalProcessApp: React.FC<TurnInApprovalProcessProps> = ({
             <>
               <Button
                 appearance="primary"
-                disabled={busy || isDisabled || !canApproveBE}
+                disabled={blocked || !canApproveBE}
                 onClick={() => void setFlag(BE_APPROVED, true)}
               >
                 Approve — Budget Execution
               </Button>
-              <Button
-                appearance="secondary"
-                disabled={busy || isDisabled || !canApproveState}
-                onClick={() => void setFlag(STATE_APPROVED, false)}
-              >
-                Deny (return to State)
-              </Button>
+              {record.beAlways ? (
+                // FY27+: only BE can Deny. Final — the Turn-In is kept as Denied and a new one
+                // must be created.
+                <Button
+                  appearance="secondary"
+                  disabled={busy || isDisabled || !canApproveBE}
+                  onClick={() => void denyTurnIn()}
+                >
+                  Deny
+                </Button>
+              ) : (
+                <Button
+                  appearance="secondary"
+                  disabled={busy || isDisabled || !canApproveState}
+                  onClick={() => void setFlag(STATE_APPROVED, false)}
+                >
+                  Deny (return to State)
+                </Button>
+              )}
               {!canApproveBE && (
                 <Text className={styles.helper}>
                   Only Budget Executors or Checkbook Administrators can
@@ -397,6 +473,14 @@ export const TurnInApprovalProcessApp: React.FC<TurnInApprovalProcessProps> = ({
             <Text>This Turn-In is fully approved.</Text>
           )}
         </div>
+
+        {notBuilt && (
+          <div style={{ marginTop: 8 }}>
+            <MessageBar intent="info">
+              <MessageBarBody>Please complete building the Turn-In before approving.</MessageBarBody>
+            </MessageBar>
+          </div>
+        )}
 
         {error && (
           <div style={{ marginTop: 8 }}>

@@ -8,6 +8,14 @@ import { num, money, cleanId, useStyles } from "./shared";
  * (TurnInItemAmountCalculator: TDP × the line's Fund/PG percentage); a value is saved with
  * its override flag so the plugin keeps it as entered.
  */
+/**
+ * Temporarily off: AFP / Allotment entry is a future feature. While false the inputs, columns
+ * and totals are hidden; new lines save with blank AFP / Allotment, so they are sized
+ * automatically. An override already saved on a line is kept when that line is edited.
+ * Set to true to bring the AFP / Allotment UI back in both builders.
+ */
+export const SHOW_AFP_ALLOT = false;
+
 export interface LineAmounts {
   amount: string;
   afp: string; // "" = auto
@@ -61,9 +69,15 @@ export const AmountTotals: React.FC<{
   entered?: boolean;
 }> = ({ styles, tdp, afp, allot, entered }) => (
   <div className={styles.balanceRow}>
-    <Text>
-      Turn-In total — TDP <b>{money(tdp)}</b> · AFP <b>{money(afp)}</b> · Allotment <b>{money(allot)}</b>
-      {entered ? " (AFP / Allotment entered; blank lines are sized automatically on save)" : ""}
-    </Text>
+    {SHOW_AFP_ALLOT ? (
+      <Text>
+        Turn-In total — TDP <b>{money(tdp)}</b> · AFP <b>{money(afp)}</b> · Allotment <b>{money(allot)}</b>
+        {entered ? " (AFP / Allotment entered; blank lines are sized automatically on save)" : ""}
+      </Text>
+    ) : (
+      <Text>
+        Turn-In total — TDP <b>{money(tdp)}</b>
+      </Text>
+    )}
   </div>
 );

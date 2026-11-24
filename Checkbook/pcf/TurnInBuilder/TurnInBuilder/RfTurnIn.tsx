@@ -10,6 +10,8 @@ import {
   MessageBar,
   MessageBarBody,
   Option,
+  Radio,
+  RadioGroup,
   Spinner,
   Text,
 } from "@fluentui/react-components";
@@ -28,12 +30,13 @@ import {
   EPS,
   num,
   money,
+  moneyShort,
   cleanId,
   useStyles,
   saveTurnInChildren,
   DesiredRow,
 } from "./shared";
-import { lineAmountFields, SavedLine, readSavedLine, SAVED_LINE_SELECT, AmountTotals } from "./lines";
+import { lineAmountFields, SavedLine, readSavedLine, SAVED_LINE_SELECT, AmountTotals, SHOW_AFP_ALLOT } from "./lines";
 
 /**
  * RF-level Turn-In (FY27): an NPM turns in from one Requirement Funding; a Resource
@@ -67,13 +70,23 @@ interface RdfLine {
   reduce: string;
 }
 
-const RD_LABELS = "_book_item_value,_book_tdc_value,_book_mdep_value";
+// book_requirementfunding.book_requirementtype (formula over book_Requirement.book_type, option set
+// book_requirementtype): the user picks which kind of Requirement to turn in from.
+const REQ_TYPE_ATTR = "book_requirementtype";
+const REQ_TYPE_STATE = 0;
+const REQ_TYPE_TARC = 1;
+type ReqType = typeof REQ_TYPE_STATE | typeof REQ_TYPE_TARC;
+const asReqType = (v: unknown): ReqType | null =>
+  v === REQ_TYPE_STATE || v === REQ_TYPE_TARC ? v : null;
+
+const RD_LABELS ="_book_item_value,_book_tdc_value,_book_mdep_value";
 const label = (e: Record<string, unknown>, attr: string): string => (e[`_${attr}_value${FV}`] as string) ?? "";
 
 export const RfTurnIn: React.FC<RfTurnInProps> = ({ webAPI, recordId, isActive, fiscalYear }) => {
   const styles = useStyles();
 
   const [loading, setLoading] = React.useState(true);
+  const [rfsLoading, setRfsLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
   const [saving, setSaving] = React.useState(false);
   const [saveMsg, setSaveMsg] = React.useState<string | null>(null);
@@ -88,27 +101,78 @@ export const RfTurnIn: React.FC<RfTurnInProps> = ({ webAPI, recordId, isActive, 
   const [prioFunded, setPrioFunded] = React.useState(false);
   const [lines, setLines] = React.useState<RdfLine[]>([]);
 
-  const [saved, setSaved] = React.useState<(SavedLine & { rfId: string }) | null>(null);
+  // Requirement type the RF lookup is filtered to (TARC by default — this is the NPM path).
+  const [reqType, setReqType] = React.useState<ReqType>(REQ_TYPE_TARC);
+  const [saved, setSaved] = React.useState<(SavedLine & { rfId: string; reqType: ReqType | null }) | null>(null);
   const [savedReductions, setSavedReductions] = React.useState<{ id: string; label: string; amount: number }[]>([]);
   const prefill = React.useRef<Map<string, number>>(new Map());
   const [prefillKey, setPrefillKey] = React.useState(0);
 
-  const rf = rfs.find((r) => r.id === rfId) ?? null;
+  // Name search: `nameFilter` is what the user types; `nameQuery` is the debounced value sent to Dataverse.
+  const [nameFilter, setNameFilter] = React.useState("");
+  const [nameQuery, setNameQuery] = React.useState("");
+  // Text typed into the combobox itself (null = show the selected RF's name).
+  const [rfInput, setRfInput] = React.useState<string | null>(null);
+  // Every RF seen so far, so the selected RF survives a narrower search result.
+  const rfCache = React.useRef<Map<string, RfOpt>>(new Map());
 
-  // ---- RF candidates + saved lines --------------------------------------------------
+  const rf = rfs.find((r) => r.id === rfId) ?? rfCache.current.get(rfId) ?? null;
+
+  const rfOptions = React.useMemo(() => {
+    const q = (rfInput ?? "").trim().toLowerCase();
+    return q ? rfs.filter((r) => r.name.toLowerCase().includes(q)) : rfs;
+  }, [rfs, rfInput]);
+
+  // ---- RF candidates (re-queried as the Name Contains search changes) ---------------
+  React.useEffect(() => {
+    const t = setTimeout(() => setNameQuery(nameFilter.trim()), 400);
+    return () => clearTimeout(t);
+  }, [nameFilter]);
+
+  React.useEffect(() => {
+    let cancelled = false;
+    setRfsLoading(true);
+    const nameClause = nameQuery
+      ? ` and contains(book_name,'${encodeURIComponent(nameQuery.replace(/'/g, "''"))}')`
+      : "";
+    void (async () => {
+      try {
+        const res = await webAPI.retrieveMultipleRecords(
+          REQ_FUNDING,
+          "?$select=book_name,book_newtdp,book_newfundedamount,book_newwithholding" +
+            `&$filter=statecode eq ${STATECODE_ACTIVE} and book_newfiscalyear eq ${fiscalYear} and book_newtdp gt 0` +
+            ` and ${REQ_TYPE_ATTR} eq ${reqType}${nameClause}` +
+            "&$orderby=book_name asc&$top=500"
+        );
+        if (cancelled) return;
+        const opts = res.entities.map((e) => ({
+          id: cleanId(e.book_requirementfundingid),
+          name: (e.book_name as string) ?? "(RF)",
+          tdp: num(e.book_newtdp),
+          funded: num(e.book_newfundedamount),
+          withholding: num(e.book_newwithholding),
+        }));
+        opts.forEach((o) => rfCache.current.set(o.id, o));
+        setRfs(opts);
+      } catch {
+        if (!cancelled) setError("Could not load the Requirement Fundings.");
+      } finally {
+        if (!cancelled) setRfsLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [webAPI, fiscalYear, reloadKey, nameQuery, reqType]);
+
+  // ---- saved lines ------------------------------------------------------------------
   React.useEffect(() => {
     let cancelled = false;
     setLoading(true);
     setError(null);
     void (async () => {
       try {
-        const [res, items, reds] = await Promise.all([
-          webAPI.retrieveMultipleRecords(
-            REQ_FUNDING,
-            "?$select=book_name,book_newtdp,book_newfundedamount,book_newwithholding" +
-              `&$filter=statecode eq ${STATECODE_ACTIVE} and book_newfiscalyear eq ${fiscalYear} and book_newtdp gt 0` +
-              "&$orderby=book_name asc&$top=500"
-          ),
+        const [items, reds] = await Promise.all([
           webAPI.retrieveMultipleRecords(
             TURNIN_ITEM,
             `?$select=${SAVED_LINE_SELECT},_book_requirementfunding_value` +
@@ -123,21 +187,22 @@ export const RfTurnIn: React.FC<RfTurnInProps> = ({ webAPI, recordId, isActive, 
           ),
         ]);
         if (cancelled) return;
-        setRfs(
-          res.entities.map((e) => ({
-            id: cleanId(e.book_requirementfundingid),
-            name: (e.book_name as string) ?? "(RF)",
-            tdp: num(e.book_newtdp),
-            funded: num(e.book_newfundedamount),
-            withholding: num(e.book_newwithholding),
-          }))
-        );
         const it = items.entities[0];
+        const savedRfId = it ? cleanId(it._book_requirementfunding_value) : "";
+        // The saved RF's type, so Edit reopens the lookup on the matching TARC / State filter.
+        const savedType = savedRfId
+          ? await webAPI
+              .retrieveRecord(REQ_FUNDING, savedRfId, `?$select=${REQ_TYPE_ATTR}`)
+              .then((r) => asReqType(r[REQ_TYPE_ATTR]))
+              .catch(() => null)
+          : null;
+        if (cancelled) return;
         setSaved(
           it
             ? {
                 ...readSavedLine(it),
-                rfId: cleanId(it._book_requirementfunding_value),
+                rfId: savedRfId,
+                reqType: savedType,
                 label: (it[`_book_requirementfunding_value${FV}`] as string) ?? "(RF)",
               }
             : null
@@ -154,7 +219,7 @@ export const RfTurnIn: React.FC<RfTurnInProps> = ({ webAPI, recordId, isActive, 
         );
         if (it) setMode("view");
       } catch {
-        if (!cancelled) setError("Could not load the Requirement Fundings.");
+        if (!cancelled) setError("Could not load the Turn-In's saved line.");
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -241,6 +306,7 @@ export const RfTurnIn: React.FC<RfTurnInProps> = ({ webAPI, recordId, isActive, 
     setSaveMsg(null);
     prefill.current = new Map(savedReductions.map((r) => [r.id, r.amount]));
     if (saved) {
+      if (saved.reqType !== null) setReqType(saved.reqType);
       setRfId(saved.rfId);
       setAmount(String(saved.amount));
       setAfp(saved.afpOverridden ? String(saved.afp) : "");
@@ -295,7 +361,7 @@ export const RfTurnIn: React.FC<RfTurnInProps> = ({ webAPI, recordId, isActive, 
   };
 
   const rfLabel = (r: RfOpt): string =>
-    `${r.name} — TDP ${money(r.tdp)} · Funded ${money(r.funded)} · Withholding ${money(r.withholding)}`;
+    `${r.name} - (TDP ${moneyShort(r.tdp)}) (FND ${moneyShort(r.funded)}) (WHD ${moneyShort(r.withholding)})`;
 
   const renderSummary = (): React.ReactElement => (
     <div className={styles.section}>
@@ -315,7 +381,7 @@ export const RfTurnIn: React.FC<RfTurnInProps> = ({ webAPI, recordId, isActive, 
             Turning in from <b>{saved.label}</b>.
           </Text>
           <AmountTotals styles={styles} tdp={saved.amount} afp={saved.afp} allot={saved.allot} />
-          {(!saved.afpOverridden || !saved.allotOverridden) && (
+          {SHOW_AFP_ALLOT && (!saved.afpOverridden || !saved.allotOverridden) && (
             <Text className={styles.muted}>
               {!saved.afpOverridden && !saved.allotOverridden
                 ? "AFP and Allotment were"
@@ -381,18 +447,52 @@ export const RfTurnIn: React.FC<RfTurnInProps> = ({ webAPI, recordId, isActive, 
           <>
             <div className={styles.pickers}>
               <div className={styles.pickerField}>
+                <Text className={styles.heading}>Name Contains</Text>
+                <Input
+                  placeholder="Search Requirement Fundings"
+                  value={nameFilter}
+                  onChange={(_, d) => setNameFilter(d.value)}
+                  contentAfter={rfsLoading ? <Spinner size="extra-tiny" /> : undefined}
+                />
+              </div>
+              <div className={styles.pickerField}>
+                <RadioGroup
+                  layout="horizontal"
+                  value={String(reqType)}
+                  onChange={(_, d) => {
+                    // A different Requirement type means a different RF list — drop the old pick.
+                    setReqType(Number(d.value) as ReqType);
+                    setRfId("");
+                    setRfInput(null);
+                  }}
+                >
+                  <Radio value={String(REQ_TYPE_TARC)} label="TARC" />
+                  <Radio value={String(REQ_TYPE_STATE)} label="State" />
+                </RadioGroup>
                 <Text className={styles.heading}>Requirement Funding</Text>
                 <Combobox
                   placeholder="Select the RF to turn funds in from"
                   selectedOptions={rfId ? [rfId] : []}
-                  value={rf?.name ?? ""}
-                  onOptionSelect={(_, d) => setRfId(d.optionValue ?? "")}
+                  value={rfInput ?? rf?.name ?? ""}
+                  onChange={(e) => setRfInput(e.target.value)}
+                  onOpenChange={(_, d) => {
+                    if (!d.open) setRfInput(null);
+                  }}
+                  onOptionSelect={(_, d) => {
+                    setRfId(d.optionValue ?? "");
+                    setRfInput(null);
+                  }}
                 >
-                  {rfs.map((r) => (
+                  {rfOptions.map((r) => (
                     <Option key={r.id} value={r.id} text={r.name}>
                       {rfLabel(r)}
                     </Option>
                   ))}
+                  {rfOptions.length === 0 && !rfsLoading && (
+                    <Option key="__none" value="" text="" disabled>
+                      No matching Requirement Fundings
+                    </Option>
+                  )}
                 </Combobox>
               </div>
               <div className={styles.pickerField}>
@@ -404,32 +504,35 @@ export const RfTurnIn: React.FC<RfTurnInProps> = ({ webAPI, recordId, isActive, 
                   onChange={(_, d) => setAmount(d.value)}
                 />
               </div>
-              <div className={styles.pickerField}>
-                <Text className={styles.heading}>AFP (optional)</Text>
-                <Input
-                  className={styles.amtInput}
-                  type="number"
-                  placeholder="auto"
-                  value={afp}
-                  onChange={(_, d) => setAfp(d.value)}
-                />
-              </div>
-              <div className={styles.pickerField}>
-                <Text className={styles.heading}>Allotment (optional)</Text>
-                <Input
-                  className={styles.amtInput}
-                  type="number"
-                  placeholder="auto"
-                  value={allot}
-                  onChange={(_, d) => setAllot(d.value)}
-                />
-              </div>
+              {SHOW_AFP_ALLOT && (
+                <div className={styles.pickerField}>
+                  <Text className={styles.heading}>AFP (optional)</Text>
+                  <Input
+                    className={styles.amtInput}
+                    type="number"
+                    placeholder="auto"
+                    value={afp}
+                    onChange={(_, d) => setAfp(d.value)}
+                  />
+                </div>
+              )}
+              {SHOW_AFP_ALLOT && (
+                <div className={styles.pickerField}>
+                  <Text className={styles.heading}>Allotment (optional)</Text>
+                  <Input
+                    className={styles.amtInput}
+                    type="number"
+                    placeholder="auto"
+                    value={allot}
+                    onChange={(_, d) => setAllot(d.value)}
+                  />
+                </div>
+              )}
             </div>
 
             {rf && (
               <Text className={styles.muted}>
-                {rf.name}: TDP {money(rf.tdp)} · Funded {money(rf.funded)} · Withholding {money(withholding)}.
-                Available to turn in: <b>{money(available)}</b>
+                {rfLabel(rf)}. Available to turn in: <b>{money(available)}</b>
                 {prioFunded ? " (Withholding only — its Funded belongs to Prioritizations)" : ""}.
               </Text>
             )}

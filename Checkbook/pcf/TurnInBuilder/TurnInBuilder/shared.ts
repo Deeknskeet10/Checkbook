@@ -48,6 +48,22 @@ export function num(v: unknown): number {
 export function money(n: number): string {
   return n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
+/** Compact currency for dense labels: 1000 -> $1.00K, 1,200,000 -> $1.20M, 1,234,000,000 -> $1.23B. */
+export function moneyShort(n: number): string {
+  const suffixes = ["", "K", "M", "B"];
+  let x = Math.abs(n);
+  let i = 0;
+  while (x >= 1000 && i < suffixes.length - 1) {
+    x /= 1000;
+    i++;
+  }
+  let r = Math.round(x * 100) / 100;
+  if (r >= 1000 && i < suffixes.length - 1) {
+    r /= 1000; // e.g. 999,999 rounds to 1000.00K -> show 1.00M
+    i++;
+  }
+  return `${n < 0 ? "-" : ""}$${r.toFixed(2)}${suffixes[i]}`;
+}
 export function cleanId(v: unknown): string {
   return typeof v === "string" ? v.replace(/[{}]/g, "").toLowerCase() : "";
 }

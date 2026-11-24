@@ -1337,7 +1337,16 @@ statecode/statuscode, so neither can re-trigger it.
 ### `Checkbook.Plugins.TurnIns.TurnInDeactivator`
 
 Post-op handler for the **denied** path: when `book_stateapproved` flips
-true → false, deactivates the Turn-In (statecode = Inactive). No financial
+true → false, deactivates the Turn-In (statecode = Inactive) and stamps
+`book_turninstatus` = **Denied** in the same write (all FYs). A denied Turn-In is
+final and kept for record keeping — the user creates a new one. The FY27 approval
+PCF's BE **Deny** is exactly this: it writes `book_stateapproved = false` +
+`book_turninstatus = Denied`, which this step turns into the deactivation (no
+registration change — the step filter stays `book_stateapproved`).
+FY27+ approval gate (`TurnInApprovalPlugin`): **every** non-legacy Turn-In needs
+State **and** BE approval before execution (RF-level keeps its single RI / CSOR
+approval); on completion it stamps `book_turninstatus` = Approved. Requires the
+`book_turninstatus` optionset (Pending 0 / Approved 1 / Denied 2, default Pending). No financial
 side effects — `TurnInValidator`'s idempotency guarantees no ledgers exist
 when this path runs. Denial detection stays transition-based (a bare false
 can't distinguish "denied" from "never approved"). **No nesting or Depth

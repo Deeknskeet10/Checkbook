@@ -120,8 +120,10 @@ namespace Checkbook.Plugins.TurnIns
             // RF-only Turn-In (State approves first, which routes it to BE), so the
             // "RF-only needs BE approval before funds move" rule lives HERE: don't
             // create any ledgers/distributions until the Turn-In is fully approved.
-            //   * RF-only (any item without a Prio) — needs BOTH State and BE approval.
-            //   * Otherwise (all items Prio-backed) — State approval alone.
+            //   * FY27+ (non-legacy) — EVERY Turn-In needs BOTH State and BE approval
+            //     (RF-level Turn-Ins excepted: their single RI / CSOR approval is the BE flag).
+            //   * Pre-FY27 RF-only (any item without a Prio) — needs BOTH State and BE approval.
+            //   * Pre-FY27 otherwise (all items Prio-backed) — State approval alone.
             // A save that only records one half of an RF-only approval falls through
             // to a no-op return; the other approval's save re-drives this orchestrator
             // (value-based trigger) once both flags are effective.
@@ -132,9 +134,12 @@ namespace Checkbook.Plugins.TurnIns
             // (carried on book_beapproved) — no State step.
             EnsureFiscalYear(service, merged, turnInId);
             bool rfLevel = items.Count > 0 && items.All(i => i.IsRFOnly) && !TurnInRules.IsLegacy(merged);
+            // FY27+ (non-legacy): EVERY Turn-In needs BE approval on top of State — including
+            // Prio-backed and zero-item Sweep Turn-Ins. Pre-FY27 only RF-only Turn-Ins did.
+            bool beRequired = anyRfOnly || !TurnInRules.IsLegacy(merged);
             bool readyToExecute = rfLevel
                 ? newBeApproved
-                : anyRfOnly ? (newStateApproved && newBeApproved) : newStateApproved;
+                : beRequired ? (newStateApproved && newBeApproved) : newStateApproved;
 
             if (!readyToExecute)
             {
@@ -191,6 +196,7 @@ namespace Checkbook.Plugins.TurnIns
             {
                 [CommonAttributes.StateCode] = new OptionSetValue(StateCodeValues.Inactive),
                 [CommonAttributes.StatusCode] = new OptionSetValue(StatusCodeValues.InactiveDefault),
+                [TurninAttributes.TurnInStatus] = new OptionSetValue(TurnInStatusValues.Approved),
             });
         }
     }

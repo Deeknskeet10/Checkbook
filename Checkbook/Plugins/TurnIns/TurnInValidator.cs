@@ -23,7 +23,8 @@ namespace Checkbook.Plugins.TurnIns
     ///   2. AFP-only path (book_origin = Sweep with zero items):
     ///        - Header book_newamount must equal 0 (no TDP is moving).
     ///        - Either book_afpamount or book_allotmentamount must be &gt; 0.
-    ///        - book_beapproved must be true (matches RequiresBEApprovalRecalc).
+    ///        - State approval must be in place; FY27+ additionally needs BE approval,
+    ///          enforced at execution by TurnInApprovalPlugin (pre-FY27: State only).
     ///   3. Regular (item-bearing) path:
     ///        - Header amount &gt; 0.
     ///        - Sum of item amounts equals header amount.
@@ -40,7 +41,8 @@ namespace Checkbook.Plugins.TurnIns
     ///          "{ABBR} - State Approver/Administrator" owner team, ABBR not PEC/WTC)
     ///          may not turn in RF-only items — every item must carry a Prioritization.
     ///          PEC and WTC are exempt (may turn in RF-only).
-    ///        - Approval ordering: RF-only Turn-Ins take a two-step approval (State
+    ///        - Approval ordering: RF-only Turn-Ins — and ALL FY27+ Turn-Ins (RF-level
+    ///          excepted: RI / CSOR single step) — take a two-step approval (State
     ///          first, then BE). This validator only enforces that a BE-approval save
     ///          has State approval already in place; the RF-only "BE before funds move"
     ///          rule itself is gated in TurnInApprovalPlugin's execution-readiness check
@@ -172,9 +174,10 @@ namespace Checkbook.Plugins.TurnIns
                         "Sweep-origin (AFP-only) Turn-In must carry a positive AFP or Allotment amount.");
                 }
 
-                // Sweep-origin Turn-Ins are State-approved only — no BE gate. BE Approval
-                // applies solely to Turn-Ins that move funds outside a Prioritization
-                // (RF-only items), which a zero-item sweep by definition never has.
+                // Pre-FY27 sweep-origin Turn-Ins are State-approved only — no BE gate.
+                // FY27+ sweeps also need BE approval, but that is gated at execution in
+                // TurnInApprovalPlugin (State first, which routes to BE; BE second). A BE
+                // save without State approval is caught by this same check.
                 if (!newStateApproved)
                 {
                     throw new InvalidPluginExecutionException(

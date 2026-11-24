@@ -142,6 +142,21 @@ namespace Checkbook.Plugins.Constants
     }
 
     /// <summary>
+    /// Values for book_turnin.book_turninstatus (FY27+ approval lifecycle).
+    /// Pending is the default on every new Turn-In. Approved is stamped by
+    /// TurnInApprovalPlugin when the Turn-In is fully approved and processed. Denied is
+    /// stamped by TurnInDeactivator when Budget Execution denies — the Turn-In is deactivated
+    /// and kept for record keeping; a denied Turn-In is final (the user creates a new one).
+    /// Column must exist in the maker portal before this assembly is deployed.
+    /// </summary>
+    public static class TurnInStatusValues
+    {
+        public const int Pending = 0;
+        public const int Approved = 1;
+        public const int Denied = 2;
+    }
+
+    /// <summary>
     /// Decision values for book_realignments.book_bedecision.
     /// NOTE: confirm values in the target env — most custom picklists in this solution
     /// start at 100000000, but BE Decision is documented as 0/1 here.

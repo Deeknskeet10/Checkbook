@@ -13,6 +13,9 @@ namespace Checkbook.Plugins.TurnIns
     /// Custom API that triggers this same logic — that's a wiring concern, not
     /// a code concern.
     ///
+    /// The deactivation also stamps book_turninstatus = Denied. The Turn-In is kept (inactive)
+    /// for record keeping; a denied Turn-In is final — the user creates a new one.
+    ///
     /// Runs on book_turnin Update, post-op. No financial side effects — denial only
     /// fires when the Turn-In was never processed (idempotency check in
     /// TurnInValidator guarantees no ledgers exist if we reach this point).
@@ -70,9 +73,14 @@ namespace Checkbook.Plugins.TurnIns
 
             // SetStateRequest is the supported API for deactivation, but a direct
             // statecode/statuscode update works for system-defined statuses too.
+            // book_turninstatus = Denied is stamped in the same write (every FY) so the
+            // deactivated record reads as Denied for record keeping. A denied Turn-In is
+            // final: the user creates a new one. (This Update touches neither approval flag,
+            // so it cannot re-trigger this step or the approval orchestrator.)
             var update = new Entity(EntityNames.Turnin, context.PrimaryEntityId);
             update[CommonAttributes.StateCode] = new OptionSetValue(StateCodeValues.Inactive);
             update[CommonAttributes.StatusCode] = new OptionSetValue(StatusCodeValues.InactiveDefault);
+            update[TurninAttributes.TurnInStatus] = new OptionSetValue(TurnInStatusValues.Denied);
 
             service.Update(update);
 

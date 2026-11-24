@@ -35,7 +35,15 @@ import {
   saveTurnInChildren,
   DesiredRow,
 } from "./shared";
-import { LineAmounts, lineAmountFields, SavedLine, readSavedLine, SAVED_LINE_SELECT, AmountTotals } from "./lines";
+import {
+  LineAmounts,
+  lineAmountFields,
+  SavedLine,
+  readSavedLine,
+  SAVED_LINE_SELECT,
+  AmountTotals,
+  SHOW_AFP_ALLOT,
+} from "./lines";
 
 /**
  * State Turn-In (FY27): one or more Prioritizations in the Turn-In's state. For each, the
@@ -384,8 +392,8 @@ export const StateTurnIn: React.FC<StateTurnInProps> = ({ webAPI, recordId, isAc
                   <th className={styles.th}>Prioritization</th>
                   <th className={styles.th}>Requirement Funding (Fund/SAG)</th>
                   <th className={styles.th}>TDP</th>
-                  <th className={styles.th}>AFP</th>
-                  <th className={styles.th}>Allotment</th>
+                  {SHOW_AFP_ALLOT && <th className={styles.th}>AFP</th>}
+                  {SHOW_AFP_ALLOT && <th className={styles.th}>Allotment</th>}
                 </tr>
               </thead>
               <tbody>
@@ -395,14 +403,18 @@ export const StateTurnIn: React.FC<StateTurnInProps> = ({ webAPI, recordId, isAc
                       <td className={styles.td}>{i === 0 ? prioName : ""}</td>
                       <td className={styles.td}>{l.label}</td>
                       <td className={styles.td}>{money(l.amount)}</td>
-                      <td className={styles.td}>
-                        {money(l.afp)}
-                        {l.afpOverridden ? "" : " (auto)"}
-                      </td>
-                      <td className={styles.td}>
-                        {money(l.allot)}
-                        {l.allotOverridden ? "" : " (auto)"}
-                      </td>
+                      {SHOW_AFP_ALLOT && (
+                        <td className={styles.td}>
+                          {money(l.afp)}
+                          {l.afpOverridden ? "" : " (auto)"}
+                        </td>
+                      )}
+                      {SHOW_AFP_ALLOT && (
+                        <td className={styles.td}>
+                          {money(l.allot)}
+                          {l.allotOverridden ? "" : " (auto)"}
+                        </td>
+                      )}
                     </tr>
                   ))
                 )}
@@ -472,8 +484,8 @@ export const StateTurnIn: React.FC<StateTurnInProps> = ({ webAPI, recordId, isAc
                 <th className={styles.th}>Requirement Funding (Fund/SAG)</th>
                 <th className={styles.th}>Funded</th>
                 <th className={styles.th}>TDP to turn in</th>
-                <th className={styles.th}>AFP</th>
-                <th className={styles.th}>Allotment</th>
+                {SHOW_AFP_ALLOT && <th className={styles.th}>AFP</th>}
+                {SHOW_AFP_ALLOT && <th className={styles.th}>Allotment</th>}
               </tr>
             </thead>
             <tbody>
@@ -489,24 +501,28 @@ export const StateTurnIn: React.FC<StateTurnInProps> = ({ webAPI, recordId, isAc
                       onChange={(_, d) => patchPf(b.prio.id, r.id, { amount: d.value })}
                     />
                   </td>
-                  <td className={styles.td}>
-                    <Input
-                      className={styles.amtInput}
-                      type="number"
-                      placeholder="auto"
-                      value={r.afp}
-                      onChange={(_, d) => patchPf(b.prio.id, r.id, { afp: d.value })}
-                    />
-                  </td>
-                  <td className={styles.td}>
-                    <Input
-                      className={styles.amtInput}
-                      type="number"
-                      placeholder="auto"
-                      value={r.allot}
-                      onChange={(_, d) => patchPf(b.prio.id, r.id, { allot: d.value })}
-                    />
-                  </td>
+                  {SHOW_AFP_ALLOT && (
+                    <td className={styles.td}>
+                      <Input
+                        className={styles.amtInput}
+                        type="number"
+                        placeholder="auto"
+                        value={r.afp}
+                        onChange={(_, d) => patchPf(b.prio.id, r.id, { afp: d.value })}
+                      />
+                    </td>
+                  )}
+                  {SHOW_AFP_ALLOT && (
+                    <td className={styles.td}>
+                      <Input
+                        className={styles.amtInput}
+                        type="number"
+                        placeholder="auto"
+                        value={r.allot}
+                        onChange={(_, d) => patchPf(b.prio.id, r.id, { allot: d.value })}
+                      />
+                    </td>
+                  )}
                 </tr>
               ))}
             </tbody>
@@ -629,9 +645,11 @@ export const StateTurnIn: React.FC<StateTurnInProps> = ({ webAPI, recordId, isAc
               </div>
             </div>
             <Text className={styles.muted}>
-              Enter the TDP to turn in per Fund/SAG. AFP and Allotment are optional: leave blank to size them
-              automatically, or enter what you want returned. The Prioritization Requested amount drops by the TDP
-              turned in.
+              Enter the TDP to turn in per Fund/SAG.
+              {SHOW_AFP_ALLOT
+                ? " AFP and Allotment are optional: leave blank to size them automatically, or enter what you want returned."
+                : ""}{" "}
+              The Prioritization Requested amount drops by the TDP turned in.
             </Text>
 
             {blocks.map(renderBlock)}

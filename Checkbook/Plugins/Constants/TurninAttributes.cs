@@ -40,7 +40,12 @@ namespace Checkbook.Plugins.Constants
         // Recomputed by TurnInRequiresBEApprovalRecalc on Turn-In Item changes.
         // Default in the maker portal should be Yes so a fresh (item-less) Turn-In
         // starts on the BE-approval path until items say otherwise.
+        // NOTE: from FY27 every Turn-In needs BE approval regardless of this flag (the RF-level
+        // route keeps its single RI / CSOR approval). The flag still drives the pre-FY27 routing
+        // and, for FY27+, distinguishes the RF-level route (flag = true) in the approval PCF.
         public const string RequiresBEApproval = "book_requiresbeapproval";
+        // Optionset book_turninstatus — see TurnInStatusValues. Default Pending (maker portal).
+        public const string TurnInStatus = "book_turninstatus";
         // Distinguishes Kind A (State-submitted) from Kind B (sweep-created over-allocation
         // tracker). The Distributions sweep only mutates / deactivates Sweep-origin records.
         // Column must be created in the maker portal — option set values State=0, Sweep=1.
