@@ -98,6 +98,8 @@ namespace Checkbook.Plugins.LOAs.Helpers
                     ? null
                     : (nameMap.TryGetValue(reference.Id, out var n) ? n : null);
 
+            tracing.Trace($"Category raw value: {(category == null ? "null" : category.Value.ToString())}.");
+
             LOAGrain grain;
             try
             {
