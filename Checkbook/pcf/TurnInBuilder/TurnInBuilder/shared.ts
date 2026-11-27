@@ -1,4 +1,5 @@
 import { makeStyles, shorthands, tokens } from "@fluentui/react-components";
+import { CB } from "./designSystem";
 
 export type WebApi = ComponentFramework.WebApi;
 
@@ -13,6 +14,7 @@ export const REQ_FUNDING = "book_requirementfunding";
 export const RD_FUNDING = "book_requirementdetailfunding";
 export const ITEMIZED_DETAILS = "book_itemizeddetails";
 export const FUND_CENTER = "book_fundcenter";
+export const OPR = "book_opr";
 
 // Entity-SET (collection) names for @odata.bind paths — not uniformly logical + "s".
 export const SET = {
@@ -45,8 +47,15 @@ export function num(v: unknown): number {
   }
   return 0;
 }
+const USD = new Intl.NumberFormat("en-US", {
+  style: "currency",
+  currency: "USD",
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+});
+/** Read-only money text (Design Documentation §3 / §6.2): "$1,250.50". */
 export function money(n: number): string {
-  return n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return USD.format(n);
 }
 /** Compact currency for dense labels: 1000 -> $1.00K, 1,200,000 -> $1.20M, 1,234,000,000 -> $1.23B. */
 export function moneyShort(n: number): string {
@@ -63,6 +72,27 @@ export function moneyShort(n: number): string {
     i++;
   }
   return `${n < 0 ? "-" : ""}$${r.toFixed(2)}${suffixes[i]}`;
+}
+/**
+ * OData `contains(attr,'text')` clause for a user-typed value, or "" when blank.
+ * Quotes are doubled (OData literal) and the text is URL-encoded for the query string.
+ */
+export function containsClause(
+  attr: string,
+  text: string | null | undefined,
+): string {
+  const t = (text ?? "").trim();
+  return t
+    ? ` and contains(${attr},'${encodeURIComponent(t.replace(/'/g, "''"))}')`
+    : "";
+}
+/** Case-insensitive "contains" match used to filter combobox options as the user types. */
+export function matches(
+  name: string,
+  typed: string | null | undefined,
+): boolean {
+  const q = (typed ?? "").trim().toLowerCase();
+  return q === "" || name.toLowerCase().includes(q);
 }
 export function cleanId(v: unknown): string {
   return typeof v === "string" ? v.replace(/[{}]/g, "").toLowerCase() : "";
@@ -93,7 +123,11 @@ const itemKey = (e: ComponentFramework.WebApi.Entity): string =>
  * so re-saving amounts must never need a delete. Covers all three child tables, so
  * switching entry type removes the other path's rows.
  */
-export async function saveTurnInChildren(webAPI: WebApi, recordId: string, desired: DesiredChildren): Promise<void> {
+export async function saveTurnInChildren(
+  webAPI: WebApi,
+  recordId: string,
+  desired: DesiredChildren,
+): Promise<void> {
   const parent = `_book_turnin_value eq ${recordId} and statecode eq ${STATECODE_ACTIVE}`;
   const specs: {
     table: string;
@@ -105,7 +139,8 @@ export async function saveTurnInChildren(webAPI: WebApi, recordId: string, desir
     {
       table: TURNIN_ITEM,
       idAttr: "book_turninitemsid",
-      select: "_book_prioritizationfunding_value,_book_requirementfunding_value",
+      select:
+        "_book_prioritizationfunding_value,_book_requirementfunding_value",
       key: itemKey,
       rows: desired.items,
     },
@@ -127,7 +162,10 @@ export async function saveTurnInChildren(webAPI: WebApi, recordId: string, desir
 
   const stale: [string, string][] = [];
   for (const s of specs) {
-    const found = await webAPI.retrieveMultipleRecords(s.table, `?$select=${s.idAttr},${s.select}&$filter=${parent}`);
+    const found = await webAPI.retrieveMultipleRecords(
+      s.table,
+      `?$select=${s.idAttr},${s.select}&$filter=${parent}`,
+    );
     const existing = new Map<string, string>();
     for (const e of found.entities) {
       const k = s.key(e);
@@ -150,49 +188,325 @@ export async function saveTurnInChildren(webAPI: WebApi, recordId: string, desir
   for (const [table, id] of stale) await webAPI.deleteRecord(table, id);
 }
 
+const disabled = {
+  opacity: 0.7,
+  filter: "saturate(0)",
+  cursor: "not-allowed",
+} as const;
+
+const choiceRow = {
+  ...shorthands.padding("5px"),
+  ...shorthands.borderRadius("5px"),
+  transitionProperty: "background-color",
+  transitionDuration: "120ms",
+  ":hover": { backgroundColor: CB.controlHoverBg },
+  ":has(input:disabled):hover": { backgroundColor: "transparent" },
+} as const;
+
+/** Builder layout + Checkbook design (Design Documentation.md §4–§8). */
 export const useStyles = makeStyles({
   root: {
-    ...shorthands.padding("12px"),
+    ...shorthands.padding("8px"),
     display: "flex",
     flexDirection: "column",
-    rowGap: "14px",
+    rowGap: "16px",
     // Fill the form cell: the host sizes a virtual control to its content otherwise.
     width: "100%",
     boxSizing: "border-box",
+    fontFamily: tokens.fontFamilyBase,
+    fontSize: "14px",
+    color: tokens.colorNeutralForeground1,
   },
-  section: { display: "flex", flexDirection: "column", rowGap: "6px" },
+  section: { display: "flex", flexDirection: "column", rowGap: "8px" },
   heading: { fontWeight: tokens.fontWeightSemibold },
-  pickers: { display: "flex", flexWrap: "wrap", columnGap: "24px", rowGap: "10px" },
-  pickerField: { display: "flex", flexDirection: "column", rowGap: "4px", minWidth: "260px" },
-  table: { width: "100%", borderCollapse: "collapse" },
-  th: {
-    textAlign: "left",
-    ...shorthands.borderBottom("1px", "solid", tokens.colorNeutralStroke2),
-    ...shorthands.padding("4px", "8px"),
+  /** Block title (Prioritization name, summary). */
+  title: { fontWeight: tokens.fontWeightSemibold, fontSize: "16px" },
+  /** Small field label above an input. */
+  fieldLabel: {
     fontWeight: tokens.fontWeightSemibold,
-    fontSize: tokens.fontSizeBase200,
+    fontSize: "12px",
+    color: tokens.colorNeutralForeground2,
+  },
+  pickers: {
+    display: "flex",
+    flexWrap: "wrap",
+    alignItems: "flex-end",
+    columnGap: "16px",
+    rowGap: "12px",
+  },
+  pickerField: {
+    display: "flex",
+    flexDirection: "column",
+    rowGap: "4px",
+    minWidth: "220px",
+  },
+
+  // Turn-In type selector on top: label + horizontal radios, hairline below.
+  typeBar: {
+    display: "flex",
+    alignItems: "center",
+    flexWrap: "wrap",
+    columnGap: "16px",
+    rowGap: "4px",
+    ...shorthands.padding("4px", "2px", "8px", "2px"),
+    ...shorthands.borderBottom("1px", "solid", tokens.colorNeutralStroke2),
+  },
+  radioGroup: { columnGap: "8px" },
+
+  // §6.1 radio: #d9d9d9 ring at rest, brand when on, row tint + blue label on hover.
+  radio: {
+    ...choiceRow,
+    ":hover .fui-Radio__label": { color: CB.brand },
+    ":hover .fui-Radio__input:enabled:not(:checked) ~ .fui-Radio__indicator": {
+      ...shorthands.borderColor(`${CB.brand} !important`),
+    },
+  },
+  radioRing: {
+    width: "18px",
+    height: "18px",
+    ...shorthands.border("1.5px", "solid", CB.controlLine),
+  },
+
+  // §6 editable input / combobox: grey fill, 2px blue-grey border on hover.
+  editable: {
+    backgroundColor: CB.inputFill,
+    ...shorthands.border("2px", "solid", "transparent"),
+    ":hover": {
+      backgroundColor: "#fff",
+      ...shorthands.borderColor(`${CB.inputHover} !important`),
+    },
+    "::after": { display: "none" },
+    "& input": { backgroundColor: "transparent" },
+  },
+  listbox: {
+    maxHeight: "200px",
+    overflowY: "auto",
+    "& .fui-Option": { whiteSpace: "normal" },
+  },
+
+  // §7 table: soft header band, hairline dividers, spacious rows.
+  tableWrap: { width: "100%", overflowX: "auto" },
+  table: { width: "100%", borderCollapse: "separate", borderSpacing: 0 },
+  th: {
+    height: "40px",
+    ...shorthands.padding("0", "16px"),
+    textAlign: "left",
+    backgroundColor: CB.tableHead,
+    color: tokens.colorNeutralForeground2,
+    fontSize: "11px",
+    fontWeight: 700,
+    textTransform: "uppercase",
+    letterSpacing: "0.05em",
+    whiteSpace: "nowrap",
+    ":first-child": {
+      borderTopLeftRadius: "8px",
+      borderBottomLeftRadius: "8px",
+    },
+    ":last-child": {
+      borderTopRightRadius: "8px",
+      borderBottomRightRadius: "8px",
+    },
   },
   td: {
-    ...shorthands.borderBottom("1px", "solid", tokens.colorNeutralStroke3),
-    ...shorthands.padding("4px", "8px"),
+    height: "56px",
+    boxSizing: "border-box",
+    ...shorthands.padding("12px", "16px"),
+    ...shorthands.borderBottom("1px", "solid", CB.rowLine),
     verticalAlign: "middle",
   },
-  amtInput: { width: "130px" },
-  balanceRow: { display: "flex", alignItems: "center", columnGap: "10px" },
-  removeBtn: {
-    backgroundColor: tokens.colorPaletteRedBackground3,
-    color: tokens.colorNeutralForegroundOnBrand,
-    ...shorthands.border("1px", "solid", tokens.colorPaletteRedBackground3),
-    ":hover": {
-      backgroundColor: tokens.colorPaletteRedForeground1,
-      color: tokens.colorNeutralForegroundOnBrand,
-      ...shorthands.border("1px", "solid", tokens.colorPaletteRedForeground1),
+  /** Numeric column: right-aligned body and header, tabular figures. */
+  num: {
+    textAlign: "right",
+    fontVariantNumeric: "tabular-nums",
+    whiteSpace: "nowrap",
+  },
+  /** Context column: muted. */
+  ctx: { color: tokens.colorNeutralForeground3 },
+  identity: { fontWeight: tokens.fontWeightSemibold },
+  totals: {
+    display: "flex",
+    alignItems: "center",
+    flexWrap: "wrap",
+    columnGap: "10px",
+    minHeight: "52px",
+    ...shorthands.padding("0", "16px"),
+    backgroundColor: tokens.colorNeutralBackground2,
+    ...shorthands.borderTop("1px", "solid", tokens.colorNeutralStroke2),
+    fontWeight: tokens.fontWeightSemibold,
+    fontVariantNumeric: "tabular-nums",
+  },
+
+  amtInput: { width: "140px" },
+  balanceRow: {
+    display: "flex",
+    alignItems: "center",
+    flexWrap: "wrap",
+    columnGap: "10px",
+    rowGap: "6px",
+  },
+  spacer: { flexGrow: 1 },
+
+  // §5 buttons: subtle, borderless, icon first, background only on hover.
+  action: {
+    fontSize: "14px",
+    fontWeight: tokens.fontWeightRegular,
+    color: tokens.colorNeutralForeground1,
+    ...shorthands.padding("10px", "14px"),
+    ":disabled": disabled,
+    "&[aria-disabled='true']": disabled,
+  },
+  destructive: {
+    fontSize: "14px",
+    fontWeight: tokens.fontWeightRegular,
+    color: CB.danger,
+    ...shorthands.padding("10px", "14px"),
+    ":hover": { color: CB.danger },
+    ":hover:active": { color: CB.danger },
+    ":disabled": disabled,
+    "&[aria-disabled='true']": disabled,
+  },
+  /** [save icon] Save: no background at rest, brand-blue label and icon. */
+  saveButton: {
+    fontSize: "14px",
+    fontWeight: tokens.fontWeightSemibold,
+    color: CB.brand,
+    ...shorthands.padding("10px", "14px"),
+    ":hover": { color: CB.brandHover },
+    ":hover:active": { color: CB.brandPressed },
+    ":disabled": disabled,
+    "&[aria-disabled='true']": disabled,
+  },
+
+  footer: {
+    display: "flex",
+    alignItems: "center",
+    flexWrap: "wrap",
+    columnGap: "12px",
+    rowGap: "6px",
+  },
+  muted: {
+    color: tokens.colorNeutralForeground3,
+    fontSize: tokens.fontSizeBase200,
+  },
+
+  /** Waiting for record data (Design Documentation §8 Feedback): one sentence on a grey panel. */
+  awaiting: {
+    width: "100%",
+    boxSizing: "border-box",
+    ...shorthands.padding("12px", "16px"),
+    backgroundColor: tokens.colorNeutralBackground2,
+    ...shorthands.borderRadius(tokens.borderRadiusMedium),
+    fontFamily: tokens.fontFamilyBase,
+  },
+
+  // ---- RF Turn-In (TARC Requirement) layout -----------------------------------------
+  /** Caps the form's width so it doesn't stretch across the whole form tab. */
+  narrow: {
+    display: "flex",
+    flexDirection: "column",
+    rowGap: "16px",
+    width: "100%",
+    maxWidth: "580px",
+  },
+  /** Two equal fields side by side (OPR · Fund). */
+  pair: {
+    display: "grid",
+    gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+    columnGap: "16px",
+    rowGap: "12px",
+  },
+  /** Picked Requirement Funding's name, in brand blue. */
+  rfTitle: {
+    color: CB.brand,
+    fontSize: "16px",
+    fontWeight: tokens.fontWeightSemibold,
+    wordBreak: "break-word",
+  },
+  /** Figure cards: 3 equal columns, so the Available card below lines up with them. */
+  cards: {
+    display: "grid",
+    gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+    columnGap: "12px",
+    rowGap: "12px",
+  },
+  card: {
+    display: "flex",
+    flexDirection: "column",
+    rowGap: "2px",
+    minWidth: 0,
+    ...shorthands.padding("12px", "16px"),
+    ...shorthands.borderRadius("8px"),
+    backgroundColor: "#f5f5f5",
+  },
+  cardTitle: { fontSize: "13px", fontWeight: 700, opacity: 0.8 },
+  cardValue: {
+    fontSize: "20px",
+    fontWeight: 700,
+    fontFamily: "Consolas, 'Courier New', monospace",
+    fontVariantNumeric: "tabular-nums",
+    lineHeight: "26px",
+  },
+  cardSub: { fontSize: "14px", fontVariantNumeric: "tabular-nums" },
+  cardAvailable: { backgroundColor: "#dbe9ff", color: "#1b3a6b" },
+  // Turn-In Total card: StatusLabel success / warning tints (§8).
+  cardSuccess: { backgroundColor: "#e2fcdc", color: "#14532d" },
+  cardWarning: { backgroundColor: "#fef3c7", color: "#78350f" },
+
+  // ---- State Turn-In -------------------------------------------------------------------
+  /** Caps the State builder's width so its tables don't stretch across the form tab. */
+  stateNarrow: {
+    display: "flex",
+    flexDirection: "column",
+    rowGap: "16px",
+    width: "100%",
+    maxWidth: "760px",
+  },
+  /**
+   * Itemized table in the Itemized Details Grid's density: 8px cell padding, rows size to
+   * their tallest cell (item name + chips), row hover tint.
+   */
+  gridTable: {
+    "& th": { ...shorthands.padding("0", "8px") },
+    "& td": { height: "auto", ...shorthands.padding("6px", "8px") },
+    "& tbody tr:hover": { backgroundColor: CB.rowHover },
+  },
+  /** ITEM column: item name, chips underneath; the only column that wraps. */
+  itemCol: {
+    whiteSpace: "normal",
+    wordBreak: "break-word",
+    verticalAlign: "top",
+    minWidth: "210px",
+  },
+  /** Total row under the Itemized table. */
+  totalRow: {
+    "& td": {
+      backgroundColor: tokens.colorNeutralBackground2,
+      fontWeight: tokens.fontWeightSemibold,
+      ...shorthands.borderBottom("none"),
     },
-    ":hover:active": {
-      backgroundColor: tokens.colorPaletteRedForeground1,
-      color: tokens.colorNeutralForegroundOnBrand,
+    "& td:first-child": {
+      borderTopLeftRadius: "8px",
+      borderBottomLeftRadius: "8px",
+    },
+    "& td:last-child": {
+      borderTopRightRadius: "8px",
+      borderBottomRightRadius: "8px",
     },
   },
-  footer: { display: "flex", alignItems: "center", columnGap: "12px" },
-  muted: { color: tokens.colorNeutralForeground3, fontSize: tokens.fontSizeBase200 },
+  /** Two stacked figures in a right-aligned cell: reduced, then "of" the total. */
+  stack: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "flex-end",
+    rowGap: "2px",
+  },
+  /** Soft warning strip: amber left rule on a pale yellow band. */
+  note: {
+    ...shorthands.padding("8px", "12px"),
+    ...shorthands.borderRadius("4px"),
+    ...shorthands.borderLeft("3px", "solid", "#f2a900"),
+    backgroundColor: "#fff8e1",
+    fontSize: "13px",
+    color: tokens.colorNeutralForeground2,
+  },
 });

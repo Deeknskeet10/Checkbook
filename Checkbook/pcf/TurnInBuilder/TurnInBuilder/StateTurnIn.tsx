@@ -1,17 +1,14 @@
 import * as React from "react";
 import {
   FluentProvider,
-  webLightTheme,
-  Badge,
   Button,
   Combobox,
-  Divider,
-  Input,
   MessageBar,
   MessageBarBody,
   Option,
   Spinner,
   Text,
+  mergeClasses,
 } from "@fluentui/react-components";
 import {
   WebApi,
@@ -31,6 +28,7 @@ import {
   num,
   money,
   cleanId,
+  matches,
   useStyles,
   saveTurnInChildren,
   DesiredRow,
@@ -42,8 +40,22 @@ import {
   readSavedLine,
   SAVED_LINE_SELECT,
   AmountTotals,
+  AmountInput,
+  FigureCard,
   SHOW_AFP_ALLOT,
 } from "./lines";
+import {
+  checkbookTheme,
+  CB,
+  ChipData,
+  ChipList,
+  DeleteIcon,
+  EditIcon,
+  ItemName,
+  SaveIcon,
+  StatusLabel,
+  TagLabel,
+} from "./designSystem";
 
 /**
  * State Turn-In (FY27): one or more Prioritizations in the Turn-In's state. For each, the
@@ -95,8 +107,11 @@ const DETAIL_SELECT =
   "&$expand=book_RequirementItem($select=_book_item_value,_book_tdc_value,_book_mdep_value)";
 
 const toDetailRow = (e: Record<string, unknown>, reduce: string): DetailRow => {
-  const ri = (e.book_RequirementItem as Record<string, unknown> | null | undefined) ?? {};
-  const label = (attr: string): string => (ri[`_${attr}_value${FV}`] as string) ?? "";
+  const ri =
+    (e.book_RequirementItem as Record<string, unknown> | null | undefined) ??
+    {};
+  const label = (attr: string): string =>
+    (ri[`_${attr}_value${FV}`] as string) ?? "";
   return {
     id: cleanId(e.book_itemizeddetailsid),
     name: (e.book_name as string) ?? "(detail)",
@@ -109,16 +124,32 @@ const toDetailRow = (e: Record<string, unknown>, reduce: string): DetailRow => {
   };
 };
 
-const blockTotal = (b: Block): number => b.pfRows.reduce((s, r) => s + num(r.amount), 0);
-const blockReduced = (b: Block): number => b.detailRows.reduce((s, r) => s + num(r.reduce), 0);
-const isItemized = (b: Block): boolean => b.prio.fundingMode === FUNDING_MODE_ITEMIZED;
+const blockTotal = (b: Block): number =>
+  b.pfRows.reduce((s, r) => s + num(r.amount), 0);
+const blockReduced = (b: Block): number =>
+  b.detailRows.reduce((s, r) => s + num(r.reduce), 0);
+const isItemized = (b: Block): boolean =>
+  b.prio.fundingMode === FUNDING_MODE_ITEMIZED;
 const blockOverLine = (b: Block): boolean =>
-  b.pfRows.some((r) => num(r.amount) > r.funded + EPS || num(r.amount) < 0 || num(r.afp) < 0 || num(r.allot) < 0);
+  b.pfRows.some(
+    (r) =>
+      num(r.amount) > r.funded + EPS ||
+      num(r.amount) < 0 ||
+      num(r.afp) < 0 ||
+      num(r.allot) < 0,
+  );
 const blockOverDetail = (b: Block): boolean =>
   b.detailRows.some((r) => num(r.reduce) > r.funded + EPS || num(r.reduce) < 0);
-const blockBalanced = (b: Block): boolean => !isItemized(b) || Math.abs(blockTotal(b) - blockReduced(b)) < EPS;
+const blockBalanced = (b: Block): boolean =>
+  !isItemized(b) || Math.abs(blockTotal(b) - blockReduced(b)) < EPS;
 
-export const StateTurnIn: React.FC<StateTurnInProps> = ({ webAPI, recordId, isActive, fiscalYear, fundCenterId }) => {
+export const StateTurnIn: React.FC<StateTurnInProps> = ({
+  webAPI,
+  recordId,
+  isActive,
+  fiscalYear,
+  fundCenterId,
+}) => {
   const styles = useStyles();
 
   const [loading, setLoading] = React.useState(true);
@@ -131,12 +162,20 @@ export const StateTurnIn: React.FC<StateTurnInProps> = ({ webAPI, recordId, isAc
   const [stateName, setStateName] = React.useState("");
   const [prios, setPrios] = React.useState<PrioOpt[]>([]);
   const [blocks, setBlocks] = React.useState<Block[]>([]);
+  // Text typed into the Prioritization combobox: options are filtered by "contains", as in RfTurnIn.
   const [picker, setPicker] = React.useState("");
 
   // Saved rows: the summary, and the amounts Edit pre-fills.
-  const [savedLines, setSavedLines] = React.useState<(SavedLine & { prioId: string; prioName: string })[]>([]);
-  const [savedReductions, setSavedReductions] = React.useState<{ id: string; label: string; amount: number }[]>([]);
-  const prefill = React.useRef<{ pf: Map<string, LineAmounts>; detail: Map<string, number> }>({
+  const [savedLines, setSavedLines] = React.useState<
+    (SavedLine & { prioId: string; prioName: string })[]
+  >([]);
+  const [savedReductions, setSavedReductions] = React.useState<
+    { id: string; item: string; tdc: string; mdep: string; amount: number }[]
+  >([]);
+  const prefill = React.useRef<{
+    pf: Map<string, LineAmounts>;
+    detail: Map<string, number>;
+  }>({
     pf: new Map(),
     detail: new Map(),
   });
@@ -152,30 +191,39 @@ export const StateTurnIn: React.FC<StateTurnInProps> = ({ webAPI, recordId, isAc
     setError(null);
     void (async () => {
       try {
-        const fc = await webAPI.retrieveRecord(FUND_CENTER, fundCenterId, "?$select=_book_state_value");
+        const fc = await webAPI.retrieveRecord(
+          FUND_CENTER,
+          fundCenterId,
+          "?$select=_book_state_value",
+        );
         const stateId = cleanId(fc._book_state_value);
         if (cancelled) return;
         setStateName((fc[`_book_state_value${FV}`] as string) ?? "");
-        const stateFilter = stateId ? ` and _book_state_value eq ${stateId}` : "";
+        const stateFilter = stateId
+          ? ` and _book_state_value eq ${stateId}`
+          : "";
         const [prioRes, items, reds] = await Promise.all([
           webAPI.retrieveMultipleRecords(
             PRIORITIZATION,
             "?$select=book_name,book_newfundedamounttdp,book_fundingmode" +
               `&$filter=statecode eq ${STATECODE_ACTIVE} and book_newfiscalyear eq ${fiscalYear}` +
               ` and book_approvalstatus eq ${FINAL_APPROVED} and book_newfundedamounttdp gt 0${stateFilter}` +
-              "&$orderby=book_name asc&$top=500"
+              "&$orderby=book_name asc&$top=500",
           ),
           webAPI.retrieveMultipleRecords(
             TURNIN_ITEM,
             `?$select=${SAVED_LINE_SELECT},_book_prioritizationfunding_value,_book_prioritization_value` +
               `&$filter=_book_turnin_value eq ${recordId} and statecode eq ${STATECODE_ACTIVE}` +
               " and _book_prioritizationfunding_value ne null" +
-              "&$expand=book_PrioritizationFunding($select=_book_requirementfunding_value)"
+              "&$expand=book_PrioritizationFunding($select=_book_requirementfunding_value)",
           ),
           webAPI.retrieveMultipleRecords(
             DETAIL_REDUCTION,
             "?$select=book_newamount,_book_itemizeddetail_value" +
-              `&$filter=_book_turnin_value eq ${recordId} and statecode eq ${STATECODE_ACTIVE}`
+              `&$filter=_book_turnin_value eq ${recordId} and statecode eq ${STATECODE_ACTIVE}` +
+              // The detail's Requirement Item → Item / TDC / MDEP for the summary's ITEM column.
+              "&$expand=book_ItemizedDetail($select=book_name;" +
+              "$expand=book_RequirementItem($select=_book_item_value,_book_tdc_value,_book_mdep_value))",
           ),
         ]);
         if (cancelled) return;
@@ -184,31 +232,45 @@ export const StateTurnIn: React.FC<StateTurnInProps> = ({ webAPI, recordId, isAc
             id: cleanId(e.book_prioritizationid),
             name: (e.book_name as string) ?? "(unnamed)",
             funded: num(e.book_newfundedamounttdp),
-            fundingMode: e.book_fundingmode == null ? null : num(e.book_fundingmode),
-          }))
+            fundingMode:
+              e.book_fundingmode == null ? null : num(e.book_fundingmode),
+          })),
         );
         setSavedLines(
           items.entities.map((e) => {
-            const pf = e.book_PrioritizationFunding as Record<string, unknown> | undefined;
+            const pf = e.book_PrioritizationFunding as
+              Record<string, unknown> | undefined;
             return {
               ...readSavedLine(e),
               id: cleanId(e._book_prioritizationfunding_value),
-              label: (pf?.[`_book_requirementfunding_value${FV}`] as string) ?? "(Fund/SAG)",
+              label:
+                (pf?.[`_book_requirementfunding_value${FV}`] as string) ??
+                "(Fund/SAG)",
               prioId: cleanId(e._book_prioritization_value),
-              prioName: (e[`_book_prioritization_value${FV}`] as string) ?? "(Prioritization)",
+              prioName:
+                (e[`_book_prioritization_value${FV}`] as string) ??
+                "(Prioritization)",
             };
-          })
+          }),
         );
         setSavedReductions(
-          reds.entities.map((e) => ({
-            id: cleanId(e._book_itemizeddetail_value),
-            label: (e[`_book_itemizeddetail_value${FV}`] as string) ?? "(detail)",
-            amount: num(e.book_newamount),
-          }))
+          reds.entities.map((e) => {
+            const d =
+              (e.book_ItemizedDetail as Record<string, unknown> | null) ?? {};
+            const row = toDetailRow(d, "");
+            return {
+              id: cleanId(e._book_itemizeddetail_value),
+              item: row.item,
+              tdc: row.tdc,
+              mdep: row.mdep,
+              amount: num(e.book_newamount),
+            };
+          }),
         );
         if (items.entities.length > 0) setMode("view");
       } catch {
-        if (!cancelled) setError("Could not load the Turn-In's Prioritizations.");
+        if (!cancelled)
+          setError("Could not load the Turn-In's Prioritizations.");
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -221,32 +283,40 @@ export const StateTurnIn: React.FC<StateTurnInProps> = ({ webAPI, recordId, isAc
   // ---- add a Prioritization block: load its PF lines (one per Fund/SAG) and details --
   const addPrio = React.useCallback(
     async (p: PrioOpt): Promise<void> => {
-      setBlocks((bs) => (bs.some((b) => b.prio.id === p.id) ? bs : [...bs, { prio: p, loading: true, pfRows: [], detailRows: [] }]));
+      setBlocks((bs) =>
+        bs.some((b) => b.prio.id === p.id)
+          ? bs
+          : [...bs, { prio: p, loading: true, pfRows: [], detailRows: [] }],
+      );
       try {
         const [pfRes, idRes] = await Promise.all([
           webAPI.retrieveMultipleRecords(
             PRIO_FUNDING,
             "?$select=book_fundedamount,_book_requirementfunding_value" +
               `&$filter=_book_prioritization_value eq ${p.id} and statecode eq ${STATECODE_ACTIVE}` +
-              "&$expand=book_RequirementFunding($select=book_name)"
+              "&$expand=book_RequirementFunding($select=book_name)",
           ),
           webAPI.retrieveMultipleRecords(
             ITEMIZED_DETAILS,
             DETAIL_SELECT +
-              `&$filter=_book_prioritization_value eq ${p.id} and statecode eq ${STATECODE_ACTIVE}&$orderby=book_name asc`
+              `&$filter=_book_prioritization_value eq ${p.id} and statecode eq ${STATECODE_ACTIVE}&$orderby=book_name asc`,
           ),
         ]);
         const pfFill = prefill.current.pf;
         const dFill = prefill.current.detail;
         const pfRows: PfRow[] = pfRes.entities
           .map((e) => {
-            const rf = e.book_RequirementFunding as Record<string, unknown> | undefined;
+            const rf = e.book_RequirementFunding as
+              Record<string, unknown> | undefined;
             const id = cleanId(e.book_prioritizationfundingid);
             const fill = pfFill.get(id);
             return {
               id,
               rfId: cleanId(e._book_requirementfunding_value),
-              rfName: (rf?.book_name as string) ?? (e[`_book_requirementfunding_value${FV}`] as string) ?? "(RF)",
+              rfName:
+                (rf?.book_name as string) ??
+                (e[`_book_requirementfunding_value${FV}`] as string) ??
+                "(RF)",
               funded: num(e.book_fundedamount),
               amount: fill?.amount ?? "",
               afp: fill?.afp ?? "",
@@ -260,27 +330,52 @@ export const StateTurnIn: React.FC<StateTurnInProps> = ({ webAPI, recordId, isAc
             return toDetailRow(e, dFill.has(id) ? String(dFill.get(id)) : "");
           })
           .filter((r) => r.funded > 0);
-        setBlocks((bs) => bs.map((b) => (b.prio.id === p.id ? { ...b, loading: false, pfRows, detailRows } : b)));
+        setBlocks((bs) =>
+          bs.map((b) =>
+            b.prio.id === p.id
+              ? { ...b, loading: false, pfRows, detailRows }
+              : b,
+          ),
+        );
       } catch {
         setError(`Could not load the funding for ${p.name}.`);
         setBlocks((bs) => bs.filter((b) => b.prio.id !== p.id));
       }
     },
-    [webAPI]
+    [webAPI],
   );
 
-  const removePrio = (id: string): void => setBlocks((bs) => bs.filter((b) => b.prio.id !== id));
-  const patchPf = (prioId: string, id: string, patch: Partial<LineAmounts>): void =>
+  const removePrio = (id: string): void =>
+    setBlocks((bs) => bs.filter((b) => b.prio.id !== id));
+  const patchPf = (
+    prioId: string,
+    id: string,
+    patch: Partial<LineAmounts>,
+  ): void =>
     setBlocks((bs) =>
       bs.map((b) =>
-        b.prio.id === prioId ? { ...b, pfRows: b.pfRows.map((r) => (r.id === id ? { ...r, ...patch } : r)) } : b
-      )
+        b.prio.id === prioId
+          ? {
+              ...b,
+              pfRows: b.pfRows.map((r) =>
+                r.id === id ? { ...r, ...patch } : r,
+              ),
+            }
+          : b,
+      ),
     );
   const patchDetail = (prioId: string, id: string, reduce: string): void =>
     setBlocks((bs) =>
       bs.map((b) =>
-        b.prio.id === prioId ? { ...b, detailRows: b.detailRows.map((r) => (r.id === id ? { ...r, reduce } : r)) } : b
-      )
+        b.prio.id === prioId
+          ? {
+              ...b,
+              detailRows: b.detailRows.map((r) =>
+                r.id === id ? { ...r, reduce } : r,
+              ),
+            }
+          : b,
+      ),
     );
 
   // ---- derived ----------------------------------------------------------------------
@@ -289,7 +384,13 @@ export const StateTurnIn: React.FC<StateTurnInProps> = ({ webAPI, recordId, isAc
   const canSave =
     isActive &&
     blocks.length > 0 &&
-    !blocks.some((b) => b.loading || blockOverLine(b) || blockOverDetail(b) || !blockBalanced(b)) &&
+    !blocks.some(
+      (b) =>
+        b.loading ||
+        blockOverLine(b) ||
+        blockOverDetail(b) ||
+        !blockBalanced(b),
+    ) &&
     total > EPS;
 
   const beginEdit = (): void => {
@@ -303,7 +404,7 @@ export const StateTurnIn: React.FC<StateTurnInProps> = ({ webAPI, recordId, isAc
             afp: l.afpOverridden ? String(l.afp) : "",
             allot: l.allotOverridden ? String(l.allot) : "",
           },
-        ])
+        ]),
       ),
       detail: new Map(savedReductions.map((r) => [r.id, r.amount])),
     };
@@ -312,7 +413,12 @@ export const StateTurnIn: React.FC<StateTurnInProps> = ({ webAPI, recordId, isAc
     for (const l of savedLines) {
       if (seen.has(l.prioId)) continue;
       seen.add(l.prioId);
-      const p = prios.find((x) => x.id === l.prioId) ?? { id: l.prioId, name: l.prioName, funded: 0, fundingMode: null };
+      const p = prios.find((x) => x.id === l.prioId) ?? {
+        id: l.prioId,
+        name: l.prioName,
+        funded: 0,
+        fundingMode: null,
+      };
       void addPrio(p);
     }
     setMode("edit");
@@ -354,92 +460,173 @@ export const StateTurnIn: React.FC<StateTurnInProps> = ({ webAPI, recordId, isAc
         }
       }
       await saveTurnInChildren(webAPI, recordId, { items, details, rdfs: [] });
-      setSaveMsg("Turn-In saved. Submit it for State approval from the Approval panel.");
+      setSaveMsg(
+        "Turn-In saved. Submit it for State approval from the Approval panel.",
+      );
       setMode("view");
       setReloadKey((k) => k + 1);
-      window.dispatchEvent(new CustomEvent(ITEMS_SAVED_EVENT, { detail: { id: recordId } }));
+      window.dispatchEvent(
+        new CustomEvent(ITEMS_SAVED_EVENT, { detail: { id: recordId } }),
+      );
     } catch (e) {
-      setError((e as { message?: string })?.message ?? "Could not save the Turn-In.");
+      setError(
+        (e as { message?: string })?.message ?? "Could not save the Turn-In.",
+      );
     } finally {
       setSaving(false);
     }
   };
 
   // ---- render -------------------------------------------------------------------------
-  const detailLabel = (r: DetailRow): string =>
-    [r.item !== "" ? r.item : "(no item)", r.tdc, r.mdep].filter((x) => x !== "").join(" · ");
+  /** Chips under the item name, as on the Itemized Details Grid; empty values skipped. */
+  const detailChips = (r: { tdc: string; mdep: string }): ChipData[] =>
+    [
+      { type: "tdc", label: "TDC", value: r.tdc },
+      { type: "mdep", label: "MDEP", value: r.mdep },
+    ].filter((c) => c.value !== "");
+
+  /** ITEM cell: item name with TDC / MDEP chips underneath (Itemized Details Grid design). */
+  const itemCell = (r: {
+    item: string;
+    tdc: string;
+    mdep: string;
+  }): React.ReactElement => (
+    <>
+      <ItemName name={r.item !== "" ? r.item : "(no item)"} />
+      <ChipList chips={detailChips(r)} />
+    </>
+  );
+
+  const statusFor = (): React.ReactElement =>
+    isActive ? (
+      <StatusLabel kind="neutral">Draft — Not Yet Approved</StatusLabel>
+    ) : (
+      <StatusLabel kind="success">Processed</StatusLabel>
+    );
 
   const renderSummary = (): React.ReactElement => {
     const groups = new Map<string, typeof savedLines>();
-    for (const l of savedLines) groups.set(l.prioName, [...(groups.get(l.prioName) ?? []), l]);
+    for (const l of savedLines)
+      groups.set(l.prioName, [...(groups.get(l.prioName) ?? []), l]);
     return (
-      <div className={styles.section}>
+      <div className={styles.stateNarrow}>
         <div className={styles.balanceRow}>
-          <Text className={styles.heading}>Turn-In summary</Text>
-          {isActive ? (
-            <Badge color="informative" appearance="tint">Draft — not yet approved</Badge>
-          ) : (
-            <Badge color="success" appearance="tint">Processed</Badge>
+          <Text className={styles.title}>Turn-In Summary</Text>
+          {statusFor()}
+          <span className={styles.spacer} />
+          {isActive && (
+            <Button
+              appearance="subtle"
+              size="small"
+              className={styles.action}
+              icon={<EditIcon />}
+              onClick={beginEdit}
+            >
+              Edit
+            </Button>
           )}
         </div>
         {savedLines.length === 0 ? (
-          <Text>No Turn-In lines saved yet.</Text>
+          <Text className={styles.muted}>
+            No Turn-In lines saved yet. Use Edit to add a Prioritization.
+          </Text>
         ) : (
           <>
-            <table className={styles.table}>
-              <thead>
-                <tr>
-                  <th className={styles.th}>Prioritization</th>
-                  <th className={styles.th}>Requirement Funding (Fund/SAG)</th>
-                  <th className={styles.th}>TDP</th>
-                  {SHOW_AFP_ALLOT && <th className={styles.th}>AFP</th>}
-                  {SHOW_AFP_ALLOT && <th className={styles.th}>Allotment</th>}
-                </tr>
-              </thead>
-              <tbody>
-                {[...groups].flatMap(([prioName, lines]) =>
-                  lines.map((l, i) => (
-                    <tr key={l.id}>
-                      <td className={styles.td}>{i === 0 ? prioName : ""}</td>
-                      <td className={styles.td}>{l.label}</td>
-                      <td className={styles.td}>{money(l.amount)}</td>
-                      {SHOW_AFP_ALLOT && (
-                        <td className={styles.td}>
-                          {money(l.afp)}
-                          {l.afpOverridden ? "" : " (auto)"}
+            {/* Saved lines always balance, so the total is green. */}
+            <div className={styles.cards}>
+              <FigureCard
+                title="Turn-In Total"
+                value={savedLines.reduce((s, l) => s + l.amount, 0)}
+                tone="success"
+              />
+            </div>
+            {SHOW_AFP_ALLOT && (
+              <AmountTotals
+                styles={styles}
+                tdp={savedLines.reduce((s, l) => s + l.amount, 0)}
+                afp={savedLines.reduce((s, l) => s + l.afp, 0)}
+                allot={savedLines.reduce((s, l) => s + l.allot, 0)}
+              />
+            )}
+            <div className={styles.tableWrap}>
+              <table className={styles.table}>
+                <thead>
+                  <tr>
+                    <th className={styles.th}>Prioritization</th>
+                    <th className={styles.th}>
+                      Requirement Funding (Fund/SAG)
+                    </th>
+                    <th className={mergeClasses(styles.th, styles.num)}>TDP</th>
+                    {SHOW_AFP_ALLOT && (
+                      <th className={mergeClasses(styles.th, styles.num)}>
+                        AFP
+                      </th>
+                    )}
+                    {SHOW_AFP_ALLOT && (
+                      <th className={mergeClasses(styles.th, styles.num)}>
+                        Allotment
+                      </th>
+                    )}
+                  </tr>
+                </thead>
+                <tbody>
+                  {[...groups].flatMap(([prioName, lines]) =>
+                    lines.map((l, i) => (
+                      <tr key={l.id}>
+                        <td
+                          className={mergeClasses(styles.td, styles.identity)}
+                        >
+                          {i === 0 ? prioName : ""}
                         </td>
-                      )}
-                      {SHOW_AFP_ALLOT && (
-                        <td className={styles.td}>
-                          {money(l.allot)}
-                          {l.allotOverridden ? "" : " (auto)"}
+                        <td className={mergeClasses(styles.td, styles.ctx)}>
+                          {l.label}
                         </td>
-                      )}
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-            <AmountTotals
-              styles={styles}
-              tdp={savedLines.reduce((s, l) => s + l.amount, 0)}
-              afp={savedLines.reduce((s, l) => s + l.afp, 0)}
-              allot={savedLines.reduce((s, l) => s + l.allot, 0)}
-            />
+                        <td className={mergeClasses(styles.td, styles.num)}>
+                          {money(l.amount)}
+                        </td>
+                        {SHOW_AFP_ALLOT && (
+                          <td className={mergeClasses(styles.td, styles.num)}>
+                            {money(l.afp)}
+                            {l.afpOverridden ? "" : " (auto)"}
+                          </td>
+                        )}
+                        {SHOW_AFP_ALLOT && (
+                          <td className={mergeClasses(styles.td, styles.num)}>
+                            {money(l.allot)}
+                            {l.allotOverridden ? "" : " (auto)"}
+                          </td>
+                        )}
+                      </tr>
+                    )),
+                  )}
+                </tbody>
+              </table>
+            </div>
             {savedReductions.length > 0 && (
-              <>
-                <Text className={styles.heading}>Itemized Detail reductions</Text>
-                <table className={styles.table}>
+              <div className={styles.tableWrap}>
+                <table className={mergeClasses(styles.table, styles.gridTable)}>
+                  <thead>
+                    <tr>
+                      <th className={styles.th}>Item</th>
+                      <th className={mergeClasses(styles.th, styles.num)}>
+                        Reduced By
+                      </th>
+                    </tr>
+                  </thead>
                   <tbody>
                     {savedReductions.map((r) => (
                       <tr key={r.id}>
-                        <td className={styles.td}>{r.label}</td>
-                        <td className={styles.td}>−{money(r.amount)}</td>
+                        <td className={mergeClasses(styles.td, styles.itemCol)}>
+                          {itemCell(r)}
+                        </td>
+                        <td className={mergeClasses(styles.td, styles.num)}>
+                          −{money(r.amount)}
+                        </td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
-              </>
+              </div>
             )}
           </>
         )}
@@ -447,13 +634,6 @@ export const StateTurnIn: React.FC<StateTurnInProps> = ({ webAPI, recordId, isAc
           <MessageBar intent="success">
             <MessageBarBody>{saveMsg}</MessageBarBody>
           </MessageBar>
-        )}
-        {isActive && (
-          <div className={styles.footer}>
-            <Button appearance="secondary" onClick={beginEdit}>
-              Edit
-            </Button>
-          </div>
         )}
       </div>
     );
@@ -465,212 +645,317 @@ export const StateTurnIn: React.FC<StateTurnInProps> = ({ webAPI, recordId, isAc
     const remaining = t - reduced;
     return (
       <div key={b.prio.id} className={styles.section}>
-        <Divider />
         <div className={styles.balanceRow}>
-          <Text className={styles.heading}>{b.prio.name}</Text>
-          {isItemized(b) && <Badge appearance="outline">Itemized</Badge>}
-          <Button size="small" appearance="primary" className={styles.removeBtn} onClick={() => removePrio(b.prio.id)}>
+          <Text className={styles.title}>{b.prio.name}</Text>
+          {isItemized(b) && <TagLabel>Itemized</TagLabel>}
+          <span className={styles.spacer} />
+          <Button
+            appearance="subtle"
+            size="small"
+            className={styles.destructive}
+            icon={<DeleteIcon />}
+            aria-label={`Remove ${b.prio.name}`}
+            onClick={() => removePrio(b.prio.id)}
+          >
             Remove
           </Button>
         </div>
         {b.loading ? (
-          <Spinner size="tiny" label="Loading..." />
+          <Spinner size="tiny" label={`Loading ${b.prio.name}…`} />
         ) : b.pfRows.length === 0 ? (
-          <Text>This Prioritization has no funded Requirement Funding lines.</Text>
+          <Text className={styles.muted}>
+            This Prioritization has no funded Requirement Funding lines.
+          </Text>
         ) : (
-          <table className={styles.table}>
-            <thead>
-              <tr>
-                <th className={styles.th}>Requirement Funding (Fund/SAG)</th>
-                <th className={styles.th}>Funded</th>
-                <th className={styles.th}>TDP to turn in</th>
-                {SHOW_AFP_ALLOT && <th className={styles.th}>AFP</th>}
-                {SHOW_AFP_ALLOT && <th className={styles.th}>Allotment</th>}
-              </tr>
-            </thead>
-            <tbody>
-              {b.pfRows.map((r) => (
-                <tr key={r.id}>
-                  <td className={styles.td}>{r.rfName}</td>
-                  <td className={styles.td}>{money(r.funded)}</td>
-                  <td className={styles.td}>
-                    <Input
-                      className={styles.amtInput}
-                      type="number"
-                      value={r.amount}
-                      onChange={(_, d) => patchPf(b.prio.id, r.id, { amount: d.value })}
-                    />
-                  </td>
+          <div className={styles.tableWrap}>
+            <table className={styles.table}>
+              <thead>
+                <tr>
+                  <th className={styles.th}>Requirement Funding (Fund/SAG)</th>
+                  <th className={mergeClasses(styles.th, styles.num)}>
+                    Funded
+                  </th>
+                  <th className={mergeClasses(styles.th, styles.num)}>
+                    TDP to Turn In
+                  </th>
                   {SHOW_AFP_ALLOT && (
-                    <td className={styles.td}>
-                      <Input
-                        className={styles.amtInput}
-                        type="number"
-                        placeholder="auto"
-                        value={r.afp}
-                        onChange={(_, d) => patchPf(b.prio.id, r.id, { afp: d.value })}
-                      />
-                    </td>
+                    <th className={mergeClasses(styles.th, styles.num)}>AFP</th>
                   )}
                   {SHOW_AFP_ALLOT && (
-                    <td className={styles.td}>
-                      <Input
-                        className={styles.amtInput}
-                        type="number"
-                        placeholder="auto"
-                        value={r.allot}
-                        onChange={(_, d) => patchPf(b.prio.id, r.id, { allot: d.value })}
-                      />
-                    </td>
+                    <th className={mergeClasses(styles.th, styles.num)}>
+                      Allotment
+                    </th>
                   )}
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {b.pfRows.map((r) => (
+                  <tr key={r.id}>
+                    <td className={mergeClasses(styles.td, styles.identity)}>
+                      {r.rfName}
+                    </td>
+                    <td className={mergeClasses(styles.td, styles.num)}>
+                      {money(r.funded)}
+                    </td>
+                    <td className={mergeClasses(styles.td, styles.num)}>
+                      <AmountInput
+                        aria-label={`TDP to turn in from ${r.rfName}`}
+                        value={r.amount}
+                        onChange={(v) =>
+                          patchPf(b.prio.id, r.id, { amount: v })
+                        }
+                      />
+                    </td>
+                    {SHOW_AFP_ALLOT && (
+                      <td className={mergeClasses(styles.td, styles.num)}>
+                        <AmountInput
+                          aria-label={`AFP for ${r.rfName}`}
+                          value={r.afp}
+                          onChange={(v) => patchPf(b.prio.id, r.id, { afp: v })}
+                        />
+                      </td>
+                    )}
+                    {SHOW_AFP_ALLOT && (
+                      <td className={mergeClasses(styles.td, styles.num)}>
+                        <AmountInput
+                          aria-label={`Allotment for ${r.rfName}`}
+                          value={r.allot}
+                          onChange={(v) =>
+                            patchPf(b.prio.id, r.id, { allot: v })
+                          }
+                        />
+                      </td>
+                    )}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
         {blockOverLine(b) && (
           <MessageBar intent="error">
-            <MessageBarBody>A line exceeds the funding on that Fund/SAG, or an amount is negative.</MessageBarBody>
+            <MessageBarBody>
+              A line exceeds the funding on that Fund/SAG, or an amount is
+              negative.
+            </MessageBarBody>
           </MessageBar>
         )}
 
         {isItemized(b) && t > 0 && (
           <>
-            <Text>
-              Itemized: reduce its details by a total of <b>{money(t)}</b> (Funded and Requested drop together).
-            </Text>
-            <table className={styles.table}>
-              <thead>
-                <tr>
-                  <th className={styles.th}>Item · TDC · MDEP</th>
-                  <th className={styles.th}>Detail #</th>
-                  <th className={styles.th}>Requested</th>
-                  <th className={styles.th}>Funded</th>
-                  <th className={styles.th}>Reduce by</th>
-                </tr>
-              </thead>
-              <tbody>
-                {b.detailRows.map((r) => (
-                  <tr key={r.id}>
-                    <td className={styles.td}>{detailLabel(r)}</td>
-                    <td className={styles.td}>{r.name}</td>
-                    <td className={styles.td}>{money(r.requested)}</td>
-                    <td className={styles.td}>{money(r.funded)}</td>
-                    <td className={styles.td}>
-                      <Input
-                        className={styles.amtInput}
-                        type="number"
-                        value={r.reduce}
-                        onChange={(_, d) => patchDetail(b.prio.id, r.id, d.value)}
-                      />
+            {/* Itemized: the details drop by this total (Funded and Requested together). */}
+            <div className={styles.cards}>
+              <FigureCard title="Turn In Amount" value={t} />
+            </div>
+            <div className={styles.tableWrap}>
+              <table className={mergeClasses(styles.table, styles.gridTable)}>
+                <thead>
+                  <tr>
+                    <th className={styles.th}>Item</th>
+                    <th className={mergeClasses(styles.th, styles.num)}>
+                      Requested
+                    </th>
+                    <th className={mergeClasses(styles.th, styles.num)}>
+                      Funded
+                    </th>
+                    <th className={mergeClasses(styles.th, styles.num)}>
+                      Reduce By
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {b.detailRows.map((r) => (
+                    <tr key={r.id}>
+                      <td className={mergeClasses(styles.td, styles.itemCol)}>
+                        {itemCell(r)}
+                      </td>
+                      <td className={mergeClasses(styles.td, styles.num)}>
+                        {money(r.requested)}
+                      </td>
+                      <td className={mergeClasses(styles.td, styles.num)}>
+                        {money(r.funded)}
+                      </td>
+                      <td className={mergeClasses(styles.td, styles.num)}>
+                        <AmountInput
+                          aria-label={`Reduce detail ${r.name} by`}
+                          value={r.reduce}
+                          onChange={(v) => patchDetail(b.prio.id, r.id, v)}
+                        />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+                <tfoot>
+                  <tr className={styles.totalRow}>
+                    <td className={styles.td} colSpan={3}>
+                      <div className={styles.balanceRow}>
+                        <span>Total</span>
+                        {blockBalanced(b) ? (
+                          <StatusLabel kind="success">Balanced</StatusLabel>
+                        ) : (
+                          <StatusLabel kind="warning">
+                            {remaining > 0
+                              ? `${money(remaining)} left to reduce`
+                              : `${money(-remaining)} over`}
+                          </StatusLabel>
+                        )}
+                      </div>
+                    </td>
+                    <td className={mergeClasses(styles.td, styles.num)}>
+                      <div className={styles.stack}>
+                        <span>{money(reduced)}</span>
+                        <span className={styles.muted}>of {money(t)}</span>
+                      </div>
                     </td>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </tfoot>
+              </table>
+            </div>
             {blockOverDetail(b) && (
               <MessageBar intent="error">
-                <MessageBarBody>A reduction exceeds the funding on that Itemized Detail.</MessageBarBody>
+                <MessageBarBody>
+                  A reduction exceeds the funding on that Itemized Detail.
+                </MessageBarBody>
               </MessageBar>
             )}
-            <div className={styles.balanceRow}>
-              <Text>
-                Reduced <b>{money(reduced)}</b> of <b>{money(t)}</b>
-              </Text>
-              {blockBalanced(b) ? (
-                <Badge color="success" appearance="tint">Balanced</Badge>
-              ) : (
-                <Badge color="warning" appearance="tint">
-                  {remaining > 0 ? `${money(remaining)} left to reduce` : `${money(-remaining)} over`}
-                </Badge>
-              )}
-            </div>
           </>
         )}
       </div>
     );
   };
 
-  const available = prios.filter((p) => !blocks.some((b) => b.prio.id === p.id));
+  const available = prios.filter(
+    (p) => !blocks.some((b) => b.prio.id === p.id),
+  );
+  const prioOptions = available.filter((p) => matches(p.name, picker));
   const enteredAfp = allRows.reduce((s, r) => s + num(r.afp), 0);
   const enteredAllot = allRows.reduce((s, r) => s + num(r.allot), 0);
 
   return (
-    <FluentProvider theme={webLightTheme} style={{ width: "100%" }}>
+    <FluentProvider theme={checkbookTheme} style={{ width: "100%" }}>
       <div className={styles.root}>
-        {loading && <Spinner label="Loading..." />}
+        {loading && <Spinner size="tiny" label="Loading Prioritizations…" />}
         {error && (
           <MessageBar intent="error">
             <MessageBarBody>{error}</MessageBarBody>
           </MessageBar>
         )}
         {!loading && !fundCenterId && (
-          <MessageBar intent="info">
-            <MessageBarBody>Set the Turn-In Fund Center (your state) and save to pick Prioritizations.</MessageBarBody>
-          </MessageBar>
+          <div className={styles.awaiting}>
+            <Text>
+              Set the Turn-In Fund Center (your state) and save to pick
+              Prioritizations.
+            </Text>
+          </div>
         )}
         {!loading && !isActive && (
           <MessageBar intent="warning">
             <MessageBarBody>
-              This Turn-In has been approved or processed, so its lines are locked. Changing them would not reverse
-              the funds already moved — submit a new Turn-In or realignment to correct it.
+              This Turn-In has been approved or processed, so its lines are
+              locked. Changing them would not reverse the funds already moved —
+              submit a new Turn-In or realignment to correct it.
             </MessageBarBody>
           </MessageBar>
         )}
 
-        {!loading && fundCenterId && (mode === "view" || !isActive) && renderSummary()}
+        {!loading &&
+          fundCenterId &&
+          (mode === "view" || !isActive) &&
+          renderSummary()}
 
         {!loading && fundCenterId && isActive && mode === "edit" && (
-          <>
-            <div className={styles.pickers}>
-              <div className={styles.pickerField}>
-                <Text className={styles.heading}>Add a Prioritization{stateName ? ` (${stateName})` : ""}</Text>
-                <Combobox
-                  placeholder="Select a Prioritization to turn funds in from"
-                  selectedOptions={[]}
-                  value={picker}
-                  onChange={(e) => setPicker(e.target.value)}
-                  onOptionSelect={(_, d) => {
-                    const p = prios.find((x) => x.id === d.optionValue);
-                    setPicker("");
-                    if (p) void addPrio(p);
-                  }}
-                >
-                  {available.map((p) => (
-                    <Option key={p.id} value={p.id} text={p.name}>
-                      {`${p.name} — Funded ${money(p.funded)}`}
-                    </Option>
-                  ))}
-                </Combobox>
-              </div>
+          <div className={styles.stateNarrow}>
+            <div
+              className={styles.pickerField}
+              style={{ width: "100%", minWidth: 0 }}
+            >
+              <Text className={styles.fieldLabel}>
+                Add a Prioritization{stateName ? ` (${stateName})` : ""}
+              </Text>
+              <Combobox
+                appearance="filled-lighter"
+                className={styles.editable}
+                listbox={{ className: styles.listbox }}
+                style={{ width: "100%", maxWidth: "none", minWidth: 0 }}
+                placeholder="Search by Requirement name"
+                selectedOptions={[]}
+                value={picker}
+                onChange={(e) => setPicker(e.target.value)}
+                onOptionSelect={(_, d) => {
+                  const p = prios.find((x) => x.id === d.optionValue);
+                  setPicker("");
+                  if (p) void addPrio(p);
+                }}
+              >
+                {prioOptions.map((p) => (
+                  <Option key={p.id} value={p.id} text={p.name}>
+                    {`${p.name} — Funded ${money(p.funded)}`}
+                  </Option>
+                ))}
+                {prioOptions.length === 0 && (
+                  <Option key="__none" value="" text="" disabled>
+                    {available.length === 0
+                      ? "No more Prioritizations to add"
+                      : "No Prioritizations match your search"}
+                  </Option>
+                )}
+              </Combobox>
+              <Text className={styles.muted}>
+                Enter the TDP to turn in per Fund/SAG.
+                {SHOW_AFP_ALLOT
+                  ? " AFP and Allotment are optional: leave blank to size them automatically, or enter what you want returned."
+                  : ""}{" "}
+                The Prioritization Requested amount drops by the TDP turned in.
+              </Text>
             </div>
-            <Text className={styles.muted}>
-              Enter the TDP to turn in per Fund/SAG.
-              {SHOW_AFP_ALLOT
-                ? " AFP and Allotment are optional: leave blank to size them automatically, or enter what you want returned."
-                : ""}{" "}
-              The Prioritization Requested amount drops by the TDP turned in.
-            </Text>
 
             {blocks.map(renderBlock)}
 
             {blocks.length > 0 && (
-              <>
-                <Divider />
-                <AmountTotals styles={styles} tdp={total} afp={enteredAfp} allot={enteredAllot} entered />
-              </>
+              // Green once every itemized Prioritization's details balance, yellow until then.
+              <div className={styles.cards}>
+                <FigureCard
+                  title="Turn-In Total"
+                  value={total}
+                  tone={blocks.every(blockBalanced) ? "success" : "warning"}
+                />
+              </div>
+            )}
+            {blocks.length > 0 && SHOW_AFP_ALLOT && (
+              <AmountTotals
+                styles={styles}
+                tdp={total}
+                afp={enteredAfp}
+                allot={enteredAllot}
+                entered
+              />
             )}
 
             <div className={styles.footer}>
-              <Button appearance="primary" disabled={!canSave || saving} onClick={() => void save()}>
-                {saving ? "Saving..." : "Save Turn-In"}
+              <Button
+                appearance="subtle"
+                size="small"
+                className={styles.saveButton}
+                icon={
+                  saving ? (
+                    <Spinner size="extra-tiny" aria-label="Saving" />
+                  ) : (
+                    <SaveIcon color={CB.brand} />
+                  )
+                }
+                disabled={!canSave || saving}
+                onClick={() => void save()}
+              >
+                {saving ? "Saving…" : "Save"}
               </Button>
-              {saving && <Spinner size="tiny" />}
               {blocks.some((b) => !blockBalanced(b)) && !saving && (
-                <Text>Each itemized Prioritization must reduce its details by its own total before saving.</Text>
+                <Text className={styles.muted}>
+                  Each itemized Prioritization must reduce its details by its
+                  own total before saving.
+                </Text>
               )}
             </div>
-          </>
+          </div>
         )}
       </div>
     </FluentProvider>

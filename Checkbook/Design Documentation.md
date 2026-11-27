@@ -925,6 +925,36 @@ export const Badge: React.FC<{ result: "saved" | "error" }> = ({ result }) => {
   to…"). Use a separate message for "No X match your search."
 - **Errors:** inline `colorPaletteRedForeground1` text in dialogs. Banners for
   component-level problems. Never `alert()`.
+- **Waiting for data (disabled control):** when a whole PCF can't work yet because
+  the record is missing data it needs (unsaved record, Fiscal Year or Fund Center
+  not set, a record type the control doesn't handle), it renders **one style
+  only**: a plain sentence on a soft grey panel. Don't use a `MessageBar`, an
+  icon or a border for this, and don't vary the style between controls.
+
+  | Property | Value |
+  |---|---|
+  | Background | `colorNeutralBackground2` (`#fafafa`) |
+  | Padding | `12px 16px` |
+  | Radius | `borderRadiusMedium` (4px) |
+  | Width | `100%` of the control |
+  | Text | `<Text>`, 14px, `colorNeutralForeground1`, one sentence |
+
+  The sentence names what's missing and what to do: "Save the Turn-In first
+  to see the approval process." Use the same panel when there's nothing to do
+  on this record (for example "This is a Sweep Turn-In… It has no lines to build.").
+  Real problems are different: a failed load stays an error banner
+  (`MessageBar intent="error"`), and a locked record stays a warning banner.
+
+  ```tsx
+  awaiting: {
+    width: "100%", boxSizing: "border-box",
+    ...shorthands.padding("12px", "16px"),
+    backgroundColor: tokens.colorNeutralBackground2,
+    ...shorthands.borderRadius(tokens.borderRadiusMedium),
+  },
+  // …
+  <div className={styles.awaiting}><Text>Save the Turn-In first to see the approval process.</Text></div>
+  ```
 
 ## 9. Toolbar & dialogs
 
@@ -1097,6 +1127,7 @@ Copy into the PR description for any new or restyled component.
 - [ ] Grid: sticky header, sticky all-record totals, Load more, 560px max height, `tableLayout: auto`. Row actions are Edit · Delete · More.
 - [ ] Tags follow the three tiers (§8). Chips: outlined `Label: Value`, dot, max 3 then 2 + `+N`, wrapping. Status label: tinted, icon, own column. Badge: solid, icon, inline after the name, clears itself (Error has a tooltip). No table legend. All via the shared `Chip` / `ChipList` / `StatusLabel` / `Badge`.
 - [ ] Spinner with label while loading. Guidance empty state plus a separate no-match message.
+- [ ] A control waiting for record data (save first, set the Fiscal Year…) shows the single §8 "Waiting for data" grey panel, not a `MessageBar`.
 - [ ] Destructive actions confirm. Busy dialogs block dismiss.
 - [ ] Icons from §10 (640 viewBox, `aria-hidden`, FA license comment kept).
 - [ ] Visible keyboard focus on all interactive elements.

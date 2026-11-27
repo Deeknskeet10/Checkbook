@@ -1,6 +1,7 @@
 import * as React from "react";
-import { Text } from "@fluentui/react-components";
-import { num, money, cleanId, useStyles } from "./shared";
+import { mergeClasses } from "@fluentui/react-components";
+import { num, money, moneyShort, cleanId, useStyles } from "./shared";
+import { MoneyInput } from "./designSystem";
 
 /**
  * Per-line TDP / AFP / Allotment entry, shared by both Turn-In types. TDP is required;
@@ -60,7 +61,56 @@ export function readSavedLine(e: Record<string, unknown>): SavedLine {
   };
 }
 
-/** Totals row: TDP / AFP / Allotment. `entered` = edit mode, where blank AFP/Allotment are auto. */
+/**
+ * Money box (Design Documentation §6.2) over the builders' string state: "" = blank.
+ * `live` so totals, balance badges and the Save button track typing.
+ */
+export const AmountInput: React.FC<{
+  value: string;
+  onChange: (value: string) => void;
+  disabled?: boolean;
+  "aria-label": string;
+}> = ({ value, onChange, disabled, "aria-label": ariaLabel }) => {
+  const styles = useStyles();
+  return (
+    <MoneyInput
+      live
+      aria-label={ariaLabel}
+      className={styles.amtInput}
+      disabled={disabled}
+      value={value.trim() === "" ? null : num(value)}
+      onCommit={(v) => onChange(v === null ? "" : String(v))}
+    />
+  );
+};
+
+/**
+ * Figure card: 13px title, 20px short amount ($1.00M), 14px exact amount beneath.
+ * `tone` tints it: available = blue, success = green, warning = yellow; default grey.
+ */
+export const FigureCard: React.FC<{
+  title: string;
+  value: number;
+  tone?: "neutral" | "available" | "success" | "warning";
+}> = ({ title, value, tone = "neutral" }) => {
+  const styles = useStyles();
+  return (
+    <div
+      className={mergeClasses(
+        styles.card,
+        tone === "available" && styles.cardAvailable,
+        tone === "success" && styles.cardSuccess,
+        tone === "warning" && styles.cardWarning,
+      )}
+    >
+      <span className={styles.cardTitle}>{title}</span>
+      <span className={styles.cardValue}>{moneyShort(value)}</span>
+      <span className={styles.cardSub}>{money(value)}</span>
+    </div>
+  );
+};
+
+/** Totals bar: TDP / AFP / Allotment. `entered` = edit mode, where blank AFP/Allotment are auto. */
 export const AmountTotals: React.FC<{
   styles: ReturnType<typeof useStyles>;
   tdp: number;
@@ -68,16 +118,21 @@ export const AmountTotals: React.FC<{
   allot: number;
   entered?: boolean;
 }> = ({ styles, tdp, afp, allot, entered }) => (
-  <div className={styles.balanceRow}>
+  <div className={styles.totals}>
+    <span>Turn-In Total</span>
+    <span className={styles.spacer} />
     {SHOW_AFP_ALLOT ? (
-      <Text>
-        Turn-In total — TDP <b>{money(tdp)}</b> · AFP <b>{money(afp)}</b> · Allotment <b>{money(allot)}</b>
-        {entered ? " (AFP / Allotment entered; blank lines are sized automatically on save)" : ""}
-      </Text>
+      <span className={styles.num}>
+        TDP {money(tdp)} · AFP {money(afp)} · Allotment {money(allot)}
+        {entered && (
+          <span className={mergeClasses(styles.muted)}>
+            {" "}
+            (blank AFP / Allotment sized on save)
+          </span>
+        )}
+      </span>
     ) : (
-      <Text>
-        Turn-In total — TDP <b>{money(tdp)}</b>
-      </Text>
+      <span className={styles.num}>TDP {money(tdp)}</span>
     )}
   </div>
 );
