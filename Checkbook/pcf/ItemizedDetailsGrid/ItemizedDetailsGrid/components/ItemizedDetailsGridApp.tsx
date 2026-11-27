@@ -1,7 +1,6 @@
 import * as React from "react";
 import {
   FluentProvider,
-  webLightTheme,
   makeStyles,
   shorthands,
   tokens,
@@ -12,12 +11,10 @@ import {
   TableRow,
   TableCell,
   Input,
-  Textarea,
   Spinner,
   Text,
   Button,
   Tooltip,
-  Link,
   Dialog,
   DialogSurface,
   DialogBody,
@@ -28,8 +25,27 @@ import {
   Dropdown,
   Combobox,
   Option,
-  Badge,
 } from "@fluentui/react-components";
+import {
+  CB,
+  checkbookTheme,
+  AddIcon,
+  DeleteIcon,
+  RefreshIcon,
+  SearchIcon,
+  SortIcon,
+  useChoiceStyles,
+  MoneyInput,
+  QuantityInput,
+  formatMoney,
+  ChipList,
+  ChipData,
+  ItemName,
+  TagLabel,
+  HyperlinkLabel,
+  NoteCell,
+  PortalRootContext,
+} from "./designSystem";
 
 type DataSet = ComponentFramework.PropertyTypes.DataSet;
 type WebApi = ComponentFramework.WebApi;
@@ -90,13 +106,6 @@ type NumericField = "quantity" | "requestedAmount" | "validatedAmount" | "funded
 type TextField = "npmComment" | "stateComment";
 type EditableField = NumericField | TextField;
 
-const NUMERIC_FIELDS: NumericField[] = [
-  "quantity",
-  "requestedAmount",
-  "validatedAmount",
-  "fundedAmount",
-];
-
 type SaveState = "saving" | "saved" | "error";
 
 /** Read-only context pulled from the linked Requirement Detail. */
@@ -151,234 +160,135 @@ interface RowLinCountry {
 }
 
 const useStyles = makeStyles({
+  // minWidth: 0 + maxWidth keep the root at the form section's width. Without
+  // them the root grows to the table's natural width, the form clips it, and
+  // scrollContainer never gets a narrower box to scroll inside.
   root: {
     ...shorthands.padding("8px"),
+    boxSizing: "border-box",
+    width: "100%",
+    maxWidth: "100%",
+    minWidth: 0,
     fontFamily: tokens.fontFamilyBase,
   },
   toolbar: {
     display: "flex",
     alignItems: "center",
     justifyContent: "space-between",
+    flexWrap: "wrap",
+    rowGap: "4px",
     ...shorthands.padding("4px", "2px", "8px", "2px"),
   },
-  // Lets the table extend past the form's width on narrow screens instead of
-  // squeezing every column into the visible area. Capped/scrollable
-  // vertically so long item lists don't push the rest of the form down —
-  // the header stays pinned via sticky th below.
+  // Grid (Design Documentation.md §7): 40px header band with 11px / 700 /
+  // UPPERCASE labels, 56px rows, hairline dividers. Cell side padding is 8px
+  // (the doc's 16px made this wide grid overflow the form). Capped/scrollable
+  // both ways so long item lists don't push the rest of the form down; header
+  // and totals stay pinned via sticky cells.
   scrollContainer: {
     width: "100%",
-    maxHeight: "500px",
+    maxWidth: "100%",
+    minWidth: 0,
+    maxHeight: "560px",
     overflowX: "auto",
     overflowY: "auto",
-    "& td": {
-      ...shorthands.padding("5px"),
-      maxWidth: "180px",
-    },
-    "& tr:hover": {
-      backgroundColor: "#fbfbfb"
-    },
     "& th": {
-      paddingBottom: "8px",
-      fontWeight: 600,
+      height: "40px",
+      ...shorthands.padding("0", "8px"),
       position: "sticky",
       top: 0,
       zIndex: 2,
-      backgroundColor: tokens.colorNeutralBackground1,
+      backgroundColor: CB.tableHead,
+      color: tokens.colorNeutralForeground2,
+      fontSize: "11px",
+      fontWeight: 700,
+      textTransform: "uppercase",
+      letterSpacing: "0.05em",
+      whiteSpace: "nowrap",
     },
+    "& th:first-child": { borderTopLeftRadius: "8px", borderBottomLeftRadius: "8px" },
+    "& th:last-child": { borderTopRightRadius: "8px", borderBottomRightRadius: "8px" },
+    // The header row itself carries Fluent's bottom border — the band has none.
+    "& thead tr": { borderBottomStyle: "none" },
+    "& td": {
+      // Minimum only — a td grows to its content (32px inputs, item name +
+      // chips), so rows size to their tallest cell.
+      height: "20px",
+      ...shorthands.padding("6px", "8px"),
+      maxWidth: "220px",
+    },
+    "& tbody tr": { borderBottomColor: CB.rowLine },
+    "& tbody tr:hover": { backgroundColor: CB.rowHover },
   },
   // Fluent's Table defaults to table-layout: fixed, which sizes columns off
-  // the header row alone — columns with no explicit header width (Fund
-  // Center, LIN, Country, State Comment, …) get squeezed to an arbitrary
-  // share of the table's width, so their fixed-width body content (the
-  // dropdowns, the comment Textarea) overflows past its own padding and
-  // gets clipped at the cell edge. auto sizes every column off its widest
-  // cell instead, so padding always has room. minWidth keeps the table from
-  // squeezing columns illegibly on narrow forms — scrollContainer's
-  // overflowX scrolls the pane horizontally past that point instead.
+  // the header row alone and clips fixed-width body content (dropdowns,
+  // numeric boxes, the comment Textarea). auto sizes every column off its
+  // widest cell. minWidth keeps columns legible on narrow forms —
+  // scrollContainer's overflowX scrolls past that point instead.
   tableAutoLayout: {
     tableLayout: "auto",
-    minWidth: "700px",
+    minWidth: "760px",
+  },
+  // Checked rows (§7 "Selected"): blue-tinted so #f7f7f7 inputs stay visible.
+  rowSelected: {
+    backgroundColor: `${CB.rowSelected} !important`,
   },
   contextCell: {
     color: tokens.colorNeutralForeground3,
     whiteSpace: "nowrap",
   },
-  tdcLink: {
-    maxWidth: "170px",
-    minWidth: "100px",
-    textWrap: "auto"
+  // TDC TagLabel column — the pill ellipsizes past this cap.
+  tdcCol: {
+    minWidth: "120px",
+    maxWidth: "180px",
   },
-  // First column stacks Item name / Category / Quantity Type; Item names can
-  // be long, so this is the one column that wraps rather than nowraps.
-  // No min/max width of its own — a minWidth here bigger than the blanket
-  // 150px td cap above would win over it (min-width always beats max-width
-  // in the box calc) and force the column wide even with no content, which
-  // is exactly the bug that used to make this column ignore the cap.
+  // Identity column: item name + inline action badge, chips underneath
+  // (§8). The chips wrap onto separate lines when narrow; the column wraps,
+  // others don't.
   firstCol: {
     whiteSpace: "normal",
     wordBreak: "break-word",
     verticalAlign: "top",
-    minWidth: "180px",
-    // Anchors statusBadge below to this cell's corner instead of the page.
-    position: "relative",
+    minWidth: "210px",
   },
-  firstColName: {
-    fontWeight: tokens.fontWeightSemibold,
-    display: "flex",
-    alignItems: "center",
-    flexWrap: "wrap",
-    columnGap: "4px",
+  // Numeric boxes (§6.2) — the box itself comes from MoneyInput /
+  // QuantityInput; these only size it.
+  moneyBox: {
+    width: "128px",
+    minWidth: "112px",
   },
-  // Category/Qty Type chips — one line, wrapping to a second only if they
-  // don't both fit.
-  metaChipRow: {
-    display: "flex",
-    flexWrap: "wrap",
-    columnGap: "4px",
-    rowGap: "2px",
-    marginTop: "4px",
-  },
-  // Toolbar legend explaining what the chip colors mean.
-  legend: {
-    display: "flex",
-    alignItems: "center",
-    columnGap: "12px",
-    marginRight: "4px",
-    fontSize: tokens.fontSizeBase200,
-    color: tokens.colorNeutralForeground3,
-  },
-  legendItem: {
-    display: "flex",
-    alignItems: "center",
-    columnGap: "4px",
-  },
-  legendPip: {
-    width: "12px",
-    height: "12px",
-    borderRadius: "50%",
-  },
-  // Matches the Category/Qty Type Badges' own tint background/foreground
-  // exactly (see the Badge usages below) rather than independently-picked
-  // colors, so the legend swatch and the chip it explains never drift apart.
-  legendPipCategory: {
-    backgroundColor: tokens.colorPaletteGreenBackground1,
-    border: `1px solid ${tokens.colorPaletteGreenBackground2}`,
-  },
-  legendPipQtyType: {
-    backgroundColor: tokens.colorBrandBackground2,
-    border: `1px solid ${tokens.colorBrandBackground2Pressed}`,
-  },
-  numberInput: {
-    minWidth: "100px",
-    width: "100px",
-    maxWidth: "140px",
-    backgroundColor: "#f7f7f7",
-    textAlign: "right",
-    ":hover": {
-      backgroundColor: "#fff",
-      border: "2px solid #b2c3f4 !important",
-    },
-    // Drop the native number-input spin box so it reads as a plain text
-    // field — Firefox via -moz-appearance, WebKit/Blink via hiding its
-    // spin-button pseudo-elements (there's no single cross-browser property
-    // for this).
-    "& input": {
-      paddingLeft: "6px",
-      paddingRight: "6px",
-      MozAppearance: "textfield",
-    },
-    "& input::-webkit-outer-spin-button": {
-      WebkitAppearance: "none",
-      margin: 0,
-    },
-    "& input::-webkit-inner-spin-button": {
-      WebkitAppearance: "none",
-      margin: 0,
-    },
+  qtyBox: {
+    width: "88px",
+    minWidth: "80px",
   },
   qtyCol: {
     textAlign: "right",
     justifyContent: "flex-end",
-    minWidth: "90px",
-    width: "90px",
+    minWidth: "96px",
   },
-  qtyInput: {
-    minWidth: "80px",
-    width: "80px",
-    maxWidth: "140px",
-    backgroundColor: "#f7f7f7",
-    textAlign: "right",
-    ":hover": {
-      backgroundColor: "#fff",
-      border: "2px solid #b2c3f4 !important",
-    },
-    "& input": {
-      paddingLeft: "6px",
-      paddingRight: "6px",
-      MozAppearance: "textfield",
-    },
-    "& input::-webkit-outer-spin-button": {
-      WebkitAppearance: "none",
-      margin: 0,
-    },
-    "& input::-webkit-inner-spin-button": {
-      WebkitAppearance: "none",
-      margin: 0,
-    },
-  },
-  commentInput: {
-    minWidth: "150px",
-    width: "160px",
-    maxWidth: "200px",
-    backgroundColor: "#f7f7f7",
-      border: "2px solid transparent",
-    ":hover": {
-      backgroundColor: "#fff",
-      border: "2px solid #b2c3f4 !important",
-    },
-  },
-  // NPM Comment is read-only here (owned by the NPM on the Requirement
-  // Funding side) — a Textarea instead of plain text so long paragraphs get
-  // the same wrap/scroll box as State Comment, but no editable styling
-  // (no #f7f7f7 fill, no hover border) since it can't actually be edited.
-  npmCommentInput: {
-    minWidth: "150px",
-    width: "160px",
-    maxWidth: "200px",
-    cursor: "default",
-    "& textarea": {
-      cursor: "default",
-    },
-  },
-  // Fund Center *column* — kept wider than the dropdown's own minWidth
-  // below so the cell has breathing room around it; applied to both the
-  // TableHeaderCell and TableCell for this column.
+  // Fund Center column — wider than the dropdown so the cell has room.
   fcCol: {
-    minWidth: "170px",
+    minWidth: "130px",
   },
-  // The dropdown itself is capped to the shared 150px td max-width (see
-  // scrollContainer's "& td" rule) — it used to have a fixed 170px width,
-  // wider than that cap, which overflowed the cell.
   fcDropdown: {
     maxWidth: "150px",
     minWidth: "100px",
-    height: "30px",
-    backgroundColor: "#f7f7f7",
+    height: "32px",
+    backgroundColor: CB.inputFill,
     ":hover": {
       backgroundColor: "#fff",
-      border: "2px solid #b2c3f4",
-    }
+      border: `2px solid ${CB.inputHover} !important`,
+    },
   },
   // minWidth only (not a fixed width) so the closed field can grow to fit
   // longer LIN/Country names instead of clipping them.
   linCountryDropdown: {
     maxWidth: "160px",
     minWidth: "100px",
-    height: "30px",
-    backgroundColor: "#f7f7f7",
+    height: "32px",
+    backgroundColor: CB.inputFill,
     ":hover": {
       backgroundColor: "#fff",
-      border: "2px solid #b2c3f4 !important",
+      border: `2px solid ${CB.inputHover} !important`,
     },
     "& input": {
       maxWidth: "120px",
@@ -391,10 +301,8 @@ const useStyles = makeStyles({
     maxHeight: "200px",
     overflowY: "auto",
   },
-  // The closed Combobox field is a native <input> — it can never wrap text,
-  // only scroll/clip a single line, no matter what CSS is applied to it.
-  // Wrapping is only achievable for the open option list, where entries are
-  // plain elements, not an input — some country names run long.
+  // The closed Combobox field is a native <input> — it can't wrap. Wrapping
+  // is only possible in the open option list.
   dropdownOptionWrap: {
     whiteSpace: "normal",
     wordBreak: "break-word",
@@ -410,26 +318,32 @@ const useStyles = makeStyles({
     color: tokens.colorNeutralForeground3,
     whiteSpace: "nowrap",
   },
+  // Totals (§7): 52px, sticky to the bottom, all-record totals.
   totalsRow: {
     fontWeight: 600,
+    fontSize: "11px",
+    textTransform: "capitalize",
     "& td": {
-      // Explicit height (rather than relying on Fluent's default small-row
-      // height) so loadMoreRow's sticky offset below has a fixed, known
-      // value to stack against instead of guessing at internals.
-      height: "44px",
+      fontWeight: 600,
+      fontSize: "11px",
+      textTransform: "capitalize",
+      height: "52px",
       position: "sticky",
       bottom: "-1px", // -1px so the row's bottom border sits flush with the table's bottom
       zIndex: 2,
       backgroundColor: tokens.colorNeutralBackground2,
+      borderTop: `1px solid ${tokens.colorNeutralStroke2}`,
+      verticalAlign: "middle", // beats firstCol's top alignment for the "Totals" label
     },
   },
   // Sits directly above the sticky totalsRow — its bottom offset must equal
-  // that row's td height (44px) so the two stack flush with no gap/overlap.
+  // that row's td height (52px) so the two stack flush with no gap/overlap.
   loadMoreRow: {
     "& td": {
       position: "sticky",
-      bottom: "44px",
+      bottom: "52px",
       zIndex: 2,
+      height: "auto",
       backgroundColor: tokens.colorNeutralBackground1,
     },
   },
@@ -446,53 +360,32 @@ const useStyles = makeStyles({
     padding: 0,
     margin: 0,
     borderRadius: 0,
-    color: "#5b9bd5",
+    color: CB.link,
     backgroundImage:
       "linear-gradient(to bottom, transparent, rgba(255, 255, 255, 0.7))",
     ":hover": {
-      color: "#2e5f8a",
+      color: CB.linkHover,
       backgroundImage:
         "linear-gradient(to bottom, transparent, rgba(255, 255, 255, 1))",
     },
   },
-  // Numeric column sizing — width only. Alignment is right for all of
-  // Quantity/Requested/Validated/Funded (see amountBodyRight and
-  // headerJustifyEnd below), since a table-cell's own text-align/
-  // justifyContent don't reach the <Input>/<span> children directly.
+  // Numeric column sizing. Right-aligned body and header (headerJustifyEnd).
   amount: {
     textAlign: "right",
     justifyContent: "flex-end",
     fontVariantNumeric: "tabular-nums",
     minWidth: "120px",
-    width: "120px",
   },
-  // Validated/Funded body cells — right-aligned to match their headers
-  // (headerJustifyEnd below). Applied to both the TableCell and the <span>
-  // readOnlyAmount renders inside it.
   amountBodyRight: {
     textAlign: "right",
     justifyContent: "flex-end",
     fontVariantNumeric: "tabular-nums",
-    minWidth: "120px",
-    width: "120px",
+    whiteSpace: "nowrap",
   },
-  // TableHeaderCell's own text sits in an inner flex "button" slot (a div,
-  // not the <th> itself), so aligning it needs justifyContent on that slot
-  // — text-align/justifyContent on the <th> root has no effect since a
-  // table-cell isn't a flex container. Applied via the `button` slot prop,
-  // not `className`, on every right-aligned numeric header (Quantity,
-  // Requested, Validated, Funded).
+  // TableHeaderCell's text sits in an inner flex "button" slot, so alignment
+  // goes on that slot via the `button` prop, not on the <th>.
   headerJustifyEnd: {
     justifyContent: "end",
-  },
-  // Pinned to the first column cell's top-right corner (firstCol above sets
-  // position: relative) instead of sitting inline next to the item name —
-  // inline "Saving…"/"Saved"/"Error" text used to change that cell's content
-  // width as it appeared/disappeared, jittering the whole column's layout.
-  statusBadge: {
-    position: "absolute",
-    top: "4px",
-    right: "4px",
   },
   empty: {
     ...shorthands.padding("16px"),
@@ -500,12 +393,20 @@ const useStyles = makeStyles({
   },
   toolbarButtons: {
     display: "flex",
+    alignItems: "center",
     columnGap: "8px",
   },
+  // Action buttons (§5): subtle, borderless, icon + 14px label. Disabled =
+  // desaturated, never recolored — filter also greys the SVG's own fill.
   toolbarButtonText: {
     fontSize: "14px",
-    color: "black",
-    padding: "10px 14px",
+    color: tokens.colorNeutralForeground1,
+    ...shorthands.padding("10px", "14px"),
+    ":disabled": {
+      opacity: 0.7,
+      filter: "saturate(0)",
+      cursor: "not-allowed",
+    },
   },
   dialogSearch: {
     width: "100%",
@@ -515,6 +416,25 @@ const useStyles = makeStyles({
     maxHeight: "360px",
     overflowY: "auto",
   },
+  // Compact table (§7): dialogs and pick-lists only. Same header style as
+  // the main grid, tighter rows.
+  compactTable: {
+    "& th": {
+      height: "34px",
+      ...shorthands.padding("0", "12px"),
+      backgroundColor: CB.tableHead,
+      color: tokens.colorNeutralForeground2,
+      fontSize: "11px",
+      fontWeight: 700,
+      textTransform: "uppercase",
+      letterSpacing: "0.05em",
+    },
+    "& td": {
+      height: "44px",
+      ...shorthands.padding("8px", "12px"),
+    },
+    "& tbody tr": { borderBottomColor: CB.rowLine },
+  },
   candidateMeta: {
     display: "block",
     fontSize: tokens.fontSizeBase200,
@@ -523,11 +443,8 @@ const useStyles = makeStyles({
   dialogError: {
     color: tokens.colorPaletteRedForeground1,
   },
-  // Rendered as its own block row between DialogContent and DialogActions —
-  // it used to be the first child inside DialogActions (pushed left via
-  // marginRight: auto), but with 2-3 buttons sharing that flex row there
-  // wasn't enough space left for "Adding: N Items" to read comfortably,
-  // especially on the LIN/Country step (Back + Cancel + Add Items).
+  // Its own block row between DialogContent and DialogActions, so the
+  // count has room next to 2–3 footer buttons.
   addingCountLabel: {
     display: "block",
     color: "#333",
@@ -545,21 +462,26 @@ const useStyles = makeStyles({
   },
   candidateTdcCell: {
     width: "56px",
-    ...shorthands.padding(0, 0, 0, "16px"),
     color: tokens.colorNeutralForeground3,
     whiteSpace: "nowrap",
   },
+  // Actions column (§7): last, right-aligned, labelled "Actions".
   actionCol: {
-    maxWidth: "70px",
-    paddingLeft: "20px"
+    width: "1%",
+    whiteSpace: "nowrap",
+    textAlign: "right",
+    paddingRight: "12px",
+  },
+  actionButton: {
+    minWidth: "30px",
+    height: "30px",
   },
   toolbarLeft: {
     display: "flex",
     alignItems: "center",
     columnGap: "10px",
   },
-  // Red dot + "Selected (N)" — ties visually to Delete Selected (also red)
-  // since selection here exists to feed that action.
+  // "● Selected (N)" — ties visually to Delete Selected, which it feeds.
   selectedIndicator: {
     display: "flex",
     alignItems: "center",
@@ -577,41 +499,42 @@ const useStyles = makeStyles({
   rowSearchInput: {
     minWidth: "180px",
     width: "400px",
-    backgroundColor: "#f7f7f7",
+    maxWidth: "100%",
+    height: "35px",
+    minHeight: "35px",
+    backgroundColor: CB.inputFill,
     border: "2px solid transparent",
     ":hover": {
       backgroundColor: "#fff",
-      border: "2px solid #b2c3f4 !important",
-    }
+      border: `2px solid ${CB.inputHover} !important`,
+    },
   },
-  // Stays red at all times — disabled state is conveyed with opacity +
-  // saturate(0) below instead of swapping the text color. filter (unlike
-  // color) applies to the whole rendered button including the icon slot,
-  // so it also desaturates DeleteIcon's hardcoded red fill, not just text.
+  // Stays red at all times — disabled is conveyed with opacity + saturate(0)
+  // instead of swapping the text color, which also desaturates DeleteIcon.
   deleteSelectedButtonText: {
     fontSize: "14px",
-    padding: "10px 14px",
-    color: "#9f151e",
+    ...shorthands.padding("10px", "14px"),
+    color: CB.danger,
     ":disabled": {
       opacity: 0.7,
       filter: "saturate(0)",
+      cursor: "not-allowed",
     },
   },
   selectCol: {
-    width: "36px",
-    minWidth: "36px",
+    width: "44px",
+    minWidth: "44px",
+    paddingLeft: "12px !important",
+    paddingRight: "4px !important",
     textAlign: "center",
   },
   // Applied via TableHeaderCell's `button` slot — that's the element that
-  // actually receives the click, since text-align/justify on the <th> root
-  // has no effect (see headerJustifyEnd above for the same reasoning).
+  // receives the click. The double chevron (SortIcon) is always visible.
   sortableHeaderButton: {
     cursor: "pointer",
     userSelect: "none",
-  },
-  sortIndicator: {
-    fontSize: "10px",
-    marginLeft: "2px",
+    textTransform: "uppercase",
+    ":hover": { color: tokens.colorNeutralForeground1 },
   },
 });
 
@@ -630,48 +553,10 @@ function toNumber(value: unknown): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
+/** "$1,250.50" — read-only amounts and totals (Design Documentation.md §6.2). */
 function formatCurrency(value: number): string {
-  return value.toLocaleString(undefined, {
-    style: "currency",
-    currency: "USD",
-    maximumFractionDigits: 2,
-  });
+  return formatMoney(value);
 }
-
-const DeleteIcon: React.FC = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" width="20" height="20" aria-hidden="true">
-    <path
-      fill="#9f151e"
-      d="M232.7 69.9C237.1 56.8 249.3 48 263.1 48L377 48C390.8 48 403 56.8 407.4 69.9L416 96L512 96C529.7 96 544 110.3 544 128C544 145.7 529.7 160 512 160L128 160C110.3 160 96 145.7 96 128C96 110.3 110.3 96 128 96L224 96L232.7 69.9zM128 208L512 208L512 512C512 547.3 483.3 576 448 576L192 576C156.7 576 128 547.3 128 512L128 208zM216 272C202.7 272 192 282.7 192 296L192 488C192 501.3 202.7 512 216 512C229.3 512 240 501.3 240 488L240 296C240 282.7 229.3 272 216 272zM320 272C306.7 272 296 282.7 296 296L296 488C296 501.3 306.7 512 320 512C333.3 512 344 501.3 344 488L344 296C344 282.7 333.3 272 320 272zM424 272C410.7 272 400 282.7 400 296L400 488C400 501.3 410.7 512 424 512C437.3 512 448 501.3 448 488L448 296C448 282.7 437.3 272 424 272z"
-    />
-  </svg>
-);
-
-const RefreshIcon: React.FC = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" height="18" width="18" viewBox="0 0 640 640" aria-hidden="true">
-    <path
-      fill="rgb(114, 114, 114)"
-      d="M320 128C263.2 128 212.1 152.7 176.9 192L224 192C241.7 192 256 206.3 256 224C256 241.7 241.7 256 224 256L96 256C78.3 256 64 241.7 64 224L64 96C64 78.3 78.3 64 96 64C113.7 64 128 78.3 128 96L128 150.7C174.9 97.6 243.5 64 320 64C461.4 64 576 178.6 576 320C576 461.4 461.4 576 320 576C233 576 156.1 532.6 109.9 466.3C99.8 451.8 103.3 431.9 117.8 421.7C132.3 411.5 152.2 415.1 162.4 429.6C197.2 479.4 254.8 511.9 320 511.9C426 511.9 512 425.9 512 319.9C512 213.9 426 128 320 128z"
-    />
-  </svg>
-);
-
-const AddIcon: React.FC = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" height="20" width="20" viewBox="0 0 640 640" aria-hidden="true">
-    <path
-      fill="rgb(22, 202, 146)"
-      d="M352 128C352 110.3 337.7 96 320 96C302.3 96 288 110.3 288 128L288 288L128 288C110.3 288 96 302.3 96 320C96 337.7 110.3 352 128 352L288 352L288 512C288 529.7 302.3 544 320 544C337.7 544 352 529.7 352 512L352 352L512 352C529.7 352 544 337.7 544 320C544 302.3 529.7 288 512 288L352 288L352 128z"
-    />
-  </svg>
-);
-
-const SearchIcon: React.FC = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" height="20" width="20">
-    <path 
-      fill="rgb(152, 152, 152)"
-      d="M480 272C480 317.9 465.1 360.3 440 394.7L566.6 521.4C579.1 533.9 579.1 554.2 566.6 566.7C554.1 579.2 533.8 579.2 521.3 566.7L394.7 440C360.3 465.1 317.9 480 272 480C157.1 480 64 386.9 64 272C64 157.1 157.1 64 272 64C386.9 64 480 157.1 480 272zM272 416C351.5 416 416 351.5 416 272C416 192.5 351.5 128 272 128C192.5 128 128 192.5 128 272C128 351.5 192.5 416 272 416z"/>
-  </svg>
-);
 
 /** Combobox with a height-capped, scrollable option list — used for
  * LIN/Country pickers whose reference lists run to 100+ entries. Typing
@@ -762,6 +647,9 @@ export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
 ) => {
   const { dataset, webAPI, navigation, isDisabled } = props;
   const styles = useStyles();
+  const choice = useChoiceStyles();
+  // Where NoteCell modals mount: inside the FluentProvider, so they inherit its theme.
+  const [portalRoot, setPortalRoot] = React.useState<HTMLElement | null>(null);
   const prioritizationId = props.prioritizationId
     ? props.prioritizationId.replace(/[{}]/g, "").toLowerCase()
     : null;
@@ -1231,17 +1119,6 @@ export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
     return value ?? 0;
   };
 
-  const onCellChange = (
-    recordId: string,
-    field: EditableField,
-    value: string
-  ): void => {
-    setEdits((prev) => ({
-      ...prev,
-      [recordId]: { ...prev[recordId], [field]: value },
-    }));
-  };
-
   /** Writes an update payload for one record, driving its save indicator. */
   const persist = (recordId: string, payload: Record<string, unknown>): void => {
     setSaveState((prev) => ({ ...prev, [recordId]: "saving" }));
@@ -1249,6 +1126,8 @@ export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
     webAPI
       .updateRecord(ITEMIZED_DETAILS_ENTITY, recordId, payload)
       .then(() => {
+        // "Saved" badge clears itself after 3s (§8); "Error" stays until the
+        // row's next save succeeds (this same branch replaces it).
         setSaveState((prev) => ({ ...prev, [recordId]: "saved" }));
         window.setTimeout(() => {
           setSaveState((prev) => {
@@ -1256,7 +1135,7 @@ export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
             if (next[recordId] === "saved") delete next[recordId];
             return next;
           });
-        }, 2500);
+        }, 3000);
         if (touchesAmount) fetchAllTotals();
         return;
       })
@@ -1265,43 +1144,40 @@ export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
       });
   };
 
-  /** Persists a single cell via the Web API on blur, if it actually changed. */
-  const commitCell = (row: GridRow, field: EditableField): void => {
-    const pending = edits[row.recordId]?.[field];
-    if (pending === undefined) return;
-
-    const isNumeric = (NUMERIC_FIELDS as string[]).includes(field);
-    const newValue: number | string | null = isNumeric
-      ? toNumber(pending)
-      : pending.trim() === ""
-        ? null
-        : pending;
-
-    // Requested Amount reads as a dollar figure elsewhere in the grid — once
-    // it parses as a real number, normalize the field to a fixed 2-decimal
-    // string so it always shows as a proper decimal amount, not whatever
-    // precision (or lack of one) the user happened to type.
-    if (field === "requestedAmount" && typeof newValue === "number") {
-      const formatted = newValue.toFixed(2);
-      if (formatted !== pending) {
-        setEdits((prev) => ({
-          ...prev,
-          [row.recordId]: { ...prev[row.recordId], [field]: formatted },
-        }));
-      }
-    }
-
-    const original = row[field];
-    const originalNorm =
-      original === null || original === undefined || original === ""
-        ? null
-        : original;
-    if (newValue === originalNorm) return; // no real change
-
+  /** Saves a comment from its modal ("" clears it) — only if it differs from what's shown. */
+  const saveComment = (row: GridRow, field: TextField, text: string): void => {
+    if (text === displayValue(row, field)) return; // no real change
     const logicalName = aliasToLogical[field];
     if (!logicalName) return;
+    // Keeps the cell showing the new text while the save runs / until the grid refreshes.
+    setEdits((prev) => ({
+      ...prev,
+      [row.recordId]: { ...prev[row.recordId], [field]: text },
+    }));
+    persist(row.recordId, { [logicalName]: text.trim() === "" ? null : text });
+  };
 
-    persist(row.recordId, { [logicalName]: newValue });
+  /** Effective number for a Money/Quantity box (pending edit wins), or null when empty. */
+  const numericValue = (row: GridRow, field: NumericField): number | null => {
+    const pending = edits[row.recordId]?.[field];
+    return pending !== undefined ? toNumber(pending) : row[field];
+  };
+
+  /**
+   * Commits a Money/Quantity box (§6.2). The box has already parsed and
+   * validated the text and only calls this when the number changed; the
+   * pending edit keeps totals and the display in step while the save runs.
+   */
+  const commitNumber = (row: GridRow, field: NumericField, value: number | null): void => {
+    setEdits((prev) => ({
+      ...prev,
+      [row.recordId]: { ...prev[row.recordId], [field]: value === null ? "" : String(value) },
+    }));
+    const original = row[field] ?? null;
+    if (value === original) return; // back to the stored value: nothing to save
+    const logicalName = aliasToLogical[field];
+    if (!logicalName) return;
+    persist(row.recordId, { [logicalName]: value });
   };
 
   /** Persists a Fund Center pick immediately ("" clears back to state level). */
@@ -1753,76 +1629,55 @@ export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
 
   const displayTotals = allTotals ?? totals;
 
-  const renderStatus = (recordId: string): React.ReactNode => {
-    const state = saveState[recordId];
-    if (!state) return null;
-    if (state === "saving")
-      return <Spinner size="extra-tiny" className={styles.statusBadge} />;
-    if (state === "saved")
+  /** Row action result for the inline badge after the item name (§8). */
+  const actionResult = (recordId: string) => saveState[recordId];
+
+  /**
+   * Quantity (#) / Money ($) box (§6.2). When the control is locked the value
+   * renders as plain text instead of a disabled box (§6 "Form locked").
+   */
+  const numericCell = (row: GridRow, field: NumericField): React.ReactNode => {
+    const value = numericValue(row, field);
+    const isQty = field === "quantity";
+    if (isDisabled) {
       return (
-        <Badge
-          className={styles.statusBadge}
-          appearance="filled"
-          color="success"
-          size="small"
-        >
-          Saved
-        </Badge>
+        <span className={styles.amountBodyRight}>
+          {value === null ? "" : isQty ? value.toLocaleString("en-US") : formatCurrency(value)}
+        </span>
       );
-    return (
-      <Tooltip content="Save failed — re-check the value" relationship="label">
-        <Badge
-          className={styles.statusBadge}
-          appearance="filled"
-          color="danger"
-          size="small"
-        >
-          Error
-        </Badge>
-      </Tooltip>
+    }
+    const common = {
+      value,
+      onCommit: (v: number | null) => commitNumber(row, field, v),
+      onInvalid: () => setSaveState((prev) => ({ ...prev, [row.recordId]: "error" })),
+    };
+    return isQty ? (
+      <QuantityInput {...common} className={styles.qtyBox} aria-label="Quantity" />
+    ) : (
+      <MoneyInput {...common} className={styles.moneyBox} aria-label="Requested amount" />
     );
   };
 
-  const numericCell = (
-    row: GridRow,
-    field: NumericField,
-    className: string
-  ): React.ReactNode => (
-    <Input
-      type="number"
-      appearance="filled-lighter"
-      className={className}
-      disabled={isDisabled}
-      value={displayValue(row, field)}
-      onChange={(_e, data) => onCellChange(row.recordId, field, data.value)}
-      onBlur={() => commitCell(row, field)}
-      input={{ style: { textAlign: "right", fontVariantNumeric: "tabular-nums" } }}
-    />
-  );
+  // Comments can run to a paragraph: a capped read-only preview that opens a
+  // modal (NoteCell). State Comment is editable there unless the form is locked.
+  /** Modal title: "State Comment for State Vehicles (TDC: 101)". */
+  const noteTitle = (label: string, row: GridRow): string => {
+    const tdc = row.requirementItemId ? contexts[row.requirementItemId]?.tdc : "";
+    return `${label} for ${itemDisplayName(row)}${tdc ? ` (${tdc})` : ""}`;
+  };
 
   const commentCell = (row: GridRow, field: TextField): React.ReactNode => (
-    <Textarea
-      appearance="filled-lighter"
-      className={styles.commentInput}
-      disabled={isDisabled}
-      resize="vertical"
+    <NoteCell
+      title={noteTitle("State Comment", row)}
+      editable={!isDisabled}
       value={displayValue(row, field)}
-      onChange={(_e, data) => onCellChange(row.recordId, field, data.value)}
-      onBlur={() => commitCell(row, field)}
+      onSave={(text) => saveComment(row, field, text)}
     />
   );
 
-  // NPM Comment can run to a paragraph — a read-only Textarea instead of
-  // plain text gives it the same wrap/scroll box as State Comment.
+  // NPM Comment is owned by the NPM on the Requirement Funding side — always read-only here.
   const npmCommentCell = (row: GridRow): React.ReactNode => (
-    <Textarea
-      appearance="filled-lighter"
-      className={styles.npmCommentInput}
-      readOnly
-      tabIndex={-1}
-      resize="vertical"
-      value={row.npmComment}
-    />
+    <NoteCell title={noteTitle("NPM Comment", row)} editable={false} value={row.npmComment} />
   );
 
   const fundCenterCell = (row: GridRow): React.ReactNode => {
@@ -1916,27 +1771,39 @@ export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
   );
 
   /** Clickable header cell for one of the sortable columns (Item, TDC, Fund
-   * Center, Country) — shows a ▲/▼ arrow only when it's the active sort. */
+   * Center, Country). The double chevron is always visible; the active
+   * direction darkens and aria-sort tells assistive tech (§7). */
   const renderSortableHeader = (
     label: string,
     field: SortField,
     cellClassName?: string
-  ): React.ReactNode => (
-    <TableHeaderCell
-      className={cellClassName}
-      button={{
-        className: styles.sortableHeaderButton,
-        onClick: () => toggleSort(field),
-      }}
-    >
-      {label}
-      {sortField === field && (
-        <span className={styles.sortIndicator} aria-hidden="true">
-          {sortDirection === "asc" ? "▲" : "▼"}
-        </span>
-      )}
-    </TableHeaderCell>
-  );
+  ): React.ReactNode => {
+    const active = sortField === field;
+    return (
+      <TableHeaderCell
+        className={cellClassName}
+        aria-sort={active ? (sortDirection === "asc" ? "ascending" : "descending") : "none"}
+        button={{
+          className: styles.sortableHeaderButton,
+          onClick: () => toggleSort(field),
+        }}
+      >
+        {label}
+        <SortIcon direction={active ? sortDirection : null} />
+      </TableHeaderCell>
+    );
+  };
+
+  /** "101 — CONUS": TDC code plus its long name once that has loaded. */
+  const tdcText = (ctx: RequirementItemContext): string =>
+    ctx.tdcLongName ? `${ctx.tdc} — ${ctx.tdcLongName}` : ctx.tdc;
+
+  /** Attribute chips under the item name (§8): "Label: Value", empty values skipped. */
+  const rowChips = (ctx: RequirementItemContext | undefined): ChipData[] =>
+    [
+      { type: "category", label: "Category", value: ctx?.category ?? "" },
+      { type: "qtyType", label: "Qty Type", value: ctx?.quantityType ?? "" },
+    ].filter((c) => c.value);
 
   const hasNextPage = !!dataset.paging && dataset.paging.hasNextPage;
 
@@ -1950,7 +1817,15 @@ export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
     (!isDisabled ? 2 : 0); // select col + action col
 
   return (
-    <FluentProvider theme={webLightTheme}>
+    // The form's PCF container is a flexbox, so this provider is a flex item
+    // whose default min-width:auto lets it grow to the table's full width —
+    // the scroll container below then never overflows. minWidth: 0 lets it
+    // shrink to the container, so the table scrolls inside scrollContainer.
+    <FluentProvider
+      theme={checkbookTheme}
+      style={{ minWidth: 0, width: "100%", maxWidth: "100%" }}
+    >
+      <PortalRootContext.Provider value={portalRoot}>
       <div className={styles.root}>
         <div className={styles.toolbar}>
           <div className={styles.toolbarLeft}>
@@ -1974,20 +1849,6 @@ export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
               value={rowSearch}
               onChange={(_e, data) => setRowSearch(data.value)}
             />
-            <div className={styles.legend}>
-              <span className={styles.legendItem}>
-                <span
-                  className={`${styles.legendPip} ${styles.legendPipCategory}`}
-                />
-                Category
-              </span>
-              <span className={styles.legendItem}>
-                <span
-                  className={`${styles.legendPip} ${styles.legendPipQtyType}`}
-                />
-                Qty Type
-              </span>
-            </div>
             {!isDisabled && (
               <Button
                 size="small"
@@ -2051,6 +1912,8 @@ export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
                   {!isDisabled && (
                     <TableHeaderCell className={styles.selectCol}>
                       <Checkbox
+                        className={choice.checkboxBare}
+                        indicator={{ className: choice.checkboxBox }}
                         checked={
                           allVisibleSelected ? true : someVisibleSelected ? "mixed" : false
                         }
@@ -2094,7 +1957,12 @@ export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
                   <TableHeaderCell>NPM Comment</TableHeaderCell>
                   <TableHeaderCell>State Comment</TableHeaderCell>
                   {!isDisabled && (
-                    <TableHeaderCell className={styles.actionCol} />
+                    <TableHeaderCell
+                      className={styles.actionCol}
+                      button={{ className: styles.headerJustifyEnd }}
+                    >
+                      Actions
+                    </TableHeaderCell>
                   )}
                 </TableRow>
               </TableHeader>
@@ -2103,12 +1971,19 @@ export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
                   const ctx = row.requirementItemId
                     ? contexts[row.requirementItemId]
                     : undefined;
+                  const isSelected = selectedRows.has(row.recordId);
                   return (
-                    <TableRow key={row.recordId}>
+                    <TableRow
+                      key={row.recordId}
+                      aria-selected={isDisabled ? undefined : isSelected}
+                      className={isSelected ? styles.rowSelected : undefined}
+                    >
                       {!isDisabled && (
                         <TableCell className={styles.selectCol}>
                           <Checkbox
-                            checked={selectedRows.has(row.recordId)}
+                            className={choice.checkboxBare}
+                            indicator={{ className: choice.checkboxBox }}
+                            checked={isSelected}
                             onChange={(_e, data) =>
                               toggleRowSelected(row.recordId, data.checked === true)
                             }
@@ -2117,45 +1992,29 @@ export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
                         </TableCell>
                       )}
                       <TableCell className={styles.firstCol}>
-                        {renderStatus(row.recordId)}
-                        <div className={styles.firstColName}>
-                          <span>{itemDisplayName(row)}</span>
-                        </div>
-                        <div className={styles.metaChipRow}>
-                          {ctx?.category && (
-                            <Badge appearance="tint" color="success" size="small">
-                              {ctx.category}
-                            </Badge>
-                          )}
-                          {ctx?.quantityType && (
-                            // "informative" renders as neutral gray in
-                            // Fluent's theme, not blue — "brand" is this
-                            // theme's actual blue, matching legendPipQtyType.
-                            <Badge appearance="tint" color="brand" size="small">
-                              {ctx.quantityType}
-                            </Badge>
-                          )}
-                        </div>
+                        <ItemName name={itemDisplayName(row)} result={actionResult(row.recordId)} />
+                        <ChipList chips={rowChips(ctx)} />
                       </TableCell>
-                      <TableCell className={styles.contextCell}>
-                        {ctx?.tdcId ? (
-                          <Link
-                            as="button"
-                            className={styles.tdcLink}
-                            onClick={() => {
-                              void navigation.openForm({
-                                entityName: TDC_ENTITY,
-                                entityId: ctx.tdcId!,
-                                openInNewWindow: false,
-                              });
-                            }}
-                          >
-                            {ctx.tdc}
-                            {ctx.tdcLongName ? ` — ${ctx.tdcLongName}` : ""}
-                          </Link>
-                        ) : (
-                          ctx?.tdc ?? ""
-                        )}
+                      <TableCell className={styles.tdcCol}>
+                        {ctx?.tdc ? (
+                          ctx.tdcId ? (
+                            <HyperlinkLabel
+                              title={tdcText(ctx)}
+                              onClick={() => {
+                                // Always a new tab, so the user keeps their place in this grid.
+                                void navigation.openForm({
+                                  entityName: TDC_ENTITY,
+                                  entityId: ctx.tdcId!,
+                                  openInNewWindow: true,
+                                });
+                              }}
+                            >
+                              {tdcText(ctx)}
+                            </HyperlinkLabel>
+                          ) : (
+                            <TagLabel title={tdcText(ctx)}>{tdcText(ctx)}</TagLabel>
+                          )
+                        ) : null}
                       </TableCell>
                       <TableCell className={styles.fcCol}>{fundCenterCell(row)}</TableCell>
                       {prioFlags?.linRequired && (
@@ -2165,10 +2024,10 @@ export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
                         <TableCell>{countryCell(row)}</TableCell>
                       )}
                       <TableCell className={styles.qtyCol}>
-                        {numericCell(row, "quantity", styles.qtyInput)}
+                        {numericCell(row, "quantity")}
                       </TableCell>
                       <TableCell className={styles.amount}>
-                        {numericCell(row, "requestedAmount", styles.numberInput)}
+                        {numericCell(row, "requestedAmount")}
                       </TableCell>
                       <TableCell className={styles.amountBodyRight}>
                         {readOnlyAmount(row, "validatedAmount")}
@@ -2187,7 +2046,8 @@ export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
                             <Button
                               size="small"
                               appearance="subtle"
-                              icon={<DeleteIcon />}
+                              className={styles.actionButton}
+                              icon={<DeleteIcon size={16} />}
                               aria-label="Delete Itemized Detail"
                               onClick={() => setPendingRemove(row)}
                             />
@@ -2273,7 +2133,7 @@ export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
                           </Text>
                         ) : (
                           <div className={styles.addListScroll}>
-                            <Table size="small" aria-label="Requirement Details">
+                            <Table size="small" aria-label="Requirement Details" className={styles.compactTable}>
                               <TableHeader>
                                 <TableRow>
                                   <TableHeaderCell>Item Name</TableHeaderCell>
@@ -2287,6 +2147,8 @@ export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
                                   <TableRow key={c.id}>
                                     <TableCell>
                                       <Checkbox
+                                        className={choice.checkbox}
+                                        indicator={{ className: choice.checkboxBox }}
                                         checked={selected.has(c.id)}
                                         onChange={(_e, data) =>
                                           toggleSelected(c.id, data.checked === true)
@@ -2372,7 +2234,7 @@ export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
                             </Text>
                           ) : (
                             <div className={styles.addListScroll}>
-                              <Table size="small" aria-label="LIN">
+                              <Table size="small" aria-label="LIN" className={styles.compactTable}>
                                 <TableHeader>
                                   <TableRow>
                                     <TableHeaderCell>LIN</TableHeaderCell>
@@ -2383,6 +2245,8 @@ export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
                                     <TableRow key={o.id}>
                                       <TableCell>
                                         <Checkbox
+                                          className={choice.checkbox}
+                                          indicator={{ className: choice.checkboxBox }}
                                           checked={selectedSecondary.has(o.id)}
                                           onChange={(_e, data) =>
                                             toggleSecondary(o.id, data.checked === true)
@@ -2406,7 +2270,7 @@ export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
                           </Text>
                         ) : (
                           <div className={styles.addListScroll}>
-                            <Table size="small" aria-label="Country">
+                            <Table size="small" aria-label="Country" className={styles.compactTable}>
                               <TableHeader>
                                 <TableRow>
                                   <TableHeaderCell>Partner</TableHeaderCell>
@@ -2420,6 +2284,8 @@ export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
                                   <TableRow key={o.id}>
                                     <TableCell>
                                       <Checkbox
+                                        className={choice.checkbox}
+                                        indicator={{ className: choice.checkboxBox }}
                                         checked={selectedSecondary.has(o.id)}
                                         onChange={(_e, data) =>
                                           toggleSecondary(o.id, data.checked === true)
@@ -2563,7 +2429,9 @@ export const ItemizedDetailsGridApp: React.FC<ItemizedDetailsGridProps> = (
             </DialogBody>
           </DialogSurface>
         </Dialog>
+        <div ref={setPortalRoot} />
       </div>
+      </PortalRootContext.Provider>
     </FluentProvider>
   );
 };

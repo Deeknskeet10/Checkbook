@@ -1,11 +1,10 @@
 import * as React from "react";
 import {
   FluentProvider,
-  webLightTheme,
   makeStyles,
+  mergeClasses,
   shorthands,
   tokens,
-  Badge,
   Button,
   Combobox,
   Dialog,
@@ -15,16 +14,40 @@ import {
   DialogSurface,
   DialogTitle,
   DialogTrigger,
-  Input,
   MessageBar,
+  MessageBarActions,
   MessageBarBody,
   Option,
   Spinner,
   Text,
-  Textarea,
   Tooltip,
   Link,
 } from "@fluentui/react-components";
+import {
+  CB,
+  STATUS,
+  checkbookTheme,
+  useButtonStyles,
+  AddIcon,
+  AllocateIcon,
+  ChevronIcon,
+  CloseIcon,
+  DeleteIcon,
+  EditIcon,
+  RefreshIcon,
+  SaveIcon,
+  UndoIcon,
+  MoneyInput,
+  ChipList,
+  ChipData,
+  ItemName,
+  ActionResult,
+  StatusLabel,
+  StatusKind,
+  TagLabel,
+  NoteCell,
+  PortalRootContext,
+} from "./designSystem";
 type DataSet = ComponentFramework.PropertyTypes.DataSet;
 type WebApi = ComponentFramework.WebApi;
 type Navigation = ComponentFramework.Navigation;
@@ -155,254 +178,377 @@ type JunctionField = "fundedAmount" | "validatedAmount";
 // see a tiny default page before scrolling — users can still click Load more.
 const PAGE_SIZE = 100;
 
+// Design Documentation.md §5 (buttons), §7 (spacious grid / compact variant),
+// §8 (tags), §9 (toolbar & dialogs). Header/cell rules use explicit classes
+// (not "& th") so the nested Itemized Details table keeps its compact spec.
+const headBand = {
+  backgroundColor: CB.tableHead,
+  color: tokens.colorNeutralForeground2,
+  fontSize: "11px",
+  fontWeight: 700,
+  textTransform: "uppercase",
+  letterSpacing: "0.05em",
+  whiteSpace: "nowrap",
+  textAlign: "left",
+  borderBottomStyle: "none",
+} as const;
+
+const fillInput = {
+  backgroundColor: CB.inputFill,
+  border: "1px solid transparent",
+  ":hover": {
+    backgroundColor: "#fff",
+    ...shorthands.borderColor(`${CB.inputHover} !important`),
+  },
+} as const;
+
 const useStyles = makeStyles({
   root: {
-    ...shorthands.padding("12px"),
+    ...shorthands.padding("8px"),
+    boxSizing: "border-box",
+    width: "100%",
+    maxWidth: "100%",
+    minWidth: 0,
     fontFamily: tokens.fontFamilyBase,
-    fontSize: tokens.fontSizeBase200,
+    fontSize: tokens.fontSizeBase300,
+    color: tokens.colorNeutralForeground1,
     backgroundColor: tokens.colorNeutralBackground1,
   },
+
+  // ── Toolbar (§9): Title (count) · FY ‖ Edit / Cancel · Save · Refresh ──
   toolbar: {
     display: "flex",
     alignItems: "center",
     flexWrap: "wrap",
     columnGap: "12px",
     rowGap: "8px",
-    marginBottom: "10px",
+    ...shorthands.padding("4px", "2px", "8px", "2px"),
   },
   toolbarLeft: {
     display: "flex",
     alignItems: "center",
-    columnGap: "12px",
+    columnGap: "16px",
+    rowGap: "8px",
     flexWrap: "wrap",
     flexGrow: 1,
+  },
+  title: {
+    fontSize: tokens.fontSizeBase400,
+    fontWeight: tokens.fontWeightSemibold,
+  },
+  count: {
+    color: tokens.colorNeutralForeground3,
+    fontWeight: tokens.fontWeightRegular,
+    marginLeft: "6px",
+  },
+  toolbarButtons: {
+    display: "flex",
+    alignItems: "center",
+    columnGap: "4px",
   },
   fyFilter: {
     display: "flex",
     alignItems: "center",
-    columnGap: "6px",
+    columnGap: "8px",
+    color: tokens.colorNeutralForeground3,
   },
+  combo: {
+    ...fillInput,
+    minWidth: "140px",
+    "::after": { display: "none" },
+  },
+
+  // ── TDP guardrail cards ──
   statStrip: {
     display: "flex",
     flexWrap: "wrap",
-    columnGap: "8px",
-    rowGap: "8px",
-    marginBottom: "10px",
+    columnGap: "12px",
+    rowGap: "12px",
+    marginBottom: "12px",
   },
   stat: {
     flexGrow: 1,
-    minWidth: "140px",
-    ...shorthands.padding("8px", "12px"),
-    border: `1px solid ${tokens.colorNeutralStroke2}`,
-    borderRadius: tokens.borderRadiusMedium,
-    backgroundColor: tokens.colorNeutralBackground2,
+    flexBasis: 0,
+    minWidth: "160px",
+    boxSizing: "border-box",
+    ...shorthands.padding("12px", "16px"),
+    borderRadius: "8px",
+    backgroundColor: CB.tableHead,
   },
   statLabel: {
     color: tokens.colorNeutralForeground3,
-    fontSize: tokens.fontSizeBase100,
-    textTransform: "uppercase",
-    letterSpacing: "0.5px",
+    fontSize: tokens.fontSizeBase200,
+    marginBottom: "4px",
   },
   statValue: {
     fontWeight: tokens.fontWeightSemibold,
-    fontSize: tokens.fontSizeBase400,
+    fontSize: "20px",
+    lineHeight: "28px",
     fontVariantNumeric: "tabular-nums",
   },
+  // Tinted like the success / danger status labels (§8).
   statGood: {
-    backgroundColor: tokens.colorPaletteGreenBackground2,
-    ...shorthands.borderColor(tokens.colorPaletteGreenBorder1),
+    backgroundColor: STATUS.success.bg,
+    "& > div": { color: STATUS.success.fg },
   },
   statBad: {
-    backgroundColor: tokens.colorPaletteRedBackground2,
-    ...shorthands.borderColor(tokens.colorPaletteRedBorder1),
+    backgroundColor: STATUS.danger.bg,
+    "& > div": { color: STATUS.danger.fg },
   },
-  tableScroll: {
-    border: `1px solid ${tokens.colorNeutralStroke2}`,
-    borderRadius: tokens.borderRadiusMedium,
-    maxHeight: "min(75vh, 900px)",
-    overflowY: "auto",
+  banner: {
+    marginBottom: "12px",
+  },
+
+  // ── Main grid (§7). Cell side padding is 8px, rows size to content (20px
+  // minimum) — the same compact spec as the Itemized Details grid. ──
+  scrollContainer: {
+    width: "100%",
+    maxWidth: "100%",
+    minWidth: 0,
+    maxHeight: "560px",
     overflowX: "auto",
+    overflowY: "auto",
   },
   table: {
     width: "100%",
-    minWidth: "820px",
+    minWidth: "980px",
     borderCollapse: "separate",
     borderSpacing: 0,
-    fontSize: tokens.fontSizeBase200,
   },
-  stickyTh: {
-    textAlign: "left",
-    ...shorthands.padding("8px", "12px"),
-    fontWeight: tokens.fontWeightSemibold,
-    fontSize: tokens.fontSizeBase100,
+  th: {
+    ...headBand,
+    height: "40px",
+    ...shorthands.padding("0", "8px"),
     position: "sticky",
     top: 0,
     zIndex: 2,
-    backgroundColor: tokens.colorNeutralBackground3,
-    borderBottom: `1px solid ${tokens.colorNeutralStroke2}`,
+    // Plain header text has none of the inset the body's pills / buttons /
+    // expander bring, so it read as flush. First column lines up with the
+    // Prioritization name (8px cell + 30px expander slot + 6px gap); last
+    // lines up with the Allocate button's text (8px cell + 10px button padding).
+    ":first-child": {
+      borderTopLeftRadius: "8px",
+      borderBottomLeftRadius: "8px",
+      paddingLeft: "44px",
+    },
+    ":last-child": {
+      borderTopRightRadius: "8px",
+      borderBottomRightRadius: "8px",
+      paddingRight: "18px",
+    },
   },
-  stickyThNum: {
-    textAlign: "right",
-  },
-  td: {
-    ...shorthands.padding("8px", "12px"),
-    verticalAlign: "middle",
-    borderTop: `1px solid ${tokens.colorNeutralStroke2}`,
-  },
-  tdNum: {
+  num: {
     textAlign: "right",
     fontVariantNumeric: "tabular-nums",
+    whiteSpace: "nowrap",
   },
-  tdRedNum: {
+  row: {
+    ":hover": { backgroundColor: CB.rowHover },
+  },
+  rowOpen: {
+    backgroundColor: `${CB.rowSelected} !important`,
+  },
+  td: {
+    // Minimum only — a row grows to its tallest cell (32px inputs, name + chips).
+    height: "20px",
+    ...shorthands.padding("6px", "8px"),
+    verticalAlign: "middle",
+    borderBottom: `1px solid ${CB.rowLine}`,
+    whiteSpace: "nowrap",
+  },
+  // Identity column: expander · name + badge, chips underneath (§7/§8).
+  firstCol: {
+    minWidth: "240px",
+    whiteSpace: "normal",
+    verticalAlign: "top",
+  },
+  identity: {
+    display: "flex",
+    alignItems: "flex-start",
+    columnGap: "6px",
+  },
+  expanderSlot: {
+    width: "30px",
+    flexShrink: 0,
+    marginTop: "-3px",
+  },
+  prioLink: {
+    fontWeight: tokens.fontWeightSemibold,
+    fontSize: tokens.fontSizeBase300,
+    textAlign: "left",
+  },
+  unfunded: {
     color: tokens.colorPaletteRedForeground1,
   },
-  tdGreenNum: {
-    color: tokens.colorPaletteGreenForeground1,
-  },
-  prioCell: {
-    display: "flex",
-    alignItems: "center",
-    columnGap: "8px",
-  },
-  prioName: {
-    fontWeight: tokens.fontWeightSemibold,
-  },
-  prioSub: {
+  muted: {
     color: tokens.colorNeutralForeground3,
-    fontSize: tokens.fontSizeBase100,
   },
-  amountInput: {
-    width: "130px",
-    marginLeft: "auto",
-    marginRight: "auto",
+  moneyBox: {
+    width: "128px",
+    minWidth: "112px",
   },
-  itemsHeaderRow: {
-    backgroundColor: tokens.colorNeutralBackground2,
-  },
-  itemsTable: {
-    width: "100%",
-    borderCollapse: "collapse",
-  },
-  itemsTh: {
-    textAlign: "left",
-    ...shorthands.padding("6px", "12px", "6px", "28px"),
-    color: tokens.colorNeutralForeground3,
-    fontSize: tokens.fontSizeBase100,
-    fontWeight: tokens.fontWeightSemibold,
-  },
-  itemsThNum: {
+  actionsCol: {
+    width: "1%",
     textAlign: "right",
   },
-  itemsTd: {
-    ...shorthands.padding("6px", "12px", "6px", "28px"),
-    borderTop: `1px solid ${tokens.colorNeutralStroke2}`,
+  // "Allocate": brand-blue text + icon, so the icon's meaning is spelled out.
+  // CB.brandHover (#1a74e0, 4.5:1 on white) rather than CB.brand, for AA text.
+  // Disabled keeps btn.action's desaturate + opacity.
+  allocateBtn: {
+    columnGap: "6px",
+    minWidth: 0,
+    fontSize: "12px",
+    fontWeight: 600,
+    color: CB.brandHover,
+    ...shorthands.padding("4px", "10px"),
+    ":hover": { color: CB.brandPressed },
+    ":hover:active": { color: CB.brandPressed },
   },
-  codeBubble: {
-    display: "inline-block",
-    marginLeft: "6px",
-    ...shorthands.padding("1px", "8px"),
-    border: `1px solid ${tokens.colorNeutralStroke2}`,
-    borderRadius: "9px",
-    fontSize: tokens.fontSizeBase200,
-    fontWeight: tokens.fontWeightSemibold,
-    lineHeight: "16px",
-    whiteSpace: "nowrap",
+
+  // Load more (§7): sticky right above the 52px totals row.
+  loadMoreRow: {
+    "& td": {
+      position: "sticky",
+      bottom: "52px",
+      zIndex: 2,
+      ...shorthands.padding("0"),
+      backgroundColor: tokens.colorNeutralBackground1,
+    },
+  },
+  // Footer: 52px, 11px / 600 / capitalized — matches the Itemized Details totals.
+  totalsRow: {
+    "& td": {
+      height: "52px",
+      ...shorthands.padding("0", "8px"),
+      position: "sticky",
+      bottom: "-1px",
+      zIndex: 2,
+      fontWeight: 600,
+      fontSize: "11px",
+      textTransform: "capitalize",
+      verticalAlign: "middle",
+      backgroundColor: tokens.colorNeutralBackground2,
+      borderTop: `1px solid ${tokens.colorNeutralStroke2}`,
+      whiteSpace: "nowrap",
+    },
+    // Same insets as the header (th:first-child / th:last-child) so "Total"
+    // lines up with the names above it and the header above it.
+    "& td:first-child": { paddingLeft: "44px" },
+    "& td:last-child": { paddingRight: "18px" },
+  },
+
+  // ── Itemized Details sub-table (§7 compact variant) ──
+  subCell: {
+    ...shorthands.padding("4px", "16px", "16px", "52px"),
+    backgroundColor: CB.rowSelected,
+    borderBottom: `1px solid ${CB.rowLine}`,
+  },
+  subTable: {
+    width: "100%",
+    borderCollapse: "separate",
+    borderSpacing: 0,
+    backgroundColor: tokens.colorNeutralBackground1,
+    borderRadius: "8px",
+  },
+  subTh: {
+    ...headBand,
+    height: "34px",
+    ...shorthands.padding("0", "8px"),
+    ":first-child": { borderTopLeftRadius: "8px", borderBottomLeftRadius: "8px" },
+    ":last-child": { borderTopRightRadius: "8px", borderBottomRightRadius: "8px" },
+  },
+  subTd: {
+    height: "20px",
+    ...shorthands.padding("6px", "8px"),
     verticalAlign: "middle",
+    borderBottom: `1px solid ${CB.rowLine}`,
+    whiteSpace: "nowrap",
   },
-  linBubble: {
-    backgroundColor: "#dfebf4",
-    color: tokens.colorPaletteBlueForeground2,
-    ...shorthands.borderColor(tokens.colorPaletteBlueBorderActive),
-  },
-  countryBubble: {
-    backgroundColor: "#edf6ed",
-    color: tokens.colorPaletteGreenForeground2,
-    ...shorthands.borderColor(tokens.colorPaletteGreenBorderActive),
-  },
-  rowActions: {
-    display: "flex",
-    alignItems: "center",
-    columnGap: "4px",
-    justifyContent: "flex-end",
-  },
-  stickyFootTd: {
-    ...shorthands.padding("8px", "12px"),
-    position: "sticky",
-    bottom: 0,
-    zIndex: 2,
-    backgroundColor: tokens.colorNeutralBackground3,
-    fontWeight: tokens.fontWeightBold,
-    borderTop: `2px solid ${tokens.colorNeutralStroke2}`,
+  subFirst: {
+    minWidth: "200px",
+    whiteSpace: "normal",
+    fontWeight: tokens.fontWeightSemibold,
   },
   empty: {
     ...shorthands.padding("16px"),
     color: tokens.colorNeutralForeground3,
   },
-  dialogSurface: {
-    minWidth: "min(720px, 95vw)",
-  },
-  drawerJunctionList: {
-    display: "flex",
-    flexDirection: "column",
-    rowGap: "6px",
+  footNote: {
     marginTop: "8px",
   },
-  drawerJunctionHead: {
-    display: "grid",
-    gridTemplateColumns: "minmax(180px, 1.5fr) 140px 140px 40px",
-    columnGap: "10px",
+  srOnly: {
+    position: "absolute",
+    width: "1px",
+    height: "1px",
+    overflow: "hidden",
+    clip: "rect(0 0 0 0)",
+    whiteSpace: "nowrap",
+  },
+
+  // ── Allocate-to-RFs dialog (§9) ──
+  dialogSurface: {
+    maxWidth: "640px",
+    width: "95vw",
+  },
+  intro: {
     color: tokens.colorNeutralForeground3,
-    fontSize: tokens.fontSizeBase100,
-    fontWeight: tokens.fontWeightSemibold,
-    borderBottom: `1px solid ${tokens.colorNeutralStroke2}`,
-    paddingBottom: "4px",
+    fontSize: tokens.fontSizeBase200,
+    marginBottom: "12px",
   },
-  drawerJunctionRow: {
-    display: "grid",
-    gridTemplateColumns: "minmax(180px, 1.5fr) 140px 140px 40px",
-    columnGap: "10px",
-    alignItems: "center",
+  dialogScroll: {
+    maxHeight: "360px",
+    overflowY: "auto",
   },
-  drawerJunctionEmpty: {
+  dialogTh: {
+    ...headBand,
+    height: "34px",
+    ...shorthands.padding("0", "12px"),
+    position: "sticky",
+    top: 0,
+    zIndex: 1,
+    ":first-child": { borderTopLeftRadius: "8px", borderBottomLeftRadius: "8px" },
+    ":last-child": { borderTopRightRadius: "8px", borderBottomRightRadius: "8px" },
+  },
+  rfCell: {
+    whiteSpace: "normal",
+    width: "100%",
+  },
+  rfFy: {
+    display: "block",
     color: tokens.colorNeutralForeground3,
-    fontStyle: "italic",
-    ...shorthands.padding("8px", "0"),
+    fontSize: tokens.fontSizeBase200,
   },
-  deleteButton: {
-    opacity: 0.7,
-    filter: "saturate(50%)",
-    ":hover": {
-      opacity: 1,
-      filter: "saturate(100%)",
-    },
+  dialogMoneyBox: {
+    width: "128px",
+    minWidth: "112px",
   },
-  deleteButtonDisabled: {
-    opacity: 0.5,
-    filter: "saturate(0%)",
-    ":hover": {
-      opacity: 0.5,
-      filter: "saturate(0%)",
-    },
-  },
-  drawerAddRow: {
+  addRow: {
     display: "flex",
     alignItems: "center",
     columnGap: "8px",
+    rowGap: "8px",
     marginTop: "8px",
     flexWrap: "wrap",
   },
-  drawerSummaryRow: {
-    display: "flex",
-    columnGap: "12px",
+  dialogNote: {
     marginTop: "12px",
-    paddingTop: "8px",
-    borderTop: `1px solid ${tokens.colorNeutralStroke2}`,
   },
-  drawerSummaryStat: {
-    flexGrow: 1,
-  },
-  drawerErrorBar: {
+  dialogError: {
+    display: "block",
     marginTop: "8px",
+    color: tokens.colorPaletteRedForeground1,
+  },
+  dialogWarn: {
+    display: "block",
+    marginTop: "8px",
+    color: STATUS.warning.fg,
+  },
+  summaryRow: {
+    display: "flex",
+    flexWrap: "wrap",
+    columnGap: "12px",
+    rowGap: "12px",
+    marginTop: "16px",
   },
 });
 
@@ -435,92 +581,14 @@ function formatCurrency(value: number | null): string {
   });
 }
 
-const DeleteIcon: React.FC = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" width="20" height="20" aria-hidden="true">
-    <path
-      fill="#9f151e"
-      d="M232.7 69.9C237.1 56.8 249.3 48 263.1 48L377 48C390.8 48 403 56.8 407.4 69.9L416 96L512 96C529.7 96 544 110.3 544 128C544 145.7 529.7 160 512 160L128 160C110.3 160 96 145.7 96 128C96 110.3 110.3 96 128 96L224 96L232.7 69.9zM128 208L512 208L512 512C512 547.3 483.3 576 448 576L192 576C156.7 576 128 547.3 128 512L128 208zM216 272C202.7 272 192 282.7 192 296L192 488C192 501.3 202.7 512 216 512C229.3 512 240 501.3 240 488L240 296C240 282.7 229.3 272 216 272zM320 272C306.7 272 296 282.7 296 296L296 488C296 501.3 306.7 512 320 512C333.3 512 344 501.3 344 488L344 296C344 282.7 333.3 272 320 272zM424 272C410.7 272 400 282.7 400 296L400 488C400 501.3 410.7 512 424 512C437.3 512 448 501.3 448 488L448 296C448 282.7 437.3 272 424 272z"
-    />
-  </svg>
-);
-
-const parseMoney = (s: string): number => {
-  if (s == null) return 0;
-  const n = parseFloat(String(s).replace(/[^0-9.-]/g, ""));
-  return isNaN(n) ? 0 : n;
-};
-
-const sanitizeMoneyText = (s: string): string => {
-  let out = (s ?? "").replace(/[^0-9.-]/g, "");
-  const neg = out.startsWith("-");
-  out = (neg ? "-" : "") + out.replace(/-/g, "");
-  const dot = out.indexOf(".");
-  if (dot !== -1) {
-    out =
-      out.slice(0, dot + 1) +
-      out.slice(dot + 1).replace(/\./g, "").slice(0, 2);
-  }
-  return out;
-};
-
-/**
- * Currency input that preserves the literal text the user is typing — partial
- * decimals like "100." or "100.5" en route to "100.50" survive until blur.
- * Re-formats to two decimal places on blur.
- */
-const MoneyInput: React.FC<{
-  value: number;
-  onChange: (n: number) => void;
-  disabled?: boolean;
-  className?: string;
-}> = ({ value, onChange, disabled, className }) => {
-  const [text, setText] = React.useState<string>(() =>
-    value === 0 ? "" : value.toFixed(2)
-  );
-  const lastEmittedRef = React.useRef<number>(value);
-  React.useEffect(() => {
-    if (value !== lastEmittedRef.current) {
-      setText(value === 0 ? "" : value.toFixed(2));
-      lastEmittedRef.current = value;
-    }
-  }, [value]);
-
-  return (
-    <Input
-      appearance="outline"
-      disabled={disabled}
-      className={className}
-      value={text}
-      onChange={(_e, d) => {
-        const cleaned = sanitizeMoneyText(d.value);
-        setText(cleaned);
-        const parsed = parseMoney(cleaned);
-        lastEmittedRef.current = parsed;
-        onChange(parsed);
-      }}
-      onBlur={() => {
-        const parsed = parseMoney(text);
-        const formatted = text.trim() === "" ? "" : parsed.toFixed(2);
-        setText(formatted);
-        if (parsed !== lastEmittedRef.current) {
-          lastEmittedRef.current = parsed;
-          onChange(parsed);
-        }
-      }}
-      input={{
-        style: { textAlign: "right", fontVariantNumeric: "tabular-nums" },
-      }}
-    />
-  );
-};
-
-function approvalColor(label: string | null): "danger" | "warning" | "success" | "informative" | "brand" {
+/** Approval status → status-label variant, by meaning (§8). */
+function approvalKind(label: string | null): StatusKind {
   const t = (label ?? "").toLowerCase();
   if (t.includes("approved") || t.includes("funded")) return "success";
-  if (t.includes("reject") || t.includes("kick")) return "danger";
-  if (t.includes("review") || t.includes("submit")) return "warning";
-  if (t.includes("draft") || t.includes("planning")) return "informative";
-  return "informative";
+  if (t.includes("reject") || t.includes("kick") || t.includes("denied")) return "danger";
+  if (t.includes("review") || t.includes("submit")) return "info";
+  if (t.includes("pending") || t.includes("return")) return "warning";
+  return "neutral"; // draft, planning, closed, unknown
 }
 
 // A Prioritization is only fundable once it reaches NPM Review; below that the
@@ -548,6 +616,45 @@ export const PrioritizationFundingGridApp: React.FC<PrioritizationFundingGridPro
     onAfterSave,
   } = props;
   const styles = useStyles();
+  const btn = useButtonStyles();
+  // Where NoteCell modals mount: inside the FluentProvider, so they inherit its theme.
+  const [portalRoot, setPortalRoot] = React.useState<HTMLElement | null>(null);
+
+  // ---- Per-row action result badge (§8): Saved clears after 3s; Error stays
+  // until that row's next successful save. Keyed by Prioritization id. ----
+  const [rowResult, setRowResult] = React.useState<Record<string, ActionResult>>({});
+  const savedTimers = React.useRef<Record<string, number>>({});
+  React.useEffect(
+    () => () => Object.values(savedTimers.current).forEach((t) => window.clearTimeout(t)),
+    []
+  );
+  const setResults = React.useCallback(
+    (ids: Iterable<string>, result: ActionResult | null): void => {
+      const list = Array.from(ids);
+      if (list.length === 0) return;
+      setRowResult((prev) => {
+        const next = { ...prev };
+        for (const id of list) {
+          if (result) next[id] = result;
+          else delete next[id];
+        }
+        return next;
+      });
+      if (result !== "saved") return;
+      for (const id of list) {
+        window.clearTimeout(savedTimers.current[id]);
+        savedTimers.current[id] = window.setTimeout(() => {
+          setRowResult((prev) => {
+            if (prev[id] !== "saved") return prev;
+            const next = { ...prev };
+            delete next[id];
+            return next;
+          });
+        }, 3000);
+      }
+    },
+    []
+  );
 
   // ---- Current user's security roles (gates the RF allocation delete button) ----
   const [userRoles, setUserRoles] = React.useState<Set<string>>(new Set());
@@ -716,7 +823,6 @@ export const PrioritizationFundingGridApp: React.FC<PrioritizationFundingGridPro
   const [editMode, setEditMode] = React.useState(false);
   const [saving, setSaving] = React.useState(false);
   const [vfError, setVfError] = React.useState<string | null>(null);
-  const [vfSuccess, setVfSuccess] = React.useState<string | null>(null);
   const [loadingItems, setLoadingItems] = React.useState(true);
   const [expandedItems, setExpandedItems] = React.useState<Record<string, boolean>>({});
   const [reloadKey, setReloadKey] = React.useState(0);
@@ -970,7 +1076,10 @@ export const PrioritizationFundingGridApp: React.FC<PrioritizationFundingGridPro
       validated = 0,
       funded = 0,
       unfunded = 0;
-    for (const p of visiblePrios) {
+    // Pending edits count, so the totals and the TDP guardrail warn before Save.
+    const edited = new Map(prioRows.map((r) => [r.id, r]));
+    for (const vp of visiblePrios) {
+      const p = edited.get(vp.id) ?? vp;
       const eff = effective(p);
       requested += p.requestedAmount;
       validated += eff.validated;
@@ -978,7 +1087,7 @@ export const PrioritizationFundingGridApp: React.FC<PrioritizationFundingGridPro
       unfunded += Math.max(p.requestedAmount - eff.funded, 0);
     }
     return { requested, validated, funded, unfunded };
-  }, [visiblePrios, effective]);
+  }, [visiblePrios, prioRows, effective]);
 
   // Whole-cent comparison: totals.funded is a running JS-float sum, so a total
   // that exactly equals TDP can land a sub-cent epsilon high and trip a strict
@@ -1022,78 +1131,105 @@ export const PrioritizationFundingGridApp: React.FC<PrioritizationFundingGridPro
     setItemRows(baselineItems);
     setEditMode(false);
     setVfError(null);
-    setVfSuccess(null);
+    // Reverted rows no longer carry the failed value.
+    setRowResult((prev) => {
+      const next: Record<string, ActionResult> = {};
+      for (const [id, r] of Object.entries(prev)) if (r !== "error") next[id] = r;
+      return next;
+    });
   };
+
+  // Every changed write, tagged with its Prio (for the row badge) and its
+  // Funded delta (for ordering). Drives both onSave and the Save (N) count.
+  interface PendingWrite {
+    prioId: string;
+    fundedDelta: number;
+    run: () => Promise<unknown>;
+  }
+  const collectWrites = (): PendingWrite[] => {
+    const writes: PendingWrite[] = [];
+
+    // Direct Prios (no Itemized Details) that changed.
+    const prioBase = new Map(baselinePrio.map((r) => [r.id, r]));
+    for (const r of prioRows) {
+      if (hasItemized(r.id)) continue;
+      const base = prioBase.get(r.id);
+      if (
+        base &&
+        base.validatedAmount === r.validatedAmount &&
+        base.fundedAmount === r.fundedAmount
+      )
+        continue;
+      writes.push({
+        prioId: r.id,
+        fundedDelta: r.fundedAmount - (base?.fundedAmount ?? 0),
+        run: () =>
+          webAPI.updateRecord(PRIORITIZATION_ENTITY, r.id, {
+            [PRIO_VALIDATED]: r.validatedAmount,
+            [PRIO_FUNDED]: r.fundedAmount,
+          }),
+      });
+    }
+
+    // Itemized Details that changed.
+    const itemBase = new Map(baselineItems.map((r) => [r.id, r]));
+    for (const it of itemRows) {
+      const base = itemBase.get(it.id);
+      if (
+        base &&
+        base.validated === it.validated &&
+        base.funded === it.funded &&
+        base.npmComment === it.npmComment
+      )
+        continue;
+      writes.push({
+        prioId: it.prioritizationId,
+        fundedDelta: it.funded - (base?.funded ?? 0),
+        run: () =>
+          webAPI.updateRecord(ITEMIZED_DETAILS_ENTITY, it.id, {
+            [ITEM_VALIDATED]: it.validated,
+            [ITEM_FUNDED]: it.funded,
+            [ITEM_NPM_COMMENT]:
+              it.npmComment.trim() === "" ? null : it.npmComment,
+          }),
+      });
+    }
+    return writes;
+  };
+  const pendingCount = editMode ? collectWrites().length : 0;
 
   const onSave = async (): Promise<void> => {
     setVfError(null);
-    setVfSuccess(null);
+    // Collect every changed write tagged with its Funded delta, then run
+    // reductions before increases. Each write is awaited so it commits (and,
+    // for Itemized Details, rolls up onto its Prio) before the next is
+    // validated. The cap plugins (PrioritizationFundingValidator /
+    // JunctionGuard) only enforce the RF TDP cap on an *increase*, so landing
+    // all decreases first frees the headroom an increase needs. This lets a
+    // single save rebalance multiple rows around the cap — reducing some to
+    // make room for others — even though no individual row is valid mid-save
+    // and the RF may currently be over-cap (e.g. negative Withholding from a
+    // Turn-In). Both Prio-level and Item-level writes share the RF's sibling
+    // aggregate, so they are ordered together in one list.
+    const writes = collectWrites();
+    if (writes.length === 0) {
+      setEditMode(false);
+      return;
+    }
+    const touched = new Set(writes.map((w) => w.prioId));
+    const done = new Set<string>();
+    let current: string | null = null;
+    setResults(touched, "saving");
     setSaving(true);
     try {
-      // Collect every changed write tagged with its Funded delta, then run
-      // reductions before increases. Each write is awaited so it commits (and,
-      // for Itemized Details, rolls up onto its Prio) before the next is
-      // validated. The cap plugins (PrioritizationFundingValidator /
-      // JunctionGuard) only enforce the RF TDP cap on an *increase*, so landing
-      // all decreases first frees the headroom an increase needs. This lets a
-      // single save rebalance multiple rows around the cap — reducing some to
-      // make room for others — even though no individual row is valid mid-save
-      // and the RF may currently be over-cap (e.g. negative Withholding from a
-      // Turn-In). Both Prio-level and Item-level writes share the RF's sibling
-      // aggregate, so they are ordered together in one list.
-      interface PendingWrite {
-        fundedDelta: number;
-        run: () => Promise<unknown>;
-      }
-      const writes: PendingWrite[] = [];
-
-      // Direct Prios (no Itemized Details) that changed.
-      const prioBase = new Map(baselinePrio.map((r) => [r.id, r]));
-      for (const r of prioRows) {
-        if (hasItemized(r.id)) continue;
-        const base = prioBase.get(r.id);
-        if (
-          base &&
-          base.validatedAmount === r.validatedAmount &&
-          base.fundedAmount === r.fundedAmount
-        )
-          continue;
-        writes.push({
-          fundedDelta: r.fundedAmount - (base?.fundedAmount ?? 0),
-          run: () =>
-            webAPI.updateRecord(PRIORITIZATION_ENTITY, r.id, {
-              [PRIO_VALIDATED]: r.validatedAmount,
-              [PRIO_FUNDED]: r.fundedAmount,
-            }),
-        });
-      }
-
-      // Itemized Details that changed.
-      const itemBase = new Map(baselineItems.map((r) => [r.id, r]));
-      for (const it of itemRows) {
-        const base = itemBase.get(it.id);
-        if (
-          base &&
-          base.validated === it.validated &&
-          base.funded === it.funded &&
-          base.npmComment === it.npmComment
-        )
-          continue;
-        writes.push({
-          fundedDelta: it.funded - (base?.funded ?? 0),
-          run: () =>
-            webAPI.updateRecord(ITEMIZED_DETAILS_ENTITY, it.id, {
-              [ITEM_VALIDATED]: it.validated,
-              [ITEM_FUNDED]: it.funded,
-              [ITEM_NPM_COMMENT]:
-                it.npmComment.trim() === "" ? null : it.npmComment,
-            }),
-        });
-      }
-
       // Reductions (and Funded-unchanged rows) first, increases last.
       writes.sort((a, b) => a.fundedDelta - b.fundedDelta);
-      for (const w of writes) await w.run();
+      for (const w of writes) {
+        current = w.prioId;
+        await w.run();
+        done.add(w.prioId);
+      }
+      current = null;
 
       // Reseed baselines from what we just committed so the *next* Edit/Save
       // cycle diffs against current values immediately — even if the host hands
@@ -1103,13 +1239,19 @@ export const PrioritizationFundingGridApp: React.FC<PrioritizationFundingGridPro
       setBaselinePrio(prioRows);
       setBaselineItems(itemRows);
 
-      setVfSuccess("Validation & funding saved.");
+      setResults(touched, "saved");
       setEditMode(false);
       refresh();
       setReloadKey((k) => k + 1);
     } catch (e) {
       const msg = (e as { message?: string })?.message;
       setVfError(msg ?? "Save failed. Please try again or contact support.");
+      // The failing row shows Error; rows fully written before it show Saved;
+      // rows never reached drop their spinner (they're still pending edits).
+      const failed = current;
+      setResults([...done].filter((id) => id !== failed), "saved");
+      setResults([...touched].filter((id) => id !== failed && !done.has(id)), null);
+      if (failed) setResults([failed], "error");
     } finally {
       setSaving(false);
     }
@@ -1124,6 +1266,8 @@ export const PrioritizationFundingGridApp: React.FC<PrioritizationFundingGridPro
   const [allocAddRFId, setAllocAddRFId] = React.useState<string>("");
   const [allocBusy, setAllocBusy] = React.useState<boolean>(false);
   const [allocError, setAllocError] = React.useState<string | null>(null);
+  // Junction id awaiting the inline "Remove?" confirmation (§9).
+  const [allocConfirmDeleteId, setAllocConfirmDeleteId] = React.useState<string | null>(null);
   // Pending in-dialog edits keyed by junction id.
   const [allocEdits, setAllocEdits] = React.useState<
     Record<string, Partial<Record<JunctionField, number>>>
@@ -1156,6 +1300,7 @@ export const PrioritizationFundingGridApp: React.FC<PrioritizationFundingGridPro
     setAllocBusy(false);
     setAllocError(null);
     setAllocEdits({});
+    setAllocConfirmDeleteId(null);
     ensureRFs();
   };
 
@@ -1166,6 +1311,7 @@ export const PrioritizationFundingGridApp: React.FC<PrioritizationFundingGridPro
     setAllocBusy(false);
     setAllocError(null);
     setAllocEdits({});
+    setAllocConfirmDeleteId(null);
   };
 
   const allocJunctionValue = (row: JunctionRow, field: JunctionField): number => {
@@ -1239,6 +1385,7 @@ export const PrioritizationFundingGridApp: React.FC<PrioritizationFundingGridPro
       allocWrites.sort((a, b) => a.fundedDelta - b.fundedDelta);
       for (const w of allocWrites) await w.run();
       setAllocEdits({});
+      setResults([allocPrioId], "saved");
       reloadJunctions(initialPrioRows.map((p) => p.id));
       refresh();
       setReloadKey((k) => k + 1);
@@ -1288,6 +1435,7 @@ export const PrioritizationFundingGridApp: React.FC<PrioritizationFundingGridPro
       // RF drops out of eligibleRFs; the panel collapses on its own once none
       // remain, or the user closes it with Cancel / the dialog with Close.
       setAllocAddRFId("");
+      setResults([allocPrioId], "saved");
       reloadJunctions(initialPrioRows.map((p) => p.id));
       refresh();
     } catch (e) {
@@ -1308,6 +1456,7 @@ export const PrioritizationFundingGridApp: React.FC<PrioritizationFundingGridPro
         delete next[row.id];
         return next;
       });
+      setResults([row.prioritizationId], "saved");
       reloadJunctions(initialPrioRows.map((p) => p.id));
       refresh();
     } catch (e) {
@@ -1325,9 +1474,11 @@ export const PrioritizationFundingGridApp: React.FC<PrioritizationFundingGridPro
     tone: "neutral" | "good" | "bad" = "neutral"
   ): React.ReactElement => (
     <div
-      className={`${styles.stat} ${
-        tone === "good" ? styles.statGood : tone === "bad" ? styles.statBad : ""
-      }`}
+      className={mergeClasses(
+        styles.stat,
+        tone === "good" && styles.statGood,
+        tone === "bad" && styles.statBad
+      )}
     >
       <div className={styles.statLabel}>{label}</div>
       <div className={styles.statValue}>{value}</div>
@@ -1350,218 +1501,235 @@ export const PrioritizationFundingGridApp: React.FC<PrioritizationFundingGridPro
       0
     );
     const fundedDelta = allocFundedSum - eff.funded;
+    const balanced = Math.abs(fundedDelta) < 0.005;
     const dirty = Object.keys(allocEdits).length > 0;
+    const pendingDelete = list.find((j) => j.id === allocConfirmDeleteId) ?? null;
 
     return (
       <Dialog
         open
         onOpenChange={(_e, data) => {
-          if (!data.open) closeAllocate();
+          // Block dismiss while a write is in flight (§9).
+          if (!data.open && !allocBusy) closeAllocate();
         }}
         modalType="modal"
       >
         <DialogSurface className={styles.dialogSurface}>
           <DialogBody>
-            <DialogTitle>
-              Allocate to RFs — {allocPrio.name}
-            </DialogTitle>
+            <DialogTitle>Allocate to RFs — {allocPrio.stateName ?? allocPrio.name}</DialogTitle>
             <DialogContent>
-              <Text size={200}>
+              <div className={styles.intro}>
                 Split the Prioritization&apos;s Funded total across one or more
-                Requirement Fundings. The plugin rolls each row up into the RF
-                Funded / Validated.
-              </Text>
-
-              <div className={styles.drawerJunctionList}>
-                {list.length === 0 ? (
-                  <div className={styles.drawerJunctionEmpty}>
-                    No RF allocations yet — use Add from RF below.
-                  </div>
-                ) : (
-                  <>
-                    <div className={styles.drawerJunctionHead}>
-                      <div>Requirement Funding</div>
-                      <div style={{ textAlign: "right" }}>Validated</div>
-                      <div style={{ textAlign: "right" }}>Funded</div>
-                      <div />
-                    </div>
-                    {list.map((j) => (
-                      <div key={j.id} className={styles.drawerJunctionRow}>
-                        <div>
-                          <Link
-                            as="button"
-                            onClick={() =>
-                              void navigation.openForm({
-                                entityName: REQUIREMENT_FUNDING_ENTITY,
-                                entityId: j.rfId,
-                                openInNewWindow: false,
-                              })
-                            }
-                          >
-                            {j.rfName}
-                          </Link>
-                          {j.rfFiscalYear != null && (
-                            <>
-                              {" "}
-                              <Badge appearance="outline" color="informative">
-                                {fyLabelFor(j.rfFiscalYear)}
-                              </Badge>
-                            </>
-                          )}
-                        </div>
-                        <MoneyInput
-                          value={allocJunctionValue(j, "validatedAmount")}
-                          disabled={isDisabled || allocBusy}
-                          onChange={(n) =>
-                            setAllocJunctionValue(j.id, "validatedAmount", n)
-                          }
-                        />
-                        <MoneyInput
-                          value={allocJunctionValue(j, "fundedAmount")}
-                          disabled={isDisabled || allocBusy}
-                          onChange={(n) =>
-                            setAllocJunctionValue(j.id, "fundedAmount", n)
-                          }
-                        />
-                        <Tooltip
-                          content={
-                            canDeleteAllocation
-                              ? "Remove allocation"
-                              : "Insufficient Permission - Contact System Admin"
-                          }
-                          relationship="label"
-                        >
-                          <Button
-                            appearance="subtle"
-                            size="small"
-                            className={`${styles.deleteButton} ${
-                              canDeleteAllocation ? "" : styles.deleteButtonDisabled
-                            }`}
-                            disabled={isDisabled || allocBusy}
-                            disabledFocusable={!canDeleteAllocation}
-                            onClick={() => void deleteJunction(j)}
-                            icon={<DeleteIcon />}
-                            aria-label="Remove allocation"
-                          />
-                        </Tooltip>
-                      </div>
-                    ))}
-                  </>
-                )}
+                Requirement Fundings. Allocations must total the Prio Funded
+                amount before you can save. Validated may exceed Funded and is
+                not reconciled.
               </div>
 
-              {/* Add from RF */}
-              <div className={styles.drawerAddRow}>
-                {!allocAddOpen ? (
-                  <Button
-                    appearance="subtle"
-                    size="small"
-                    disabled={isDisabled || allocBusy}
-                    onClick={() => {
-                      setAllocAddOpen(true);
-                      ensureRFs();
-                    }}
-                  >
-                    + Add from RF
-                  </Button>
-                ) : rfsLoading ? (
-                  <Spinner size="extra-tiny" label="Loading RFs…" labelPosition="after" />
-                ) : eligibleRFs.length === 0 ? (
-                  <Text size={200} className={styles.drawerJunctionEmpty}>
-                    No additional Requirement Fundings available for this Requirement.
-                  </Text>
-                ) : (
-                  <>
-                    <Combobox
-                      size="small"
-                      placeholder="Select a Requirement Funding"
-                      value={
-                        eligibleRFs.find((rf) => rf.id === allocAddRFId)?.name ?? ""
-                      }
-                      selectedOptions={allocAddRFId ? [allocAddRFId] : []}
-                      onOptionSelect={(_e, data) =>
-                        setAllocAddRFId(data.optionValue ?? "")
-                      }
-                      disabled={isDisabled || allocBusy}
-                    >
-                      {eligibleRFs.map((rf) => (
-                        <Option key={rf.id} value={rf.id} text={rf.name}>
-                          {rf.name}
-                          {rf.fiscalYearLabel ? ` — ${rf.fiscalYearLabel}` : ""}
-                          {rf.tdp != null ? ` — TDP ${formatCurrency(rf.tdp)}` : ""}
-                        </Option>
+              {list.length === 0 ? (
+                <div className={styles.empty}>
+                  No RF allocations yet. Use <strong>Add from RF</strong> to
+                  pick the source Requirement Fundings.
+                </div>
+              ) : (
+                <div className={styles.dialogScroll}>
+                  <table className={styles.subTable}>
+                    <thead>
+                      <tr>
+                        <th className={styles.dialogTh}>Requirement Funding</th>
+                        <th className={mergeClasses(styles.dialogTh, styles.num)}>Validated</th>
+                        <th className={mergeClasses(styles.dialogTh, styles.num)}>Funded</th>
+                        <th className={mergeClasses(styles.dialogTh, styles.actionsCol)}>
+                          <span className={styles.srOnly}>Actions</span>
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {list.map((j) => (
+                        <tr key={j.id}>
+                          <td className={mergeClasses(styles.subTd, styles.rfCell)}>
+                            <Link
+                              as="button"
+                              onClick={() =>
+                                void navigation.openForm({
+                                  entityName: REQUIREMENT_FUNDING_ENTITY,
+                                  entityId: j.rfId,
+                                  openInNewWindow: false,
+                                })
+                              }
+                            >
+                              {j.rfName}
+                            </Link>
+                            {j.rfFiscalYear != null && (
+                              <span className={styles.rfFy}>{fyLabelFor(j.rfFiscalYear)}</span>
+                            )}
+                          </td>
+                          <td className={mergeClasses(styles.subTd, styles.num)}>
+                            <MoneyInput
+                              live
+                              className={styles.dialogMoneyBox}
+                              aria-label={`Validated for ${j.rfName}`}
+                              value={allocJunctionValue(j, "validatedAmount")}
+                              disabled={isDisabled || allocBusy}
+                              onCommit={(n) =>
+                                setAllocJunctionValue(j.id, "validatedAmount", n ?? 0)
+                              }
+                            />
+                          </td>
+                          <td className={mergeClasses(styles.subTd, styles.num)}>
+                            <MoneyInput
+                              live
+                              className={styles.dialogMoneyBox}
+                              aria-label={`Funded for ${j.rfName}`}
+                              value={allocJunctionValue(j, "fundedAmount")}
+                              disabled={isDisabled || allocBusy}
+                              onCommit={(n) =>
+                                setAllocJunctionValue(j.id, "fundedAmount", n ?? 0)
+                              }
+                            />
+                          </td>
+                          <td className={mergeClasses(styles.subTd, styles.actionsCol)}>
+                            <Tooltip
+                              content={
+                                canDeleteAllocation
+                                  ? "Remove allocation"
+                                  : "Insufficient Permission - Contact System Admin"
+                              }
+                              relationship="label"
+                            >
+                              <Button
+                                appearance="subtle"
+                                className={btn.icon}
+                                disabled={isDisabled || allocBusy}
+                                disabledFocusable={!canDeleteAllocation}
+                                onClick={() => setAllocConfirmDeleteId(j.id)}
+                                icon={<DeleteIcon size={16} />}
+                              />
+                            </Tooltip>
+                          </td>
+                        </tr>
                       ))}
-                    </Combobox>
+                    </tbody>
+                  </table>
+                </div>
+              )}
+
+              {/* Destructive actions confirm, naming what goes (§9). */}
+              {pendingDelete && (
+                <MessageBar intent="warning" className={styles.dialogNote}>
+                  <MessageBarBody>
+                    Remove the allocation from <strong>{pendingDelete.rfName}</strong> (
+                    {formatCurrency(pendingDelete.fundedAmount)} funded)?
+                  </MessageBarBody>
+                  <MessageBarActions>
                     <Button
-                      appearance="primary"
-                      size="small"
-                      disabled={isDisabled || allocBusy || !allocAddRFId}
-                      onClick={() => void addJunction()}
+                      appearance="subtle"
+                      className={btn.destructive}
+                      icon={<DeleteIcon size={16} />}
+                      disabled={allocBusy}
+                      onClick={() => {
+                        setAllocConfirmDeleteId(null);
+                        void deleteJunction(pendingDelete);
+                      }}
                     >
-                      {allocBusy ? "Adding…" : "Add"}
+                      Remove
                     </Button>
                     <Button
                       appearance="subtle"
-                      size="small"
-                      onClick={() => {
-                        setAllocAddOpen(false);
-                        setAllocAddRFId("");
-                      }}
+                      className={btn.action}
+                      disabled={allocBusy}
+                      onClick={() => setAllocConfirmDeleteId(null)}
                     >
-                      Cancel
+                      Keep
                     </Button>
-                  </>
-                )}
-              </div>
-
-              {allocError && (
-                <MessageBar intent="error" className={styles.drawerErrorBar}>
-                  <MessageBarBody>{allocError}</MessageBarBody>
+                  </MessageBarActions>
                 </MessageBar>
               )}
 
-              <MessageBar intent="info" className={styles.drawerErrorBar}>
-                <MessageBarBody>
-                  Identify all source RFs for this Prioritization up front. The
-                  allocations must total the Prio Funded amount before you can save;
-                  Validated may exceed Funded and is not reconciled.
-                </MessageBarBody>
-              </MessageBar>
+              {/* Add from RF */}
+              {!isDisabled && (
+                <div className={styles.addRow}>
+                  {!allocAddOpen ? (
+                    <Button
+                      appearance="subtle"
+                      className={btn.action}
+                      icon={<AddIcon size={16} />}
+                      disabled={allocBusy}
+                      onClick={() => {
+                        setAllocAddOpen(true);
+                        ensureRFs();
+                      }}
+                    >
+                      Add from RF
+                    </Button>
+                  ) : rfsLoading ? (
+                    <Spinner size="extra-tiny" label="Loading RFs…" labelPosition="after" />
+                  ) : eligibleRFs.length === 0 ? (
+                    <Text size={200} className={styles.muted}>
+                      No additional Requirement Fundings available for this Requirement.
+                    </Text>
+                  ) : (
+                    <>
+                      <Combobox
+                        className={styles.combo}
+                        placeholder="Select a Requirement Funding"
+                        aria-label="Requirement Funding to add"
+                        value={eligibleRFs.find((rf) => rf.id === allocAddRFId)?.name ?? ""}
+                        selectedOptions={allocAddRFId ? [allocAddRFId] : []}
+                        onOptionSelect={(_e, data) => setAllocAddRFId(data.optionValue ?? "")}
+                        disabled={allocBusy}
+                      >
+                        {eligibleRFs.map((rf) => (
+                          <Option key={rf.id} value={rf.id} text={rf.name}>
+                            {rf.name}
+                            {rf.fiscalYearLabel ? ` — ${rf.fiscalYearLabel}` : ""}
+                            {rf.tdp != null ? ` — TDP ${formatCurrency(rf.tdp)}` : ""}
+                          </Option>
+                        ))}
+                      </Combobox>
+                      <Button
+                        appearance="subtle"
+                        className={btn.action}
+                        icon={allocBusy ? <Spinner size="extra-tiny" /> : <AddIcon size={16} />}
+                        disabled={allocBusy || !allocAddRFId}
+                        onClick={() => void addJunction()}
+                      >
+                        {allocBusy ? "Adding…" : "Add"}
+                      </Button>
+                      <Tooltip content="Cancel" relationship="label">
+                        <Button
+                          appearance="subtle"
+                          className={btn.icon}
+                          icon={<CloseIcon size={16} />}
+                          disabled={allocBusy}
+                          onClick={() => {
+                            setAllocAddOpen(false);
+                            setAllocAddRFId("");
+                          }}
+                        />
+                      </Tooltip>
+                    </>
+                  )}
+                </div>
+              )}
+
+              {allocError && <Text className={styles.dialogError}>{allocError}</Text>}
 
               {/* Sum vs Prio total */}
-              <div className={styles.drawerSummaryRow}>
-                <div className={styles.drawerSummaryStat}>
-                  {renderStat(
-                    "Validated Sum",
-                    formatCurrency(allocValidatedSum)
-                  )}
-                </div>
-                <div className={styles.drawerSummaryStat}>
-                  {renderStat(
-                    "Prio Funded (target)",
-                    formatCurrency(eff.funded)
-                  )}
-                </div>
-                <div className={styles.drawerSummaryStat}>
-                  {renderStat(
-                    "Sum of Allocations",
-                    formatCurrency(allocFundedSum),
-                    Math.abs(fundedDelta) < 0.005
-                      ? "good"
-                      : "bad"
-                  )}
-                </div>
+              <div className={styles.summaryRow}>
+                {renderStat("Validated Sum", formatCurrency(allocValidatedSum))}
+                {renderStat("Prio Funded (target)", formatCurrency(eff.funded))}
+                {renderStat(
+                  "Sum of Allocations",
+                  formatCurrency(allocFundedSum),
+                  balanced ? "good" : "bad"
+                )}
               </div>
-              {Math.abs(fundedDelta) >= 0.005 && (
-                <MessageBar intent="warning" className={styles.drawerErrorBar}>
-                  <MessageBarBody>
-                    Allocation sum {formatCurrency(allocFundedSum)} differs
-                    from Prio Funded {formatCurrency(eff.funded)} by{" "}
-                    {formatCurrency(Math.abs(fundedDelta))}. Allocate exactly the
-                    Prio Funded total across the RFs to save — Save Allocations is
-                    disabled until the sums match.
-                  </MessageBarBody>
-                </MessageBar>
+              {!balanced && (
+                <Text className={styles.dialogWarn}>
+                  {fundedDelta < 0 ? "Allocate" : "Remove"} another{" "}
+                  {formatCurrency(Math.abs(fundedDelta))} so the allocations match
+                  Prio Funded. Save Allocations unlocks when they do.
+                </Text>
               )}
             </DialogContent>
             <DialogActions>
@@ -1570,23 +1738,21 @@ export const PrioritizationFundingGridApp: React.FC<PrioritizationFundingGridPro
                   Close
                 </Button>
               </DialogTrigger>
-              <Button
-                appearance="primary"
-                disabled={
-                  isDisabled ||
-                  allocBusy ||
-                  !dirty ||
-                  Math.abs(fundedDelta) >= 0.005
-                }
-                title={
-                  Math.abs(fundedDelta) >= 0.005
-                    ? "Allocations must total the Prio Funded amount before saving"
-                    : undefined
-                }
-                onClick={() => void saveAllocations()}
-              >
-                {allocBusy ? <Spinner size="extra-tiny" /> : "Save Allocations"}
-              </Button>
+              {!isDisabled && (
+                <Button
+                  appearance="primary"
+                  disabled={allocBusy || !dirty || !balanced}
+                  title={
+                    !balanced
+                      ? "Allocations must total the Prio Funded amount before saving"
+                      : undefined
+                  }
+                  icon={allocBusy ? <Spinner size="extra-tiny" /> : undefined}
+                  onClick={() => void saveAllocations()}
+                >
+                  Save Allocations
+                </Button>
+              )}
             </DialogActions>
           </DialogBody>
         </DialogSurface>
@@ -1594,26 +1760,41 @@ export const PrioritizationFundingGridApp: React.FC<PrioritizationFundingGridPro
     );
   };
 
+  const showActions = !isDisabled;
+  const colCount = showActions ? 8 : 7;
+
   return (
-    <FluentProvider theme={webLightTheme}>
+    // The form's PCF container is a flexbox, so this provider is a flex item
+    // whose default min-width:auto grows to the table's full width and the
+    // scroll container never overflows. minWidth: 0 lets it shrink to the
+    // container, so the table scrolls inside scrollContainer.
+    <FluentProvider
+      theme={checkbookTheme}
+      style={{ minWidth: 0, width: "100%", maxWidth: "100%" }}
+    >
+      <PortalRootContext.Provider value={portalRoot}>
       <div className={styles.root}>
-        {/* Toolbar */}
+        {/* Toolbar (§9) */}
         <div className={styles.toolbar}>
           <div className={styles.toolbarLeft}>
-            {!hideTitle && (
-              <Text weight="semibold" size={400}>
-                Validate &amp; Fund
-              </Text>
-            )}
-            <Badge appearance="outline" color="informative">
-              {visiblePrios.length} of {initialPrioRows.length}{" "}
-              prioritization{initialPrioRows.length === 1 ? "" : "s"}
-            </Badge>
+            <span className={styles.title}>
+              {!hideTitle && "Validate & Fund"}
+              <span className={hideTitle ? styles.muted : styles.count}>
+                {hideTitle ? "" : "("}
+                {visiblePrios.length === initialPrioRows.length
+                  ? initialPrioRows.length
+                  : `${visiblePrios.length} of ${initialPrioRows.length}`}
+                {hideTitle
+                  ? ` prioritization${initialPrioRows.length === 1 ? "" : "s"}`
+                  : ")"}
+              </span>
+            </span>
             {fyOptions.length > 0 && !hideFyPicker && !fyControlledByContainer && (
               <div className={styles.fyFilter}>
-                <Text size={200}>FY</Text>
+                <Text size={200}>Fiscal Year</Text>
                 <Combobox
-                  size="small"
+                  className={styles.combo}
+                  aria-label="Fiscal Year"
                   value={fyFilter === FY_FILTER_ALL ? "All" : fyLabelFor(fyFilter)}
                   selectedOptions={[
                     fyFilter === FY_FILTER_ALL ? FY_FILTER_ALL : String(fyFilter),
@@ -1636,43 +1817,59 @@ export const PrioritizationFundingGridApp: React.FC<PrioritizationFundingGridPro
               </div>
             )}
           </div>
-          {!editMode ? (
+          <div className={styles.toolbarButtons}>
+            {/* Edit actions are hidden when read-only (§9). */}
+            {!isDisabled &&
+              (!editMode ? (
+                <Button
+                  appearance="subtle"
+                  className={btn.action}
+                  icon={<EditIcon size={16} />}
+                  disabled={saving || initialPrioRows.length === 0}
+                  onClick={() => setEditMode(true)}
+                >
+                  Edit
+                </Button>
+              ) : (
+                <>
+                  <Button
+                    appearance="subtle"
+                    className={btn.action}
+                    icon={<UndoIcon size={16} />}
+                    onClick={onCancel}
+                    disabled={saving}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    appearance="subtle"
+                    className={btn.action}
+                    icon={saving ? <Spinner size="extra-tiny" /> : <SaveIcon size={16} />}
+                    onClick={() => void onSave()}
+                    disabled={saving || pendingCount === 0}
+                  >
+                    {saving ? "Saving…" : pendingCount > 0 ? `Save (${pendingCount})` : "Save"}
+                  </Button>
+                </>
+              ))}
+            {/* Refresh: always last, always shown. */}
             <Button
-              appearance="primary"
-              disabled={isDisabled || saving || initialPrioRows.length === 0}
-              onClick={() => setEditMode(true)}
+              appearance="subtle"
+              className={btn.action}
+              icon={<RefreshIcon size={16} />}
+              disabled={(dataset?.loading ?? false) || junctionsLoading || saving}
+              onClick={() => {
+                refresh();
+                reloadJunctions(initialPrioRows.map((p) => p.id));
+                setReloadKey((k) => k + 1);
+              }}
             >
-              Edit
+              Refresh
             </Button>
-          ) : (
-            <>
-              <Button onClick={onCancel} disabled={saving}>
-                Cancel
-              </Button>
-              <Button
-                appearance="primary"
-                onClick={() => void onSave()}
-                disabled={saving}
-              >
-                {saving ? <Spinner size="extra-tiny" /> : "Save"}
-              </Button>
-            </>
-          )}
-          <Button
-            size="small"
-            appearance="subtle"
-            disabled={(dataset?.loading ?? false) || junctionsLoading}
-            onClick={() => {
-              refresh();
-              reloadJunctions(initialPrioRows.map((p) => p.id));
-              setReloadKey((k) => k + 1);
-            }}
-          >
-            Refresh
-          </Button>
+          </div>
         </div>
 
-        {/* TDP guardrail strip (aggregated across all RFs of this Requirement) */}
+        {/* TDP guardrail (aggregated across all RFs of this Requirement) */}
         {totalTDP != null && (
           <div className={styles.statStrip}>
             {renderStat(
@@ -1693,7 +1890,7 @@ export const PrioritizationFundingGridApp: React.FC<PrioritizationFundingGridPro
         )}
 
         {overAllocated && totalTDP != null && (
-          <MessageBar intent="warning" style={{ marginBottom: 10 }}>
+          <MessageBar intent="warning" className={styles.banner}>
             <MessageBarBody>
               <strong>Over-allocated:</strong> Funded total (
               {formatCurrency(totals.funded)}) exceeds Total TDP (
@@ -1704,17 +1901,12 @@ export const PrioritizationFundingGridApp: React.FC<PrioritizationFundingGridPro
           </MessageBar>
         )}
         {vfError && (
-          <MessageBar intent="error" style={{ marginBottom: 10 }}>
+          <MessageBar intent="error" className={styles.banner}>
             <MessageBarBody>{vfError}</MessageBarBody>
           </MessageBar>
         )}
-        {vfSuccess && (
-          <MessageBar intent="success" style={{ marginBottom: 10 }}>
-            <MessageBarBody>{vfSuccess}</MessageBarBody>
-          </MessageBar>
-        )}
         {junctionsError && (
-          <MessageBar intent="error" style={{ marginBottom: 10 }}>
+          <MessageBar intent="error" className={styles.banner}>
             <MessageBarBody>{junctionsError}</MessageBarBody>
           </MessageBar>
         )}
@@ -1727,23 +1919,26 @@ export const PrioritizationFundingGridApp: React.FC<PrioritizationFundingGridPro
             {fyFilter !== FY_FILTER_ALL ? ` in ${fyLabelFor(fyFilter)}` : ""}.
           </div>
         ) : (
-          <div className={styles.tableScroll}>
+          <div className={styles.scrollContainer}>
             <table className={styles.table}>
               <thead>
                 <tr>
-                  <th className={styles.stickyTh}>Prioritization</th>
-                  <th className={`${styles.stickyTh} ${styles.stickyThNum}`}>Requested</th>
-                  <th className={`${styles.stickyTh} ${styles.stickyThNum}`}>Validated</th>
-                  <th className={`${styles.stickyTh} ${styles.stickyThNum}`}>Funded</th>
-                  <th className={`${styles.stickyTh} ${styles.stickyThNum}`}>Unfunded</th>
-                  <th className={styles.stickyTh}>Allocations</th>
+                  <th className={styles.th}>Prioritization</th>
+                  <th className={styles.th}>Status</th>
+                  <th className={mergeClasses(styles.th, styles.num)}>Requested</th>
+                  <th className={mergeClasses(styles.th, styles.num)}>Validated</th>
+                  <th className={mergeClasses(styles.th, styles.num)}>Funded</th>
+                  <th className={mergeClasses(styles.th, styles.num)}>Unfunded</th>
+                  <th className={styles.th}>Allocations</th>
+                  {showActions && (
+                    <th className={mergeClasses(styles.th, styles.actionsCol)}>Actions</th>
+                  )}
                 </tr>
               </thead>
               <tbody>
                 {visiblePrios.map((vp) => {
                   // Use editable copy from prioRows for V/F so edit mode reflects.
-                  const editable =
-                    prioRows.find((r) => r.id === vp.id) ?? vp;
+                  const editable = prioRows.find((r) => r.id === vp.id) ?? vp;
                   const eff = effective(editable);
                   const items = itemsFor(editable.id);
                   const isItemized = eff.derived;
@@ -1751,96 +1946,116 @@ export const PrioritizationFundingGridApp: React.FC<PrioritizationFundingGridPro
                   // read-only (funding they don't yet legitimately hold would be
                   // invisible to the RF roll-up — see PrioritizationFundingApprovalGuard).
                   const canFund = isFundable(editable);
-                  const isOpen = !!expandedItems[editable.id];
-                  const unfunded = Math.max(
-                    editable.requestedAmount - eff.funded,
-                    0
-                  );
+                  const editCell = editMode && !isItemized && canFund;
+                  const isOpen = isItemized && !!expandedItems[editable.id];
+                  const unfunded = Math.max(editable.requestedAmount - eff.funded, 0);
                   const jList = junctions[editable.id] ?? [];
-                  const allocSum = jList.reduce(
-                    (s, j) => s + j.fundedAmount,
-                    0
-                  );
-                  const allocDelta = allocSum - eff.funded;
-                  const allocBalanced = Math.abs(allocDelta) < 0.005;
+                  const allocSum = jList.reduce((s, j) => s + j.fundedAmount, 0);
+                  const allocBalanced = Math.abs(allocSum - eff.funded) < 0.005;
+                  const modeLabel =
+                    editable.fundingModeLabel ?? (isItemized ? "Itemized" : null);
+                  const chips: ChipData[] = [
+                    editable.statePriority != null
+                      ? { type: "priority", label: "Priority", value: `#${editable.statePriority}` }
+                      : null,
+                    modeLabel
+                      ? {
+                          type: "fundingMode",
+                          label: "Mode",
+                          value: isItemized ? `${modeLabel} (${items.length})` : modeLabel,
+                        }
+                      : null,
+                  ].filter((c): c is ChipData => c !== null);
+                  const allocTip =
+                    jList.length === 0
+                      ? "No Requirement Fundings allocated yet"
+                      : allocBalanced
+                        ? `${jList.length} RF · ${formatCurrency(allocSum)}`
+                        : `Unbalanced: allocations ${formatCurrency(allocSum)} vs Prio Funded ${formatCurrency(eff.funded)}`;
+                  const allocateTip = !canFund
+                    ? "Allocations open once the Prioritization reaches NPM Review"
+                    : editMode
+                      ? "Save or cancel your edits first"
+                      : "Allocate to RFs";
                   return (
                     <React.Fragment key={editable.id}>
-                      <tr>
-                        <td className={styles.td}>
-                          <div className={styles.prioCell}>
-                            {isItemized && (
-                              <Button
-                                size="small"
-                                appearance="subtle"
-                                onClick={() => toggleExpandItems(editable.id)}
-                              >
-                                {isOpen ? "▾" : "▸"}
-                              </Button>
-                            )}
+                      <tr className={mergeClasses(styles.row, isOpen && styles.rowOpen)}>
+                        <td className={mergeClasses(styles.td, styles.firstCol)}>
+                          <div className={styles.identity}>
+                            <div className={styles.expanderSlot}>
+                              {isItemized && (
+                                // Native title: Fluent's Tooltip portals outside the
+                                // theme here and renders transparent.
+                                <Button
+                                  appearance="subtle"
+                                  className={btn.icon}
+                                  title={isOpen ? "Hide line items" : "Show line items"}
+                                  aria-label={isOpen ? "Hide line items" : "Show line items"}
+                                  aria-expanded={isOpen}
+                                  icon={<ChevronIcon open={isOpen} />}
+                                  onClick={() => toggleExpandItems(editable.id)}
+                                />
+                              )}
+                            </div>
                             <div>
-                              <Link
-                                as="button"
-                                className={styles.prioName}
-                                onClick={() =>
-                                  void navigation.openForm({
-                                    entityName: PRIORITIZATION_ENTITY,
-                                    entityId: editable.id,
-                                    openInNewWindow: false,
-                                  })
+                              <ItemName
+                                result={rowResult[editable.id]}
+                                name={
+                                  <Link
+                                    as="button"
+                                    className={styles.prioLink}
+                                    onClick={() =>
+                                      void navigation.openForm({
+                                        entityName: PRIORITIZATION_ENTITY,
+                                        entityId: editable.id,
+                                        openInNewWindow: false,
+                                      })
+                                    }
+                                  >
+                                    {editable.stateName ?? editable.name}
+                                  </Link>
                                 }
-                              >
-                                {editable.stateName ?? editable.name}
-                              </Link>
-                              <div className={styles.prioSub}>
-                                {editable.statePriority != null && (
-                                  <>Priority #{editable.statePriority}</>
-                                )}
-                                {editable.statePriority != null && isItemized && " · "}
-                                {isItemized && `${items.length} itemized`}
-                                {editable.fundingModeLabel && (
-                                  <>
-                                    {" · "}
-                                    {editable.fundingModeLabel}
-                                  </>
-                                )}
-                                {editable.approvalStatus && (
-                                  <>
-                                    {" · "}
-                                    <Badge
-                                      appearance="tint"
-                                      color={approvalColor(editable.approvalStatus)}
-                                    >
-                                      {editable.approvalStatus}
-                                    </Badge>
-                                  </>
-                                )}
-                              </div>
+                              />
+                              <ChipList chips={chips} />
                             </div>
                           </div>
                         </td>
-                        <td className={`${styles.td} ${styles.tdNum}`}>
+                        <td className={styles.td}>
+                          {editable.approvalStatus ? (
+                            <StatusLabel kind={approvalKind(editable.approvalStatus)}>
+                              {editable.approvalStatus}
+                            </StatusLabel>
+                          ) : (
+                            <span className={styles.muted}>—</span>
+                          )}
+                        </td>
+                        <td className={mergeClasses(styles.td, styles.num)}>
                           {formatCurrency(editable.requestedAmount)}
                         </td>
-                        <td className={`${styles.td} ${styles.tdNum}`}>
-                          {editMode && !isItemized && canFund ? (
+                        <td className={mergeClasses(styles.td, styles.num)}>
+                          {editCell ? (
                             <MoneyInput
-                              className={styles.amountInput}
+                              live
+                              className={styles.moneyBox}
+                              aria-label={`Validated for ${editable.stateName ?? editable.name}`}
                               value={editable.validatedAmount}
-                              onChange={(n) =>
-                                updatePrioMoney(editable.id, "validatedAmount", n)
+                              onCommit={(n) =>
+                                updatePrioMoney(editable.id, "validatedAmount", n ?? 0)
                               }
                             />
                           ) : (
                             formatCurrency(eff.validated)
                           )}
                         </td>
-                        <td className={`${styles.td} ${styles.tdNum}`}>
-                          {editMode && !isItemized && canFund ? (
+                        <td className={mergeClasses(styles.td, styles.num)}>
+                          {editCell ? (
                             <MoneyInput
-                              className={styles.amountInput}
+                              live
+                              className={styles.moneyBox}
+                              aria-label={`Funded for ${editable.stateName ?? editable.name}`}
                               value={editable.fundedAmount}
-                              onChange={(n) =>
-                                updatePrioMoney(editable.id, "fundedAmount", n)
+                              onCommit={(n) =>
+                                updatePrioMoney(editable.id, "fundedAmount", n ?? 0)
                               }
                             />
                           ) : (
@@ -1848,127 +2063,117 @@ export const PrioritizationFundingGridApp: React.FC<PrioritizationFundingGridPro
                           )}
                         </td>
                         <td
-                          className={`${styles.td} ${styles.tdNum} ${
-                            unfunded > 0 ? styles.tdRedNum : styles.tdGreenNum
-                          }`}
+                          className={mergeClasses(
+                            styles.td,
+                            styles.num,
+                            unfunded > 0 ? styles.unfunded : styles.muted
+                          )}
                         >
                           {formatCurrency(unfunded)}
                         </td>
                         <td className={styles.td}>
-                          <div className={styles.rowActions}>
-                            {jList.length > 0 ? (
-                              <Tooltip
-                                content={
-                                  allocBalanced
-                                    ? `${jList.length} RF · ${formatCurrency(allocSum)}`
-                                    : `Unbalanced: allocations ${formatCurrency(allocSum)} vs Prio Funded ${formatCurrency(eff.funded)}`
-                                }
-                                relationship="label"
-                              >
-                                <Badge
-                                  appearance="tint"
-                                  color={allocBalanced ? "success" : "warning"}
-                                >
-                                  {jList.length} RF
-                                </Badge>
-                              </Tooltip>
+                          <span tabIndex={0} title={allocTip}>
+                            {jList.length === 0 ? (
+                              <StatusLabel kind="neutral">No RFs</StatusLabel>
+                            ) : allocBalanced ? (
+                              <StatusLabel kind="success">
+                                {jList.length} RF{jList.length === 1 ? "" : "s"}
+                              </StatusLabel>
                             ) : (
-                              <Badge appearance="outline" color="subtle">
-                                0 RF
-                              </Badge>
+                              <StatusLabel kind="warning">Unbalanced</StatusLabel>
                             )}
+                          </span>
+                        </td>
+                        {showActions && (
+                          <td className={mergeClasses(styles.td, styles.actionsCol)}>
+                            {/* Text label so the icon's meaning is clear; title carries the
+                                reason when it's disabled. */}
                             <Button
-                              size="small"
                               appearance="subtle"
-                              disabled={isDisabled || editMode || !canFund}
+                              className={mergeClasses(btn.action, styles.allocateBtn)}
+                              icon={<AllocateIcon size={14} color="currentColor" />}
+                              title={allocateTip}
+                              disabledFocusable={editMode || !canFund}
                               onClick={() => openAllocate(editable)}
                             >
-                              Allocate to RFs
+                              Allocate
                             </Button>
-                          </div>
-                        </td>
+                          </td>
+                        )}
                       </tr>
 
-                      {isItemized && isOpen && (
-                        <tr className={styles.itemsHeaderRow}>
-                          <td colSpan={6} style={{ padding: 0 }}>
-                            <table className={styles.itemsTable}>
+                      {isOpen && (
+                        <tr>
+                          <td colSpan={colCount} className={styles.subCell}>
+                            <table className={styles.subTable}>
                               <thead>
                                 <tr>
-                                  <th className={styles.itemsTh}>Requirement Item</th>
-                                  <th className={styles.itemsTh}>TDC</th>
-                                  <th className={styles.itemsTh}>Fund Center</th>
-                                  <th className={`${styles.itemsTh} ${styles.itemsThNum}`}>Requested</th>
-                                  <th className={`${styles.itemsTh} ${styles.itemsThNum}`}>Validated</th>
-                                  <th className={`${styles.itemsTh} ${styles.itemsThNum}`}>Funded</th>
-                                  <th className={styles.itemsTh}>NPM Comment</th>
-                                  <th className={styles.itemsTh} />
+                                  <th className={styles.subTh}>Requirement Item</th>
+                                  <th className={styles.subTh}>TDC</th>
+                                  <th className={styles.subTh}>Fund Center</th>
+                                  <th className={mergeClasses(styles.subTh, styles.num)}>Requested</th>
+                                  <th className={mergeClasses(styles.subTh, styles.num)}>Validated</th>
+                                  <th className={mergeClasses(styles.subTh, styles.num)}>Funded</th>
+                                  <th className={styles.subTh}>NPM Comment</th>
                                 </tr>
                               </thead>
                               <tbody>
                                 {items.map((it) => (
-                                  <tr key={it.id}>
-                                    <td className={styles.itemsTd}>
+                                  <tr key={it.id} className={styles.row}>
+                                    <td className={mergeClasses(styles.subTd, styles.subFirst)}>
                                       {it.label}
-                                      {it.lin && (
-                                        <span className={`${styles.codeBubble} ${styles.linBubble}`}>
-                                          {it.lin}
-                                        </span>
-                                      )}
-                                      {it.country && (
-                                        <span className={`${styles.codeBubble} ${styles.countryBubble}`}>
-                                          {it.country}
-                                        </span>
-                                      )}
+                                      <ChipList
+                                        chips={[
+                                          { type: "lin", label: "LIN", value: it.lin },
+                                          { type: "country", label: "Country", value: it.country },
+                                        ].filter((c) => c.value)}
+                                      />
                                     </td>
-                                    <td className={styles.itemsTd}>{it.tdc}</td>
-                                    <td className={styles.itemsTd}>
+                                    <td className={styles.subTd}>
+                                      {it.tdc ? <TagLabel title={it.tdc}>{it.tdc}</TagLabel> : <span className={styles.muted}>—</span>}
+                                    </td>
+                                    <td className={mergeClasses(styles.subTd, styles.muted)}>
                                       {it.fundCenter || "State level"}
                                     </td>
-                                    <td className={`${styles.itemsTd} ${styles.tdNum}`}>
+                                    <td className={mergeClasses(styles.subTd, styles.num)}>
                                       {formatCurrency(it.requested)}
                                     </td>
-                                    <td className={`${styles.itemsTd} ${styles.tdNum}`}>
+                                    <td className={mergeClasses(styles.subTd, styles.num)}>
                                       {editMode && canFund ? (
                                         <MoneyInput
-                                          className={styles.amountInput}
+                                          live
+                                          className={styles.moneyBox}
+                                          aria-label={`Validated for ${it.label}`}
                                           value={it.validated}
-                                          onChange={(n) =>
-                                            updateItemMoney(it.id, "validated", n)
-                                          }
+                                          onCommit={(n) => updateItemMoney(it.id, "validated", n ?? 0)}
                                         />
                                       ) : (
                                         formatCurrency(it.validated)
                                       )}
                                     </td>
-                                    <td className={`${styles.itemsTd} ${styles.tdNum}`}>
+                                    <td className={mergeClasses(styles.subTd, styles.num)}>
                                       {editMode && canFund ? (
                                         <MoneyInput
-                                          className={styles.amountInput}
+                                          live
+                                          className={styles.moneyBox}
+                                          aria-label={`Funded for ${it.label}`}
                                           value={it.funded}
-                                          onChange={(n) =>
-                                            updateItemMoney(it.id, "funded", n)
-                                          }
+                                          onCommit={(n) => updateItemMoney(it.id, "funded", n ?? 0)}
                                         />
                                       ) : (
                                         formatCurrency(it.funded)
                                       )}
                                     </td>
-                                    <td className={styles.itemsTd}>
-                                      {editMode && canFund ? (
-                                        <Textarea
-                                          appearance="outline"
-                                          resize="vertical"
-                                          value={it.npmComment}
-                                          onChange={(_e, d) =>
-                                            updateItemComment(it.id, d.value)
-                                          }
-                                        />
-                                      ) : (
-                                        it.npmComment
-                                      )}
+                                    <td className={styles.subTd} style={{ whiteSpace: "normal" }}>
+                                      {/* Editable only in edit mode on a fundable Prio; Save in
+                                          the modal stages the text like any other edit. */}
+                                      <NoteCell
+                                        title={`NPM Comment for ${it.label}${it.tdc ? ` (TDC: ${it.tdc})` : ""}`}
+                                        editable={editMode && canFund}
+                                        value={it.npmComment}
+                                        onSave={(text) => updateItemComment(it.id, text)}
+                                      />
                                     </td>
-                                    <td className={styles.itemsTd} />
                                   </tr>
                                 ))}
                               </tbody>
@@ -1981,29 +2186,37 @@ export const PrioritizationFundingGridApp: React.FC<PrioritizationFundingGridPro
                 })}
               </tbody>
               <tfoot>
-                <tr>
-                  <td className={styles.stickyFootTd}>Total</td>
-                  <td className={`${styles.stickyFootTd} ${styles.tdNum}`}>
-                    {formatCurrency(totals.requested)}
-                  </td>
-                  <td className={`${styles.stickyFootTd} ${styles.tdNum}`}>
-                    {formatCurrency(totals.validated)}
-                  </td>
-                  <td
-                    className={`${styles.stickyFootTd} ${styles.tdNum} ${
-                      overAllocated ? styles.tdRedNum : ""
-                    }`}
-                  >
+                {dataset?.paging && dataset.paging.hasNextPage && (
+                  <tr className={styles.loadMoreRow}>
+                    <td colSpan={colCount}>
+                      <Button
+                        appearance="transparent"
+                        className={btn.loadMore}
+                        onClick={() => dataset.paging.loadNextPage()}
+                      >
+                        Load more Prioritizations
+                      </Button>
+                    </td>
+                  </tr>
+                )}
+                <tr className={styles.totalsRow}>
+                  <td>Total</td>
+                  <td />
+                  <td className={styles.num}>{formatCurrency(totals.requested)}</td>
+                  <td className={styles.num}>{formatCurrency(totals.validated)}</td>
+                  <td className={mergeClasses(styles.num, overAllocated && styles.unfunded)}>
                     {formatCurrency(totals.funded)}
                   </td>
                   <td
-                    className={`${styles.stickyFootTd} ${styles.tdNum} ${
-                      totals.unfunded > 0 ? styles.tdRedNum : styles.tdGreenNum
-                    }`}
+                    className={mergeClasses(
+                      styles.num,
+                      totals.unfunded > 0 ? styles.unfunded : styles.muted
+                    )}
                   >
                     {formatCurrency(totals.unfunded)}
                   </td>
-                  <td className={styles.stickyFootTd} />
+                  <td />
+                  {showActions && <td />}
                 </tr>
               </tfoot>
             </table>
@@ -2011,25 +2224,15 @@ export const PrioritizationFundingGridApp: React.FC<PrioritizationFundingGridPro
         )}
 
         {loadingItems && (
-          <div style={{ marginTop: 8 }}>
-            <Spinner size="tiny" label="Loading Itemized Details…" />
-          </div>
-        )}
-
-        {dataset?.paging && dataset.paging.hasNextPage && (
-          <div style={{ textAlign: "center", marginTop: 8 }}>
-            <Button
-              size="small"
-              appearance="subtle"
-              onClick={() => dataset.paging.loadNextPage()}
-            >
-              Load more Prioritizations
-            </Button>
+          <div className={styles.footNote}>
+            <Spinner size="tiny" label="Loading Itemized Details…" labelPosition="after" />
           </div>
         )}
 
         {renderAllocDialog()}
+        <div ref={setPortalRoot} />
       </div>
+      </PortalRootContext.Provider>
     </FluentProvider>
   );
 };

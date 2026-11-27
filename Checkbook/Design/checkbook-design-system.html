@@ -1,0 +1,1480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Checkbook Design System</title>
+<!--
+  ARNG Checkbook — Design System reference.
+  Companion to ../Design Documentation.md. Self-contained: no external CSS/JS.
+  Page is 8.5in wide; use the "Print / Save as PDF" button (Letter, margins: default).
+
+  The block marked  <style id="checkbook-kit">  is the copy-paste CSS kit for
+  HTML Web Resources. PCF components use the Fluent v9 mapping in the .md file.
+-->
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     CHECKBOOK KIT — copy this <style> block into HTML Web Resources.
+     ═══════════════════════════════════════════════════════════════════════ -->
+<style id="checkbook-kit">
+  :root {
+    /* Text */
+    --cb-text:            #242424;  /* Fluent colorNeutralForeground1 */
+    --cb-text-secondary:  #424242;  /* colorNeutralForeground2 */
+    --cb-text-muted:      #616161;  /* colorNeutralForeground3 — context, meta, empty states */
+    --cb-text-disabled:   #bdbdbd;  /* colorNeutralForegroundDisabled */
+
+    /* Surfaces */
+    --cb-surface:         #ffffff;  /* colorNeutralBackground1 — page, sticky header */
+    --cb-surface-alt:     #fafafa;  /* colorNeutralBackground2 — totals row */
+    --cb-row-hover:       #fbfbfb;  /* table row hover */
+    --cb-input-fill:      #f7f7f7;  /* editable field resting fill */
+    --cb-hover:           #f5f5f5;  /* colorSubtleBackgroundHover — button hover */
+    --cb-pressed:         #e0e0e0;  /* colorSubtleBackgroundPressed — button active */
+
+    /* Lines */
+    --cb-border:          #e0e0e0;  /* colorNeutralStroke2 — table/row dividers */
+    --cb-border-strong:   #d1d1d1;  /* colorNeutralStroke1 — outline inputs */
+    --cb-input-hover:     #b2c3f4;  /* editable field hover border (2px) */
+    --cb-focus:           #2086ff;  /* keyboard focus ring */
+
+    /* Brand & semantic */
+    --cb-brand:           #2086ff;  /* checkbookTheme colorBrandBackground — primary button, checked controls, hover text */
+    --cb-brand-hover:     #1a74e0;
+    --cb-brand-pressed:   #1560bd;
+    --cb-brand-tint:      #e8f2ff;  /* colorBrandBackground2 — Qty Type chip */
+    --cb-brand-tint-line: #b3d4ff;  /* colorBrandBackground2Pressed */
+    --cb-link:            #5b9bd5;  /* Load more */
+    --cb-link-hover:      #2e5f8a;
+
+    --cb-add:             #16ca92;  /* Add icon */
+    --cb-danger:          #9f151e;  /* Delete icon + destructive label */
+    --cb-icon-neutral:    #727272;  /* Refresh, Close, Edit… icons */
+    --cb-icon-subtle:     #989898;  /* Search (in-field) icon */
+
+    --cb-success:         #107c10;  /* colorPaletteGreenBackground3 — "Saved" badge */
+    --cb-success-text:    #0e700e;  /* colorPaletteGreenForeground1 */
+    --cb-success-tint:    #f1faf1;  /* colorPaletteGreenBackground1 — Category chip */
+    --cb-success-line:    #9fd89f;  /* colorPaletteGreenBackground2 */
+    --cb-error:           #d13438;  /* colorPaletteRedBackground3 — "Error" badge */
+    --cb-error-text:      #bc2f32;  /* colorPaletteRedForeground1 — inline errors */
+    --cb-error-tint:      #fdf3f4;  /* colorPaletteRedBackground1 — error banner */
+    --cb-warn-text:       #8a5c00;
+    --cb-warn-tint:       #fff9e6;
+
+    /* Choice controls (checkbox / radio / switch) */
+    --cb-control-line:    #d9d9d9;  /* unchecked checkbox / radio border */
+    --cb-switch-off:      #c8c8c8;  /* standard switch, false */
+    --cb-switch-good:     #22b35e;  /* goodbad switch, true */
+    --cb-switch-bad:      #e5484d;  /* goodbad switch, false */
+    --cb-control-hover-bg: #f1f6ff; /* checkbox / radio / switch row hover */
+
+    /* Tags — chip (neutral/outlined), status (tinted), badge (solid) */
+    --cb-chip-line:       #d1d5db;  /* chip border */
+    --cb-chip-label:      #4b5563;  /* "Category:"  7.6:1 */
+    --cb-chip-value:      #111827;  /* "Equipment"  17.7:1 */
+    --cb-chip-more-line:  #6b7280;  /* +N dashed border */
+    --cb-chip-more-text:  #374151;  /* +N text     10.3:1 */
+    --cb-hue-category:    #16a34a;  /* chip dots: one hue per attribute type, in this order */
+    --cb-hue-qtytype:     #2563eb;
+    --cb-hue-class:       #7c3aed;
+    --cb-hue-origin:      #d97706;
+    --cb-hue-phase:       #0d9488;
+    --cb-hue-priority:    #db2777;
+    --cb-hue-fundingmode: #4f46e5;
+    --cb-hue-lin:         #0891b2;
+    --cb-hue-country:     #65a30d;
+    --cb-badge-saved:     #15803d;  /* white text 5.0:1 */
+    --cb-badge-error:     #b91c1c;  /* white text 6.5:1 */
+    --cb-status-success-bg: #e2fcdc; --cb-status-success-fg: #14532d;  /* Funded    8.3:1 */
+    --cb-status-warning-bg: #fef3c7; --cb-status-warning-fg: #78350f;  /* Pending   8.2:1 */
+    --cb-status-danger-bg:  #fee2e2; --cb-status-danger-fg:  #7f1d1d;  /* Unfunded  8.2:1 */
+    --cb-status-info-bg:    #dbeafe; --cb-status-info-fg:    #1e3a8a;  /* In Review 8.5:1 */
+    --cb-status-neutral-bg: #f3f4f6; --cb-status-neutral-fg: #374151;  /* Draft     9.4:1 */
+
+    /* Numeric boxes (money / quantity) */
+    --cb-adornment:       #5c5875;  /* $ / # prefix, bold (6.3:1 on the grey fill) */
+    --cb-focus-ring:      rgba(32, 134, 255, .18);  /* 3px halo on focused boxes */
+    --cb-error-ring:      rgba(209, 52, 56, .15);
+
+    /* Table */
+    --cb-table-head:      #f7f7f7;  /* header band */
+    --cb-row-line:        #f0f0f0;  /* hairline between rows */
+    --cb-row-selected:    #f5f9ff;  /* selected row (blue-tinted so #f7f7f7 inputs still read) */
+    --cb-sort-idle:       #8a8a8a;  /* inactive sort chevrons (3.2:1 on the header band) */
+
+    /* Type */
+    --cb-font: "Segoe UI", "Segoe UI Web (West European)", -apple-system, BlinkMacSystemFont, Roboto, "Helvetica Neue", sans-serif;
+    --cb-font-mono: Consolas, "Cascadia Mono", "Courier New", monospace;
+    --cb-fs-100: 10px;  /* status badges */
+    --cb-fs-th:  11px;  /* table headers: 700, UPPERCASE, .05em tracking */
+    --cb-fs-200: 12px;  /* meta, chips, helper text */
+    --cb-fs-300: 14px;  /* body, buttons, table cells */
+    --cb-fs-400: 16px;  /* dialog title */
+
+    /* Shape */
+    --cb-radius: 4px;
+    --cb-radius-sm: 2px;
+  }
+
+  .cb-root { font-family: var(--cb-font); font-size: var(--cb-fs-300); color: var(--cb-text); }
+
+  /* ── Buttons ──────────────────────────────────────────────────────────
+     Default button = borderless, transparent, hover background, icon + label. */
+  .cb-btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    font: inherit; font-size: var(--cb-fs-300); line-height: 20px;
+    color: var(--cb-text); background: transparent;
+    border: none; border-radius: var(--cb-radius);
+    padding: 6px 12px; min-height: 32px; cursor: pointer;
+    transition: background-color .1s ease;
+  }
+  .cb-btn svg { width: 20px; height: 20px; flex-shrink: 0; }
+  .cb-btn:hover  { background: var(--cb-hover); }
+  .cb-btn:active { background: var(--cb-pressed); }
+  .cb-btn:focus-visible { outline: 2px solid var(--cb-focus); outline-offset: 1px; }
+
+  /* Destructive: label + icon stay red */
+  .cb-btn-danger { color: var(--cb-danger); }
+
+  /* Icon-only: square, no label — MUST have aria-label + title/tooltip */
+  .cb-btn-icon { padding: 6px; min-width: 32px; justify-content: center; }
+
+  /* Disabled: never recolor — drain saturation instead (covers hardcoded SVG fills) */
+  .cb-btn:disabled, .cb-btn[aria-disabled="true"] {
+    opacity: .7; filter: saturate(0); cursor: not-allowed; background: transparent;
+  }
+
+  /* Dialog footer ONLY: the one place filled / bordered buttons are allowed */
+  .cb-btn-primary   { background: var(--cb-brand); color: #fff; font-weight: 600; padding: 6px 16px; }
+  .cb-btn-primary:hover  { background: var(--cb-brand-hover); }
+  .cb-btn-primary:active { background: #1560bd; }
+  .cb-btn-secondary { background: #fff; border: 1px solid var(--cb-border-strong); font-weight: 600; padding: 5px 16px; }
+  .cb-btn-secondary:hover { background: var(--cb-hover); }
+
+  /* Full-width "Load more" row button */
+  .cb-btn-loadmore {
+    width: 100%; min-height: 40px; justify-content: center; border-radius: 0;
+    font-weight: 600; font-size: 15px; color: var(--cb-link);
+    background-image: linear-gradient(to bottom, transparent, rgba(255,255,255,.7));
+  }
+  .cb-btn-loadmore:hover { color: var(--cb-link-hover); background-color: transparent;
+    background-image: linear-gradient(to bottom, transparent, rgba(255,255,255,1)); }
+
+  /* ── Inputs ───────────────────────────────────────────────────────────
+     Editable fields: soft grey fill, 2px transparent border → white + blue on hover. */
+  .cb-input, .cb-select, .cb-textarea {
+    font: inherit; font-size: var(--cb-fs-300); color: var(--cb-text);
+    background: var(--cb-input-fill);
+    border: 2px solid transparent; border-radius: var(--cb-radius);
+    padding: 3px 6px; min-height: 30px; box-sizing: border-box;
+    transition: background-color .1s ease, border-color .1s ease;
+  }
+  .cb-input:hover, .cb-select:hover, .cb-textarea:hover { background: #fff; border-color: var(--cb-input-hover); }
+  .cb-input:focus, .cb-select:focus, .cb-textarea:focus {
+    outline: none; background: #fff; border-color: var(--cb-input-hover);
+    box-shadow: inset 0 -2px 0 var(--cb-focus);
+  }
+  .cb-input::placeholder, .cb-textarea::placeholder { color: var(--cb-text-muted); }
+  .cb-textarea { resize: vertical; min-height: 52px; }
+
+  /* Numbers: right-aligned, tabular, no spin buttons */
+  .cb-input-number { text-align: right; font-variant-numeric: tabular-nums; -moz-appearance: textfield; }
+  .cb-input-number::-webkit-outer-spin-button,
+  .cb-input-number::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+
+  /* Numeric box: money ($) and quantity (#).
+     Grey #f7f7f7 box, no visible border at rest (white + border on hover/focus), 6px radius, bold prefix on the LEFT, value right-aligned.
+     Markup: <label class="cb-num"><span class="cb-num-adorn" aria-hidden="true">$</span><input class="cb-money" …></label>
+     A <label> wrapper means clicking the prefix or padding focuses the input.
+     Behavior (format on blur, raw + select-all on focus) lives in the checkbook-numeric <script>. */
+  .cb-num {
+    display: inline-flex; align-items: center; gap: 8px; box-sizing: border-box;
+    height: 32px; padding: 0 10px; background: var(--cb-input-fill); vertical-align: middle;
+    border: 1px solid transparent; border-radius: 6px; cursor: text;
+    transition: background-color .12s ease, border-color .12s ease, box-shadow .12s ease;
+  }
+  .cb-num:hover { background: #fff; border-color: var(--cb-input-hover); }
+  .cb-num:focus-within, .cb-num.is-focus { background: #fff; border-color: var(--cb-brand); box-shadow: 0 0 0 3px var(--cb-focus-ring); }
+  .cb-num-adorn { color: var(--cb-adornment); font-size: var(--cb-fs-300); font-weight: 700; flex-shrink: 0; user-select: none; }
+  .cb-num input, .cb-num-val {
+    flex: 1; min-width: 0; width: 100%; padding: 0; border: none; outline: none; background: transparent;
+    font: inherit; font-size: var(--cb-fs-300); color: var(--cb-text);
+    text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap;
+  }
+  .cb-num input::placeholder { color: #a0a0a0; }
+  .cb-num:has(input.is-invalid), .cb-num.is-invalid { border-color: var(--cb-error); box-shadow: 0 0 0 3px var(--cb-error-ring); }
+  .cb-num:has(input:disabled) { opacity: .7; filter: saturate(0); background: var(--cb-surface-alt); cursor: not-allowed; }
+  .cb-num:has(input:disabled):hover { border-color: transparent; background: var(--cb-surface-alt); }
+
+  /* Read-only: looks like text in a box — no fill, no hover affordance */
+  .cb-input[readonly], .cb-textarea[readonly] {
+    background: transparent; border-color: var(--cb-border); cursor: default; color: var(--cb-text-secondary);
+  }
+  .cb-input[readonly]:hover, .cb-textarea[readonly]:hover { border-color: var(--cb-border); }
+
+  /* Search field: outline style with leading icon */
+  .cb-search { position: relative; display: inline-flex; align-items: center; }
+  .cb-search svg { position: absolute; left: 8px; width: 16px; height: 16px; pointer-events: none; }
+  .cb-search .cb-input { padding-left: 30px; }
+
+  /* ── Table ────────────────────────────────────────────────────────── */
+  /* Spacious by default: 40px header band, 56px rows, 16px side padding, hairline dividers.
+     Header labels: 11px / 700 / UPPERCASE via CSS — keep the source text in Title Case. */
+  .cb-table-scroll { width: 100%; max-height: 560px; overflow: auto; }
+  .cb-table { width: 100%; min-width: 760px; table-layout: auto; border-collapse: separate; border-spacing: 0; font-size: var(--cb-fs-300); }
+  .cb-table th {
+    position: sticky; top: 0; z-index: 2; height: 40px; padding: 0 16px;
+    background: var(--cb-table-head); color: var(--cb-text-secondary);
+    text-align: left; white-space: nowrap;
+    font-size: var(--cb-fs-th); font-weight: 700; text-transform: uppercase; letter-spacing: .05em;
+  }
+  .cb-table thead th:first-child { border-radius: 8px 0 0 8px; }
+  .cb-table thead th:last-child  { border-radius: 0 8px 8px 0; }
+  .cb-table td {
+    height: 56px; padding: 12px 16px; max-width: 220px; vertical-align: middle;
+    border-bottom: 1px solid var(--cb-row-line);
+  }
+  .cb-table tbody tr:hover td { background: var(--cb-row-hover); }
+  .cb-table tbody tr.is-selected td { background: var(--cb-row-selected); }
+  .cb-table .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .cb-table .ctx { color: var(--cb-text-muted); white-space: nowrap; }
+  .cb-table .sel { width: 44px; min-width: 44px; padding-left: 12px; padding-right: 4px; text-align: center; }
+  .cb-table .sel .cb-checkbox { padding: 4px; }
+  .cb-table .act { width: 1%; white-space: nowrap; text-align: right; padding-right: 12px; }
+  .cb-table .act .cb-btn-icon { min-width: 30px; min-height: 30px; padding: 6px; }
+  .cb-table .act .cb-btn-icon svg { width: 16px; height: 16px; }
+
+  /* Sortable header: double chevron always visible; the active direction darkens */
+  .cb-table th.sortable { cursor: pointer; user-select: none; }
+  .cb-table th.sortable:hover { color: var(--cb-text); }
+  .cb-table th .cb-sort { width: 12px; height: 12px; margin-left: 4px; vertical-align: -1px; }
+  .cb-table th .cb-sort path { stroke: var(--cb-sort-idle); }
+  .cb-table th[aria-sort="ascending"]  .cb-sort .up,
+  .cb-table th[aria-sort="descending"] .cb-sort .down { stroke: var(--cb-text); }
+  .cb-table th.num .cb-sort { margin-left: 0; margin-right: 4px; }
+
+  .cb-table tr.cb-totals td {
+    position: sticky; bottom: -1px; z-index: 2; height: 52px;
+    font-weight: 600; background: var(--cb-surface-alt); border-bottom: none; border-top: 1px solid var(--cb-border);
+  }
+  .cb-table tr.cb-loadmore td { position: sticky; bottom: 52px; z-index: 2; height: auto; padding: 0; background: var(--cb-surface); border-bottom: none; }
+  .cb-table tr.cb-totals:hover td { background: var(--cb-surface-alt); }
+
+  /* Compact: dialogs and pick-lists only */
+  .cb-table.compact { min-width: 0; }
+  .cb-table.compact td { height: 44px; padding: 8px 12px; }
+  .cb-table.compact th { height: 34px; padding: 0 12px; }
+
+  /* ── Tags: three tiers, never mixed ─────────────────────────────────
+     CHIP    neutral / outlined  = what it is          "Label: Value", static, optional, no icon
+     STATUS  tinted              = where it stands      own column; the sort/filter value; icon always
+     BADGE   solid               = what just happened   Saved / Error, inline after the name; icon always */
+
+  /* Chip — <span class="cb-chip" data-type="category">Category: <b>Equipment</b></span> */
+  .cb-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+  .cb-chip {
+    display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 8px; box-sizing: border-box;
+    background: #fff; border: 1px solid var(--cb-chip-line); border-radius: 6px;
+    font-size: 12px; font-weight: 400; line-height: 1; white-space: nowrap; color: var(--cb-chip-label);
+  }
+  .cb-chip b { font-weight: 600; color: var(--cb-chip-value); }
+  .cb-chip::before {            /* 8px scanning dot — decorative only, the label carries the meaning */
+    content: ""; width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; background: var(--cb-chip-dot, #9ca3af);
+  }
+  .cb-chip[data-type="category"] { --cb-chip-dot: var(--cb-hue-category); }
+  .cb-chip[data-type="qtytype"]  { --cb-chip-dot: var(--cb-hue-qtytype); }
+  .cb-chip[data-type="class"]    { --cb-chip-dot: var(--cb-hue-class); }
+  .cb-chip[data-type="origin"]   { --cb-chip-dot: var(--cb-hue-origin); }
+  .cb-chip[data-type="phase"]    { --cb-chip-dot: var(--cb-hue-phase); }
+  .cb-chip[data-type="priority"] { --cb-chip-dot: var(--cb-hue-priority); }
+  .cb-chip[data-type="fundingmode"] { --cb-chip-dot: var(--cb-hue-fundingmode); }
+  .cb-chip[data-type="lin"]      { --cb-chip-dot: var(--cb-hue-lin); }
+  .cb-chip[data-type="country"]  { --cb-chip-dot: var(--cb-hue-country); }
+
+  /* +N overflow — max 3 chips; with more, show 2 + this button */
+  .cb-chip-more {
+    display: inline-flex; align-items: center; height: 24px; padding: 0 8px; box-sizing: border-box;
+    background: #fff; border: 1px dashed var(--cb-chip-more-line); border-radius: 6px; cursor: pointer;
+    font: inherit; font-size: 12px; font-weight: 600; line-height: 1; color: var(--cb-chip-more-text);
+  }
+  .cb-chip-more:hover, .cb-chip-more[aria-expanded="true"] { background: var(--cb-hover); }
+  .cb-chip-more:focus-visible { outline: 2px solid var(--cb-focus); outline-offset: 2px; }
+  .cb-chip-popover {            /* positioned by the checkbook-chips script (fixed, so scroll areas can't clip it) */
+    position: fixed; z-index: 1000; display: none; flex-wrap: wrap; gap: 6px; max-width: 300px; padding: 10px;
+    background: #fff; border: 1px solid var(--cb-border); border-radius: 8px;
+    box-shadow: 0 0 2px rgba(0,0,0,.12), 0 8px 16px rgba(0,0,0,.14);
+  }
+  .cb-chip-popover.is-open { display: flex; }
+
+  /* Badge — only while a row has a pending action result; sits inline after the item name */
+  .cb-item-name { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 8px; font-weight: 600; }
+  .cb-badge {
+    display: inline-flex; align-items: center; gap: 4px; height: 20px; padding: 0 6px; border-radius: 4px;
+    font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; line-height: 1;
+    color: #fff; white-space: nowrap;
+  }
+  .cb-badge svg { width: 12px; height: 12px; flex-shrink: 0; }
+  .cb-badge-saved { background: var(--cb-badge-saved); }
+  .cb-badge-error { background: var(--cb-badge-error); }
+
+  /* Status label — tinted pill, own column, icon always */
+  .cb-status {
+    display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 12px; border-radius: 999px;
+    font-size: 13px; font-weight: 600; line-height: 1; white-space: nowrap;
+  }
+  .cb-status svg { width: 14px; height: 14px; flex-shrink: 0; }
+  .cb-status-success { background: var(--cb-status-success-bg); color: var(--cb-status-success-fg); }
+  .cb-status-warning { background: var(--cb-status-warning-bg); color: var(--cb-status-warning-fg); }
+  .cb-status-danger  { background: var(--cb-status-danger-bg);  color: var(--cb-status-danger-fg); }
+  .cb-status-info    { background: var(--cb-status-info-bg);    color: var(--cb-status-info-fg); }
+  .cb-status-neutral { background: var(--cb-status-neutral-bg); color: var(--cb-status-neutral-fg); }
+
+  .cb-selected { display: inline-flex; align-items: center; column-gap: 6px; font-weight: 600; color: var(--cb-text-muted); }
+  .cb-selected::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: #000; }
+
+  .cb-spinner { width: 20px; height: 20px; border: 2px solid var(--cb-brand-tint-line); border-top-color: var(--cb-brand);
+    border-radius: 50%; animation: cb-spin .8s linear infinite; display: inline-block; vertical-align: middle; }
+  .cb-spinner-xs { width: 10px; height: 10px; border-width: 1.5px; }
+  @keyframes cb-spin { to { transform: rotate(360deg); } }
+  .cb-loading { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 16px; color: var(--cb-text-secondary); }
+
+  .cb-empty { padding: 16px; color: var(--cb-text-muted); }
+
+  .cb-banner { padding: 8px 12px; border-radius: var(--cb-radius); font-size: var(--cb-fs-300); border-left: 3px solid; }
+  .cb-banner-error   { background: var(--cb-error-tint);   color: var(--cb-error-text);   border-color: var(--cb-error); }
+  .cb-banner-success { background: var(--cb-success-tint); color: var(--cb-success-text); border-color: var(--cb-success); }
+  .cb-banner-warn    { background: var(--cb-warn-tint);    color: var(--cb-warn-text);    border-color: #e9a100; }
+
+  /* ── Toolbar ──────────────────────────────────────────────────────── */
+  .cb-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 4px 2px 8px; flex-wrap: wrap; }
+  .cb-toolbar-left, .cb-toolbar-right { display: flex; align-items: center; column-gap: 10px; }
+  .cb-toolbar-right { column-gap: 8px; }
+  .cb-title { font-weight: 600; font-size: var(--cb-fs-300); }
+
+  /* ── Dialog ───────────────────────────────────────────────────────── */
+  .cb-dialog { background: #fff; border-radius: 8px; max-width: 640px; padding: 24px;
+    box-shadow: 0 0 2px rgba(0,0,0,.12), 0 8px 16px rgba(0,0,0,.14); }
+  .cb-dialog-title { font-size: 20px; font-weight: 600; margin: 0 0 8px; }
+  .cb-dialog-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px; }
+  .cb-dialog-count { display: block; margin-top: 8px; font-weight: 600; color: #333; }
+  .cb-dialog-count b { color: var(--cb-success-text); }
+
+  /* ── Choice controls: checkbox, radio, switch ─────────────────────────
+     Markup: <label class="cb-checkbox|cb-radio|cb-switch"><input type="…"><span>Label</span></label>
+     The label wraps the input, so hovering anywhere on the row turns the text blue. */
+  .cb-checkbox, .cb-radio, .cb-switch {
+    display: inline-flex; align-items: center; gap: 10px; cursor: pointer;
+    font-size: var(--cb-fs-300); line-height: 20px; color: var(--cb-text);
+    user-select: none; vertical-align: middle; transition: color .12s ease, background-color .12s ease;
+    padding: 5px; border-radius: 5px;
+  }
+  .cb-checkbox input, .cb-radio input, .cb-switch input {
+    -webkit-appearance: none; appearance: none; margin: 0; flex-shrink: 0; cursor: pointer;
+    position: relative; display: inline-grid; place-content: center;
+    transition: background-color .15s ease, border-color .15s ease;
+  }
+  .cb-checkbox input:focus-visible, .cb-radio input:focus-visible, .cb-switch input:focus-visible {
+    outline: 2px solid var(--cb-focus); outline-offset: 2px;
+  }
+
+  /* Hover: label text + unchecked border turn blue */
+  .cb-checkbox:hover, .cb-radio:hover, .cb-switch:hover { color: var(--cb-brand); background-color: var(--cb-control-hover-bg); }
+  .cb-checkbox:hover input:not(:checked):not(:indeterminate),
+  .cb-radio:hover input:not(:checked) { border-color: var(--cb-brand); }
+
+  /* Checkbox — 18px rounded square; checked = blue fill + white check */
+  .cb-checkbox input {
+    width: 18px; height: 18px; border-radius: 4px;
+    background: #fff; border: 1.5px solid var(--cb-control-line);
+  }
+  .cb-checkbox input::after {
+    content: ""; width: 9px; height: 4px; margin-top: -2px;
+    border-left: 2px solid #fff; border-bottom: 2px solid #fff;
+    transform: rotate(-45deg) scale(0); transition: transform .12s ease;
+  }
+  .cb-checkbox input:checked, .cb-checkbox input:indeterminate { background: var(--cb-brand); border-color: var(--cb-brand); }
+  .cb-checkbox input:checked::after { transform: rotate(-45deg) scale(1); }
+  .cb-checkbox input:indeterminate::after { width: 8px; height: 0; margin-top: 0; border-left: 0; transform: none; }
+
+  /* Radio — 18px circle; checked = blue ring + blue dot */
+  .cb-radio input {
+    width: 18px; height: 18px; border-radius: 50%;
+    background: #fff; border: 1.5px solid var(--cb-control-line);
+  }
+  .cb-radio input::after {
+    content: ""; width: 10px; height: 10px; border-radius: 50%; background: var(--cb-brand);
+    transform: scale(0); transition: transform .12s ease;
+  }
+  .cb-radio input:checked { border: 2px solid var(--cb-brand); }
+  .cb-radio input:checked::after { transform: scale(1); }
+  .cb-radio-group { display: flex; flex-direction: column; gap: 10px; }
+  .cb-radio-group.inline { flex-direction: row; gap: 20px; }
+
+  /* Switch — 40×24 pill, white knob with soft shadow.
+     standard (default): true = blue, false = gray.   .goodbad: true = green, false = red. */
+  .cb-switch input {
+    width: 40px; height: 24px; border-radius: 999px; border: none;
+    background: var(--cb-switch-off);
+  }
+  .cb-switch input::after {
+    content: ""; position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%;
+    background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.25), 0 0 1px rgba(0,0,0,.15);
+    transition: transform .18s ease;
+  }
+  .cb-switch input:checked { background: var(--cb-brand); }
+  .cb-switch input:checked::after { transform: translateX(16px); }
+  .cb-switch.goodbad input         { background: var(--cb-switch-bad); }
+  .cb-switch.goodbad input:checked { background: var(--cb-switch-good); }
+
+  /* Disabled: same rule as buttons — desaturate, never recolor, no hover */
+  .cb-checkbox:has(input:disabled), .cb-radio:has(input:disabled), .cb-switch:has(input:disabled),
+  .cb-checkbox.is-disabled, .cb-radio.is-disabled, .cb-switch.is-disabled {
+    opacity: .7; filter: saturate(0); cursor: not-allowed; color: var(--cb-text); background-color: transparent;
+  }
+  .cb-checkbox input:disabled, .cb-radio input:disabled, .cb-switch input:disabled { cursor: not-allowed; }
+  .cb-checkbox:hover input:disabled:not(:checked), .cb-radio:hover input:disabled:not(:checked) { border-color: var(--cb-control-line); }
+</style>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     DOCUMENT CHROME — styles for this reference page only. Not part of the kit.
+     ═══════════════════════════════════════════════════════════════════════ -->
+<style>
+  * { box-sizing: border-box; }
+  html { background: #e9e9e9; }
+  body {
+    margin: 24px auto; width: 8.5in; max-width: 100%; padding: 0.6in 0.6in 0.8in;
+    background: #fff; box-shadow: 0 2px 12px rgba(0,0,0,.12);
+  }
+  @media (max-width: 8.6in) { body { margin: 0; padding: 24px 16px; box-shadow: none; } }
+
+  .doc-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 28px;
+    font-size: 12px; color: var(--cb-text-muted); }
+  h1 { font-size: 26px; font-weight: 700; margin: 0 0 4px; letter-spacing: -.2px; }
+  .doc-sub { color: var(--cb-text-muted); margin: 0 0 6px; font-size: 14px; }
+  .doc-meta { font-size: 12px; color: var(--cb-text-muted); margin: 0 0 24px; }
+
+  h2 { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .6px;
+    margin: 36px 0 12px; padding-bottom: 6px; border-bottom: 2px solid var(--cb-text);
+    break-after: avoid; page-break-after: avoid; }
+  h2 .n { color: var(--cb-text-muted); margin-right: 6px; }
+  h3 { font-size: 14px; font-weight: 600; margin: 20px 0 8px; break-after: avoid; page-break-after: avoid; }
+  p, li { font-size: 13px; line-height: 1.55; }
+  p { margin: 0 0 10px; }
+  ul { margin: 0 0 10px; padding-left: 20px; }
+  code { font-family: var(--cb-font-mono); font-size: 12px; background: #f4f4f4; padding: 1px 4px; border-radius: 3px; }
+
+  .toc { columns: 2; column-gap: 24px; font-size: 13px; padding: 12px 16px; background: var(--cb-surface-alt);
+    border: 1px solid var(--cb-border); border-radius: 4px; margin-bottom: 8px; }
+  .toc a { color: var(--cb-text); text-decoration: none; display: block; padding: 2px 0; }
+  .toc a:hover { text-decoration: underline; }
+
+  .principles { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .principle { border: 1px solid var(--cb-border); border-radius: 4px; padding: 10px 12px; break-inside: avoid; }
+  .principle b { display: block; font-size: 13px; margin-bottom: 2px; }
+  .principle span { font-size: 12px; color: var(--cb-text-secondary); line-height: 1.5; }
+
+  .stage { border: 1px solid var(--cb-border); border-radius: 4px; padding: 16px; margin: 8px 0 10px;
+    background: #fff; break-inside: avoid; page-break-inside: avoid; }
+  .stage-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px;
+    color: var(--cb-text-muted); margin-bottom: 10px; }
+  .row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .row:last-child { margin-bottom: 0; }
+  .lbl { font-size: 11px; color: var(--cb-text-muted); width: 110px; flex-shrink: 0; }
+
+  .spec { width: 100%; border-collapse: collapse; font-size: 12px; margin: 6px 0 12px; break-inside: avoid; }
+  .spec th { text-align: left; font-weight: 600; background: var(--cb-surface-alt); padding: 6px 8px;
+    border-bottom: 1px solid var(--cb-border-strong); }
+  .spec td { padding: 5px 8px; border-bottom: 1px solid var(--cb-border); vertical-align: top; }
+  .spec td:first-child { font-weight: 600; white-space: nowrap; }
+  .spec code { font-size: 11px; }
+
+  .do-dont { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 8px 0 12px; break-inside: avoid; }
+  .do, .dont { border-radius: 4px; padding: 10px 12px; font-size: 12px; line-height: 1.5; }
+  .do   { background: var(--cb-success-tint); border-left: 3px solid var(--cb-success); }
+  .dont { background: var(--cb-error-tint);   border-left: 3px solid var(--cb-error); }
+  .do b, .dont b { display: block; margin-bottom: 4px; font-size: 11px; text-transform: uppercase; letter-spacing: .4px; }
+  .do ul, .dont ul { margin: 0; padding-left: 16px; }
+  .do li, .dont li { font-size: 12px; }
+
+  .swatches { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px 12px; }
+  .sw { display: flex; align-items: center; gap: 8px; break-inside: avoid; }
+  .sw i { width: 30px; height: 30px; border-radius: 4px; border: 1px solid rgba(0,0,0,.1); flex-shrink: 0; }
+  .sw div { font-size: 11px; line-height: 1.35; }
+  .sw b { display: block; font-size: 11px; }
+  .sw code { font-size: 10px; background: none; padding: 0; color: var(--cb-text-muted); }
+
+  .type-row { display: flex; align-items: baseline; gap: 16px; padding: 6px 0; border-bottom: 1px dashed var(--cb-border); }
+  .type-row:last-child { border-bottom: none; }
+  .type-row .meta { width: 170px; flex-shrink: 0; font-size: 11px; color: var(--cb-text-muted); font-family: var(--cb-font-mono); }
+
+  .spacing-row { display: flex; align-items: flex-end; gap: 14px; }
+  .spacing-row div { text-align: center; font-size: 10px; color: var(--cb-text-muted); }
+  .spacing-row i { display: block; background: var(--cb-brand-tint-line); margin: 0 auto 4px; }
+
+  /* Static "hover" state samples so the PDF shows them */
+  .cb-btn.is-hover { background: var(--cb-hover); }
+  .cb-input.is-hover { background: #fff; border-color: var(--cb-input-hover); }
+  .sel-hl { background: #b3d4ff; color: var(--cb-text); padding: 0 1px; }
+  .cb-num.is-hover { background: #fff; border-color: var(--cb-input-hover); }
+  .cb-checkbox.is-hover, .cb-radio.is-hover, .cb-switch.is-hover { color: var(--cb-brand); background-color: var(--cb-control-hover-bg); }
+  .cb-checkbox.is-hover input:not(:checked), .cb-radio.is-hover input:not(:checked) { border-color: var(--cb-brand); }
+  .choice-grid { display: grid; grid-template-columns: 110px 1fr 1fr 1fr 1fr; gap: 12px 10px; align-items: center; }
+  .choice-grid .hd { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .4px; color: var(--cb-text-muted); }
+
+  .anatomy { position: relative; }
+  .callout { font-size: 10px; color: #fff; background: #5c2d91; border-radius: 999px; width: 16px; height: 16px;
+    display: inline-flex; align-items: center; justify-content: center; font-weight: 700; flex-shrink: 0; }
+  .callout-list { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 16px; margin-top: 12px; font-size: 12px; }
+  .callout-list div { display: flex; gap: 6px; align-items: flex-start; line-height: 1.4; }
+
+  /* Icon library */
+  .icons { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .icon-card { border: 1px solid var(--cb-border); border-radius: 4px; padding: 10px; break-inside: avoid; page-break-inside: avoid; }
+  .icon-head { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+  .icon-prev { width: 40px; height: 40px; border-radius: 4px; background: var(--cb-surface-alt);
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .icon-prev svg { width: 20px; height: 20px; }
+  .icon-name { font-weight: 600; font-size: 13px; }
+  .icon-use { font-size: 11px; color: var(--cb-text-muted); line-height: 1.35; }
+  .icon-src { font-size: 9px; text-transform: uppercase; letter-spacing: .4px; color: var(--cb-text-muted); }
+  .copy-btn { margin-left: auto; align-self: flex-start; white-space: nowrap; flex-shrink: 0; font-size: 11px; padding: 2px 8px; min-height: 24px; }
+
+  pre { font-family: var(--cb-font-mono); font-size: 10px; line-height: 1.45; background: #f6f6f6; color: #1f1f1f;
+    border: 1px solid var(--cb-border); border-radius: 4px; padding: 8px 10px; margin: 0;
+    white-space: pre-wrap; word-break: break-all; overflow-wrap: anywhere; }
+  pre.code { font-size: 11px; margin: 6px 0 12px; break-inside: avoid; }
+  .icon-card pre { max-height: 110px; overflow: hidden; }
+
+  .checklist li { list-style: none; position: relative; padding-left: 4px; }
+  .checklist li::before { content: "☐"; position: absolute; left: -18px; color: var(--cb-text-muted); }
+
+  .footer { margin-top: 40px; padding-top: 10px; border-top: 1px solid var(--cb-border); font-size: 11px; color: var(--cb-text-muted); }
+
+  @page { size: letter; margin: 0.5in; }
+  @media print {
+    html { background: #fff; }
+    body { width: auto; margin: 0; padding: 0; box-shadow: none; }
+    .no-print { display: none !important; }
+    * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+    .cb-table-scroll { max-height: none; overflow: visible; }
+    .cb-table th, .cb-table tr.cb-totals td, .cb-table tr.cb-loadmore td { position: static; }
+    .icon-card pre { max-height: none; overflow: visible; }
+    h2 { margin-top: 28px; }
+    .page-break { break-before: page; page-break-before: always; }
+    a { color: inherit; text-decoration: none; }
+  }
+</style>
+</head>
+<body class="cb-root">
+
+<div class="doc-bar no-print">
+  <span>Companion to <code>Design Documentation.md</code></span>
+  <button class="cb-btn" onclick="window.print()">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" aria-hidden="true"><path d="M320 96L320 400M192 288L320 416L448 288M128 528L512 528" fill="none" stroke="#727272" stroke-width="56" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    Print / Save as PDF
+  </button>
+</div>
+
+<h1>Checkbook Design System</h1>
+<p class="doc-sub">How every HTML Web Resource and PCF component in ARNG Checkbook should look and behave.</p>
+<p class="doc-meta">Baseline: <b>Itemized Details Grid</b> (<code>pcf/ItemizedDetailsGrid</code>) · Fluent UI v9 · <code>checkbookTheme</code> (webLightTheme + brand <code>#2086ff</code>) · v1.5 · November 2026</p>
+
+<nav class="toc">
+  <a href="#principles">1 · Design principles</a>
+  <a href="#color">2 · Color tokens</a>
+  <a href="#type">3 · Typography</a>
+  <a href="#space">4 · Spacing &amp; shape</a>
+  <a href="#buttons">5 · Buttons</a>
+  <a href="#inputs">6 · Inputs</a>
+  <a href="#table">7 · Data grid / table</a>
+  <a href="#chips">8 · Chips, badges &amp; status</a>
+  <a href="#feedback">9 · Loading, empty &amp; errors</a>
+  <a href="#toolbar">10 · Toolbar</a>
+  <a href="#dialog">11 · Dialogs</a>
+  <a href="#anatomy">12 · Full component anatomy</a>
+  <a href="#icons">13 · Icon library (raw SVG)</a>
+  <a href="#checklist">14 · Review checklist</a>
+</nav>
+
+<!-- ─────────────────────────────────────────────────────────────────────── -->
+<h2 id="principles"><span class="n">01</span>Design principles</h2>
+<div class="principles">
+  <div class="principle"><b>Quiet chrome, loud data</b><span>Borderless buttons, soft fills and muted context text. The numbers and the user's edits are what stand out.</span></div>
+  <div class="principle"><b>Color carries meaning, never decoration</b><span>Green adds, red deletes, blue is brand/interactive, grey is neutral. A color used for one meaning is never reused for another.</span></div>
+  <div class="principle"><b>Show affordance on hover</b><span>Editable fields sit at a grey fill and "wake up" (white + blue border) on hover. Buttons gain a background only on hover.</span></div>
+  <div class="principle"><b>State without layout shift</b><span>Sticky header and totals stay put, disabled controls keep their shape, and action badges sit inline after the item name in a cell that already wraps. Nothing jitters.</span></div>
+  <div class="principle"><b>Disabled = desaturated</b><span>Disabled controls keep their color identity but drop to 0 saturation at 70% opacity, so users still recognize the control.</span></div>
+  <div class="principle"><b>Tokens over hex</b><span>PCF uses Fluent v9 <code>tokens.*</code>. HTML uses the <code>--cb-*</code> variables. A raw hex in a component is a review flag unless it is in the token table.</span></div>
+</div>
+
+<!-- ─────────────────────────────────────────────────────────────────────── -->
+<h2 id="color"><span class="n">02</span>Color tokens</h2>
+<p>Every color below has a CSS variable (HTML Web Resources) and a Fluent v9 token or approved literal (PCF). Do not introduce new hex values; extend this table first.</p>
+
+<h3>Text &amp; surfaces</h3>
+<div class="swatches">
+  <div class="sw"><i style="background:#242424"></i><div><b>Text</b><code>--cb-text · #242424</code></div></div>
+  <div class="sw"><i style="background:#424242"></i><div><b>Text secondary</b><code>--cb-text-secondary · #424242</code></div></div>
+  <div class="sw"><i style="background:#616161"></i><div><b>Text muted</b><code>--cb-text-muted · #616161</code></div></div>
+  <div class="sw"><i style="background:#ffffff"></i><div><b>Surface</b><code>--cb-surface · #ffffff</code></div></div>
+  <div class="sw"><i style="background:#fafafa"></i><div><b>Surface alt / totals</b><code>--cb-surface-alt · #fafafa</code></div></div>
+  <div class="sw"><i style="background:#fbfbfb"></i><div><b>Row hover</b><code>--cb-row-hover · #fbfbfb</code></div></div>
+  <div class="sw"><i style="background:#f7f7f7"></i><div><b>Input fill</b><code>--cb-input-fill · #f7f7f7</code></div></div>
+  <div class="sw"><i style="background:#f5f5f5"></i><div><b>Button hover</b><code>--cb-hover · #f5f5f5</code></div></div>
+  <div class="sw"><i style="background:#e0e0e0"></i><div><b>Pressed / border</b><code>--cb-pressed · #e0e0e0</code></div></div>
+  <div class="sw"><i style="background:#d1d1d1"></i><div><b>Border strong</b><code>--cb-border-strong · #d1d1d1</code></div></div>
+  <div class="sw"><i style="background:#b2c3f4"></i><div><b>Input hover border</b><code>--cb-input-hover · #b2c3f4</code></div></div>
+  <div class="sw"><i style="background:#2086ff"></i><div><b>Brand / focus</b><code>--cb-brand · #2086ff</code></div></div>
+</div>
+
+<h3>Action &amp; semantic</h3>
+<div class="swatches">
+  <div class="sw"><i style="background:#16ca92"></i><div><b>Add (icon)</b><code>--cb-add · #16ca92</code></div></div>
+  <div class="sw"><i style="background:#9f151e"></i><div><b>Delete / destructive</b><code>--cb-danger · #9f151e</code></div></div>
+  <div class="sw"><i style="background:#727272"></i><div><b>Neutral icon</b><code>--cb-icon-neutral · #727272</code></div></div>
+  <div class="sw"><i style="background:#989898"></i><div><b>In-field icon</b><code>--cb-icon-subtle · #989898</code></div></div>
+  <div class="sw"><i style="background:#5b9bd5"></i><div><b>Load more link</b><code>--cb-link · #5b9bd5</code></div></div>
+  <div class="sw"><i style="background:#e8f2ff"></i><div><b>Brand tint (chip)</b><code>--cb-brand-tint · #e8f2ff</code></div></div>
+  <div class="sw"><i style="background:#107c10"></i><div><b>Success</b><code>--cb-success · #107c10</code></div></div>
+  <div class="sw"><i style="background:#f1faf1"></i><div><b>Success tint (chip)</b><code>--cb-success-tint · #f1faf1</code></div></div>
+  <div class="sw"><i style="background:#d13438"></i><div><b>Error badge</b><code>--cb-error · #d13438</code></div></div>
+  <div class="sw"><i style="background:#bc2f32"></i><div><b>Error text</b><code>--cb-error-text · #bc2f32</code></div></div>
+  <div class="sw"><i style="background:#fdf3f4"></i><div><b>Error tint</b><code>--cb-error-tint · #fdf3f4</code></div></div>
+  <div class="sw"><i style="background:#fff9e6"></i><div><b>Warning tint</b><code>--cb-warn-tint · #fff9e6</code></div></div>
+</div>
+
+<h3>Choice controls</h3>
+<div class="swatches">
+  <div class="sw"><i style="background:#2086ff"></i><div><b>Checked / switch on</b><code>--cb-brand · #2086ff</code></div></div>
+  <div class="sw"><i style="background:#1a74e0"></i><div><b>Brand hover</b><code>--cb-brand-hover · #1a74e0</code></div></div>
+  <div class="sw"><i style="background:#d9d9d9"></i><div><b>Unchecked border</b><code>--cb-control-line · #d9d9d9</code></div></div>
+  <div class="sw"><i style="background:#f1f6ff"></i><div><b>Control row hover</b><code>--cb-control-hover-bg · #f1f6ff</code></div></div>
+  <div class="sw"><i style="background:#c8c8c8"></i><div><b>Switch off</b><code>--cb-switch-off · #c8c8c8</code></div></div>
+  <div class="sw"><i style="background:#22b35e"></i><div><b>Goodbad: true</b><code>--cb-switch-good · #22b35e</code></div></div>
+  <div class="sw"><i style="background:#e5484d"></i><div><b>Goodbad: false</b><code>--cb-switch-bad · #e5484d</code></div></div>
+</div>
+
+<!-- ─────────────────────────────────────────────────────────────────────── -->
+<h2 id="type"><span class="n">03</span>Typography</h2>
+<p>One family: <b>Segoe UI</b> (Fluent <code>tokens.fontFamilyBase</code>). Weight 600 is the emphasis weight. 700 is used in only <b>three places</b>: table headers (11px / 700 / UPPERCASE), action badges (10.5px / 700 / UPPERCASE) and the <code>$</code> / <code>#</code> prefix of numeric boxes. Never use 700+ anywhere else in a component.</p>
+<div class="stage">
+  <div class="type-row"><span class="meta">20px / 600 · dialog title</span><span style="font-size:20px;font-weight:600">Add Items from Requirement Details</span></div>
+  <div class="type-row"><span class="meta">11px / 700 caps · table header</span><span style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#424242">Requested amount</span></div>
+  <div class="type-row"><span class="meta">14px / 600 · component title</span><span style="font-size:14px;font-weight:600">Itemized Details (24)</span></div>
+  <div class="type-row"><span class="meta">14px / 400 · body, cells, buttons</span><span style="font-size:14px">Humvee, M1151 Armament Carrier</span></div>
+  <div class="type-row"><span class="meta">14px / 400 tabular · amounts</span><span style="font-size:14px;font-variant-numeric:tabular-nums">$1,250,000.00</span></div>
+  <div class="type-row"><span class="meta">12px / 400 muted · meta, helper</span><span style="font-size:12px;color:var(--cb-text-muted)">No Requirement Details match that search.</span></div>
+  <div class="type-row"><span class="meta">12px · 400 label / 600 value · chips</span><span class="cb-chip" data-type="category">Category: <b>Equipment</b></span></div>
+</div>
+<ul>
+  <li>Amounts: <code>font-variant-numeric: tabular-nums</code>, right-aligned, formatted with <code>toLocaleString(undefined, { style: "currency", currency: "USD", maximumFractionDigits: 2 })</code>.</li>
+  <li>Counts in titles use parentheses: <b>Itemized Details (24)</b>, <b>Selected (3)</b>.</li>
+  <li>Use Title Case for buttons and headers (<i>Add Items</i>, <i>Delete Selected</i>). Use sentence case for messages. Loading text ends with an ellipsis: <i>Loading Itemized Details…</i></li>
+</ul>
+
+<!-- ─────────────────────────────────────────────────────────────────────── -->
+<h2 id="space"><span class="n">04</span>Spacing &amp; shape</h2>
+<div class="stage">
+  <div class="spacing-row">
+    <div><i style="width:2px;height:2px"></i>2</div>
+    <div><i style="width:4px;height:4px"></i>4</div>
+    <div><i style="width:6px;height:6px"></i>6</div>
+    <div><i style="width:8px;height:8px"></i>8</div>
+    <div><i style="width:10px;height:10px"></i>10</div>
+    <div><i style="width:12px;height:12px"></i>12</div>
+    <div><i style="width:16px;height:16px"></i>16</div>
+    <div><i style="width:24px;height:24px"></i>24</div>
+  </div>
+</div>
+<table class="spec">
+  <tr><th>Where</th><th>Value</th></tr>
+  <tr><td>Component root padding</td><td><code>8px</code></td></tr>
+  <tr><td>Toolbar padding</td><td><code>4px 2px 8px 2px</code>. Gap between toolbar buttons <code>8px</code>, between title items <code>10px</code></td></tr>
+  <tr><td>Table cells</td><td><code>12px 16px</code> padding, 56px min row height, max-width <code>220px</code>. Header band 40px with <code>0 16px</code> padding. Compact (dialogs only): <code>8px 12px</code>, 44px rows</td></tr>
+  <tr><td>Chip row gap</td><td><code>4px</code> column / <code>2px</code> row, <code>4px</code> above</td></tr>
+  <tr><td>Empty state padding</td><td><code>16px</code></td></tr>
+  <tr><td>Radius</td><td><code>4px</code> controls · <code>6px</code> numeric boxes &amp; status pills · <code>8px</code> dialogs · <code>999px</code> chips/badges · <code>50%</code> pips/dots</td></tr>
+  <tr><td>Icon size</td><td><code>20px</code> in buttons (<code>18px</code> refresh) · <code>16px</code> inside search fields</td></tr>
+</table>
+
+<!-- ─────────────────────────────────────────────────────────────────────── -->
+<h2 id="buttons" class="page-break"><span class="n">05</span>Buttons</h2>
+<p><b>Default button = no border, transparent background, a background appears on hover, and it always has an icon.</b> Fluent: <code>&lt;Button appearance="subtle" size="small" icon={…}&gt;</code>.</p>
+
+<div class="stage">
+  <div class="stage-label">Labeled action buttons (toolbar)</div>
+  <div class="row"><span class="lbl">Resting</span>
+    <button class="cb-btn cb-btn-danger"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" aria-hidden="true"><path fill="#9f151e" d="M232.7 69.9C237.1 56.8 249.3 48 263.1 48L377 48C390.8 48 403 56.8 407.4 69.9L416 96L512 96C529.7 96 544 110.3 544 128C544 145.7 529.7 160 512 160L128 160C110.3 160 96 145.7 96 128C96 110.3 110.3 96 128 96L224 96L232.7 69.9zM128 208L512 208L512 512C512 547.3 483.3 576 448 576L192 576C156.7 576 128 547.3 128 512L128 208zM216 272C202.7 272 192 282.7 192 296L192 488C192 501.3 202.7 512 216 512C229.3 512 240 501.3 240 488L240 296C240 282.7 229.3 272 216 272zM320 272C306.7 272 296 282.7 296 296L296 488C296 501.3 306.7 512 320 512C333.3 512 344 501.3 344 488L344 296C344 282.7 333.3 272 320 272zM424 272C410.7 272 400 282.7 400 296L400 488C400 501.3 410.7 512 424 512C437.3 512 448 501.3 448 488L448 296C448 282.7 437.3 272 424 272z"/></svg>Delete Selected</button>
+    <button class="cb-btn"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" aria-hidden="true"><path fill="#16ca92" d="M352 128C352 110.3 337.7 96 320 96C302.3 96 288 110.3 288 128L288 288L128 288C110.3 288 96 302.3 96 320C96 337.7 110.3 352 128 352L288 352L288 512C288 529.7 302.3 544 320 544C337.7 544 352 529.7 352 512L352 352L512 352C529.7 352 544 337.7 544 320C544 302.3 529.7 288 512 288L352 288L352 128z"/></svg>Add Items</button>
+    <button class="cb-btn"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" aria-hidden="true" style="width:18px;height:18px"><path fill="#727272" d="M320 128C263.2 128 212.1 152.7 176.9 192L224 192C241.7 192 256 206.3 256 224C256 241.7 241.7 256 224 256L96 256C78.3 256 64 241.7 64 224L64 96C64 78.3 78.3 64 96 64C113.7 64 128 78.3 128 96L128 150.7C174.9 97.6 243.5 64 320 64C461.4 64 576 178.6 576 320C576 461.4 461.4 576 320 576C233 576 156.1 532.6 109.9 466.3C99.8 451.8 103.3 431.9 117.8 421.7C132.3 411.5 152.2 415.1 162.4 429.6C197.2 479.4 254.8 511.9 320 511.9C426 511.9 512 425.9 512 319.9C512 213.9 426 128 320 128z"/></svg>Refresh</button>
+  </div>
+  <div class="row"><span class="lbl">Hover</span>
+    <button class="cb-btn cb-btn-danger is-hover"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" aria-hidden="true"><path fill="#9f151e" d="M232.7 69.9C237.1 56.8 249.3 48 263.1 48L377 48C390.8 48 403 56.8 407.4 69.9L416 96L512 96C529.7 96 544 110.3 544 128C544 145.7 529.7 160 512 160L128 160C110.3 160 96 145.7 96 128C96 110.3 110.3 96 128 96L224 96L232.7 69.9zM128 208L512 208L512 512C512 547.3 483.3 576 448 576L192 576C156.7 576 128 547.3 128 512L128 208zM216 272C202.7 272 192 282.7 192 296L192 488C192 501.3 202.7 512 216 512C229.3 512 240 501.3 240 488L240 296C240 282.7 229.3 272 216 272zM320 272C306.7 272 296 282.7 296 296L296 488C296 501.3 306.7 512 320 512C333.3 512 344 501.3 344 488L344 296C344 282.7 333.3 272 320 272zM424 272C410.7 272 400 282.7 400 296L400 488C400 501.3 410.7 512 424 512C437.3 512 448 501.3 448 488L448 296C448 282.7 437.3 272 424 272z"/></svg>Delete Selected</button>
+    <button class="cb-btn is-hover"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" aria-hidden="true"><path fill="#16ca92" d="M352 128C352 110.3 337.7 96 320 96C302.3 96 288 110.3 288 128L288 288L128 288C110.3 288 96 302.3 96 320C96 337.7 110.3 352 128 352L288 352L288 512C288 529.7 302.3 544 320 544C337.7 544 352 529.7 352 512L352 352L512 352C529.7 352 544 337.7 544 320C544 302.3 529.7 288 512 288L352 288L352 128z"/></svg>Add Items</button>
+    <span style="font-size:11px;color:var(--cb-text-muted)">background <code>#f5f5f5</code>, pressed <code>#e0e0e0</code></span>
+  </div>
+  <div class="row"><span class="lbl">Disabled</span>
+    <button class="cb-btn cb-btn-danger" disabled><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" aria-hidden="true"><path fill="#9f151e" d="M232.7 69.9C237.1 56.8 249.3 48 263.1 48L377 48C390.8 48 403 56.8 407.4 69.9L416 96L512 96C529.7 96 544 110.3 544 128C544 145.7 529.7 160 512 160L128 160C110.3 160 96 145.7 96 128C96 110.3 110.3 96 128 96L224 96L232.7 69.9zM128 208L512 208L512 512C512 547.3 483.3 576 448 576L192 576C156.7 576 128 547.3 128 512L128 208zM216 272C202.7 272 192 282.7 192 296L192 488C192 501.3 202.7 512 216 512C229.3 512 240 501.3 240 488L240 296C240 282.7 229.3 272 216 272zM320 272C306.7 272 296 282.7 296 296L296 488C296 501.3 306.7 512 320 512C333.3 512 344 501.3 344 488L344 296C344 282.7 333.3 272 320 272zM424 272C410.7 272 400 282.7 400 296L400 488C400 501.3 410.7 512 424 512C437.3 512 448 501.3 448 488L448 296C448 282.7 437.3 272 424 272z"/></svg>Delete Selected</button>
+    <button class="cb-btn" disabled><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" aria-hidden="true"><path fill="#16ca92" d="M352 128C352 110.3 337.7 96 320 96C302.3 96 288 110.3 288 128L288 288L128 288C110.3 288 96 302.3 96 320C96 337.7 110.3 352 128 352L288 352L288 512C288 529.7 302.3 544 320 544C337.7 544 352 529.7 352 512L352 352L512 352C529.7 352 544 337.7 544 320C544 302.3 529.7 288 512 288L352 288L352 128z"/></svg>Add Items</button>
+    <span style="font-size:11px;color:var(--cb-text-muted)"><code>opacity: .7; filter: saturate(0)</code></span>
+  </div>
+</div>
+
+<div class="stage">
+  <div class="stage-label">Icon-only buttons (row actions)</div>
+  <div class="row"><span class="lbl">Resting / hover / disabled</span>
+    <button class="cb-btn cb-btn-icon" aria-label="Delete Itemized Detail" title="Delete Itemized Detail"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" aria-hidden="true"><path fill="#9f151e" d="M232.7 69.9C237.1 56.8 249.3 48 263.1 48L377 48C390.8 48 403 56.8 407.4 69.9L416 96L512 96C529.7 96 544 110.3 544 128C544 145.7 529.7 160 512 160L128 160C110.3 160 96 145.7 96 128C96 110.3 110.3 96 128 96L224 96L232.7 69.9zM128 208L512 208L512 512C512 547.3 483.3 576 448 576L192 576C156.7 576 128 547.3 128 512L128 208zM216 272C202.7 272 192 282.7 192 296L192 488C192 501.3 202.7 512 216 512C229.3 512 240 501.3 240 488L240 296C240 282.7 229.3 272 216 272zM320 272C306.7 272 296 282.7 296 296L296 488C296 501.3 306.7 512 320 512C333.3 512 344 501.3 344 488L344 296C344 282.7 333.3 272 320 272zM424 272C410.7 272 400 282.7 400 296L400 488C400 501.3 410.7 512 424 512C437.3 512 448 501.3 448 488L448 296C448 282.7 437.3 272 424 272z"/></svg></button>
+    <button class="cb-btn cb-btn-icon is-hover" aria-label="Delete" title="Delete"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" aria-hidden="true"><path fill="#9f151e" d="M232.7 69.9C237.1 56.8 249.3 48 263.1 48L377 48C390.8 48 403 56.8 407.4 69.9L416 96L512 96C529.7 96 544 110.3 544 128C544 145.7 529.7 160 512 160L128 160C110.3 160 96 145.7 96 128C96 110.3 110.3 96 128 96L224 96L232.7 69.9zM128 208L512 208L512 512C512 547.3 483.3 576 448 576L192 576C156.7 576 128 547.3 128 512L128 208zM216 272C202.7 272 192 282.7 192 296L192 488C192 501.3 202.7 512 216 512C229.3 512 240 501.3 240 488L240 296C240 282.7 229.3 272 216 272zM320 272C306.7 272 296 282.7 296 296L296 488C296 501.3 306.7 512 320 512C333.3 512 344 501.3 344 488L344 296C344 282.7 333.3 272 320 272zM424 272C410.7 272 400 282.7 400 296L400 488C400 501.3 410.7 512 424 512C437.3 512 448 501.3 448 488L448 296C448 282.7 437.3 272 424 272z"/></svg></button>
+    <button class="cb-btn cb-btn-icon" aria-label="Delete" title="Delete" disabled><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" aria-hidden="true"><path fill="#9f151e" d="M232.7 69.9C237.1 56.8 249.3 48 263.1 48L377 48C390.8 48 403 56.8 407.4 69.9L416 96L512 96C529.7 96 544 110.3 544 128C544 145.7 529.7 160 512 160L128 160C110.3 160 96 145.7 96 128C96 110.3 110.3 96 128 96L224 96L232.7 69.9zM128 208L512 208L512 512C512 547.3 483.3 576 448 576L192 576C156.7 576 128 547.3 128 512L128 208zM216 272C202.7 272 192 282.7 192 296L192 488C192 501.3 202.7 512 216 512C229.3 512 240 501.3 240 488L240 296C240 282.7 229.3 272 216 272zM320 272C306.7 272 296 282.7 296 296L296 488C296 501.3 306.7 512 320 512C333.3 512 344 501.3 344 488L344 296C344 282.7 333.3 272 320 272zM424 272C410.7 272 400 282.7 400 296L400 488C400 501.3 410.7 512 424 512C437.3 512 448 501.3 448 488L448 296C448 282.7 437.3 272 424 272z"/></svg></button>
+    <span style="width:12px"></span>
+    <button class="cb-btn cb-btn-icon" aria-label="Edit" title="Edit"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" aria-hidden="true"><path d="M400 128L512 240L256 496L128 512L144 384Z M352 176L464 288" fill="none" stroke="#727272" stroke-width="48" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+    <button class="cb-btn cb-btn-icon" aria-label="Close" title="Close"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" aria-hidden="true"><path d="M192 192L448 448M448 192L192 448" fill="none" stroke="#727272" stroke-width="64" stroke-linecap="round"/></svg></button>
+    <button class="cb-btn cb-btn-icon" aria-label="Open record" title="Open record"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" aria-hidden="true"><path d="M368 128L512 128L512 272M512 128L304 336M448 400L448 512L128 512L128 192L240 192" fill="none" stroke="#727272" stroke-width="56" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+  </div>
+</div>
+
+<div class="stage">
+  <div class="stage-label">Dialog footer only: primary &amp; secondary</div>
+  <div class="row"><span class="lbl">Confirm / cancel</span>
+    <button class="cb-btn cb-btn-secondary">Cancel</button>
+    <button class="cb-btn cb-btn-primary">Add Selected</button>
+    <button class="cb-btn cb-btn-primary" disabled>Add Selected</button>
+  </div>
+  <div class="row"><span class="lbl">Load more (grid row)</span>
+    <div style="flex:1;border:1px solid var(--cb-border);border-radius:4px;overflow:hidden"><button class="cb-btn cb-btn-loadmore">Load more</button></div>
+  </div>
+</div>
+
+<table class="spec">
+  <tr><th>Variant</th><th>When</th><th>Spec</th></tr>
+  <tr><td>Action (default)</td><td>Toolbar commands: Add, Refresh, Export…</td><td>Fluent <code>subtle</code>, <code>size="small"</code>, 14px <code>#242424</code> label, padding <code>10px 14px</code>, 20px colored icon before label</td></tr>
+  <tr><td>Destructive</td><td>Delete / Remove / Clear</td><td>Same as action, but the label is <code>--cb-danger</code> <code>#9f151e</code> with a red trash icon. Always opens a confirm dialog.</td></tr>
+  <tr><td>Icon-only</td><td>Per-row actions, close, inline edit</td><td><code>subtle</code>, no label, 32×32 hit area, <b>required</b> <code>aria-label</code> + <code>&lt;Tooltip relationship="label"&gt;</code> (HTML: <code>title</code>)</td></tr>
+  <tr><td>Primary</td><td>Dialog confirm only</td><td>Fluent <code>appearance="primary"</code>. At most one per dialog, placed last (right).</td></tr>
+  <tr><td>Secondary</td><td>Dialog cancel / back only</td><td>Fluent <code>appearance="secondary"</code>, placed left of primary</td></tr>
+  <tr><td>Load more</td><td>Paging inside a grid</td><td>Full-width row, 40px, 600 weight 15px <code>#5b9bd5</code> → <code>#2e5f8a</code> on hover</td></tr>
+  <tr><td>Disabled (all)</td><td>Busy, nothing selected, no permission</td><td><code>opacity: .7; filter: saturate(0); cursor: not-allowed</code>. <b>Do not</b> swap the color: the filter also greys out hard-coded SVG fills.</td></tr>
+</table>
+<div class="do-dont">
+  <div class="do"><b>Do</b><ul><li>Pair every action button with an icon from §13</li><li>Disable a button when its action can't run (e.g. Delete Selected with 0 rows selected)</li><li>Hide edit actions entirely when the control is read-only (<code>isDisabled</code>)</li></ul></div>
+  <div class="dont"><b>Don't</b><ul><li>Add borders or filled backgrounds to toolbar/row buttons</li><li>Use primary (blue filled) outside a dialog footer</li><li>Grey out with <code>color: #bdbdbd</code>; desaturate instead</li><li>Ship an icon-only button without a tooltip</li></ul></div>
+</div>
+
+<!-- ─────────────────────────────────────────────────────────────────────── -->
+<h2 id="inputs"><span class="n">06</span>Inputs</h2>
+<p>Editable fields use Fluent <code>appearance="filled-lighter"</code> with a <code>#f7f7f7</code> fill and a 2px transparent border. On hover they turn white with a 2px <code>#b2c3f4</code> border.</p>
+<div class="stage">
+  <div class="row"><span class="lbl">Text</span>
+    <input class="cb-input" style="width:180px" placeholder="State comment…">
+    <input class="cb-input is-hover" style="width:180px" value="Hover state">
+  </div>
+  <div class="row"><span class="lbl">Money</span>
+    <label class="cb-num" style="width:130px"><span class="cb-num-adorn" aria-hidden="true">$</span><input class="cb-money" type="text" inputmode="decimal" data-value="48500" aria-label="Requested amount"></label>
+    <span style="font-size:11px;color:var(--cb-text-muted)">click it: raw on focus, formatted on blur</span>
+  </div>
+  <div class="row"><span class="lbl">Quantity</span>
+    <label class="cb-num" style="width:96px"><span class="cb-num-adorn" aria-hidden="true">#</span><input class="cb-qty" type="text" inputmode="numeric" data-value="1200" aria-label="Quantity"></label>
+    <span style="font-size:11px;color:var(--cb-text-muted)">see <b>Money &amp; quantity</b> below</span>
+  </div>
+  <div class="row"><span class="lbl">Dropdown</span>
+    <select class="cb-select" style="width:150px"><option>State level</option><option>W1AA FC 01</option></select>
+    <span style="font-size:11px;color:var(--cb-text-muted)">height 30px · min 100 / max 150–160px</span>
+  </div>
+  <div class="row"><span class="lbl">Textarea</span>
+    <textarea class="cb-textarea" style="width:180px">Editable state comment</textarea>
+    <textarea class="cb-textarea" style="width:180px" readonly>Read-only NPM comment: no fill, no hover.</textarea>
+  </div>
+  <div class="row"><span class="lbl">Search</span>
+    <span class="cb-search"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" aria-hidden="true"><path fill="#989898" d="M480 272C480 317.9 465.1 360.3 440 394.7L566.6 521.4C579.1 533.9 579.1 554.2 566.6 566.7C554.1 579.2 533.8 579.2 521.3 566.7L394.7 440C360.3 465.1 317.9 480 272 480C157.1 480 64 386.9 64 272C64 157.1 157.1 64 272 64C386.9 64 480 157.1 480 272zM272 416C351.5 416 416 351.5 416 272C416 192.5 351.5 128 272 128C192.5 128 128 192.5 128 272C128 351.5 192.5 416 272 416z"/></svg><input class="cb-input" style="width:320px" placeholder="Search Item, Fund Center, Country, LIN"></span>
+  </div>
+  <div class="row"><span class="lbl">Checkbox / radio / switch</span><span style="font-size:12px;color:var(--cb-text-muted)">See <b>Checkbox, radio &amp; switch</b> below.</span></div>
+</div>
+<table class="spec">
+  <tr><th>Rule</th><th>Detail</th></tr>
+  <tr><td>Editable</td><td><code>#f7f7f7</code> fill, 2px transparent border. Hover/focus: white + 2px <code>#b2c3f4</code>. Focus adds the Fluent underline.</td></tr>
+  <tr><td>Read-only</td><td>No fill, no hover border, <code>cursor: default</code>, <code>tabIndex={-1}</code>. Use a read-only Textarea for long text so it wraps and scrolls.</td></tr>
+  <tr><td>Form locked</td><td>When the whole control is disabled, render values as <b>plain muted text</b> (<code>--cb-text-muted</code>) instead of disabled inputs.</td></tr>
+  <tr><td>Save model</td><td>Commit on <code>blur</code> or on option select, not per keystroke. Show the row save status (§8).</td></tr>
+  <tr><td>Long lists</td><td>Use a Combobox (type-to-filter), with the option list capped at <code>200px</code> and scrolling. Long option text wraps; the closed field can't.</td></tr>
+  <tr><td>Widths</td><td>Qty <code>80px</code> · Amount <code>100px</code> · Dropdown <code>100–160px</code> · Comment <code>150–200px</code> · Toolbar search <code>180–400px</code></td></tr>
+</table>
+
+<h3>Money &amp; quantity</h3>
+<p>The two numeric subtypes share one look: a <b>grey <code>#f7f7f7</code> box with no border at rest and a 6px radius</b> (white with a border on hover and focus, like every editable input), a <b>bold</b> symbol on the <b>left</b>, and the value right-aligned in tabular figures. <b>Money</b> (<code>$</code>) is any column the form calls Money, Currency or an amount (Requested, Validated, Funded, …). <b>Quantity</b> (<code>#</code>) is any count of items. In Dataverse both are usually <b>Double</b> columns that store a plain number. The symbol is part of the box, never part of the value.</p>
+<div class="stage">
+  <div class="choice-grid" style="grid-template-columns:76px repeat(5, minmax(0,1fr));gap:14px 8px">
+    <span></span><span class="hd">Unfocused</span><span class="hd">Hover</span><span class="hd">Focused</span><span class="hd">Empty</span><span class="hd">Invalid</span>
+    <span class="lbl">Money</span>
+    <span class="cb-num" style="width:100%"><span class="cb-num-adorn">$</span><span class="cb-num-val">1,250.50</span></span>
+    <span class="cb-num is-hover" style="width:100%"><span class="cb-num-adorn">$</span><span class="cb-num-val">1,250.50</span></span>
+    <span class="cb-num is-focus" style="width:100%"><span class="cb-num-adorn">$</span><span class="cb-num-val"><span class="sel-hl">1250.50</span></span></span>
+    <span class="cb-num" style="width:100%"><span class="cb-num-adorn">$</span><span class="cb-num-val" style="color:var(--cb-text-muted)">0.00</span></span>
+    <span class="cb-num is-invalid" style="width:100%"><span class="cb-num-adorn">$</span><span class="cb-num-val">1,250.50</span></span>
+    <span class="lbl">Negative</span>
+    <span class="cb-num" style="width:100%"><span class="cb-num-adorn">$</span><span class="cb-num-val">-4,800.00</span></span>
+    <span></span>
+    <span class="cb-num is-focus" style="width:100%"><span class="cb-num-adorn">$</span><span class="cb-num-val"><span class="sel-hl">-4800</span></span></span>
+    <span></span><span></span>
+    <span class="lbl">Quantity</span>
+    <span class="cb-num" style="width:100%"><span class="cb-num-adorn">#</span><span class="cb-num-val">1,200</span></span>
+    <span class="cb-num is-hover" style="width:100%"><span class="cb-num-adorn">#</span><span class="cb-num-val">1,200</span></span>
+    <span class="cb-num is-focus" style="width:100%"><span class="cb-num-adorn">#</span><span class="cb-num-val"><span class="sel-hl">1200</span></span></span>
+    <span class="cb-num" style="width:100%"><span class="cb-num-adorn">#</span><span class="cb-num-val" style="color:var(--cb-text-muted)">0</span></span>
+    <span class="cb-num is-invalid" style="width:100%"><span class="cb-num-adorn">#</span><span class="cb-num-val">1,200</span></span>
+  </div>
+  <div class="row no-print" style="margin-top:16px"><span class="lbl">Try it</span>
+    <label class="cb-num" style="width:130px"><span class="cb-num-adorn" aria-hidden="true">$</span><input class="cb-money" type="text" inputmode="decimal" data-value="1250.5" aria-label="Demo amount"></label>
+    <label class="cb-num" style="width:130px"><span class="cb-num-adorn" aria-hidden="true">$</span><input class="cb-money" type="text" inputmode="decimal" data-value="" aria-label="Demo empty amount"></label>
+    <label class="cb-num" style="width:96px"><span class="cb-num-adorn" aria-hidden="true">#</span><input class="cb-qty" type="text" inputmode="numeric" data-value="12" aria-label="Demo quantity"></label>
+    <label class="cb-num" style="width:96px"><span class="cb-num-adorn" aria-hidden="true">#</span><input class="cb-qty" type="text" inputmode="decimal" data-decimals="1" data-value="2.5" aria-label="Demo quantity with decimals"></label>
+  </div>
+  <p class="no-print" style="font-size:11px;color:var(--cb-text-muted);margin:6px 0 0">Tab in, type, press Enter. Paste <code>$2,000</code>. Press Esc to revert. The last box allows 1 decimal (<code>data-decimals="1"</code>), so try <code>2.75</code> or <code>-3</code> in it to see the invalid state.</p>
+</div>
+<table class="spec">
+  <tr><th>Rule</th><th>Money <code>$</code></th><th>Quantity <code>#</code></th></tr>
+  <tr><td>Box</td><td colspan="2">32px tall, <code>#f7f7f7</code> fill, <b>no visible border at rest</b> (1px transparent, so nothing shifts), 6px radius, <code>0 10px</code> padding, 8px gap. Prefix 14px <b>700</b> <code>#5c5875</code> on the left. Value 14px, right-aligned, <code>tabular-nums</code>. Hover: white + border <code>#b2c3f4</code>. Focus: white + border <code>#2086ff</code> + 3px <code>#2086ff</code> halo at 18%.</td></tr>
+  <tr><td>Unfocused</td><td><code>1,250.50</code>: always 2 decimals, comma separators, negatives <code>-4,800.00</code></td><td><code>1,200</code>: comma separators, no forced decimals</td></tr>
+  <tr><td>Focused</td><td colspan="2">Separators are stripped and the raw number shows (<code>1250.50</code> / <code>1200</code>), with <b>all the text selected</b> for fast overwrite. Clicking the prefix or padding also focuses the input.</td></tr>
+  <tr><td>Empty</td><td>Muted <code>0.00</code> placeholder</td><td>Muted <code>0</code> placeholder</td></tr>
+  <tr><td>Allowed values</td><td>Any number. Rounded to cents on commit.</td><td>Not negative. Whole numbers unless the column allows decimals (<code>data-decimals="1"</code> / <code>decimals</code> prop). Too many decimals is <b>invalid</b>, never silently rounded.</td></tr>
+  <tr><td>Typing</td><td colspan="2">Only digits, <code>.</code> and <code>-</code> are kept, so a pasted <code>$2,000</code> becomes <code>2000</code>.</td></tr>
+  <tr><td>Commit</td><td colspan="2">On blur or <b>Enter</b>, only if the number changed. <b>Esc</b> reverts. A cleared box saves <i>empty</i> (null), never 0.</td></tr>
+  <tr><td>Invalid</td><td colspan="2">Previous value restored, red border + red halo until the next focus, and the row <b>Error</b> badge in PCF. Never save <code>NaN</code>.</td></tr>
+  <tr><td>Input type</td><td><code>type="text" inputmode="decimal"</code></td><td><code>type="text" inputmode="numeric"</code> (<code>decimal</code> if decimals are allowed)</td></tr>
+  <tr><td>Width</td><td><code>120–140px</code></td><td><code>88–110px</code></td></tr>
+  <tr><td>Read-only / locked</td><td>Plain text <code>$1,250.50</code>: the symbol joins the text, with no box</td><td>Plain text <code>1,200</code></td></tr>
+</table>
+
+<h3>Checkbox, radio &amp; switch</h3>
+<p>Light grey outline at rest and solid blue <code>#2086ff</code> when on. On hover, the row gets a soft <code>#f1f6ff</code> background, the <b>label text turns blue</b>, and an unchecked outline turns blue too. The label wraps the input, so the whole row is the hit area.</p>
+<div class="stage">
+  <div class="choice-grid">
+    <span></span><span class="hd">Off</span><span class="hd">On</span><span class="hd">Hover</span><span class="hd">Disabled</span>
+
+    <span class="lbl">Checkbox</span>
+    <label class="cb-checkbox"><input type="checkbox"><span>Carbonara</span></label>
+    <label class="cb-checkbox"><input type="checkbox" checked><span>Label</span></label>
+    <label class="cb-checkbox is-hover"><input type="checkbox"><span>Pasta</span></label>
+    <label class="cb-checkbox"><input type="checkbox" checked disabled><span>Locked</span></label>
+
+    <span class="lbl">Checkbox (mixed)</span>
+    <label class="cb-checkbox"><input type="checkbox" data-indeterminate aria-label="Select all"><span>Select all</span></label>
+    <span></span><span></span><span></span>
+
+    <span class="lbl">Radio</span>
+    <label class="cb-radio"><input type="radio" name="r-demo-a"><span>Banana</span></label>
+    <label class="cb-radio"><input type="radio" name="r-demo-b" checked><span>Apple</span></label>
+    <label class="cb-radio is-hover"><input type="radio" name="r-demo-c"><span>Orange</span></label>
+    <label class="cb-radio"><input type="radio" name="r-demo-d" checked disabled><span>Peach</span></label>
+
+    <span class="lbl">Switch (standard)</span>
+    <label class="cb-switch"><input type="checkbox" role="switch"><span>Off</span></label>
+    <label class="cb-switch"><input type="checkbox" role="switch" checked><span>On</span></label>
+    <label class="cb-switch is-hover"><input type="checkbox" role="switch" checked><span>Hover</span></label>
+    <label class="cb-switch"><input type="checkbox" role="switch" checked disabled><span>Locked</span></label>
+
+    <span class="lbl">Switch .goodbad</span>
+    <label class="cb-switch goodbad"><input type="checkbox" role="switch"><span>Invalid</span></label>
+    <label class="cb-switch goodbad"><input type="checkbox" role="switch" checked><span>Valid</span></label>
+    <label class="cb-switch goodbad is-hover"><input type="checkbox" role="switch" checked><span>Hover</span></label>
+    <label class="cb-switch goodbad"><input type="checkbox" role="switch" disabled><span>Locked</span></label>
+  </div>
+</div>
+<div class="stage">
+  <div class="stage-label">Radio group (vertical default, <code>.inline</code> for horizontal) · checkbox list</div>
+  <div style="display:flex;gap:56px">
+    <div class="cb-radio-group" role="radiogroup" aria-label="Fruit">
+      <label class="cb-radio"><input type="radio" name="fruit" checked><span>Apple</span></label>
+      <label class="cb-radio"><input type="radio" name="fruit"><span>Banana</span></label>
+      <label class="cb-radio"><input type="radio" name="fruit"><span>Orange</span></label>
+      <label class="cb-radio"><input type="radio" name="fruit"><span>Peach</span></label>
+    </div>
+    <div class="cb-radio-group">
+      <label class="cb-checkbox"><input type="checkbox"><span>Carbonara</span></label>
+      <label class="cb-checkbox"><input type="checkbox"><span>Chicken Piccata Pasta</span></label>
+      <label class="cb-checkbox"><input type="checkbox"><span>Pasta Puttanesca</span></label>
+      <label class="cb-checkbox"><input type="checkbox"><span>One-Pot Penne Pasta</span></label>
+    </div>
+  </div>
+</div>
+<table class="spec">
+  <tr><th>Control</th><th>Spec</th></tr>
+  <tr><td>Checkbox</td><td>18px, radius <code>4px</code>, 1.5px <code>#d9d9d9</code> border on white. Checked: <code>#2086ff</code> fill with a white check. Mixed: blue fill with a white dash.</td></tr>
+  <tr><td>Radio</td><td>18px circle, 1.5px <code>#d9d9d9</code> border. Checked: 2px <code>#2086ff</code> ring + 11px blue dot. Groups stack vertically with 10px gaps.</td></tr>
+  <tr><td>Switch (standard)</td><td>40×24 pill, 18px white knob inset 3px, with a soft shadow. True = <code>#2086ff</code>, false = <code>#c8c8c8</code>. No extra class.</td></tr>
+  <tr><td>Switch <code>.goodbad</code></td><td>Same shape. True = <code>#22b35e</code> green, false = <code>#e5484d</code> red. Use only when <i>both</i> states carry meaning (Valid / Invalid, Funded / Unfunded). Most on/off settings use standard.</td></tr>
+  <tr><td>Hover</td><td>Whole row gets a <code>#f1f6ff</code> background, and the label text turns <code>#2086ff</code>. Unchecked checkbox/radio border → <code>#2086ff</code>. No hover effect while disabled.</td></tr>
+  <tr><td>Label</td><td>14px <code>#242424</code>, 10px gap after the control. The row has <code>5px</code> padding and a <code>5px</code> radius, so the hover background frames it. Always give a visible label, or an <code>aria-label</code> in grid cells.</td></tr>
+  <tr><td>Disabled</td><td>Same as buttons: <code>opacity: .7; filter: saturate(0)</code>, <code>cursor: not-allowed</code>.</td></tr>
+  <tr><td>Switch vs checkbox</td><td>A switch takes effect immediately (it saves on toggle). A checkbox is a selection or a form value that is saved later.</td></tr>
+</table>
+
+<!-- ─────────────────────────────────────────────────────────────────────── -->
+<h2 id="table" class="page-break"><span class="n">07</span>Data grid / table</h2>
+<p>Tables are <b>spacious by default</b>: a soft 40px header band, 56px rows, 16px side padding, and hairline row dividers instead of a heavy grid. Header labels are always <b>small (11px), bold (700) and UPPERCASE</b>. The uppercase comes from CSS, so the source text stays Title Case for screen readers.</p>
+<div class="stage" style="padding:12px">
+  <div class="cb-table-scroll">
+    <table class="cb-table" style="min-width:0">
+      <thead><tr>
+        <th class="sel"><label class="cb-checkbox"><input type="checkbox" data-indeterminate aria-label="Select all"></label></th>
+        <th class="sortable" aria-sort="ascending">Item<svg class="cb-sort" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" aria-hidden="true"><path class="up" d="M208 272L320 160L432 272" fill="none" stroke-width="64" stroke-linecap="round" stroke-linejoin="round"/><path class="down" d="M208 368L320 480L432 368" fill="none" stroke-width="64" stroke-linecap="round" stroke-linejoin="round"/></svg></th>
+        <th class="sortable" aria-sort="none">Status<svg class="cb-sort" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" aria-hidden="true"><path class="up" d="M208 272L320 160L432 272" fill="none" stroke-width="64" stroke-linecap="round" stroke-linejoin="round"/><path class="down" d="M208 368L320 480L432 368" fill="none" stroke-width="64" stroke-linecap="round" stroke-linejoin="round"/></svg></th>
+        <th class="act">Actions</th>
+      </tr></thead>
+      <tbody>
+        <tr>
+          <td class="sel"><label class="cb-checkbox"><input type="checkbox" aria-label="Select row"></label></td>
+          <td style="min-width:300px;white-space:normal">
+            <div class="cb-item-name"><span>Generator, 10kW Tactical</span><span class="cb-badge cb-badge-saved"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" aria-hidden="true"><path d="M144 336L272 464L496 192" fill="none" stroke="currentColor" stroke-width="88" stroke-linecap="round" stroke-linejoin="round"/></svg>Saved</span></div>
+            <div class="cb-chips"><span class="cb-chip" data-type="category">Category: <b>Equipment</b></span><span class="cb-chip" data-type="qtytype">Qty Type: <b>Each</b></span></div></td>
+          <td><span class="cb-status cb-status-success"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" aria-hidden="true"><circle cx="320" cy="320" r="232" fill="none" stroke="currentColor" stroke-width="56"/><path d="M216 328L288 400L432 248" fill="none" stroke="currentColor" stroke-width="56" stroke-linecap="round" stroke-linejoin="round"/></svg>Funded</span></td>
+          <td class="act"><button class="cb-btn cb-btn-icon" aria-label="Edit" title="Edit"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" aria-hidden="true"><path d="M400 128L512 240L256 496L128 512L144 384Z M352 176L464 288" fill="none" stroke="#424242" stroke-width="48" stroke-linecap="round" stroke-linejoin="round"/></svg></button><button class="cb-btn cb-btn-icon" aria-label="Delete" title="Delete"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" aria-hidden="true"><path fill="#9f151e" d="M232.7 69.9C237.1 56.8 249.3 48 263.1 48L377 48C390.8 48 403 56.8 407.4 69.9L416 96L512 96C529.7 96 544 110.3 544 128C544 145.7 529.7 160 512 160L128 160C110.3 160 96 145.7 96 128C96 110.3 110.3 96 128 96L224 96L232.7 69.9zM128 208L512 208L512 512C512 547.3 483.3 576 448 576L192 576C156.7 576 128 547.3 128 512L128 208zM216 272C202.7 272 192 282.7 192 296L192 488C192 501.3 202.7 512 216 512C229.3 512 240 501.3 240 488L240 296C240 282.7 229.3 272 216 272zM320 272C306.7 272 296 282.7 296 296L296 488C296 501.3 306.7 512 320 512C333.3 512 344 501.3 344 488L344 296C344 282.7 333.3 272 320 272zM424 272C410.7 272 400 282.7 400 296L400 488C400 501.3 410.7 512 424 512C437.3 512 448 501.3 448 488L448 296C448 282.7 437.3 272 424 272z"/></svg></button><button class="cb-btn cb-btn-icon" aria-label="More actions" title="More actions"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" aria-hidden="true"><circle cx="160" cy="320" r="44" fill="#424242"/><circle cx="320" cy="320" r="44" fill="#424242"/><circle cx="480" cy="320" r="44" fill="#424242"/></svg></button></td>
+        </tr>
+        <tr class="is-selected">
+          <td class="sel"><label class="cb-checkbox"><input type="checkbox" checked aria-label="Select row"></label></td>
+          <td style="min-width:300px;white-space:normal">
+            <div class="cb-item-name"><span>Water Purification Unit</span></div>
+            <div class="cb-chips"><span class="cb-chip" data-type="category">Category: <b>Equipment</b></span><span class="cb-chip" data-type="qtytype">Qty Type: <b>Each</b></span><button type="button" class="cb-chip-more" aria-label="3 more attributes" aria-expanded="false" aria-controls="more-wpu">+3</button><div class="cb-chip-popover" id="more-wpu" role="group" aria-label="More attributes"><span class="cb-chip" data-type="class">Class: <b>Field</b></span><span class="cb-chip" data-type="origin">Origin: <b>Domestic</b></span><span class="cb-chip" data-type="phase">Phase: <b>Fielding</b></span></div></div></td>
+          <td><span class="cb-status cb-status-warning"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" aria-hidden="true"><circle cx="320" cy="320" r="232" fill="none" stroke="currentColor" stroke-width="56"/><path d="M320 192L320 320L408 376" fill="none" stroke="currentColor" stroke-width="56" stroke-linecap="round" stroke-linejoin="round"/></svg>Pending</span></td>
+          <td class="act"><button class="cb-btn cb-btn-icon" aria-label="Edit" title="Edit"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" aria-hidden="true"><path d="M400 128L512 240L256 496L128 512L144 384Z M352 176L464 288" fill="none" stroke="#424242" stroke-width="48" stroke-linecap="round" stroke-linejoin="round"/></svg></button><button class="cb-btn cb-btn-icon" aria-label="Delete" title="Delete"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" aria-hidden="true"><path fill="#9f151e" d="M232.7 69.9C237.1 56.8 249.3 48 263.1 48L377 48C390.8 48 403 56.8 407.4 69.9L416 96L512 96C529.7 96 544 110.3 544 128C544 145.7 529.7 160 512 160L128 160C110.3 160 96 145.7 96 128C96 110.3 110.3 96 128 96L224 96L232.7 69.9zM128 208L512 208L512 512C512 547.3 483.3 576 448 576L192 576C156.7 576 128 547.3 128 512L128 208zM216 272C202.7 272 192 282.7 192 296L192 488C192 501.3 202.7 512 216 512C229.3 512 240 501.3 240 488L240 296C240 282.7 229.3 272 216 272zM320 272C306.7 272 296 282.7 296 296L296 488C296 501.3 306.7 512 320 512C333.3 512 344 501.3 344 488L344 296C344 282.7 333.3 272 320 272zM424 272C410.7 272 400 282.7 400 296L400 488C400 501.3 410.7 512 424 512C437.3 512 448 501.3 448 488L448 296C448 282.7 437.3 272 424 272z"/></svg></button><button class="cb-btn cb-btn-icon" aria-label="More actions" title="More actions"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" aria-hidden="true"><circle cx="160" cy="320" r="44" fill="#424242"/><circle cx="320" cy="320" r="44" fill="#424242"/><circle cx="480" cy="320" r="44" fill="#424242"/></svg></button></td>
+        </tr>
+        <tr>
+          <td class="sel"><label class="cb-checkbox"><input type="checkbox" aria-label="Select row"></label></td>
+          <td style="min-width:300px;white-space:normal">
+            <div class="cb-item-name"><span>Night Vision Goggles</span><span class="cb-badge cb-badge-error" title="Save failed — re-check the value"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" aria-hidden="true"><circle cx="320" cy="320" r="232" fill="none" stroke="currentColor" stroke-width="64"/><path d="M320 200L320 344" fill="none" stroke="currentColor" stroke-width="72" stroke-linecap="round"/><circle cx="320" cy="440" r="44" fill="currentColor"/></svg>Error</span></div>
+            <div class="cb-chips"><span class="cb-chip" data-type="category">Category: <b>Equipment</b></span><span class="cb-chip" data-type="qtytype">Qty Type: <b>Set</b></span><span class="cb-chip" data-type="class">Class: <b>Optics</b></span></div></td>
+          <td><span class="cb-status cb-status-danger"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" aria-hidden="true"><circle cx="320" cy="320" r="232" fill="none" stroke="currentColor" stroke-width="56" stroke-dasharray="91 91" stroke-linecap="round"/></svg>Unfunded</span></td>
+          <td class="act"><button class="cb-btn cb-btn-icon" aria-label="Edit" title="Edit"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" aria-hidden="true"><path d="M400 128L512 240L256 496L128 512L144 384Z M352 176L464 288" fill="none" stroke="#424242" stroke-width="48" stroke-linecap="round" stroke-linejoin="round"/></svg></button><button class="cb-btn cb-btn-icon" aria-label="Delete" title="Delete"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" aria-hidden="true"><path fill="#9f151e" d="M232.7 69.9C237.1 56.8 249.3 48 263.1 48L377 48C390.8 48 403 56.8 407.4 69.9L416 96L512 96C529.7 96 544 110.3 544 128C544 145.7 529.7 160 512 160L128 160C110.3 160 96 145.7 96 128C96 110.3 110.3 96 128 96L224 96L232.7 69.9zM128 208L512 208L512 512C512 547.3 483.3 576 448 576L192 576C156.7 576 128 547.3 128 512L128 208zM216 272C202.7 272 192 282.7 192 296L192 488C192 501.3 202.7 512 216 512C229.3 512 240 501.3 240 488L240 296C240 282.7 229.3 272 216 272zM320 272C306.7 272 296 282.7 296 296L296 488C296 501.3 306.7 512 320 512C333.3 512 344 501.3 344 488L344 296C344 282.7 333.3 272 320 272zM424 272C410.7 272 400 282.7 400 296L400 488C400 501.3 410.7 512 424 512C437.3 512 448 501.3 448 488L448 296C448 282.7 437.3 272 424 272z"/></svg></button><button class="cb-btn cb-btn-icon" aria-label="More actions" title="More actions"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" aria-hidden="true"><circle cx="160" cy="320" r="44" fill="#424242"/><circle cx="320" cy="320" r="44" fill="#424242"/><circle cx="480" cy="320" r="44" fill="#424242"/></svg></button></td>
+        </tr>
+        <tr class="cb-loadmore"><td colspan="4" style="bottom:0"><button class="cb-btn cb-btn-loadmore">Load more</button></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="no-print" style="font-size:11px;color:var(--cb-text-muted);margin:8px 0 0">Money columns and the sticky totals row are left out of this sample so it fits the printed page (see <b>Money &amp; quantity</b> and the spec below). Click <b>+3</b> to open the overflow popover; Esc or a click outside closes it.</p>
+</div>
+<table class="spec">
+  <tr><th>Element</th><th>Spec</th></tr>
+  <tr><td>Header</td><td>40px band, background <code>#f7f7f7</code>, 8px rounded ends, no bottom border. Labels <b>11px / 700 / UPPERCASE</b>, letter-spacing <code>.05em</code>, color <code>#424242</code>. Sticky <code>top: 0; z-index: 2</code>.</td></tr>
+  <tr><td>Sortable header</td><td>Double chevron (12px) always visible in <code>#8a8a8a</code>. The active direction darkens to <code>#242424</code> (<code>aria-sort</code>). The label darkens on hover. Click target = the Fluent header <code>button</code> slot.</td></tr>
+  <tr><td>Rows</td><td>Min height <code>56px</code>, padding <code>12px 16px</code>, max-width <code>220px</code>. Divider: 1px <code>#f0f0f0</code>. Hover <code>#fbfbfb</code>. <b>Selected</b> <code>#f5f9ff</code>.</td></tr>
+  <tr><td>First column</td><td>Identity cell: item name (600) with the action <b>badge</b> inline right after it, then the <b>chips</b> underneath, wrapping onto new lines (§8). This column wraps (<code>min-width 300px</code>, enough for two chips side by side), while other columns use <code>nowrap</code>.</td></tr>
+  <tr><td>Status column</td><td>One <b>status label</b> per row (§8). It is the column's sort and filter value.</td></tr>
+  <tr><td>Numeric columns</td><td>Right-aligned body <b>and</b> header. In right-aligned headers the sort chevron sits <i>before</i> the label. Fluent: <code>justifyContent: "end"</code> on the header <code>button</code> slot.</td></tr>
+  <tr><td>Context columns</td><td>Read-only lookups: <code>colorNeutralForeground3</code>. Links to records use <code>&lt;Link as="button"&gt;</code> + <code>navigation.openForm</code>.</td></tr>
+  <tr><td>Selection</td><td>Leading 44px column. The header checkbox is tri-state (<code>"mixed"</code>) over the <i>visible</i> rows. Checked rows get the selected background.</td></tr>
+  <tr><td>Actions</td><td>Last column, right-aligned, labelled <b>Actions</b>. Icon-only buttons with 16px icons, in the order Edit · Delete · More (<code>⋯</code> opens a menu for anything else). Omitted when read-only.</td></tr>
+  <tr><td>Totals</td><td>Sticky <code>bottom: -1px</code>, 52px, 600 weight, <code>#fafafa</code>, 1px top border. Totals cover <b>all</b> records, not just the loaded page.</td></tr>
+  <tr><td>Load more</td><td>Sticky row directly above totals (<code>bottom: 52px</code>), spans all columns, td padding 0</td></tr>
+  <tr><td>Scroll area</td><td><code>max-height: 560px</code> (~8 rows), <code>overflow: auto</code>, table <code>min-width: 760px</code>, <code>tableLayout: auto</code></td></tr>
+  <tr><td>Compact</td><td><code>.cb-table.compact</code>: 44px rows, <code>8px 12px</code> padding. <b>Only</b> for dialogs and pick-lists, never a main grid.</td></tr>
+</table>
+
+<!-- ─────────────────────────────────────────────────────────────────────── -->
+<h2 id="chips"><span class="n">08</span>Chips, badges &amp; status</h2>
+<p>Three kinds of tag, one system. Each tier has its own look, so a glance tells you which kind you're reading. <b>Never mix the tiers</b>: no tinted chips, no outlined statuses, no icons on chips.</p>
+<table class="spec">
+  <tr><th>Tier</th><th>Means</th><th>Look</th><th>Icon</th><th>Where</th></tr>
+  <tr><td>Chip</td><td>What it <i>is</i></td><td>Neutral / outlined</td><td>Never (a dot, not an icon)</td><td>Under the item name. Static and optional; never sortable or clickable.</td></tr>
+  <tr><td>Status label</td><td>Where it <i>stands</i></td><td>Tinted</td><td>Always</td><td>Its own column. The filter and sort value.</td></tr>
+  <tr><td>Badge</td><td>What just <i>happened</i></td><td>Solid</td><td>Always</td><td>Inline after the item name, only while an action result is pending. Clears itself.</td></tr>
+</table>
+
+<h3>Chip: "Label: Value"</h3>
+<div class="stage">
+  <div class="row"><span class="lbl">Attribute types</span>
+    <span class="cb-chip" data-type="category">Category: <b>Equipment</b></span><span class="cb-chip" data-type="qtytype">Qty Type: <b>Each</b></span><span class="cb-chip" data-type="class">Class: <b>Field</b></span><span class="cb-chip" data-type="origin">Origin: <b>Domestic</b></span><span class="cb-chip" data-type="phase">Phase: <b>Fielding</b></span>
+  </div>
+  <div class="row"><span class="lbl">Overflow (&gt; 3)</span>
+    <span class="cb-chips" style="margin:0"><span class="cb-chip" data-type="category">Category: <b>Equipment</b></span><span class="cb-chip" data-type="qtytype">Qty Type: <b>Each</b></span><button type="button" class="cb-chip-more" aria-label="3 more attributes" aria-expanded="false" aria-controls="more-demo">+3</button><div class="cb-chip-popover" id="more-demo" role="group" aria-label="More attributes"><span class="cb-chip" data-type="class">Class: <b>Field</b></span><span class="cb-chip" data-type="origin">Origin: <b>Domestic</b></span><span class="cb-chip" data-type="phase">Phase: <b>Fielding</b></span></div></span>
+  </div>
+</div>
+<table class="spec">
+  <tr><th>Part</th><th>Spec</th></tr>
+  <tr><td>Chip</td><td>24px tall, 6px radius, white fill, 1px <code>#d1d5db</code> border, <code>0 8px</code> padding, 12px text. One chip holds one <b>Label: Value</b> pair.</td></tr>
+  <tr><td>Label / value</td><td>Label 400 <code>#4b5563</code> (7.6:1). Value <b>600</b> <code>#111827</code> (17.7:1).</td></tr>
+  <tr><td>Dot</td><td>8px circle before the label, a <b>scanning aid only</b>, because the label carries the meaning. Drawn with CSS <code>::before</code>, so screen readers skip it (PCF: <code>aria-hidden</code>). Hue per attribute type, from one type-to-hue map, in this order: Category <code>#16a34a</code> · Qty Type <code>#2563eb</code> · Class <code>#7c3aed</code> · Origin <code>#d97706</code> · Phase <code>#0d9488</code> · Priority <code>#db2777</code> · Funding Mode <code>#4f46e5</code> · LIN <code>#0891b2</code> · Country <code>#65a30d</code>.</td></tr>
+  <tr><td>Layout</td><td>Under the item name, 6px gaps, <b>wrapping onto a new line</b>. Never one chip per line.</td></tr>
+  <tr><td>Overflow</td><td>At most <b>3</b> chips. With more than 3, show the first <b>2</b> plus a <b>+N</b> button: 24px, dashed 1px <code>#6b7280</code> border, white, 12px/600 <code>#374151</code>, <code>aria-label="N more attributes"</code>. It opens a popover listing the rest as full chips. Esc or an outside click closes it.</td></tr>
+  <tr><td>No legend</td><td>Chips label themselves, so tables <b>don't</b> carry a color legend.</td></tr>
+</table>
+
+<h3>Status label</h3>
+<div class="stage">
+  <div class="row"><span class="lbl">Workflow states</span>
+    <span class="cb-status cb-status-success"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" aria-hidden="true"><circle cx="320" cy="320" r="232" fill="none" stroke="currentColor" stroke-width="56"/><path d="M216 328L288 400L432 248" fill="none" stroke="currentColor" stroke-width="56" stroke-linecap="round" stroke-linejoin="round"/></svg>Funded</span><span class="cb-status cb-status-warning"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" aria-hidden="true"><circle cx="320" cy="320" r="232" fill="none" stroke="currentColor" stroke-width="56"/><path d="M320 192L320 320L408 376" fill="none" stroke="currentColor" stroke-width="56" stroke-linecap="round" stroke-linejoin="round"/></svg>Pending</span><span class="cb-status cb-status-danger"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" aria-hidden="true"><circle cx="320" cy="320" r="232" fill="none" stroke="currentColor" stroke-width="56" stroke-dasharray="91 91" stroke-linecap="round"/></svg>Unfunded</span><span class="cb-status cb-status-info"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" aria-hidden="true"><circle cx="320" cy="320" r="232" fill="none" stroke="currentColor" stroke-width="56"/><circle cx="320" cy="320" r="80" fill="currentColor"/></svg>In Review</span><span class="cb-status cb-status-neutral"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" aria-hidden="true"><circle cx="320" cy="320" r="232" fill="none" stroke="currentColor" stroke-width="56"/><path d="M216 320L424 320" fill="none" stroke="currentColor" stroke-width="56" stroke-linecap="round"/></svg>Draft</span>
+  </div>
+</div>
+<table class="spec">
+  <tr><th>Variant</th><th>Meaning</th><th>Fill / text</th><th>Icon</th><th>Example</th></tr>
+  <tr><td><code>success</code></td><td>done, funded, approved</td><td><code>#e2fcdc</code> / <code>#14532d</code></td><td>check-circle</td><td>Funded</td></tr>
+  <tr><td><code>warning</code></td><td>pending, in progress</td><td><code>#fef3c7</code> / <code>#78350f</code></td><td>clock</td><td>Pending</td></tr>
+  <tr><td><code>danger</code></td><td>unfunded, rejected, refunded</td><td><code>#fee2e2</code> / <code>#7f1d1d</code></td><td>dashed circle</td><td>Unfunded</td></tr>
+  <tr><td><code>info</code></td><td>in review, submitted</td><td><code>#dbeafe</code> / <code>#1e3a8a</code></td><td>dot-circle</td><td>In Review</td></tr>
+  <tr><td><code>neutral</code></td><td>draft, closed</td><td><code>#f3f4f6</code> / <code>#374151</code></td><td>minus-circle</td><td>Draft</td></tr>
+</table>
+<p>28px tall, full pill radius, <code>0 12px</code> padding, 13px / <b>600</b> text, 6px gap, <b>14px icon always</b>. Text is the dark shade of its hue (all ≥ 8:1). Map states by meaning, never by taste.</p>
+
+<h3>Badge: action result</h3>
+<div class="stage">
+  <div class="row"><span class="lbl">Saved / Error</span>
+    <span class="cb-badge cb-badge-saved"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" aria-hidden="true"><path d="M144 336L272 464L496 192" fill="none" stroke="currentColor" stroke-width="88" stroke-linecap="round" stroke-linejoin="round"/></svg>Saved</span><span class="cb-badge cb-badge-error" title="Save failed — re-check the value"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" aria-hidden="true"><circle cx="320" cy="320" r="232" fill="none" stroke="currentColor" stroke-width="64"/><path d="M320 200L320 344" fill="none" stroke="currentColor" stroke-width="72" stroke-linecap="round"/><circle cx="320" cy="440" r="44" fill="currentColor"/></svg>Error</span>
+  </div>
+  <div class="row"><span class="lbl">In context</span>
+    <span class="cb-item-name"><span>Generator, 10kW Tactical</span><span class="cb-badge cb-badge-saved"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" aria-hidden="true"><path d="M144 336L272 464L496 192" fill="none" stroke="currentColor" stroke-width="88" stroke-linecap="round" stroke-linejoin="round"/></svg>Saved</span></span>
+  </div>
+  <div class="row"><span class="lbl">While saving</span>
+    <span class="cb-item-name"><span>Generator, 10kW Tactical</span><span class="cb-spinner cb-spinner-xs" role="status" aria-label="Saving"></span></span>
+  </div>
+</div>
+<table class="spec">
+  <tr><th>Part</th><th>Spec</th></tr>
+  <tr><td>Look</td><td>Solid fill, white text. <b>Saved</b> <code>#15803d</code> (5.0:1), <b>Error</b> <code>#b91c1c</code> (6.5:1). 20px tall, 4px radius, <code>0 6px</code> padding, 10.5px / <b>700</b> UPPERCASE, <code>.05em</code> tracking, 12px icon always (check / exclamation-in-circle).</td></tr>
+  <tr><td>When</td><td>Rendered <b>only</b> while a row has an action result: a small spinner while saving, then the badge. It sits inline right after the item name.</td></tr>
+  <tr><td>Clears</td><td><b>Saved</b> clears after 3 seconds. <b>Error</b> stays until the row's next save succeeds, and carries a tooltip: "Save failed — re-check the value".</td></tr>
+</table>
+
+<h3>Other indicators</h3>
+<div class="stage">
+  <div class="row"><span class="lbl">Selection indicator</span><span class="cb-selected">Selected (3)</span></div>
+</div>
+<ul>
+  <li>Every text color above passes 4.5:1 on its fill. <b>Don't lighten any of them.</b></li>
+  <li>Use the shared components (<code>Chip</code>, <code>Badge</code>, <code>StatusLabel</code> in PCF; the <code>cb-chip</code> / <code>cb-badge</code> / <code>cb-status</code> classes in HTML), never inline styles per row.</li>
+</ul>
+
+<!-- ─────────────────────────────────────────────────────────────────────── -->
+<h2 id="feedback"><span class="n">09</span>Loading, empty &amp; errors</h2>
+<div class="stage">
+  <div class="cb-loading"><span class="cb-spinner"></span>Loading Itemized Details…</div>
+  <div class="cb-empty" style="border-top:1px dashed var(--cb-border)">No Itemized Details yet. Use <b>Add Items</b> to select which of the Requirement's Details to itemize on this Prioritization.</div>
+  <div class="cb-empty" style="border-top:1px dashed var(--cb-border)">No Itemized Details match your search.</div>
+  <div style="display:grid;gap:6px;margin-top:8px">
+    <div class="cb-banner cb-banner-error">Could not load Fund Centers. Refresh to try again.</div>
+    <div class="cb-banner cb-banner-warn">3 items have no Fund Center and will roll up to State level.</div>
+    <div class="cb-banner cb-banner-success">12 items added.</div>
+  </div>
+</div>
+<ul>
+  <li><b>Loading:</b> Fluent <code>&lt;Spinner label="Loading X…" /&gt;</code> in place of the grid. Never show an empty table while loading.</li>
+  <li><b>Empty:</b> one sentence in muted text that names the action that fixes it. Use a separate message for "no search matches".</li>
+  <li><b>Errors:</b> inline in dialogs as <code>colorPaletteRedForeground1</code> text. Component-level errors use a banner. Never use <code>alert()</code>.</li>
+</ul>
+
+<!-- ─────────────────────────────────────────────────────────────────────── -->
+<h2 id="toolbar"><span class="n">10</span>Toolbar</h2>
+<div class="stage">
+  <div class="cb-toolbar" style="border-bottom:1px solid var(--cb-border)">
+    <div class="cb-toolbar-left"><span class="cb-title">Itemized Details (24)</span><span class="cb-selected">Selected (2)</span></div>
+    <div class="cb-toolbar-right">
+      <span class="cb-search"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" aria-hidden="true"><path fill="#989898" d="M480 272C480 317.9 465.1 360.3 440 394.7L566.6 521.4C579.1 533.9 579.1 554.2 566.6 566.7C554.1 579.2 533.8 579.2 521.3 566.7L394.7 440C360.3 465.1 317.9 480 272 480C157.1 480 64 386.9 64 272C64 157.1 157.1 64 272 64C386.9 64 480 157.1 480 272zM272 416C351.5 416 416 351.5 416 272C416 192.5 351.5 128 272 128C192.5 128 128 192.5 128 272C128 351.5 192.5 416 272 416z"/></svg><input class="cb-input" style="width:150px" placeholder="Search…"></span>
+      <button class="cb-btn cb-btn-icon" aria-label="Delete Selected" title="Delete Selected"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" aria-hidden="true"><path fill="#9f151e" d="M232.7 69.9C237.1 56.8 249.3 48 263.1 48L377 48C390.8 48 403 56.8 407.4 69.9L416 96L512 96C529.7 96 544 110.3 544 128C544 145.7 529.7 160 512 160L128 160C110.3 160 96 145.7 96 128C96 110.3 110.3 96 128 96L224 96L232.7 69.9zM128 208L512 208L512 512C512 547.3 483.3 576 448 576L192 576C156.7 576 128 547.3 128 512L128 208zM216 272C202.7 272 192 282.7 192 296L192 488C192 501.3 202.7 512 216 512C229.3 512 240 501.3 240 488L240 296C240 282.7 229.3 272 216 272zM320 272C306.7 272 296 282.7 296 296L296 488C296 501.3 306.7 512 320 512C333.3 512 344 501.3 344 488L344 296C344 282.7 333.3 272 320 272zM424 272C410.7 272 400 282.7 400 296L400 488C400 501.3 410.7 512 424 512C437.3 512 448 501.3 448 488L448 296C448 282.7 437.3 272 424 272z"/></svg></button>
+      <button class="cb-btn"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" aria-hidden="true"><path fill="#16ca92" d="M352 128C352 110.3 337.7 96 320 96C302.3 96 288 110.3 288 128L288 288L128 288C110.3 288 96 302.3 96 320C96 337.7 110.3 352 128 352L288 352L288 512C288 529.7 302.3 544 320 544C337.7 544 352 529.7 352 512L352 352L512 352C529.7 352 544 337.7 544 320C544 302.3 529.7 288 512 288L352 288L352 128z"/></svg>Add Items</button>
+      <button class="cb-btn"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" aria-hidden="true" style="width:18px;height:18px"><path fill="#727272" d="M320 128C263.2 128 212.1 152.7 176.9 192L224 192C241.7 192 256 206.3 256 224C256 241.7 241.7 256 224 256L96 256C78.3 256 64 241.7 64 224L64 96C64 78.3 78.3 64 96 64C113.7 64 128 78.3 128 96L128 150.7C174.9 97.6 243.5 64 320 64C461.4 64 576 178.6 576 320C576 461.4 461.4 576 320 576C233 576 156.1 532.6 109.9 466.3C99.8 451.8 103.3 431.9 117.8 421.7C132.3 411.5 152.2 415.1 162.4 429.6C197.2 479.4 254.8 511.9 320 511.9C426 511.9 512 425.9 512 319.9C512 213.9 426 128 320 128z"/></svg>Refresh</button>
+    </div>
+  </div>
+  <p style="font-size:11px;color:var(--cb-text-muted);margin:8px 0 0">Narrow toolbars may collapse labeled buttons to icon-only. Each one keeps its tooltip.</p>
+</div>
+<p><b>Order, left → right:</b> Title (count) · Selection indicator ‖ Search · Destructive · Create · Refresh. There is <b>no color legend</b>, because chips label themselves. Refresh is always last and always available, even when the control is read-only.</p>
+
+<!-- ─────────────────────────────────────────────────────────────────────── -->
+<h2 id="dialog"><span class="n">11</span>Dialogs</h2>
+<div class="stage" style="background:#f0f0f0">
+  <div class="cb-dialog" style="margin:0 auto">
+    <div class="cb-dialog-title">Add Items from Requirement Details</div>
+    <span class="cb-search" style="width:100%;margin-bottom:8px"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" aria-hidden="true"><path fill="#989898" d="M480 272C480 317.9 465.1 360.3 440 394.7L566.6 521.4C579.1 533.9 579.1 554.2 566.6 566.7C554.1 579.2 533.8 579.2 521.3 566.7L394.7 440C360.3 465.1 317.9 480 272 480C157.1 480 64 386.9 64 272C64 157.1 157.1 64 272 64C386.9 64 480 157.1 480 272zM272 416C351.5 416 416 351.5 416 272C416 192.5 351.5 128 272 128C192.5 128 128 192.5 128 272C128 351.5 192.5 416 272 416z"/></svg><input class="cb-input" style="width:100%" placeholder="Search by Item Name or TDC"></span>
+    <table class="cb-table compact">
+      <thead><tr><th>Item Name</th><th style="width:56px">TDC</th></tr></thead>
+      <tbody>
+        <tr><td><label class="cb-checkbox"><input type="checkbox" checked><span style="font-weight:600">Generator, 10kW Tactical</span></label></td><td class="ctx">TDC-04</td></tr>
+        <tr><td><label class="cb-checkbox"><input type="checkbox" checked><span style="font-weight:600">Water Purification Unit</span></label></td><td class="ctx">TDC-07</td></tr>
+        <tr><td><label class="cb-checkbox"><input type="checkbox"><span style="font-weight:600">Field Kitchen Trailer</span></label></td><td class="ctx">TDC-09</td></tr>
+      </tbody>
+    </table>
+    <span class="cb-dialog-count">Adding: <b>2</b> Items</span>
+    <div class="cb-dialog-actions"><button class="cb-btn cb-btn-secondary">Cancel</button><button class="cb-btn cb-btn-primary">Add Selected</button></div>
+  </div>
+</div>
+<ul>
+  <li>Max width <code>640px</code>. Scrollable lists are capped at <code>360px</code>. The search box is full-width and comes first.</li>
+  <li>The count line ("Adding: <b>N</b> Items") sits on its own row between the content and the actions, not inside the action row.</li>
+  <li>Multi-step dialogs: <b>Back</b> (secondary) · <b>Cancel</b> (secondary) · <b>Next / Add</b> (primary).</li>
+  <li>While busy, disable every button and block dismiss: <code>onOpenChange={(_, d) =&gt; !busy &amp;&amp; setOpen(d.open)}</code>.</li>
+  <li>Every destructive action gets a confirm dialog that names what will be removed.</li>
+</ul>
+
+<!-- ─────────────────────────────────────────────────────────────────────── -->
+<h2 id="anatomy"><span class="n">12</span>Full component anatomy</h2>
+<p>This is the Itemized Details Grid reduced to its parts. New grid-style components should follow this skeleton.</p>
+<div class="stage anatomy">
+  <pre class="code" style="margin:0;font-size:11px">FluentProvider theme={checkbookTheme}
+└─ root                    padding 8px · fontFamilyBase
+   ├─ toolbar  ①           flex · space-between · padding 4 2 8 2
+   │  ├─ left              Title (count) ② · Selected (N) ③
+   │  └─ right             Search ④ · Delete Selected ⑤ · Add ⑥ · Refresh ⑦
+   ├─ Spinner | empty ⑧    replaces the grid while loading / when empty
+   ├─ scrollContainer ⑨    max-height 560 · overflow auto
+   │  └─ Table small auto
+   │     ├─ header         40px band · 11px/700 CAPS · sort chevrons · numeric right
+   │     ├─ rows ⑩         56px · name + badge · chips · status · inputs · Edit/Delete/More
+   │     ├─ load more ⑪    sticky bottom 52px
+   │     └─ totals ⑫       sticky bottom -1px · all-record totals
+   └─ Dialogs ⑬            add / confirm remove / bulk remove</pre>
+  <div class="callout-list">
+    <div><span class="callout">1</span>Toolbar sits outside the scroll area, so it is always visible</div>
+    <div><span class="callout">2</span>14px semibold with a live record count</div>
+    <div><span class="callout">3</span>Only shown when selection &gt; 0</div>
+    <div><span class="callout">4</span>Client-side filter on visible fields</div>
+    <div><span class="callout">5</span>Disabled at 0 selected, hidden when read-only</div>
+    <div><span class="callout">6</span>Hidden when read-only</div>
+    <div><span class="callout">7</span>Always present. Refreshes data and totals.</div>
+    <div><span class="callout">8</span>Guidance text names the fixing action</div>
+    <div><span class="callout">9</span>Horizontal scroll past the 760px min-width</div>
+    <div><span class="callout">10</span>Commit on blur; Saved / Error badge after the name</div>
+    <div><span class="callout">11</span>Only when <code>paging.hasNextPage</code></div>
+    <div><span class="callout">12</span>Fetched across all pages, not summed client-side</div>
+    <div><span class="callout">13</span>Busy blocks dismiss</div>
+  </div>
+</div>
+
+<!-- ─────────────────────────────────────────────────────────────────────── -->
+<h2 id="icons" class="page-break"><span class="n">13</span>Icon library (raw SVG)</h2>
+<p>All icons use a <b>640 × 640 viewBox</b> and render at <b>20px</b> (18px for Refresh, 16px inside search fields). The fill/stroke color is baked into the icon from the token table, so <code>filter: saturate(0)</code> handles the disabled state. <b>Exception:</b> status and badge icons use <code>currentColor</code>, so they always match their tag's text.</p>
+<ul>
+  <li><b>Font Awesome Free 7 (solid)</b> is the source of record. To add an icon, copy it from fontawesome.com (Free, Solid, v7) and <b>keep its license comment</b>. Font Awesome Free icons are CC BY 4.0.</li>
+  <li><b>Checkbook line</b> icons are simple stroke glyphs drawn for this system where FA has nothing in the repo yet. They use stroke width 48–64 with round caps to match FA's weight.</li>
+  <li>In PCF, wrap each icon as a <code>React.FC</code> with <code>aria-hidden="true"</code> and put it in the control's <code>designSystem.tsx</code> (see the .md file, §10). In HTML, paste the SVG inline.</li>
+</ul>
+
+<div class="icons" id="icon-grid">
+
+  <div class="icon-card"><div class="icon-head"><div class="icon-prev">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" width="20" height="20" aria-hidden="true"><!--!Font Awesome Free 7 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.--><path fill="#16ca92" d="M352 128C352 110.3 337.7 96 320 96C302.3 96 288 110.3 288 128L288 288L128 288C110.3 288 96 302.3 96 320C96 337.7 110.3 352 128 352L288 352L288 512C288 529.7 302.3 544 320 544C337.7 544 352 529.7 352 512L352 352L512 352C529.7 352 544 337.7 544 320C544 302.3 529.7 288 512 288L352 288L352 128z"/></svg>
+    </div><div><div class="icon-name">Add</div><div class="icon-use">Create / Add Items · <code>--cb-add</code></div><div class="icon-src">Font Awesome Free 7 · plus</div></div></div><pre></pre></div>
+
+  <div class="icon-card"><div class="icon-head"><div class="icon-prev">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" width="20" height="20" aria-hidden="true"><!--!Font Awesome Free 7 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.--><path fill="#9f151e" d="M232.7 69.9C237.1 56.8 249.3 48 263.1 48L377 48C390.8 48 403 56.8 407.4 69.9L416 96L512 96C529.7 96 544 110.3 544 128C544 145.7 529.7 160 512 160L128 160C110.3 160 96 145.7 96 128C96 110.3 110.3 96 128 96L224 96L232.7 69.9zM128 208L512 208L512 512C512 547.3 483.3 576 448 576L192 576C156.7 576 128 547.3 128 512L128 208zM216 272C202.7 272 192 282.7 192 296L192 488C192 501.3 202.7 512 216 512C229.3 512 240 501.3 240 488L240 296C240 282.7 229.3 272 216 272zM320 272C306.7 272 296 282.7 296 296L296 488C296 501.3 306.7 512 320 512C333.3 512 344 501.3 344 488L344 296C344 282.7 333.3 272 320 272zM424 272C410.7 272 400 282.7 400 296L400 488C400 501.3 410.7 512 424 512C437.3 512 448 501.3 448 488L448 296C448 282.7 437.3 272 424 272z"/></svg>
+    </div><div><div class="icon-name">Delete</div><div class="icon-use">Delete / Remove · <code>--cb-danger</code></div><div class="icon-src">Font Awesome Free 7 · trash</div></div></div><pre></pre></div>
+
+  <div class="icon-card"><div class="icon-head"><div class="icon-prev">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" width="18" height="18" aria-hidden="true"><!--!Font Awesome Free 7 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.--><path fill="#727272" d="M320 128C263.2 128 212.1 152.7 176.9 192L224 192C241.7 192 256 206.3 256 224C256 241.7 241.7 256 224 256L96 256C78.3 256 64 241.7 64 224L64 96C64 78.3 78.3 64 96 64C113.7 64 128 78.3 128 96L128 150.7C174.9 97.6 243.5 64 320 64C461.4 64 576 178.6 576 320C576 461.4 461.4 576 320 576C233 576 156.1 532.6 109.9 466.3C99.8 451.8 103.3 431.9 117.8 421.7C132.3 411.5 152.2 415.1 162.4 429.6C197.2 479.4 254.8 511.9 320 511.9C426 511.9 512 425.9 512 319.9C512 213.9 426 128 320 128z"/></svg>
+    </div><div><div class="icon-name">Refresh</div><div class="icon-use">Reload data · <code>--cb-icon-neutral</code> · 18px</div><div class="icon-src">Font Awesome Free 7 · from ItemizedDetailsGrid</div></div></div><pre></pre></div>
+
+  <div class="icon-card"><div class="icon-head"><div class="icon-prev">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" width="20" height="20" aria-hidden="true"><!--!Font Awesome Free 7 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.--><path fill="#989898" d="M480 272C480 317.9 465.1 360.3 440 394.7L566.6 521.4C579.1 533.9 579.1 554.2 566.6 566.7C554.1 579.2 533.8 579.2 521.3 566.7L394.7 440C360.3 465.1 317.9 480 272 480C157.1 480 64 386.9 64 272C64 157.1 157.1 64 272 64C386.9 64 480 157.1 480 272zM272 416C351.5 416 416 351.5 416 272C416 192.5 351.5 128 272 128C192.5 128 128 192.5 128 272C128 351.5 192.5 416 272 416z"/></svg>
+    </div><div><div class="icon-name">Search</div><div class="icon-use">Search field <code>contentBefore</code> · <code>--cb-icon-subtle</code></div><div class="icon-src">Font Awesome Free 7 · magnifying-glass</div></div></div><pre></pre></div>
+
+  <div class="icon-card"><div class="icon-head"><div class="icon-prev">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" width="20" height="20" aria-hidden="true"><!--!Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.--><path fill="#2086ff" d="M320 576C461.4 576 576 461.4 576 320C576 178.6 461.4 64 320 64C178.6 64 64 178.6 64 320C64 461.4 178.6 576 320 576zM288 224C288 206.3 302.3 192 320 192C337.7 192 352 206.3 352 224C352 241.7 337.7 256 320 256C302.3 256 288 241.7 288 224zM280 288L328 288C341.3 288 352 298.7 352 312L352 400L360 400C373.3 400 384 410.7 384 424C384 437.3 373.3 448 360 448L280 448C266.7 448 256 437.3 256 424C256 410.7 266.7 400 280 400L304 400L304 336L280 336C266.7 336 256 325.3 256 312C256 298.7 266.7 288 280 288z"/></svg>
+    </div><div><div class="icon-name">Info</div><div class="icon-use">Help tooltip trigger · <code>--cb-brand</code></div><div class="icon-src">Font Awesome Free 7 · circle-info (book_circleinfosolidfull)</div></div></div><pre></pre></div>
+
+  <div class="icon-card"><div class="icon-head"><div class="icon-prev">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" width="20" height="20" aria-hidden="true"><!--!Font Awesome Free 7.0.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.--><path fill="#727272" d="M88 256L232 256C241.7 256 250.5 250.2 254.2 241.2C257.9 232.2 255.9 221.9 249 215L202.3 168.3C277.6 109.7 386.6 115 455.8 184.2C530.8 259.2 530.8 380.7 455.8 455.7C380.8 530.7 259.3 530.7 184.3 455.7C174.1 445.5 165.3 434.4 157.9 422.7C148.4 407.8 128.6 403.4 113.7 412.9C98.8 422.4 94.4 442.2 103.9 457.1C113.7 472.7 125.4 487.5 139 501C239 601 401 601 501 501C601 401 601 239 501 139C406.8 44.7 257.3 39.3 156.7 122.8L105 71C98.1 64.2 87.8 62.1 78.8 65.8C69.8 69.5 64 78.3 64 88L64 232C64 245.3 74.7 256 88 256z"/></svg>
+    </div><div><div class="icon-name">Undo / Reset</div><div class="icon-use">Revert edits, reset filters · <code>--cb-icon-neutral</code></div><div class="icon-src">Font Awesome Free 7 · rotate-left (book_rotateleftsolidfull)</div></div></div><pre></pre></div>
+
+  <div class="icon-card"><div class="icon-head"><div class="icon-prev">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" width="20" height="20" aria-hidden="true"><!--!Font Awesome Free 7.0.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.--><path fill="#2086ff" d="M566.6 214.6L470.6 310.6C461.4 319.8 447.7 322.5 435.7 317.5C423.7 312.5 416 300.9 416 288L416 224L96 224C78.3 224 64 209.7 64 192C64 174.3 78.3 160 96 160L416 160L416 96C416 83.1 423.8 71.4 435.8 66.4C447.8 61.4 461.5 64.2 470.7 73.3L566.7 169.3C579.2 181.8 579.2 202.1 566.7 214.6zM169.3 566.6L73.3 470.6C60.8 458.1 60.8 437.8 73.3 425.3L169.3 329.3C178.5 320.1 192.2 317.4 204.2 322.4C216.2 327.4 224 339.1 224 352L224 416L544 416C561.7 416 576 430.3 576 448C576 465.7 561.7 480 544 480L224 480L224 544C224 556.9 216.2 568.6 204.2 573.6C192.2 578.6 178.5 575.8 169.3 566.7z"/></svg>
+    </div><div><div class="icon-name">Transfer / Swap</div><div class="icon-use">Realignment, State Swap · <code>--cb-brand</code></div><div class="icon-src">Font Awesome Free 7 · right-left (book_rightleftsolidfull)</div></div></div><pre></pre></div>
+
+  <div class="icon-card"><div class="icon-head"><div class="icon-prev">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" width="20" height="20" aria-hidden="true"><!--!Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.--><path fill="#727272" d="M224 64C241.7 64 256 78.3 256 96L256 128L384 128L384 96C384 78.3 398.3 64 416 64C433.7 64 448 78.3 448 96L448 128L480 128C515.3 128 544 156.7 544 192L544 480C544 515.3 515.3 544 480 544L160 544C124.7 544 96 515.3 96 480L96 192C96 156.7 124.7 128 160 128L192 128L192 96C192 78.3 206.3 64 224 64zM224 320C206.3 320 192 334.3 192 352L192 416C192 433.7 206.3 448 224 448L416 448C433.7 448 448 433.7 448 416L448 352C448 334.3 433.7 320 416 320L224 320z"/></svg>
+    </div><div><div class="icon-name">Calendar</div><div class="icon-use">Date pickers, Spend Plan periods · <code>--cb-icon-neutral</code></div><div class="icon-src">Font Awesome Free 7 · calendar-week (book_calendarweeksolidfull)</div></div></div><pre></pre></div>
+
+  <div class="icon-card"><div class="icon-head"><div class="icon-prev">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" width="20" height="20" aria-hidden="true"><!-- Checkbook line icon --><path d="M400 128L512 240L256 496L128 512L144 384Z M352 176L464 288" fill="none" stroke="#727272" stroke-width="48" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </div><div><div class="icon-name">Edit</div><div class="icon-use">Open inline editor · <code>--cb-icon-neutral</code></div><div class="icon-src">Checkbook line</div></div></div><pre></pre></div>
+
+  <div class="icon-card"><div class="icon-head"><div class="icon-prev">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" width="20" height="20" aria-hidden="true"><!-- Checkbook line icon --><path d="M192 192L448 448M448 192L192 448" fill="none" stroke="#727272" stroke-width="64" stroke-linecap="round"/></svg>
+    </div><div><div class="icon-name">Close / Clear</div><div class="icon-use">Dismiss, clear a field, remove a chip · <code>--cb-icon-neutral</code></div><div class="icon-src">Checkbook line</div></div></div><pre></pre></div>
+
+  <div class="icon-card"><div class="icon-head"><div class="icon-prev">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" width="20" height="20" aria-hidden="true"><!-- Checkbook line icon --><path d="M144 336L272 464L496 192" fill="none" stroke="#107c10" stroke-width="64" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </div><div><div class="icon-name">Check / Approve</div><div class="icon-use">Approve, confirm, validated · <code>--cb-success</code></div><div class="icon-src">Checkbook line</div></div></div><pre></pre></div>
+
+  <div class="icon-card"><div class="icon-head"><div class="icon-prev">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" width="20" height="20" aria-hidden="true"><!-- Checkbook line icon --><path d="M320 96L576 528L64 528Z" fill="none" stroke="#8a5c00" stroke-width="48" stroke-linejoin="round"/><path d="M320 256L320 384" fill="none" stroke="#8a5c00" stroke-width="48" stroke-linecap="round"/><circle cx="320" cy="456" r="28" fill="#8a5c00"/></svg>
+    </div><div><div class="icon-name">Warning</div><div class="icon-use">Banner / inline warning · <code>--cb-warn-text</code></div><div class="icon-src">Checkbook line</div></div></div><pre></pre></div>
+
+  <div class="icon-card"><div class="icon-head"><div class="icon-prev">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" width="20" height="20" aria-hidden="true"><!-- Checkbook line icon --><rect x="128" y="288" width="384" height="288" rx="48" fill="#727272"/><path d="M208 288L208 208C208 146 258 96 320 96C382 96 432 146 432 208L432 288" fill="none" stroke="#727272" stroke-width="56"/></svg>
+    </div><div><div class="icon-name">Lock</div><div class="icon-use">Funding / Spend Plan locked · <code>--cb-icon-neutral</code></div><div class="icon-src">Checkbook line</div></div></div><pre></pre></div>
+
+  <div class="icon-card"><div class="icon-head"><div class="icon-prev">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" width="20" height="20" aria-hidden="true"><!-- Checkbook line icon --><path d="M96 128L544 128L368 336L368 512L272 464L272 336Z" fill="none" stroke="#727272" stroke-width="48" stroke-linejoin="round"/></svg>
+    </div><div><div class="icon-name">Filter</div><div class="icon-use">Open filter panel · <code>--cb-icon-neutral</code></div><div class="icon-src">Checkbook line</div></div></div><pre></pre></div>
+
+  <div class="icon-card"><div class="icon-head"><div class="icon-prev">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" width="20" height="20" aria-hidden="true"><!-- Checkbook line icon --><path d="M320 96L320 400M192 288L320 416L448 288M128 528L512 528" fill="none" stroke="#727272" stroke-width="56" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </div><div><div class="icon-name">Download / Export</div><div class="icon-use">Export to Excel / CSV · <code>--cb-icon-neutral</code></div><div class="icon-src">Checkbook line</div></div></div><pre></pre></div>
+
+  <div class="icon-card"><div class="icon-head"><div class="icon-prev">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" width="20" height="20" aria-hidden="true"><!-- Checkbook line icon --><path d="M368 128L512 128L512 272M512 128L304 336M448 400L448 512L128 512L128 192L240 192" fill="none" stroke="#727272" stroke-width="56" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </div><div><div class="icon-name">Open record</div><div class="icon-use">Navigate to a related record · <code>--cb-icon-neutral</code></div><div class="icon-src">Checkbook line</div></div></div><pre></pre></div>
+
+  <div class="icon-card"><div class="icon-head"><div class="icon-prev">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" width="20" height="20" aria-hidden="true"><!-- Checkbook line icon --><path d="M176 256L320 400L464 256" fill="none" stroke="#727272" stroke-width="64" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </div><div><div class="icon-name">Chevron down</div><div class="icon-use">Expand row / section. Rotate 180° for collapse. · <code>--cb-icon-neutral</code></div><div class="icon-src">Checkbook line</div></div></div><pre></pre></div>
+
+  <div class="icon-card"><div class="icon-head"><div class="icon-prev">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" width="20" height="20" aria-hidden="true"><!-- Checkbook line icon --><path d="M256 176L400 320L256 464" fill="none" stroke="#727272" stroke-width="64" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </div><div><div class="icon-name">Chevron right</div><div class="icon-use">Next step, drill-in, collapsed row · <code>--cb-icon-neutral</code></div><div class="icon-src">Checkbook line</div></div></div><pre></pre></div>
+
+  <div class="icon-card"><div class="icon-head"><div class="icon-prev">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" width="20" height="20" aria-hidden="true"><!-- Checkbook line icon --><circle cx="160" cy="320" r="44" fill="#424242"/><circle cx="320" cy="320" r="44" fill="#424242"/><circle cx="480" cy="320" r="44" fill="#424242"/></svg>
+    </div><div><div class="icon-name">More</div><div class="icon-use">Row overflow menu (last action) · <code>--cb-text-secondary</code></div><div class="icon-src">Checkbook line</div></div></div><pre></pre></div>
+
+  <div class="icon-card"><div class="icon-head"><div class="icon-prev">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" width="20" height="20" aria-hidden="true" class="cb-sort"><!-- Checkbook line icon: stroke set by CSS (.up/.down + aria-sort) --><path class="up" d="M208 272L320 160L432 272" fill="none" stroke="#8a8a8a" stroke-width="64" stroke-linecap="round" stroke-linejoin="round"/><path class="down" d="M208 368L320 480L432 368" fill="none" stroke="#8a8a8a" stroke-width="64" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </div><div><div class="icon-name">Sort</div><div class="icon-use">Sortable header, 12px · idle <code>--cb-sort-idle</code>, active half <code>--cb-text</code></div><div class="icon-src">Checkbook line</div></div></div><pre></pre></div>
+
+
+  <div class="icon-card"><div class="icon-head"><div class="icon-prev" style="color:#14532d">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" width="20" height="20" aria-hidden="true"><!-- Checkbook line icon: currentColor --><circle cx="320" cy="320" r="232" fill="none" stroke="currentColor" stroke-width="56"/><path d="M216 328L288 400L432 248" fill="none" stroke="currentColor" stroke-width="56" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </div><div><div class="icon-name">Check-circle</div><div class="icon-use">Status: success (Funded) · 14px</div><div class="icon-src">Checkbook line · currentColor</div></div></div><pre></pre></div>
+
+  <div class="icon-card"><div class="icon-head"><div class="icon-prev" style="color:#78350f">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" width="20" height="20" aria-hidden="true"><!-- Checkbook line icon: currentColor --><circle cx="320" cy="320" r="232" fill="none" stroke="currentColor" stroke-width="56"/><path d="M320 192L320 320L408 376" fill="none" stroke="currentColor" stroke-width="56" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </div><div><div class="icon-name">Clock</div><div class="icon-use">Status: warning (Pending) · 14px</div><div class="icon-src">Checkbook line · currentColor</div></div></div><pre></pre></div>
+
+  <div class="icon-card"><div class="icon-head"><div class="icon-prev" style="color:#7f1d1d">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" width="20" height="20" aria-hidden="true"><!-- Checkbook line icon: currentColor --><circle cx="320" cy="320" r="232" fill="none" stroke="currentColor" stroke-width="56" stroke-dasharray="91 91" stroke-linecap="round"/></svg>
+    </div><div><div class="icon-name">Dashed circle</div><div class="icon-use">Status: danger (Unfunded) · 14px</div><div class="icon-src">Checkbook line · currentColor</div></div></div><pre></pre></div>
+
+  <div class="icon-card"><div class="icon-head"><div class="icon-prev" style="color:#1e3a8a">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" width="20" height="20" aria-hidden="true"><!-- Checkbook line icon: currentColor --><circle cx="320" cy="320" r="232" fill="none" stroke="currentColor" stroke-width="56"/><circle cx="320" cy="320" r="80" fill="currentColor"/></svg>
+    </div><div><div class="icon-name">Dot-circle</div><div class="icon-use">Status: info (In Review) · 14px</div><div class="icon-src">Checkbook line · currentColor</div></div></div><pre></pre></div>
+
+  <div class="icon-card"><div class="icon-head"><div class="icon-prev" style="color:#374151">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" width="20" height="20" aria-hidden="true"><!-- Checkbook line icon: currentColor --><circle cx="320" cy="320" r="232" fill="none" stroke="currentColor" stroke-width="56"/><path d="M216 320L424 320" fill="none" stroke="currentColor" stroke-width="56" stroke-linecap="round"/></svg>
+    </div><div><div class="icon-name">Minus-circle</div><div class="icon-use">Status: neutral (Draft) · 14px</div><div class="icon-src">Checkbook line · currentColor</div></div></div><pre></pre></div>
+
+  <div class="icon-card"><div class="icon-head"><div class="icon-prev" style="color:#15803d">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" width="20" height="20" aria-hidden="true"><!-- Checkbook line icon: currentColor --><path d="M144 336L272 464L496 192" fill="none" stroke="currentColor" stroke-width="88" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </div><div><div class="icon-name">Badge check</div><div class="icon-use">Saved badge · 12px, white on <code>#15803d</code></div><div class="icon-src">Checkbook line · currentColor</div></div></div><pre></pre></div>
+
+  <div class="icon-card"><div class="icon-head"><div class="icon-prev" style="color:#727272">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" width="20" height="20" aria-hidden="true"><!-- SVG Repo (svgrepo.com) save-floppy · verify license before shipping · 32-unit path scaled ×20 · currentColor --><path fill="currentColor" fill-rule="evenodd" transform="scale(20) translate(-154 -517)" d="M172,522 C172,521.447 172.448,521 173,521 C173.552,521 174,521.447 174,522 L174,526 C174,526.553 173.552,527 173,527 C172.448,527 172,526.553 172,526 L172,522 L172,522 Z M163,529 L177,529 C177.552,529 178,528.553 178,528 L178,517 L162,517 L162,528 C162,528.553 162.448,529 163,529 L163,529 Z M182,517 L180,517 L180,529 C180,530.104 179.104,531 178,531 L162,531 C160.896,531 160,530.104 160,529 L160,517 L158,517 C155.791,517 154,518.791 154,521 L154,545 C154,547.209 155.791,549 158,549 L182,549 C184.209,549 186,547.209 186,545 L186,521 C186,518.791 184.209,517 182,517 L182,517 Z"/></svg>
+    </div><div><div class="icon-name">Save</div><div class="icon-use">Save buttons · set <code>color: #727272</code> (<code>--cb-icon-neutral</code>)</div><div class="icon-src">SVG Repo · save-floppy · currentColor</div></div></div><pre></pre></div>
+
+  <div class="icon-card"><div class="icon-head"><div class="icon-prev" style="color:#b91c1c">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" width="20" height="20" aria-hidden="true"><!-- Checkbook line icon: currentColor --><circle cx="320" cy="320" r="232" fill="none" stroke="currentColor" stroke-width="64"/><path d="M320 200L320 344" fill="none" stroke="currentColor" stroke-width="72" stroke-linecap="round"/><circle cx="320" cy="440" r="44" fill="currentColor"/></svg>
+    </div><div><div class="icon-name">Badge alert</div><div class="icon-use">Error badge · 12px, white on <code>#b91c1c</code></div><div class="icon-src">Checkbook line · currentColor</div></div></div><pre></pre></div>
+
+  <div class="icon-card"><div class="icon-head"><div class="icon-prev">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" width="20" height="20" aria-hidden="true"><!-- SVG Repo (svgrepo.com) · verify license before shipping · 32-unit path scaled ×20 to the 640 grid --><path fill="#727272" transform="scale(20)" d="M0.032 26.336q-0.096-0.576 0.128-1.12t0.704-0.864 1.152-0.352h1.984v-4q0-2.464 1.728-4.224t4.256-1.76h12q0.8 0 1.408-0.576t0.608-1.44v-9.984q0-0.832 0.576-1.408t1.44-0.608 1.408 0.608 0.576 1.408v9.984q0 2.496-1.76 4.256t-4.256 1.76h-12q-0.832 0-1.408 0.576t-0.576 1.408v4h2.016q0.64 0 1.152 0.384t0.704 0.864 0.096 1.12-0.544 1.056l-4 4q-0.64 0.608-1.44 0.608t-1.408-0.608l-4-4q-0.48-0.48-0.544-1.088zM20.032 26.368q-0.096-0.608 0.128-1.152t0.704-0.864 1.152-0.352h1.984v-4.256q1.536-0.32 2.336-0.832t1.664-1.664v6.752l2.016 0.032q0.64 0 1.152 0.352t0.704 0.896 0.096 1.12-0.544 1.024l-4 4.032q-0.64 0.576-1.44 0.576t-1.376-0.576l-4-4.032q-0.48-0.448-0.576-1.056z"/></svg>
+    </div><div><div class="icon-name">Allocate / Split</div><div class="icon-use">One amount splitting into two: distributions, allocations, funding splits · <code>--cb-icon-neutral</code></div><div class="icon-src">SVG Repo · alt-split · Allocate to RFs row action</div></div></div><pre></pre></div>
+
+  <div class="icon-card"><div class="icon-head"><div class="icon-prev">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" width="20" height="20" aria-hidden="true"><!-- SVG Repo (svgrepo.com) · verify license before shipping · 32-unit path scaled ×20 to the 640 grid --><path fill="#727272" transform="scale(20)" d="M26.885 18.115c-0.226-0.226-0.539-0.366-0.884-0.366-0.691 0-1.251 0.56-1.251 1.251 0 0.345 0.14 0.658 0.366 0.884l1.865 1.865h-6.68l-1.695-2.459c-0.228-0.328-0.604-0.54-1.029-0.54-0.69 0-1.249 0.559-1.249 1.249 0 0.265 0.083 0.511 0.223 0.713l-0.003-0.004 2.067 3c0.229 0.328 0.604 0.541 1.029 0.541h7.336l-1.865 1.865c-0.226 0.226-0.366 0.539-0.366 0.884 0 0.691 0.56 1.251 1.251 1.251 0.345 0 0.658-0.14 0.884-0.366l4-4c0.225-0.227 0.365-0.54 0.365-0.885s-0.139-0.658-0.365-0.885l0 0zM2 10.249l7.343 0.001 1.694 2.459c0.228 0.329 0.604 0.541 1.029 0.541 0.69 0 1.25-0.56 1.25-1.25 0-0.265-0.082-0.511-0.223-0.713l0.003 0.004-2.066-3c-0.228-0.329-0.604-0.541-1.029-0.541-0 0-0 0-0 0l-8-0.001c-0.69 0-1.25 0.56-1.25 1.25s0.56 1.25 1.25 1.25v0zM26.981 10.25l-1.866 1.866c-0.226 0.226-0.366 0.539-0.366 0.884 0 0.691 0.56 1.251 1.251 1.251 0.346 0 0.658-0.14 0.885-0.367v0l4-4c0.025-0.025 0.034-0.059 0.057-0.086 0.183-0.19 0.296-0.449 0.296-0.735 0-0.001 0-0.003 0-0.004v0c0.001-0.021 0.012-0.038 0.012-0.059s-0.011-0.038-0.012-0.059c0-0.001 0-0.003 0-0.005 0-0.285-0.113-0.543-0.296-0.733l0 0c-0.023-0.027-0.032-0.062-0.058-0.088l-4-4c-0.226-0.227-0.539-0.367-0.885-0.367-0.691 0-1.251 0.56-1.251 1.251 0 0.345 0.14 0.658 0.366 0.884v0l1.866 1.866h-6.981c-0 0-0 0-0 0-0.418 0-0.788 0.205-1.015 0.52l-0.003 0.004-9.626 13.477h-7.356c-0.69 0-1.25 0.56-1.25 1.25s0.56 1.25 1.25 1.25v0h8c0.418-0 0.788-0.205 1.015-0.52l0.003-0.004 9.625-13.477z"/></svg>
+    </div><div><div class="icon-name">Shuffle</div><div class="icon-use">Reassign / reorder between targets: realignments, swaps · <code>--cb-icon-neutral</code></div><div class="icon-src">SVG Repo · arrows-shuffle · reserved</div></div></div><pre></pre></div>
+</div>
+
+<!-- ─────────────────────────────────────────────────────────────────────── -->
+<h2 id="checklist"><span class="n">14</span>Review checklist</h2>
+<p>Run through this list before merging any new or restyled PCF / HTML Web Resource.</p>
+<ul class="checklist" style="padding-left:22px">
+  <li>PCF wraps in <code>&lt;FluentProvider theme={checkbookTheme}&gt;</code>. HTML includes the <code>checkbook-kit</code> style block.</li>
+  <li>No raw hex outside the token table. Fluent v8 colors (<code>#605e5c</code>, <code>#a4262c</code>, <code>#0078d4</code>, <code>#323130</code>) are replaced with v9 tokens.</li>
+  <li>Toolbar and row buttons are <code>subtle</code> (no border), have an icon, and show a hover background.</li>
+  <li>Icon-only buttons have an <code>aria-label</code> and a tooltip.</li>
+  <li>Disabled uses <code>opacity: .7; filter: saturate(0)</code>. Colors are not swapped.</li>
+  <li>Primary/secondary buttons appear only in dialog footers.</li>
+  <li>Checkbox, radio and switch match §6: <code>#d9d9d9</code> outline, <code>#2086ff</code> when on, blue label on hover. Switch uses <code>.goodbad</code> only when both states carry meaning.</li>
+  <li>Editable inputs are filled-lighter <code>#f7f7f7</code> with a <code>#b2c3f4</code> hover border. Read-only fields have no fill.</li>
+  <li>Numbers are right-aligned (header too), tabular, formatted as USD, with no spinners.</li>
+  <li>Money (<code>$</code>) and quantity (<code>#</code>) use the numeric box: grey fill, no border at rest (white + border on hover/focus), 6px radius, bold prefix on the left. Formatted (<code>1,250.50</code>) unfocused, raw and fully selected on focus, <code>type="text"</code>.</li>
+  <li>Grid is spacious: 56px rows, <code>12px 16px</code> cells, a 40px <code>#f7f7f7</code> header band, <code>#f0f0f0</code> hairlines. Headers are 11px / 700 / UPPERCASE.</li>
+  <li>Grid has a sticky header, a sticky all-record totals row, Load more for paging, and a 560px max height. Row actions are Edit · Delete · More.</li>
+  <li>Save status is pinned to the cell corner with no layout shift. The Error badge has a tooltip.</li>
+  <li>Loading uses a spinner with a label. Empty states give guidance, with a separate "no matches" message.</li>
+  <li>Destructive actions confirm in a dialog. Busy dialogs block dismiss.</li>
+  <li>Icons come from §13 (640 viewBox, license comment kept for FA).</li>
+  <li>Keyboard focus is visible on every interactive element.</li>
+  <li>Tags follow the three tiers (§8): chips are outlined <b>Label: Value</b> with a dot (max 3, then 2 + <b>+N</b>); the status label is tinted with an icon in its own column; badges are solid with an icon, inline after the name, and clear themselves. No legend.</li>
+</ul>
+
+<div class="footer">ARNG Checkbook · Design System v1.5 · Source of truth for tokens and rules: <code>Design Documentation.md</code> · Visual and code reference: <code>Design/checkbook-design-system.html</code></div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     CHECKBOOK KIT — Money ($) and quantity (#) inputs. Copy this <script> together
+     with the checkbook-kit <style> into any HTML Web Resource that edits numbers.
+     ═══════════════════════════════════════════════════════════════════════ -->
+<script id="checkbook-numeric">
+/*
+  Markup:   <label class="cb-num"><span class="cb-num-adorn" aria-hidden="true">$</span>
+              <input class="cb-money" type="text" inputmode="decimal" data-value="1250.5" aria-label="Requested"></label>
+            <label class="cb-num"><span class="cb-num-adorn" aria-hidden="true">#</span>
+              <input class="cb-qty" type="text" inputmode="numeric" data-value="12" aria-label="Quantity"></label>
+            Quantity with decimals: add data-decimals="2" (and inputmode="decimal").
+  Value:    input.dataset.value holds the plain number ("" = empty). Never read input.value.
+  Save:     input.addEventListener("cb-num-commit", e => save(e.detail.value))   // number | null
+  Error:    "cb-num-error" fires when the typed text is rejected (old value is kept).
+  Code:     cbNum.set(input, 1250.5)  ·  cbNum.refresh(container) after adding rows
+            cbNum.formatMoney(n) → "$1,250.50" for read-only text and totals
+*/
+(function () {
+  var fmtCache = {};
+  function nf(minD, maxD) {
+    var k = minD + ":" + maxD;
+    return fmtCache[k] || (fmtCache[k] = new Intl.NumberFormat("en-US", { minimumFractionDigits: minD, maximumFractionDigits: maxD }));
+  }
+  function kind(el) {
+    if (!el || !el.classList) return null;
+    return el.classList.contains("cb-money") ? "money" : el.classList.contains("cb-qty") ? "qty" : null;
+  }
+  function decimals(el) { return kind(el) === "money" ? 2 : Math.max(0, parseInt(el.dataset.decimals || "0", 10) || 0); }
+  function stored(el) { var s = el.dataset.value; if (s === undefined || s === "") return null; var n = Number(s); return isFinite(n) ? n : null; }
+
+  // Unfocused text inside the box (symbol is the prefix, not part of the text)
+  function format(el, n) { return n === null ? "" : nf(kind(el) === "money" ? 2 : 0, decimals(el)).format(n); }
+  // Focused text: no separators
+  function raw(el, n) {
+    if (n === null) return "";
+    if (kind(el) === "money") return n % 1 === 0 ? String(n) : n.toFixed(2);
+    return String(n);
+  }
+  // null = empty, NaN = invalid
+  function parse(el, text) {
+    var c = String(text).replace(/[^0-9.\-]/g, "");
+    if (c === "") return null;
+    var n = Number(c);
+    if (!isFinite(n)) return NaN;
+    var f = Math.pow(10, decimals(el));
+    if (kind(el) === "qty") {
+      if (n < 0) return NaN;                         // no negative quantities
+      if (Math.round(n * f) / f !== n) return NaN;   // too many decimals: reject, don't round
+      return n;
+    }
+    return Math.round(n * f) / f;                    // money: round to cents
+  }
+  function render(el) {
+    if (!el.placeholder) el.placeholder = kind(el) === "money" ? "0.00" : "0";
+    el.value = document.activeElement === el ? raw(el, stored(el)) : format(el, stored(el));
+  }
+  function fire(el, name, detail) { el.dispatchEvent(new CustomEvent(name, { bubbles: true, detail: detail })); }
+
+  document.addEventListener("focusin", function (e) {
+    var el = e.target; if (!kind(el)) return;
+    el.classList.remove("is-invalid");
+    el.value = raw(el, stored(el));
+    el.select();
+    el._cbJustFocused = true;                        // keep the selection through the click's mouseup
+  });
+  document.addEventListener("mouseup", function (e) {
+    var el = e.target; if (!kind(el) || !el._cbJustFocused) return;
+    el._cbJustFocused = false; e.preventDefault();
+  });
+  document.addEventListener("input", function (e) {
+    var el = e.target; if (!kind(el)) return;
+    var cleaned = el.value.replace(/[^0-9.\-]/g, "");  // pasted "$1,250.50" → 1250.50
+    if (cleaned !== el.value) el.value = cleaned;
+  });
+  document.addEventListener("keydown", function (e) {
+    var el = e.target; if (!kind(el)) return;
+    if (e.key === "Enter") { e.preventDefault(); el.blur(); }
+    else if (e.key === "Escape") { el._cbCancel = true; el.blur(); }
+  });
+  document.addEventListener("focusout", function (e) {
+    var el = e.target; if (!kind(el)) return;
+    el._cbJustFocused = false;
+    var before = stored(el);
+    if (el._cbCancel) { el._cbCancel = false; el.value = format(el, before); return; }
+    var n = parse(el, el.value);
+    if (n !== n) {                                   // NaN
+      el.classList.add("is-invalid");
+      el.value = format(el, before);
+      fire(el, "cb-num-error");
+      return;
+    }
+    if (n !== before) {
+      el.dataset.value = n === null ? "" : String(n);
+      fire(el, "cb-num-commit", { value: n });
+    }
+    el.value = format(el, n);
+  });
+
+  var usd = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  window.cbNum = {
+    formatMoney: function (n) { return n === null || n === undefined ? "" : usd.format(n); },
+    set: function (el, n) { el.dataset.value = n === null || n === undefined ? "" : String(n); render(el); },
+    refresh: function (root) { (root || document).querySelectorAll(".cb-money, .cb-qty").forEach(render); }
+  };
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", function () { window.cbNum.refresh(); });
+  else window.cbNum.refresh();
+})();
+</script>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     CHECKBOOK KIT — chip overflow (+N) popover. Copy with the checkbook-kit <style>.
+     ═══════════════════════════════════════════════════════════════════════ -->
+<script id="checkbook-chips">
+/*
+  Markup: <button type="button" class="cb-chip-more" aria-label="3 more attributes"
+                  aria-expanded="false" aria-controls="more-123">+3</button>
+          <div class="cb-chip-popover" id="more-123" role="group" aria-label="More attributes"> …chips… </div>
+  Opens below the button (flips above near the bottom of the window). Esc, an outside click or scrolling closes it.
+*/
+(function () {
+  function popFor(btn) { return document.getElementById(btn.getAttribute("aria-controls")); }
+  function close(btn, refocus) {
+    var p = popFor(btn); btn.setAttribute("aria-expanded", "false"); if (p) p.classList.remove("is-open");
+    if (refocus) btn.focus();
+  }
+  function closeAll() { document.querySelectorAll('.cb-chip-more[aria-expanded="true"]').forEach(function (b) { close(b, false); }); }
+  function open(btn) {
+    var p = popFor(btn); if (!p) return;
+    closeAll();
+    btn.setAttribute("aria-expanded", "true"); p.classList.add("is-open");
+    var r = btn.getBoundingClientRect(), h = p.offsetHeight, w = p.offsetWidth;
+    var top = r.bottom + 6; if (top + h > window.innerHeight - 8) top = Math.max(8, r.top - 6 - h);
+    p.style.top = top + "px";
+    p.style.left = Math.max(8, Math.min(r.left, window.innerWidth - w - 8)) + "px";
+  }
+  document.addEventListener("click", function (e) {
+    var btn = e.target.closest && e.target.closest(".cb-chip-more");
+    if (btn) { btn.getAttribute("aria-expanded") === "true" ? close(btn, false) : open(btn); return; }
+    if (!(e.target.closest && e.target.closest(".cb-chip-popover"))) closeAll();
+  });
+  document.addEventListener("keydown", function (e) {
+    if (e.key !== "Escape") return;
+    var btn = document.querySelector('.cb-chip-more[aria-expanded="true"]'); if (btn) close(btn, true);
+  });
+  window.addEventListener("scroll", closeAll, true);
+  window.addEventListener("resize", closeAll);
+})();
+</script>
+
+<script>
+  // "Mixed" can only be set from script — demo select-all checkboxes start indeterminate.
+  document.querySelectorAll('input[data-indeterminate]').forEach(function (el) { el.indeterminate = true; });
+
+  // Fill each icon card's <pre> with that card's raw SVG markup (copyable + printed).
+  (function () {
+    document.querySelectorAll('#icon-grid .icon-card').forEach(function (card) {
+      var svg = card.querySelector('.icon-prev svg');
+      var pre = card.querySelector('pre');
+      if (!svg || !pre) return;
+      var markup = svg.outerHTML.replace(/\s+xmlns:xlink="[^"]*"/, '').trim();
+      pre.textContent = markup;
+      var btn = document.createElement('button');
+      btn.className = 'cb-btn copy-btn no-print';
+      btn.type = 'button';
+      btn.textContent = 'Copy SVG';
+      btn.addEventListener('click', function () {
+        var done = function () { btn.textContent = 'Copied'; setTimeout(function () { btn.textContent = 'Copy SVG'; }, 1200); };
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(markup).then(done, function () { fallback(); });
+        } else { fallback(); }
+        function fallback() {
+          var r = document.createRange(); r.selectNodeContents(pre);
+          var s = window.getSelection(); s.removeAllRanges(); s.addRange(r);
+          try { document.execCommand('copy'); done(); } catch (e) {}
+        }
+      });
+      card.querySelector('.icon-head').appendChild(btn);
+    });
+  })();
+</script>
+</body>
+</html>

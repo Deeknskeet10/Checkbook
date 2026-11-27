@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GAPS Design System — Style Reference</title>
+<link rel="stylesheet" href="Css/gaps-shared.css">
+<style>
+  body { padding: 32px; max-width: 8.5in; margin: 0 auto; }
+  .print-bar { display: flex; justify-content: flex-end; margin-bottom: 24px; }
+  @media print { .print-bar { display: none !important; } body { padding: 20px; } * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; } }
+  .page-title { font-size: 20px; font-weight: 700; color: #2F372F; margin-bottom: 4px; }
+  .page-sub   { font-size: 12px; color: #607060; margin-bottom: 32px; }
+  .demo-section { margin-bottom: 40px; }
+  .demo-section-title {
+    font-size: 13px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.5px; color: #2F372F;
+    border-bottom: 2px solid #2F372F;
+    padding-bottom: 5px; margin-bottom: 16px;
+  }
+  .demo-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 12px; }
+  .demo-label { font-size: 11px; color: #607060; min-width: 100px; }
+  .color-swatch {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-size: 12px; font-weight: 600;
+  }
+  .swatch {
+    width: 32px; height: 32px; border-radius: 4px;
+    border: 1px solid rgba(0,0,0,0.1);
+    flex-shrink: 0;
+  }
+  .demo-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 600px) { .demo-grid { grid-template-columns: 1fr; } }
+  .demo-card {
+    border: 1px solid #dde8dd; border-radius: 2px;
+    padding: 14px 16px; background: #fff;
+  }
+  .demo-card-label { font-size: 10px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.4px; color: #607060; margin-bottom: 8px; }
+  .progress-fill-demo { width: 60%; }
+</style>
+</head>
+<body>
+
+<div class="print-bar">
+  <button class="btn btn-primary" onclick="window.print()">&#128438; Print / Save as PDF</button>
+</div>
+
+<div class="page-title">GAPS Design System</div>
+<div class="page-sub">Style reference for co-workers — all shared components from <code>gaps-shared.css</code></div>
+
+<!-- ── Colors ─────────────────────────────────────────────────────── -->
+<div class="demo-section">
+  <div class="demo-section-title">Color Palette</div>
+  <div class="demo-row">
+    <span class="color-swatch"><span class="swatch" style="background:#2F372F"></span>Army Green #2F372F</span>
+    <span class="color-swatch"><span class="swatch" style="background:#ffcc00"></span>Gold #ffcc00</span>
+    <span class="color-swatch"><span class="swatch" style="background:#607060"></span>Muted #607060</span>
+    <span class="color-swatch"><span class="swatch" style="background:#f4f8f4;border-color:#dde8dd"></span>Surface #f4f8f4</span>
+    <span class="color-swatch"><span class="swatch" style="background:#dde8dd"></span>Border #dde8dd</span>
+    <span class="color-swatch"><span class="swatch" style="background:#eef2ee;border-color:#dde8dd"></span>Hover #eef2ee</span>
+  </div>
+</div>
+
+<!-- ── Section labels ─────────────────────────────────────────────── -->
+<div class="demo-section">
+  <div class="demo-section-title">Section Labels &amp; Dividers</div>
+  <span class="section-label">Section label — appears above groups of fields</span>
+  <div class="section">
+    <span class="section-label">Another section</span>
+    <p style="font-size:13px;color:#2F372F;">Body text at 13px — default paragraph content.</p>
+  </div>
+  <hr class="divider">
+  <p style="font-size:11px;color:#607060;">Divider above — used to separate content areas.</p>
+</div>
+
+<!-- ── Buttons ───────────────────────────────────────────────────── -->
+<div class="demo-section">
+  <div class="demo-section-title">Buttons</div>
+  <div class="demo-row">
+    <span class="demo-label">Primary</span>
+    <button class="btn btn-primary">Save</button>
+    <button class="btn btn-primary" disabled>Save (disabled)</button>
+  </div>
+  <div class="demo-row">
+    <span class="demo-label">Secondary</span>
+    <button class="btn btn-secondary">Cancel</button>
+    <button class="btn btn-secondary" disabled>Cancel (disabled)</button>
+  </div>
+  <div class="demo-row">
+    <span class="demo-label">Link</span>
+    <button class="btn btn-link">Clear selection</button>
+  </div>
+</div>
+
+<!-- ── Text Inputs ────────────────────────────────────────────────── -->
+<div class="demo-section">
+  <div class="demo-section-title">Text Inputs</div>
+  <div class="demo-grid">
+    <div class="demo-card">
+      <div class="demo-card-label">Text input (click to see focus style)</div>
+      <div class="section">
+        <span class="section-label">Soldier Name</span>
+        <input type="text" placeholder="e.g. Smith, John A." style="width:100%">
+      </div>
+    </div>
+    <div class="demo-card">
+      <div class="demo-card-label">Date input</div>
+      <div class="section">
+        <span class="section-label">Period From</span>
+        <input type="date" style="width:100%">
+      </div>
+    </div>
+    <div class="demo-card">
+      <div class="demo-card-label">Number input</div>
+      <div class="section">
+        <span class="section-label">MUTA Count</span>
+        <input type="number" placeholder="0" style="width:120px">
+      </div>
+    </div>
+    <div class="demo-card">
+      <div class="demo-card-label">Search row (input + button)</div>
+      <div class="search-row">
+        <input type="text" class="search-input" placeholder="Search UIC or name…">
+        <button class="btn btn-primary">Search</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Checkboxes ─────────────────────────────────────────────────── -->
+<div class="demo-section">
+  <div class="demo-section-title">Circular Checkboxes</div>
+  <div class="demo-row" style="gap:20px;">
+    <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;">
+      <input type="checkbox"> Unchecked
+    </label>
+    <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;">
+      <input type="checkbox" checked> Checked
+    </label>
+    <label style="display:flex;align-items:center;gap:8px;cursor:not-allowed;font-size:13px;opacity:0.5;">
+      <input type="checkbox" disabled> Disabled
+    </label>
+  </div>
+</div>
+
+<!-- ── Tags ──────────────────────────────────────────────────────── -->
+<div class="demo-section">
+  <div class="demo-section-title">Tags (Chips)</div>
+  <div class="demo-row">
+    <span class="tag">HHC 1-120 IN<button class="tag-remove" style="cursor:pointer;font-size:17px;line-height:1;color:#223122;background:none;border:none;padding:0 2px;">&#x2715;</button></span>
+    <span class="tag">A CO<button class="tag-remove" style="cursor:pointer;font-size:17px;line-height:1;color:#223122;background:none;border:none;padding:0 2px;">&#x2715;</button></span>
+    <span class="tag">B CO</span>
+  </div>
+</div>
+
+<!-- ── Table ─────────────────────────────────────────────────────── -->
+<div class="demo-section">
+  <div class="demo-section-title">Table</div>
+  <div class="list-box" style="max-height:none;">
+    <table>
+      <thead>
+        <tr>
+          <th style="width:30px;text-align:center;"><input type="checkbox"></th>
+          <th style="width:110px;">DODID</th>
+          <th>Name</th>
+          <th>Rank</th>
+          <th>UIC</th>
+          <th style="width:80px;">Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td style="text-align:center;"><input type="checkbox" checked></td>
+          <td style="font-family:monospace;letter-spacing:.4px;color:#607060;">1234567890</td>
+          <td>Smith, John A.</td>
+          <td>SGT</td>
+          <td>W1AAAA</td>
+          <td><span style="color:#1a6a1a;font-weight:600;">Present</span></td>
+        </tr>
+        <tr>
+          <td style="text-align:center;"><input type="checkbox"></td>
+          <td style="font-family:monospace;letter-spacing:.4px;color:#607060;">0987654321</td>
+          <td>Johnson, Mary B.</td>
+          <td>SSG</td>
+          <td>W1AAAA</td>
+          <td><span style="color:#607060;">Absent</span></td>
+        </tr>
+        <tr>
+          <td style="text-align:center;"><input type="checkbox"></td>
+          <td style="font-family:monospace;letter-spacing:.4px;color:#607060;">1122334455</td>
+          <td>Williams, Robert C.</td>
+          <td>SPC</td>
+          <td>W1BBBB</td>
+          <td><span style="color:#b83000;font-weight:600;">Excused</span></td>
+        </tr>
+        <tr>
+          <td style="text-align:center;"><input type="checkbox"></td>
+          <td style="font-family:monospace;letter-spacing:.4px;color:#607060;">5566778899</td>
+          <td>Davis, Patricia D.</td>
+          <td>CPL</td>
+          <td>W1BBBB</td>
+          <td><span style="color:#1a6a1a;font-weight:600;">Present</span></td>
+        </tr>
+        <tr>
+          <td style="text-align:center;"><input type="checkbox"></td>
+          <td style="font-family:monospace;letter-spacing:.4px;color:#607060;">2233445566</td>
+          <td>Brown, Michael E.</td>
+          <td>PFC</td>
+          <td>W1CCCC</td>
+          <td><span style="color:#607060;">Absent</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ── Spinner ───────────────────────────────────────────────────── -->
+<div class="demo-section">
+  <div class="demo-section-title">Spinner</div>
+  <div class="demo-row">
+    <span class="spinner"></span>
+    <span style="font-size:13px;color:#607060;">Loading soldiers…</span>
+  </div>
+</div>
+
+<!-- ── Progress Bar ──────────────────────────────────────────────── -->
+<div class="demo-section">
+  <div class="demo-section-title">Progress Bar</div>
+  <div class="progress-wrap">
+    <div class="progress-bar"><div class="progress-fill progress-fill-demo"></div></div>
+    <div class="progress-text">Creating records… 18 of 30</div>
+  </div>
+</div>
+
+<!-- ── Alerts ────────────────────────────────────────────────────── -->
+<div class="demo-section">
+  <div class="demo-section-title">Alerts</div>
+  <div class="alert alert-success visible">Success — 30 attendance records created successfully.</div>
+  <div class="alert alert-error visible">Error — Failed to create record for Smith, John A. Field validation failed.</div>
+  <div class="alert alert-warn visible">Warning — 3 soldiers already have an attendance record for this event.</div>
+</div>
+
+<!-- ── Status Messages ───────────────────────────────────────────── -->
+<div class="demo-section">
+  <div class="demo-section-title">Status Messages</div>
+  <div class="status status-info">Info — Select a UIC to load soldiers.</div>
+  <div class="status status-success" style="margin-top:6px;">Success — Record saved.</div>
+  <div class="status status-error" style="margin-top:6px;">Error — Could not connect to Dynamics 365.</div>
+</div>
+
+<!-- ── Layout Example ────────────────────────────────────────────── -->
+<div class="demo-section">
+  <div class="demo-section-title">Typical Form Layout</div>
+  <div class="demo-card">
+    <div class="section">
+      <span class="section-label">Unit (UIC)</span>
+      <div class="search-row">
+        <input type="text" class="search-input" placeholder="Type UIC or unit name…">
+        <button class="btn btn-primary">Search</button>
+      </div>
+      <div style="margin-top:8px;">
+        <span class="tag">HHC 1-120 IN<button class="tag-remove" style="cursor:pointer;font-size:17px;line-height:1;color:#223122;background:none;border:none;padding:0 2px;">&#x2715;</button></span>
+      </div>
+    </div>
+    <hr class="divider">
+    <div class="section">
+      <span class="section-label">Training Period</span>
+      <div class="demo-row">
+        <input type="date" style="width:160px;">
+        <span style="font-size:12px;color:#607060;">to</span>
+        <input type="date" style="width:160px;">
+      </div>
+    </div>
+    <hr class="divider">
+    <div style="display:flex;justify-content:flex-end;gap:8px;padding-top:4px;">
+      <button class="btn btn-secondary">Cancel</button>
+      <button class="btn btn-primary">Save</button>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
